@@ -4,6 +4,16 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Rentas municipales</title>
+        <script>
+            // before the bundle: the stored theme (portal and admin share srtm.*), so a dark user never sees a light flash
+            try {
+                const stored = localStorage.getItem('srtm.theme')
+                const dark = matchMedia('(prefers-color-scheme: dark)').matches
+                const theme = stored && stored !== 'system' ? stored : dark ? 'dark' : 'light'
+                document.documentElement.dataset.theme = theme
+                if (theme === 'light' || theme === 'dark') document.documentElement.style.colorScheme = theme
+            } catch {}
+        </script>
     </head>
     <body>
         <div id="root"></div>

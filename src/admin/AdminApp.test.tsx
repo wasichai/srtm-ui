@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mockFetch, type FetchMock } from '@wasichai/testing'
-import { App } from './App'
+import { AdminApp } from './AdminApp'
 
 const admin = { id: 'u1', email: 'admin@wasichai.local', displayName: 'Admin', organizationId: 'o1', roles: ['ADMIN'] }
 
 let fetch: FetchMock | null = null
 beforeEach(() => {
   localStorage.clear()
-  window.history.pushState({}, '', '/')
+  window.history.pushState({}, '', '/admin')
 })
 afterEach(() => fetch?.restore())
 
@@ -20,7 +20,7 @@ async function signIn() {
     { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
     { path: '/objects', body: [] }
   ])
-  render(<App />)
+  render(<AdminApp />)
   const email = await screen.findByLabelText('Correo')
   await userEvent.clear(email)
   await userEvent.type(email, 'admin@wasichai.local')
@@ -29,7 +29,7 @@ async function signIn() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
 }
 
-describe('srtm-ui', () => {
+describe('admin', () => {
   it('signs the seeded admin in', async () => {
     await signIn()
     expect(screen.getAllByText('Rentas municipales').length).toBeGreaterThan(0)

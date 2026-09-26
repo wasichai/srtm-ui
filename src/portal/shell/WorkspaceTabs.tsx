@@ -1,0 +1,84 @@
+import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router'
+import { TABS_KEY } from '../auth/session'
+
+// the workspace tabs, like gisxp's: every ficha one opens stays a tab until it is closed, so a clerk
+// attending several people keeps them all a click away. kept per browser tab (sessionStorage)
+
+export interface WorkspaceTab {
+  path: string
+  label: string
+  kind: 'contribuyente' | 'predio'
+}
+
+interface WorkspaceTabs {
+  tabs: WorkspaceTab[]
+  open: (tab: WorkspaceTab) => void
+  close: (path: string) => void
+}
+
+const Context = createContext<WorkspaceTabs | null>(null)
+
+function load(): WorkspaceTab[] {
+  try {
+    const raw = sessionStorage.getItem(TABS_KEY)
+    return raw ? (JSON.parse(raw) as WorkspaceTab[]) : []
+  } catch {
+    return []
+  }
+}
+
+export function WorkspaceTabsProvider({ children }: { children: ReactNode }) {
+  const [tabs, setTabs] = useState<WorkspaceTab[]>(load)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(TABS_KEY, JSON.stringify(tabs))
+    } catch {
+      // storage full or blocked: tabs just do not survive a reload
+    }
+  }, [tabs])
+
+  const open = useCallback((tab: WorkspaceTab) => {
+    setTabs((current) => {
+      const index = current.findIndex((t) => t.path === tab.path)
+      if (index === -1) return [...current, tab]
+      if (current[index].label === tab.label) return current
+      return current.map((t, i) => (i === index ? tab : t))
+    })
+  }, [])
+
+  // closing the tab on screen moves to its right neighbour, else the left one, else home
+  const close = useCallback(
+    (path: string) => {
+      const index = tabs.findIndex((t) => t.path === path)
+      if (index === -1) return
+      const rest = tabs.filter((t) => t.path !== path)
+      setTabs(rest)
+      if (location.pathname === path) navigate(rest[index]?.path ?? rest[index - 1]?.path ?? '/')
+    },
+    [tabs, location.pathname, navigate]
+  )
+
+  const value = useMemo(() => ({ tabs, open, close }), [tabs, open, close])
+  return <Context value={value}>{children}</Context>
+}
+
+export function useWorkspaceTabs(): WorkspaceTabs {
+  const context = use(Context)
+  if (!context) throw new Error('useWorkspaceTabs must be used inside WorkspaceTabsProvider')
+  return context
+}
+
+// a ficha registers itself once its label is known
+export function useWorkspaceTab(tab: WorkspaceTab | null) {
+  const { open } = useWorkspaceTabs()
+  const path = tab?.path
+  const label = tab?.label
+  const kind = tab?.kind
+  useEffect(() => {
+    if (path && label && kind) open({ path, label, kind })
+  }, [open, path, label, kind])
+}

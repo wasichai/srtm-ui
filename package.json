@@ -17,24 +17,26 @@
         "typecheck": "tsc -p tsconfig.json"
     },
     "dependencies": {
-        "@wasichai/core": "link:../wasichai-ui/packages/core",
-        "@wasichai/documents": "link:../wasichai-ui/packages/documents",
-        "@wasichai/forms": "link:../wasichai-ui/packages/forms",
-        "@wasichai/pages": "link:../wasichai-ui/packages/pages",
-        "@wasichai/ui": "link:../wasichai-ui/packages/ui",
-        "@wasichai/views": "link:../wasichai-ui/packages/views",
-        "@wasichai/workflow": "link:../wasichai-ui/packages/workflow",
-        "@tanstack/react-query": "5.103.1",
+        "@wasichai/core": "0.2.1",
+        "@wasichai/documents": "0.2.1",
+        "@wasichai/forms": "0.2.1",
+        "@wasichai/pages": "0.2.1",
+        "@wasichai/ui": "0.2.1",
+        "@wasichai/views": "0.2.1",
+        "@wasichai/workflow": "0.2.1",
+        "@tanstack/react-query": "5.103.2",
         "i18next": "26.4.2",
+        "lucide-react": "1.48.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
+        "react-hook-form": "7.89.0",
         "react-i18next": "17.0.15",
         "react-router": "8.4.0"
     },
     "devDependencies": {
-        "@wasichai/testing": "link:../wasichai-ui/packages/testing",
+        "@wasichai/testing": "0.2.1",
         "@tailwindcss/vite": "4.3.3",
-        "@testing-library/dom": "10.4.1",
+        "@testing-library/dom": "10.4.2",
         "@testing-library/jest-dom": "7.0.1",
         "@testing-library/react": "16.3.3",
         "@testing-library/user-event": "14.6.7",
@@ -48,9 +50,5 @@
         "typescript": "7.0.2",
         "vite": "8.3.0",
         "vitest": "5.0.1"
-    },
-    "resolutions": {
-        "@wasichai/core": "link:../wasichai-ui/packages/core",
-        "@wasichai/ui": "link:../wasichai-ui/packages/ui"
     }
 }

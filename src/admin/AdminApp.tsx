@@ -5,16 +5,17 @@ import { pagesModule } from '@wasichai/pages'
 import { viewsModule } from '@wasichai/views'
 import { workflowModule } from '@wasichai/workflow'
 
-// core plus the modules srtm-backend runs: workflow, documents, views, forms, pages. no gis, automation or agent.
-// contribuyente, predio and declaracion_predial come from the backend metadata: nothing here per object
-export function App() {
+// the admin: core plus the modules srtm-backend runs (workflow, documents, views, forms, pages), under /admin.
+// storagePrefix 'srtm' is the portal's too, so one sign-in serves both
+export function AdminApp() {
   return (
     <WasichaiApp
       config={{
         apiBaseUrl: '/api',
         appName: 'Rentas municipales',
-        appTagline: 'Municipalidad Distrital de Perené',
+        appTagline: 'Administración',
         storagePrefix: 'srtm',
+        basename: '/admin',
         defaultLoginEmail: 'admin@wasichai.local'
       }}
       modules={[workflowModule(), pagesModule(), viewsModule(), formsModule(), documentsModule()]}
