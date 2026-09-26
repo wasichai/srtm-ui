@@ -9,10 +9,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# packages: @wasichai/* come from github packages, which wants a token even to read
 permissions:
   contents: read
-  packages: read
 
 jobs:
   web:
@@ -20,10 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     # a hung yarn install or vite build must not burn the default 6 h
     timeout-minutes: 20
-    # job level, not only on the install step: setup-node writes an .npmrc that reads ${NODE_AUTH_TOKEN} and, with
-    # cache: yarn, runs yarn right away. yarn 1 aborts on an unset variable in .npmrc
+    # @wasichai/* are private packages of wasichai-ui: the workflow token cannot read them, a read:packages PAT can
+    # (repo secret PACKAGES_TOKEN; dependabot has its own copy). job level, not only on the install step:
+    # setup-node writes an .npmrc that reads ${NODE_AUTH_TOKEN} and, with cache: yarn, runs yarn right away
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
