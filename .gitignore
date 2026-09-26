@@ -6,3 +6,6 @@ dist/
 .vscode/
 .env
 .env.local
+
+# local secrets (tokens): never in the repo
+.local/
