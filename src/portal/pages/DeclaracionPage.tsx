@@ -9,10 +9,12 @@ import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPen
 import { Button } from '../components/controles'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
+import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { useComun, useGrupoFormularios } from '../forms/grupo'
+import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
 import { RecordForm } from '../forms/RecordForm'
 import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
@@ -257,6 +259,10 @@ function DeclaracionPage({ id }: { id: string }) {
                 )
               }
             />
+            {/* every tab is open: a step goes to its tab, as the tab does, still in the wizard */}
+            {asistente && (
+              <PasosAsistente pasos={DECLARACION_TABS} actual={activa} onIr={(tab) => abrir(tab)} instruccion={INSTRUCCIONES_DECLARACION[activa]} />
+            )}
             {soloLectura && <AvisoAnulada declaracion={declaracion} />}
             <Card className="pb-4">
               <FichaTabs

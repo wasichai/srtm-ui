@@ -6,6 +6,8 @@ import { rentas } from '../api'
 import { Button } from '../components/controles'
 import { FichaTabs } from '../components/FichaTabs'
 import { today } from '../components/format'
+import { PasosAsistente } from '../components/PasosAsistente'
+import { INSTRUCCIONES_INSCRIPCION } from '../forms/instrucciones'
 import { RecordForm } from '../forms/RecordForm'
 import { CONTRIBUYENTE_SECTIONS, emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
@@ -58,6 +60,8 @@ export function NuevoContribuyentePage() {
           </Button>
         </div>
       </div>
+      {/* the inscription's first step: the other tabs wait for it, so there is no step to go to */}
+      <PasosAsistente pasos={CONTRIBUYENTE_TABS} actual="datos" instruccion={INSTRUCCIONES_INSCRIPCION.datos} />
       <Card className="pb-5">
         <FichaTabs
           label="Registro de contribuyente"

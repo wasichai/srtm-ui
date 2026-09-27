@@ -11,7 +11,7 @@ const dir = join(__dirname, 'portal-tributario')
 const read = (file: string) => readFileSync(join(dir, file), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css']
+const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css', 'pasos.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -136,5 +136,90 @@ describe('nav.css', () => {
     expect(contrast(actual.get('color')!, actual.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
     expect(contrast(grupo.get('color')!, head)).toBeGreaterThanOrEqual(4.5)
     expect(contrast(caret.get('color')!, head)).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe('pasos.css', () => {
+  const css = read('pasos.css')
+  const tokens = rule(read('tokens.css'), PORTAL)
+  const PASO = `${PORTAL} [data-ui='pasos-galon'] > [data-ui='paso']`
+  const BARRA = `${PORTAL} [data-ui='barra-instruccion']`
+
+  // a point of 14px on the right, a notch of 14px on the left
+  it('cuts every step as a chevron, the first with no notch, the last with no point', () => {
+    expect(rule(css, PASO).get('clip-path')).toBe('polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%)')
+    expect(rule(css, `${PASO}:first-child`).get('clip-path')).toBe('polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)')
+    expect(rule(css, `${PASO}:last-child`).get('clip-path')).toBe('polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%)')
+    expect(rule(css, `${PASO}:only-child`).get('clip-path')).toBe('none')
+  })
+
+  // each step starts under the point of the one before; 2px short of its 14px, so two grey steps still read apart
+  it('tucks each step under the point of the one before, but the first', () => {
+    expect(rule(css, PASO).get('margin-left')).toBe('-12px')
+    expect(rule(css, `${PASO}:first-child`).get('margin-left')).toBe('0')
+  })
+
+  it("gives the steps the prototype's size and room, around the notch and the point", () => {
+    expect(rule(css, PASO).get('font-size')).toBe('15.5px')
+    expect(rule(css, `${PASO} > *`).get('padding')).toBe('11px 30px 11px 34px')
+    expect(rule(css, `${PASO}:first-child > *`).get('padding-left')).toBe('22px')
+    expect(rule(css, `${PASO}:last-child > *`).get('padding-right')).toBe('26px')
+  })
+
+  // a declaración's six steps need some 1090px: below 1100px and 1000px of list they close up, as tabs.css's tabs
+  it('closes the steps up where the list is narrow, clearing the notch and the point', () => {
+    expect(rule(css, `${PORTAL} [data-ui='pasos-galon']`).get('container')).toBe('pasos-galon / inline-size')
+    expect(css).toMatch(/@container pasos-galon \(max-width: 1100px\)/)
+    expect(css).toMatch(/@container pasos-galon \(max-width: 1000px\)/)
+    const room = rules(css)
+      .filter((r) => r.selectors.includes(`${PASO} > *`))
+      .map((r) => r.declarations.get('padding')!)
+    expect(room).toEqual(['11px 30px 11px 34px', '11px 24px 11px 28px', '10px 20px 10px 24px'])
+    // on the right the 14px point, on the left the 14px notch, and some room besides
+    for (const padding of room) {
+      const [, right, , left] = padding.split(' ').map((side) => parseFloat(side))
+      expect(right).toBeGreaterThan(14)
+      expect(left).toBeGreaterThan(14)
+    }
+    const sizes = rules(css)
+      .filter((r) => r.selectors.includes(PASO))
+      .map((r) => r.declarations.get('font-size'))
+    expect(sizes).toEqual(['15.5px', '14.5px'])
+  })
+
+  // the current one keeps the component's brand (on-brand over brand, in tokens.test.tsx); the others, the
+  // prototype's greys
+  it('draws the steps that are not the current one in the prototype greys, with AA', () => {
+    const otro = rule(css, `${PASO}:not([aria-current='step'])`)
+    expect(otro.get('background-color')).toBe('#ededed')
+    expect(otro.get('color')).toBe('#555')
+    expect(contrast(otro.get('color')!, otro.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it("writes the instruction bar at the prototype's size, with AA", () => {
+    expect(rule(css, BARRA).get('padding-left')).toBe('18px')
+    const texto = rule(css, `${BARRA} > p`)
+    expect(texto.get('padding')).toBe('11px 0')
+    expect(texto.get('font-size')).toBe('15px')
+    expect(contrast(tokens.get('--ink')!, tokens.get('--surface-muted')!)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  // controls.css's primary button, flat, each after a line of 30% white
+  it('lays its tools flat side by side', () => {
+    const herramienta = rule(css, `${BARRA} [data-ui='button'][data-variant='primary']`)
+    expect(herramienta.get('padding')).toBe('12px 18px')
+    expect(herramienta.get('font-size')).toBe('14.5px')
+    expect(herramienta.get('border-radius')).toBe('0')
+    expect(herramienta.get('border-width')).toBe('0 0 0 1px')
+    expect(herramienta.get('border-color')).toBe('color-mix(in srgb, var(--on-brand) 30%, transparent)')
+    const icono = rule(css, `${BARRA} [data-ui='button'] svg`)
+    expect(icono.get('width')).toBe('15px')
+    expect(icono.get('height')).toBe('15px')
+  })
+
+  // after controls.css: its rule for the primary's padding is as specific, and the later one wins
+  it('comes after controls.css', () => {
+    const index = read('index.css')
+    expect(index.indexOf("@import './pasos.css';")).toBeGreaterThan(index.indexOf("@import './controls.css';"))
   })
 })

@@ -1,0 +1,115 @@
+/* portal-tributario: the wizards' chevron steps and the instruction bar under them (#54). out of layers, so these
+   rules beat tailwind's utilities, and only under the theme, so light and dark do not change. the components
+   (src/portal/components/PasosGalon.tsx and BarraInstruccion.tsx) draw them with tokens and mark them: data-ui="pasos-galon"
+   on the <ol>, data-ui="paso" on each <li> (aria-current="step" on the current one), data-ui="barra-instruccion" on the
+   bar. this gives them the prototype's shape and measures; the greys with no token (#ededed, #555) are the prototype's */
+
+/* the list is a container: where it is narrow its steps close up (below). what still does not fit scrolls sideways,
+   under a thin scrollbar */
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] {
+    container: pasos-galon / inline-size;
+    scrollbar-width: thin;
+}
+
+/* a step is a chevron: a point of 14px on the right and a notch of 14px on the left. each one after the first starts
+   under the point of the one before, its notch cut to fit, 2px short so that two grey steps in a row still read
+   apart (the prototype tucks the whole 14px, and its grey steps run into one band). the cut leaves no overlap, so
+   no step needs to be above another */
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso'] {
+    margin-left: -12px;
+    font-size: 15.5px;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%);
+}
+
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:first-child {
+    margin-left: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+}
+
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:last-child {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%);
+}
+
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:only-child {
+    clip-path: none;
+}
+
+/* the room is the step's text or button, so all of the chevron takes the click: 34px on the left clears the notch,
+   30px on the right the point */
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso'] > * {
+    padding: 11px 30px 11px 34px;
+}
+
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:first-child > * {
+    padding-left: 22px;
+}
+
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:last-child > * {
+    padding-right: 26px;
+}
+
+/* many long steps: a declaración's six need some 1090px at the prototype's measures, more than a 1440px screen gives
+   them beside the lateral. as the tabs do (tabs.css), they close up below 1100px and again below 1000px; the notch and
+   the point stay 14px */
+@container pasos-galon (max-width: 1100px) {
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso'] > * {
+        padding: 11px 24px 11px 28px;
+    }
+
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:first-child > * {
+        padding-left: 18px;
+    }
+
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:last-child > * {
+        padding-right: 22px;
+    }
+}
+
+@container pasos-galon (max-width: 1000px) {
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso'] {
+        font-size: 14.5px;
+    }
+
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso'] > * {
+        padding: 10px 20px 10px 24px;
+    }
+
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:first-child > * {
+        padding-left: 14px;
+    }
+
+    [data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:last-child > * {
+        padding-right: 18px;
+    }
+}
+
+/* the current step keeps the component's brand; the others, the prototype's greys (6.37:1) */
+[data-theme='portal-tributario'] [data-ui='pasos-galon'] > [data-ui='paso']:not([aria-current='step']) {
+    background-color: #ededed;
+    color: #555;
+}
+
+/* the instruction bar: "Paso N:" and its text at 15px */
+[data-theme='portal-tributario'] [data-ui='barra-instruccion'] {
+    padding-left: 18px;
+}
+
+[data-theme='portal-tributario'] [data-ui='barra-instruccion'] > p {
+    padding: 11px 0;
+    font-size: 15px;
+}
+
+/* its tools: controls.css's primary button (steel, darker on hover), flat and side by side at 14.5px with a 15px icon,
+   each after a line of 30% white. as specific as controls.css's own padding, and after it */
+[data-theme='portal-tributario'] [data-ui='barra-instruccion'] [data-ui='button'][data-variant='primary'] {
+    padding: 12px 18px;
+    border-width: 0 0 0 1px;
+    border-color: color-mix(in srgb, var(--on-brand) 30%, transparent);
+    border-radius: 0;
+    font-size: 14.5px;
+}
+
+[data-theme='portal-tributario'] [data-ui='barra-instruccion'] [data-ui='button'] svg {
+    width: 15px;
+    height: 15px;
+}

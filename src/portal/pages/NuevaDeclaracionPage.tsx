@@ -9,10 +9,12 @@ import { useSalidaConCambios } from '../components/CambiosPendientes'
 import { Button } from '../components/controles'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
+import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { useComun, useGrupoFormularios } from '../forms/grupo'
+import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordForm } from '../forms/RecordForm'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
@@ -131,6 +133,10 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
     }
   }
 
+  // where the tabs (and the steps, with the portal's theme) can go: datos del predio, and the ubicación once it is in
+  const abierta = (t: string) => t === 'datos' || (t === 'ubicacion' && Boolean(datos))
+  const ir = (next: string) => setTab(next === 'ubicacion' && datos ? 'ubicacion' : 'datos')
+
   const c = ficha.data?.contribuyente
   return (
     <div className="space-y-5">
@@ -169,15 +175,16 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
           )}
         </div>
       </div>
+      <PasosAsistente pasos={DECLARACION_TABS} actual={tab} onIr={ir} puedeIr={abierta} instruccion={INSTRUCCIONES_NUEVA_DECLARACION[tab]} />
       <Card className="pb-5">
         <FichaTabs
           label="Declaración jurada predial"
           active={tab}
-          onChange={(next) => setTab(next === 'ubicacion' && datos ? 'ubicacion' : 'datos')}
+          onChange={ir}
           tabs={DECLARACION_TABS.map((t) => ({
             ...t,
             icon: t.id === 'ubicacion' ? MapPin : FileText,
-            disabled: t.id === 'ubicacion' ? !datos : t.id !== 'datos',
+            disabled: !abierta(t.id),
             render: () =>
               t.id === 'datos' ? (
                 <div className="px-6 pt-5">

@@ -27,6 +27,7 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/portal/components/Alerta.tsx`          | Alerta con tono, título y cierre; en light y dark se ve como el texto que sustituye (#50).                                         |
 | `src/themes/portal-tributario/nav.css`      | El menú en árbol del lateral: hoja activa, hovers y carets con los valores del prototipo (ver [Menú en árbol](#menú-en-árbol-53)). |
 | `src/portal/shell/ArbolNav.tsx`             | El menú en árbol genérico (grupos, subgrupos y hojas) con sus ganchos `data-ui` (#53).                                             |
+| `src/themes/portal-tributario/pasos.css`    | Pasos en galón y barra de instrucción de los asistentes (#54).                                                                     |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -217,6 +218,47 @@ inicio: "Atención.", "Sr. contribuyente,"), `children`, `onCerrar?` (un botón 
   `danger-soft`/`danger`, `notice-soft`/`notice`; su contraste lo comprueba `tokens.test.tsx`) con el borde de
   Bootstrap 3 en hex (`#D6E9C6`, `#FAEBCC`, `#EBCCD1`, `#E8E0C4`). El botón de cerrar queda arriba a la derecha.
 - El toast queda fuera de alcance: el portal no tiene toasts.
+
+### Pasos en galón y barra de instrucción (`pasos.css`, #54)
+
+Componentes (en `src/portal/components/`):
+
+- `PasosGalon`: `pasos` (`{ id, label }[]`), `actual`, `onIr?(id)`, `puedeIr?(id)` y `label` (por defecto "Pasos del
+  trámite"). Es un `<ol>` (`data-ui="pasos-galon"`) con un `<li>` por paso (`data-ui="paso"`) y `aria-current="step"`
+  en el actual, que va en `bg-brand text-on-brand`; los demás, en `bg-surface-muted text-ink-muted`. Solo son botones
+  los pasos a los que se puede ir (hay `onIr` y `puedeIr` lo permite); los demás, y el actual, son texto: no se
+  enfocan. El recorte también cortaría el contorno de foco, así que el botón dibuja el anillo alrededor de su texto,
+  dentro del galón, en el color del texto.
+- `BarraInstruccion`: `paso?` (en negrita), `children` (la instrucción, con `aria-live="polite"`) y `herramientas?`
+  (`{ label, icon, onClick }[]`), que son `Button` primarios de `controles.tsx`. Hoy nadie pasa herramientas: el
+  portal no tiene Recuperar, Importar ni Limpiar.
+- `PasosAsistente` junta los dos sobre una tarjeta, solo con la variante `portal`; en la clásica no pinta nada. Lo
+  usan Nuevo contribuyente, Nueva declaración y la declaración con `?asistente=1`, justo debajo de su cabecera. Los
+  pasos son las pestañas de cada asistente, con su mismo estado: el paso actual es la pestaña abierta y un paso va
+  adonde va su pestaña, cuando se puede abrir. Las instrucciones, una por paso, están en
+  `src/portal/forms/instrucciones.ts`.
+
+Bajo el tema, `pasos.css` da la forma y las medidas del prototipo:
+
+| Pieza                    | Bajo el tema                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Paso                     | 15.5px, `padding: 11px 30px 11px 34px` (el primero 22px a la izquierda, el último 26px a la derecha)               |
+| Recorte                  | `clip-path` con punta y muesca de 14px; el primero sin muesca, el último sin punta, uno solo sin recorte           |
+| Paso no actual           | `#EDEDED` con texto `#555` (6.37:1)                                                                                |
+| Barra de instrucción     | `padding-left: 18px`; el texto a 15px con `padding: 11px 0`, sobre `surface-muted` y con la línea `line` debajo    |
+| Herramientas de la barra | el botón primario, plano: `padding: 12px 18px`, 14.5px, ícono de 15px y una línea de blanco al 30 % a su izquierda |
+
+- **Separación entre pasos.** El prototipo mete cada paso 14px bajo la punta del anterior (`margin-left: -14px`) y
+  su recorte encaja justo: dos pasos grises seguidos se funden en una sola banda. Aquí se meten 12px: queda una
+  línea de 2px del fondo entre paso y paso. El recorte no deja solapes, así que no hace falta el `z-index`
+  decreciente del prototipo.
+- **Muchos pasos.** Los seis de la declaración necesitan unos 1090px con las medidas del prototipo, más de lo que
+  queda junto al lateral en una pantalla de 1440px. Como las pestañas (`tabs.css`), la lista es un contenedor: por
+  debajo de 1100px los pasos se estrechan (`11px 24px 11px 28px`) y por debajo de 1000px pasan a 14.5px
+  (`10px 20px 10px 24px`). Lo que aún no cabe se desplaza en horizontal, con una barra fina.
+- **Sobre una tarjeta.** El prototipo pone galón y barra sobre su columna blanca, y la barra es gris (`#F6F6F6`).
+  Aquí el fondo de la página ya es `surface-muted` (ese mismo gris), así que `PasosAsistente` los pone sobre una
+  tarjeta blanca: el galón con `padding: 10px 18px` y la barra debajo, cuya línea inferior es el borde de la tarjeta.
 
 ## Tokens de extensión en light y dark
 
