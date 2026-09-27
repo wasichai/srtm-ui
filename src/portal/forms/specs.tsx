@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
 import type { CatalogKey } from '../types'
-import { errorDocumento, pideNumero } from './documento'
+import { errorDocumento, pideNumero, SIN_DOCUMENTO } from './documento'
 import { UbigeoFields } from './UbigeoFields'
 
 // how each entity shows and edits: sections, labels and value kinds. names are the model's fields.
@@ -24,6 +24,8 @@ export interface FieldSpec {
   when?: (values: FormValues) => boolean
   // shown always, but greyed (and neither required nor sent) until this holds: the srtm's dependent fields
   enabledWhen?: (values: FormValues) => boolean
+  // what it shows while greyed, from the live and the stored values (default: nothing)
+  greyedValue?: (values: FormValues, stored: FormValues) => string
   // a filled field's own check (a document number by its tipo): true, or the message
   validate?: (value: string, values: FormValues) => true | string
   // kind multi: the choices, kept as one comma-separated text
@@ -80,13 +82,15 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
     number: 2,
     fields: [
       { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
-      // greyed until a tipo is chosen, and for SIN DOCUMENTO (the backend stores none)
+      // greyed until a tipo is chosen, and for SIN DOCUMENTO: none for a new one or one switched to it, the padrón's
+      // number for one that already was (the backend keeps it: the importer knows it by it)
       {
         name: 'numero_documento',
         label: 'N° documento',
         required: true,
         span: 2,
         enabledWhen: (v) => pideNumero(v.tipo_documento),
+        greyedValue: (v, stored) => (v.tipo_documento === SIN_DOCUMENTO && stored.tipo_documento === SIN_DOCUMENTO ? stored.numero_documento : ''),
         validate: (value, v) => errorDocumento(v.tipo_documento, value) ?? true
       },
       { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 }

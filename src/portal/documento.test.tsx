@@ -171,6 +171,25 @@ describe('the document of a new contribuyente', () => {
   })
 })
 
+describe('the document of an existing contribuyente', () => {
+  it('shows, greyed, the number a SIN DOCUMENTO from the padrón keeps', async () => {
+    const importado = { ...contribuyente, tipo_documento: 'SIN DOCUMENTO', numero_documento: 'SD-0001' }
+    start('/contribuyentes/c1', [{ path: '/srtm/contribuyentes/c1', body: { contribuyente: importado, anio: year, predios: 0, totales } }])
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    expect(screen.getByLabelText(/N° documento/)).toBeDisabled()
+    expect(screen.getByLabelText(/N° documento/)).toHaveValue('SD-0001')
+  })
+
+  it('shows no number once switched to SIN DOCUMENTO: the backend clears it', async () => {
+    start('/contribuyentes/c1')
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await screen.findByRole('option', { name: 'SIN DOCUMENTO' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de documento/), 'SIN DOCUMENTO')
+    expect(screen.getByLabelText(/N° documento/)).toBeDisabled()
+    expect(screen.getByLabelText(/N° documento/)).toHaveValue('')
+  })
+})
+
 describe('the vía and unidad urbana of a domicilio', () => {
   const grabado = () => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')
 

@@ -123,7 +123,8 @@ function Field({ field, form, values, options }: { field: FieldSpec; form: UseFo
 
   let control: ReactNode
   if (!enabled && !field.readOnly) {
-    control = <Input {...aria} disabled value="" placeholder={field.kind === 'date' ? 'DD/MM/AAAA' : field.kind === 'enum' ? 'SELECCIONAR' : ''} />
+    const shown = field.greyedValue?.(values, form.formState.defaultValues as FormValues) ?? ''
+    control = <Input {...aria} disabled value={shown} placeholder={field.kind === 'date' ? 'DD/MM/AAAA' : field.kind === 'enum' ? 'SELECCIONAR' : ''} />
   } else if (field.readOnly) {
     const value = values[field.name] ?? ''
     // empty stays empty, so the placeholder ("(AUTOGENERADO)") shows instead of a dash
