@@ -1,4 +1,4 @@
-import { ApiError, createApiClient, getActiveApiClient } from '@wasichai/core'
+import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
   CatastroFiscal,
@@ -35,7 +35,87 @@ import type {
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
-export const client = createApiClient({ baseUrl: '/api', storagePrefix: 'srtm' })
+const base = createApiClient({ baseUrl: '/api', storagePrefix: 'srtm' })
+
+// core's AuthProvider hands the client what to do on a 401 (sign out); kept here too, so rentas.blob, which fetches
+// on its own, signs out the same way
+let onUnauthorized: (() => void) | null = null
+export const client: ApiClient = {
+  ...base,
+  setOnUnauthorized: (handler) => {
+    onUnauthorized = handler
+    base.setOnUnauthorized(handler)
+  }
+}
+
+// a titular of a predio as the PU's 409 lists them, for picking one
+export interface TitularPu {
+  id: string
+  nombre: string
+  documento: string | null
+}
+
+// srtm-backend's problem+json, with what the PDFs add: the titulares to pick from (409 of the PU) and the year's
+// parámetros that are missing (422 of the HR)
+export class RentasError extends ApiError {
+  constructor(
+    status: number,
+    message: string,
+    violations: FieldViolation[] = [],
+    readonly titulares: TitularPu[] = [],
+    readonly faltan: string[] = []
+  ) {
+    super(status, message, violations)
+  }
+}
+
+// the file name of a Content-Disposition: filename*=UTF-8''… (RFC 5987) before filename="…"
+function nombreDeArchivo(disposition: string | null): string | null {
+  if (!disposition) return null
+  const extendido = /filename\*\s*=\s*[^']*'[^']*'([^;]+)/i.exec(disposition)
+  if (extendido) {
+    try {
+      return decodeURIComponent(extendido[1].trim())
+    } catch {
+      return extendido[1].trim()
+    }
+  }
+  const simple = /filename\s*=\s*(?:"([^"]*)"|([^;]+))/i.exec(disposition)
+  return simple ? (simple[1] ?? simple[2]).trim() : null
+}
+
+// a file (the PU, the HR, a mass emission's): client.request only reads JSON, so it is fetched here, with the same
+// token, the same sign-out on a 401 and the same problem+json errors
+async function blob(path: string): Promise<{ blob: Blob; filename: string }> {
+  const headers = new Headers()
+  const token = client.getToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const response = await fetch(`${client.baseUrl}${path}`, { headers })
+  if (!response.ok) {
+    if (response.status === 401) {
+      client.setToken(null)
+      onUnauthorized?.()
+    }
+    const text = await response.text().catch(() => '')
+    let problem: Record<string, unknown> = {}
+    try {
+      problem = text ? ((JSON.parse(text) as Record<string, unknown> | null) ?? {}) : {}
+    } catch {
+      problem = {}
+    }
+    const texto = (valor: unknown) => (typeof valor === 'string' && valor ? valor : null)
+    const lista = <T>(valor: unknown) => (Array.isArray(valor) ? (valor as T[]) : [])
+    throw new RentasError(
+      response.status,
+      texto(problem.detail) ?? texto(problem.title) ?? (response.statusText || `Error ${response.status}`),
+      lista<FieldViolation>(problem.errors),
+      lista<TitularPu>(problem.titulares),
+      lista<unknown>(problem.faltan).map(String)
+    )
+  }
+  const archivo = nombreDeArchivo(response.headers.get('Content-Disposition')) ?? path.split('?')[0].split('/').filter(Boolean).join('-')
+  return { blob: await response.blob(), filename: archivo }
+}
 
 const get = <T>(path: string) => client.request<T>(path)
 const send = <T>(method: 'POST' | 'PUT', path: string, body: unknown) => client.request<T>(path, { method, body: JSON.stringify(body) })
@@ -49,28 +129,6 @@ function query(params: Record<string, string | number | null | undefined>): stri
 }
 
 export const PAGE_SIZE = 20
-
-// a file the backend sends (a pdf, a zip), with the name its Content-Disposition gives. a refusal comes as problem+json:
-// an ApiError that carries its fields too (title, detail, errors and whatever else the route adds)
-async function blob(path: string): Promise<{ blob: Blob; filename: string }> {
-  const active = getActiveApiClient()
-  const token = active.getToken()
-  const response = await fetch(`${active.baseUrl}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-  if (!response.ok) {
-    const text = await response.text()
-    let problem: Record<string, unknown> = {}
-    try {
-      problem = text ? (JSON.parse(text) as Record<string, unknown>) : {}
-    } catch {
-      // not problem+json: the status says it all
-    }
-    const message = String(problem.detail ?? problem.title ?? response.statusText)
-    throw Object.assign(new ApiError(response.status, message, (problem.errors as ApiError['violations']) ?? []), problem, { status: response.status })
-  }
-  const disposition = response.headers.get('Content-Disposition') ?? ''
-  const filename = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1] ?? /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? path.split('/').pop() ?? 'archivo'
-  return { blob: await response.blob(), filename: decodeURIComponent(filename) }
-}
 
 // a list that hangs from a record (a contribuyente, a declaración): listed and added under it, changed and removed
 // by its own id

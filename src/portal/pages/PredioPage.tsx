@@ -17,6 +17,7 @@ import { camposDe } from './DeclaracionPage'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
+import { VerPu } from './VerPdf'
 
 export function PredioRoute() {
   const { id = '' } = useParams()
@@ -52,6 +53,7 @@ function PredioPage({ id }: { id: string }) {
             aside={
               <div className="flex items-center gap-3">
                 <YearSelect value={anio} onChange={setAnio} />
+                <VerPu predio={id} codigo={predio.codigo ?? id} anio={anio} titulares={titulares} />
                 <EliminarFicha path={`/predios/${id}`} singular="predio" borrar={() => rentas.borrarPredio(id)} />
               </div>
             }
