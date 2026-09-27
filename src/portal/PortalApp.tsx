@@ -10,6 +10,7 @@ import { EmptyState } from './components/QueryState'
 import { BuscarPage } from './pages/BuscarPage'
 import { ContribuyenteRoute } from './pages/ContribuyentePage'
 import { DeclaracionRoute } from './pages/DeclaracionPage'
+import { EmisionesPage } from './pages/EmisionesPage'
 import { NuevaDeclaracionRoute } from './pages/NuevaDeclaracionPage'
 import { InicioPage } from './pages/InicioPage'
 import { LoteCatastroRoute, NuevoLotePage } from './pages/LoteCatastroPage'
@@ -49,6 +50,7 @@ const rutas = createRoutesFromElements(
       <Route path="predios/:id" element={<PredioRoute />} />
       <Route path="catastro/nuevo" element={<NuevoLotePage />} />
       <Route path="catastro/:id" element={<LoteCatastroRoute />} />
+      <Route path="emisiones" element={<EmisionesPage />} />
       <Route path="*" element={<EmptyState title="Esta página no existe" />} />
     </Route>
   </>

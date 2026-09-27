@@ -1,5 +1,5 @@
 import { cn } from '@wasichai/ui'
-import { Home, MapPinned, Search, Users } from 'lucide-react'
+import { Home, MapPinned, Printer, Search, Users } from 'lucide-react'
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 
@@ -10,7 +10,8 @@ export const ENTIDAD = 'Municipalidad Distrital de Perené'
 export const NAV = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
   { to: '/contribuyentes', label: 'Contribuyentes', icon: Users, end: false },
-  { to: '/predios', label: 'Predios', icon: MapPinned, end: false }
+  { to: '/predios', label: 'Predios', icon: MapPinned, end: false },
+  { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false }
 ]
 
 // the lateral gets whether it is open (the header's menu button, usePanelLateral) and tells a pick, which may close

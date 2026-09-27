@@ -44,6 +44,8 @@ export const NAV_TREE: NodoNav[] = [
   // the wizard started from a contribuyente's ficha is the same new declaration, with its declarant chosen
   { label: 'Declaraciones', hijos: [{ label: 'Nueva declaración', to: '/declaraciones/nueva', tambienEn: ['/contribuyentes/:id/declaraciones/nueva'] }] },
   { label: 'Catastro', hijos: [{ label: 'Nuevo lote', to: '/catastro/nuevo' }] },
+  // the HR and PU of a whole year, in the background
+  { label: 'Emisión', hijos: [{ label: 'Emisión masiva', to: '/emisiones' }] },
   { label: 'Administración', to: '/admin', externa: true, soloAdmin: true, icono: Settings }
 ]
 
