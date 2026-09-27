@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { Label, Textarea } from '@wasichai/ui'
+import { Label } from '@wasichai/ui'
 import { useEffect } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
+import { NativeSelect, Textarea } from '../components/controles'
 import { bloquear, desbloquear } from './bloqueo'
 import type { FormValues } from './specs'
-import { selectClass } from './styles'
 
 export const etiquetaObra = (c: { numero: number; descripcion: string }) => `${c.numero}. ${c.descripcion}`
 
@@ -37,7 +37,7 @@ export function ObraCategoriaField({ form }: { form: UseFormReturn<FormValues> }
         Categoría<span className="text-danger"> *</span>
       </Label>
       {opciones.length > 0 ? (
-        <select
+        <NativeSelect
           {...common}
           value={categoria}
           onChange={(e) => {
@@ -45,7 +45,6 @@ export function ObraCategoriaField({ form }: { form: UseFormReturn<FormValues> }
             set('categoria', e.target.value)
             if (elegida) set('unidad_medida', elegida.unidad_medida)
           }}
-          className={selectClass}
         >
           <option value="">SELECCIONAR</option>
           {categoria && !opciones.some((c) => etiquetaObra(c) === categoria) && <option value={categoria}>{categoria}</option>}
@@ -54,7 +53,7 @@ export function ObraCategoriaField({ form }: { form: UseFormReturn<FormValues> }
               {etiquetaObra(c)}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       ) : (
         <Textarea
           {...common}

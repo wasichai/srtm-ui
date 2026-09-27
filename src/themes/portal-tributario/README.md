@@ -8,16 +8,20 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 
 ## Archivos
 
-| Archivo                                   | Qué hace                                                                                                                           |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `src/index.css`                           | Importa `tailwindcss`, `@wasichai/ui/theme.css`, `./themes/extensions.css` y `./themes/portal-tributario/index.css`, en ese orden. |
-| `src/themes/extensions.css`               | Tokens de extensión en `:root` para todos los temas y sus utilidades `--color-*`.                                                  |
-| `src/themes/portal-tributario/index.css`  | Punto de entrada del tema. Cada issue añade aquí el `@import` de su parcial.                                                       |
-| `src/themes/portal-tributario/tokens.css` | El bloque `[data-theme='portal-tributario']` (tokens, fuente y radios), el cuerpo a 14px y el foco.                                |
-| `src/themes/portal-tributario/tables.css` | Tablas cebra con fila de total, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-49)).                   |
-| `src/themes/portal-tributario/shell.css`  | El panel del menú de sesión de la barra de marca: borde, sombra y cabecera del prototipo (ver [Shell](#shell-52)).                 |
-| `src/themes/tokens.test.tsx`              | Tests de completitud, extensión y contraste WCAG.                                                                                  |
-| `src/themes/tablas.test.tsx`              | Tests de `tables.css`: importado tras los tokens, fuera de capas, solo bajo el tema y con los valores del prototipo.               |
+| Archivo                                     | Qué hace                                                                                                                           |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.css`                             | Importa `tailwindcss`, `@wasichai/ui/theme.css`, `./themes/extensions.css` y `./themes/portal-tributario/index.css`, en ese orden. |
+| `src/themes/extensions.css`                 | Tokens de extensión en `:root` para todos los temas y sus utilidades `--color-*`.                                                  |
+| `src/themes/portal-tributario/index.css`    | Punto de entrada del tema. Cada issue añade aquí el `@import` de su parcial.                                                       |
+| `src/themes/portal-tributario/tokens.css`   | El bloque `[data-theme='portal-tributario']` (tokens, fuente y radios), el cuerpo a 14px y el foco.                                |
+| `src/themes/portal-tributario/tables.css`   | Tablas cebra con fila de total, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-49)).                   |
+| `src/themes/portal-tributario/shell.css`    | El panel del menú de sesión de la barra de marca: borde, sombra y cabecera del prototipo (ver [Shell](#shell-52)).                 |
+| `src/themes/tokens.test.tsx`                | Tests de completitud, extensión y contraste WCAG.                                                                                  |
+| `src/themes/tablas.test.tsx`                | Tests de `tables.css`: importado tras los tokens, fuera de capas, solo bajo el tema y con los valores del prototipo.               |
+| `src/themes/portal-tributario/controls.css` | Botones, campos, selects, radios y checkboxes (#47).                                                                               |
+| `src/themes/parciales.test.tsx`             | Cada parcial va bajo el tema, fuera de capas e importado; y los contrastes de sus colores propios.                                 |
+| `src/themes/css.ts`                         | Ayudas de los tests: leer una regla CSS y medir un contraste.                                                                      |
+| `src/portal/components/controles.tsx`       | `Button`, `Input`, `Textarea` y `NativeSelect` con sus ganchos `data-ui` (#47).                                                    |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -56,7 +60,7 @@ que va después. Por eso `extensions.css` se importa **antes** que los temas, y 
 | `notice`       | `#7A6A33` | texto de la alerta de aviso                                       |
 | `notice-soft`  | `#FBF7E6` | fondo de la alerta de aviso                                       |
 | `link`         | `#1569B0` | AZUL_TXT: enlaces, hojas del árbol y `accent-color`               |
-| `focus`        | `#1BA0D7` | contorno de foco y borde del input con foco                       |
+| `focus`        | `#1E9CD5` | contorno de foco y borde del input con foco (`#1BA0D7` ajustado)  |
 | `table-head`   | `#F2F2F2` | cabecera de tabla (y fondo del lateral)                           |
 | `table-stripe` | `#FAFAFA` | cebra de tablas y fichas, notas bajo la tabla y pie               |
 | `line`         | `#E4E4E4` | líneas finas: barra de instrucción y pie institucional            |
@@ -101,8 +105,61 @@ mismo tono y cada canal baja un 5 %, así que a simple vista casi no se distingu
 | `danger`       | `danger-soft`  | 4.53  |
 | `notice`       | `notice-soft`  | 4.97  |
 
-Pendiente para #47/#56: el foco `#1BA0D7` da **2.98:1** sobre blanco, justo por debajo del 3:1 que pide WCAG 1.4.11
-(contraste no textual). Se mantiene el valor del prototipo. Si hace falta, `#1B9FD6` ya llega a 3.01:1.
+El foco no es texto: WCAG 1.4.11 (contraste no textual) le pide **3:1** sobre lo que tiene alrededor, y el test lo
+comprueba sobre `surface`. El `#1BA0D7` del prototipo daba **2.98:1**. Usamos **`#1E9CD5`**, el color más cercano
+(en OKLab) que llega a **3.10:1**: deja margen sobre el 3:1 y a simple vista es el mismo cian (#47).
+
+| Elemento no textual | Fondo     | Ratio |
+| ------------------- | --------- | ----- |
+| `focus`             | `surface` | 3.10  |
+
+## Parciales de componentes
+
+Cada issue de componentes escribe su parcial en esta carpeta y lo importa en `index.css`, después de `tokens.css`.
+Las reglas van **fuera de capas**: una regla sin `@layer` gana a cualquier utilidad de Tailwind (que van en la capa
+`utilities`), sin importar la especificidad. Todas empiezan por `[data-theme='portal-tributario']`, así que light y dark
+no cambian. Se enganchan en atributos `data-ui` que ponen los componentes. `src/themes/parciales.test.tsx` lo comprueba.
+
+Consecuencia: bajo el tema, lo que fija un parcial gana también a las clases que un sitio pase al componente. Por eso
+los parciales fijan solo lo que el prototipo define (por ejemplo, el botón secundario no fija el color del texto y un
+ícono puede seguir en `brand`).
+
+### Controles (`controls.css`, #47)
+
+`Button`, `Input` y `Textarea` de `@wasichai/ui` reenvían los atributos `data-*` (hacen `{...props}`), pero no ponen
+ganchos propios. `src/portal/components/controles.tsx` los envuelve sin cambiar su API y añade `data-ui`,
+`data-variant` y `data-size`. También trae `NativeSelect`, el `<select>` nativo con `selectClass` y `data-ui="select"`.
+En light y dark solo aparecen los atributos.
+
+| Gancho                                      | Bajo el tema                                                                                       |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `data-ui="button"` + `data-size="md"`       | 15px, `padding: 10px 20px` (primario y danger, `10px 26px`), radio 3px, borde de 1px en todas      |
+| `data-size="sm"`                            | 14px, `padding: 5px 12px`. `icon` conserva el tamaño de la librería                                |
+| `data-variant="primary"`                    | `brand`, hover `brand-strong`                                                                      |
+| `data-variant="secondary"`                  | blanco con borde `#CCC`, hover `#F0F0F0`                                                           |
+| `data-variant="ghost"`                      | sin caja, texto `link`, hover `#F0F0F0`                                                            |
+| `data-variant="danger"`                     | `danger`, hover un 15 % más oscuro                                                                 |
+| `data-variant="round"`                      | botón-ícono redondo de 28px: ícono blanco sobre `#8794A0`, hover `#6D7A86`                         |
+| `:disabled`                                 | opacidad 0.55 y cursor `not-allowed` (la librería quita los eventos del puntero, que lo ocultaban) |
+| `data-ui="input"`, `"textarea"`, `"select"` | borde `#CCC`, radio 3px, `padding: 8px 10px`, 14.5px; input y select de 38px de alto               |
+| `:focus` de los campos                      | borde `focus` y brillo `0 0 6px` del mismo color al 45 %, en lugar del contorno                    |
+| `[aria-invalid='true']` de los campos       | borde `danger`, también con foco                                                                   |
+| `input[type=radio]`, `input[type=checkbox]` | 16px, `accent-color: var(--link)`                                                                  |
+
+- **Botón-ícono redondo.** `<Button variant="round" aria-label="Ayuda"><CircleHelp /></Button>`. Bajo el tema es
+  un disco gris con el ícono blanco. En light y dark es un botón fantasma redondo. El `#8B99A6` del prototipo da
+  2.91:1 con blanco, por debajo del 3:1 de WCAG 1.4.11. Usamos `#8794A0`, el más cercano que llega a 3.10:1. El
+  hover del prototipo (`#6D7A86`) ya da 4.40:1.
+- **Enlaces.** Los enlaces de texto del contenido usan la utilidad `text-link` en lugar de `text-brand`. En light y
+  dark `--link` vale `var(--brand)`, así que no cambian. Bajo el tema son `#1569B0`. Ya se subrayaban al pasar el
+  cursor (`hover:underline`).
+- **Dónde se usan.** Los envoltorios están en `RecordForm` y sus campos propios (`forms/`), en las cabeceras con
+  acciones de Nuevo contribuyente, Nueva declaración y la ficha de la declaración, en `DatosPanel`, en la barra de
+  `HijosPanel` y en los diálogos (`BuscarPrediosDialog`, `CambiosPendientes`, `EliminarFicha`, `AnularDeclaracion`).
+  Las listas (`Listas`, `Declaraciones`, `Condominos`), el inicio, el login y los paginadores siguen con los
+  controles de la librería: bajo el tema toman los tokens (colores y radios de 3px), pero no las medidas del
+  prototipo. Cuando wasichai/wasichai-ui#12 ponga ganchos `data-slot` en la librería, `controles.tsx` sobrará y los
+  selectores pasarán a esos ganchos.
 
 ## Tokens de extensión en light y dark
 

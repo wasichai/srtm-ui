@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { contrast, rule } from './css'
 
 const read = (...path: string[]) => readFileSync(join(__dirname, ...path), 'utf8')
 
@@ -14,46 +15,7 @@ const PORTAL = "[data-theme='portal-tributario']"
 // the tokens every theme gets on top of the base ones (and --color-* utilities for them)
 const EXTENSION = ['success-soft', 'danger-soft', 'notice', 'notice-soft', 'link', 'focus', 'table-head', 'table-stripe', 'line', 'map-selected']
 
-// the declarations of the first rule whose selector list has `selector` (innermost rules, so `@layer` wrappers are skipped)
-function rule(css: string, selector: string): Map<string, string> {
-  const clean = css.replace(/\/\*[\s\S]*?\*\//g, '')
-  for (const [, selectors, body] of clean.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (!selectors.split(',').some((part) => part.trim() === selector)) continue
-    const declarations = body.split(';').flatMap((declaration) => {
-      const colon = declaration.indexOf(':')
-      return colon < 0 ? [] : [[declaration.slice(0, colon).trim(), declaration.slice(colon + 1).trim()] as const]
-    })
-    return new Map(declarations)
-  }
-  throw new Error(`no rule for ${selector}`)
-}
-
 const customProperties = (declarations: Map<string, string>) => [...declarations.keys()].filter((name) => name.startsWith('--')).sort()
-
-// #rgb, #rrggbb or rgb(r g b) / rgb(r, g, b), as 0-255 channels
-function channels(color: string): number[] {
-  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color)
-  if (hex) {
-    const digits = hex[1].length === 3 ? [...hex[1]].map((digit) => digit + digit).join('') : hex[1]
-    return [0, 2, 4].map((start) => parseInt(digits.slice(start, start + 2), 16))
-  }
-  const rgb = /^rgb\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)\s*\)$/i.exec(color)
-  if (rgb) return rgb.slice(1, 4).map(Number)
-  throw new Error(`not a plain srgb color: ${color}`)
-}
-
-// WCAG 2.x relative luminance and contrast ratio
-function luminance(color: string): number {
-  const [r, g, b] = channels(color)
-    .map((channel) => channel / 255)
-    .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-function contrast(a: string, b: string): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x)
-  return (light + 0.05) / (dark + 0.05)
-}
 
 describe('contrast', () => {
   it('follows WCAG 2.x', () => {
@@ -127,6 +89,11 @@ describe('portal-tributario', () => {
       return ratio >= 4.5 ? [] : [`${text} on ${background}: ${ratio.toFixed(2)}`]
     })
     expect(failing).toEqual([])
+  })
+
+  // WCAG 1.4.11 (non-text contrast): the focus ring and the focused input's border, over the page
+  it('draws its focus at 3:1 or more over the surface', () => {
+    expect(contrast(tokens.get('--focus') ?? '', tokens.get('--surface') ?? '')).toBeGreaterThanOrEqual(3)
   })
 })
 

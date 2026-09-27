@@ -99,7 +99,7 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
                     <Td>
                       {row.contribuyente ? (
                         <div>
-                          <Link to={`/contribuyentes/${row.contribuyente.id}`} className="font-medium text-brand hover:underline">
+                          <Link to={`/contribuyentes/${row.contribuyente.id}`} className="font-medium text-link hover:underline">
                             {row.contribuyente.nombre_completo}
                           </Link>
                           <p className="text-xs text-ink-muted">
@@ -117,7 +117,7 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
                     <Td {...NUMERICA}>{formatMoney(row.declaracion.deduccion)}</Td>
                     <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                     <Td>
-                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-link hover:underline">
                         <FileText className="size-3.5" />
                         {row.declaracion.numero_declaracion ?? 'Abrir'}
                       </Link>

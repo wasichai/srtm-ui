@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { Badge, Button, Card } from '@wasichai/ui'
+import { Badge, Card } from '@wasichai/ui'
 import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
 import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPendientes'
+import { Button } from '../components/controles'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { QueryState } from '../components/QueryState'
@@ -198,7 +199,7 @@ function DeclaracionPage({ id }: { id: string }) {
           <div className="space-y-5">
             <FichaHeader
               kind={
-                <Link to={`/contribuyentes/${contribuyente.id}`} className="hover:text-brand hover:underline">
+                <Link to={`/contribuyentes/${contribuyente.id}`} className="hover:text-link hover:underline">
                   {contribuyente.codigo ? `Contribuyente Nº ${contribuyente.codigo}` : 'Contribuyente'} - {contribuyente.nombre_completo}
                 </Link>
               }
@@ -208,7 +209,7 @@ function DeclaracionPage({ id }: { id: string }) {
                   <EstadoBadge estado={declaracion.estado ?? 'VIGENTE'} />
                   {declaracion.anio && <Badge>{declaracion.anio}</Badge>}
                   {declaracion.condicion_propiedad && <Badge>{declaracion.condicion_propiedad}</Badge>}
-                  <Link to={`/predios/${predio.id}`} className="font-medium text-brand hover:underline">
+                  <Link to={`/predios/${predio.id}`} className="font-medium text-link hover:underline">
                     {predio.codigo}
                   </Link>
                   <span>· {predio.direccion}</span>

@@ -36,7 +36,7 @@ function OtherSide({ side, detalle }: { side: Side; detalle: DeclaracionDetalle 
     if (!p) return <span className="text-ink-muted">—</span>
     return (
       <div>
-        <Link to={`/predios/${p.id}`} className="font-medium text-brand hover:underline">
+        <Link to={`/predios/${p.id}`} className="font-medium text-link hover:underline">
           {p.codigo}
         </Link>
         <p className="text-xs text-ink-muted">{p.direccion}</p>
@@ -47,7 +47,7 @@ function OtherSide({ side, detalle }: { side: Side; detalle: DeclaracionDetalle 
   if (!c) return <span className="text-ink-muted">—</span>
   return (
     <div>
-      <Link to={`/contribuyentes/${c.id}`} className="font-medium text-brand hover:underline">
+      <Link to={`/contribuyentes/${c.id}`} className="font-medium text-link hover:underline">
         {c.nombre_completo}
       </Link>
       <p className="text-xs text-ink-muted">
@@ -98,7 +98,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                   <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                   <Td>
                     {/* straight to what is declared of the predio: características, niveles and obras */}
-                    <Link to={`/declaraciones/${row.declaracion.id}?tab=caracteristicas`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                    <Link to={`/declaraciones/${row.declaracion.id}?tab=caracteristicas`} className="inline-flex items-center gap-1 text-link hover:underline">
                       <FileText className="size-3.5" />
                       {row.declaracion.numero_declaracion ?? 'Abrir'}
                     </Link>
@@ -165,7 +165,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                   <tr key={row.declaracion.id} className="hover:bg-surface-muted/60">
                     <Td className="font-medium">{row.declaracion.anio}</Td>
                     <Td>
-                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-link hover:underline">
                         <FileText className="size-3.5" />
                         {row.declaracion.numero_declaracion ?? 'Abrir'}
                       </Link>

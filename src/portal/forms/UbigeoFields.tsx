@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Label } from '@wasichai/ui'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
+import { NativeSelect } from '../components/controles'
 import type { Ubigeo } from '../types'
 import { bloqueadosEn } from './bloqueo'
 import { useCampoId } from './campoId'
 import type { FormValues } from './specs'
-import { selectClass } from './styles'
 
 const distinct = (values: string[]) => [...new Set(values)]
 
@@ -74,14 +74,13 @@ export function UbigeoFields({ form }: { form: UseFormReturn<FormValues> }) {
               {level.label}
               <span className="text-danger"> *</span>
             </Label>
-            <select
+            <NativeSelect
               id={id}
               value={level.value}
               onChange={(e) => level.change(e.target.value)}
               disabled={ubigeos.isPending || bloqueados.includes(level.name)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? `${id}-error` : undefined}
-              className={selectClass}
             >
               <option value="">{ubigeos.isPending ? 'Cargando…' : 'SELECCIONAR'}</option>
               {options.map((o) => (
@@ -89,7 +88,7 @@ export function UbigeoFields({ form }: { form: UseFormReturn<FormValues> }) {
                   {o.label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             {error && (
               <p id={`${id}-error`} className="text-xs text-danger">
                 {error}

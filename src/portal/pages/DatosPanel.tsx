@@ -1,6 +1,6 @@
-import { Button } from '@wasichai/ui'
 import { Pencil } from 'lucide-react'
 import { useState } from 'react'
+import { Button } from '../components/controles'
 import { FieldGrid } from '../forms/FieldGrid'
 import { RecordForm } from '../forms/RecordForm'
 import type { SectionSpec } from '../forms/specs'

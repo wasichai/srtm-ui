@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
+import { NativeSelect } from '../components/controles'
 import { currentYear } from '../components/format'
 import { COLUMNAS_CATEGORIA } from '../types'
 import type { FormValues } from './specs'
-import { selectClass } from './styles'
 
 // the srtm's "datos de la categoría": one row per column of the official unit-value table, its letter (A-I) and,
 // beside it, what that letter means. the letters offered are the ones the table describes for that column
@@ -53,14 +53,13 @@ export function CategoriasFields({ form }: { form: UseFormReturn<FormValues> }) 
               {columna.required && enabled && <span className="text-danger"> *</span>}
             </label>
             <div>
-              <select
+              <NativeSelect
                 id={id}
                 value={value}
                 disabled={!enabled}
                 onChange={(e) => form.setValue(columna.field, e.target.value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${id}-error` : `${id}-descripcion`}
-                className={selectClass}
               >
                 <option value="">—</option>
                 {(letras.length > 0 ? letras.map((c) => c.letra) : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']).map((letra) => (
@@ -68,7 +67,7 @@ export function CategoriasFields({ form }: { form: UseFormReturn<FormValues> }) 
                     {letra}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
               {error && (
                 <p id={`${id}-error`} className="mt-1 text-xs text-danger">
                   {error}

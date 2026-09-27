@@ -77,7 +77,7 @@ export function InicioPage() {
               <ul className="space-y-1">
                 {tabs.map((tab) => (
                   <li key={tab.path}>
-                    <Link to={tab.path} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-brand hover:bg-brand-soft">
+                    <Link to={tab.path} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-link hover:bg-brand-soft">
                       {tab.kind === 'predio' ? (
                         <MapPinned className="size-4" />
                       ) : tab.kind === 'declaracion' ? (

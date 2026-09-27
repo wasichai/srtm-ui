@@ -1,7 +1,8 @@
 import { ApiError, type FieldViolation } from '@wasichai/core'
-import { Button, cn, Input, Label, Textarea } from '@wasichai/ui'
+import { cn, Label } from '@wasichai/ui'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
+import { Button, Input, NativeSelect, Textarea } from '../components/controles'
 import { currentYear, formatDate, MESES } from '../components/format'
 import { parseGeometry } from '../components/geo'
 import { BLOQUEADOS, bloqueados as bloqueadosDe } from './bloqueo'
@@ -9,7 +10,7 @@ import { CampoId, useCampoId } from './campoId'
 import { etiqueta } from './etiquetas'
 import type { Comun, Enlace } from './grupo'
 import { dataFields, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
-import { GRID, selectClass, SPAN } from './styles'
+import { GRID, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
 
 interface RecordFormProps<T> {
@@ -292,14 +293,14 @@ function Field({
     // a value the catalog no longer offers (an imported record) is still shown, not silently dropped
     const all = stored && !choices.some((c) => c.value === stored) ? [{ value: stored, label: etiqueta(field.name, stored) }, ...choices] : choices
     control = (
-      <select {...aria} {...form.register(field.name, rules)} className={selectClass}>
+      <NativeSelect {...aria} {...form.register(field.name, rules)}>
         <option value="">SELECCIONAR</option>
         {all.map((c) => (
           <option key={c.value} value={c.value}>
             {c.label}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     )
   } else if (field.kind === 'longtext') {
     control = <Textarea {...aria} {...form.register(field.name, rules)} placeholder={field.placeholder} rows={2} />
