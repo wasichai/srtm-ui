@@ -14,7 +14,8 @@ export const COLUMNAS = [
   { field: 'puertas_ventanas', label: 'Puertas y ventanas', required: true },
   { field: 'revestimientos', label: 'Revestimientos', required: false },
   { field: 'banos', label: 'Baños', required: false },
-  { field: 'instalaciones', label: 'Instalaciones eléctricas y sanitarias', required: false }
+  // eléctricas y sanitarias, as the srtm writes it (page 16)
+  { field: 'instalaciones', label: 'Instalaciones de E/S', required: false }
 ] satisfies { field: (typeof COLUMNAS_CATEGORIA)[number]; label: string; required: boolean }[]
 
 export function useCategoriasValor() {

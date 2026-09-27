@@ -10,6 +10,7 @@ import { recordIdOf } from '../components/geo'
 import { LotesMap } from '../components/LotesMap'
 import { Paginador } from '../components/Paginador'
 import { EmptyState } from '../components/QueryState'
+import { etiqueta } from '../forms/etiquetas'
 import { selectClass } from '../forms/styles'
 import { SuggestInput } from '../forms/SuggestInput'
 import type { Elegido } from '../forms/ubicacion'
@@ -186,7 +187,7 @@ function Busqueda({
         <option value="">SELECCIONAR</option>
         {options.map((o) => (
           <option key={o} value={o}>
-            {o}
+            {etiqueta(name, o)}
           </option>
         ))}
       </select>

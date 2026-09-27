@@ -2,9 +2,10 @@ import { ApiError } from '@wasichai/core'
 import { Button, cn, Input, Label, Textarea } from '@wasichai/ui'
 import { useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
-import { formatDate, MESES } from '../components/format'
+import { currentYear, formatDate, MESES } from '../components/format'
 import { parseGeometry } from '../components/geo'
 import { BLOQUEADOS, bloqueados as bloqueadosDe } from './bloqueo'
+import { etiqueta } from './etiquetas'
 import { dataFields, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, selectClass, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
@@ -147,7 +148,7 @@ function Field({
   } else if (field.readOnly || locked) {
     // a locked field is still the form's: registered, so it is validated and sent
     if (locked) form.register(field.name, rules)
-    const value = values[field.name] ?? ''
+    const value = field.kind === 'enum' ? etiqueta(field.name, values[field.name] ?? '') : (values[field.name] ?? '')
     // empty stays empty, so the placeholder ("(AUTOGENERADO)", "SIN CÓDIGO (padrón)") shows instead of a dash
     control = <Input {...aria} disabled value={field.kind === 'date' && value ? formatDate(value) : value} placeholder={vacioDe(field, values, guardado)} />
   } else if (field.kind === 'multi') {
@@ -170,16 +171,23 @@ function Field({
         {(field.choices ?? []).map((choice) => (
           <label key={choice} className="flex items-center gap-1.5 text-sm text-ink">
             <input type="checkbox" checked={picked.includes(choice)} onChange={() => toggle(choice)} className="accent-brand" />
-            {choice}
+            {etiqueta(field.name, choice)}
           </label>
         ))}
       </div>
     )
-  } else if (field.kind === 'enum' || field.kind === 'boolean' || field.kind === 'month') {
-    const choices = field.kind === 'boolean' ? BOOLEAN_CHOICES : field.kind === 'month' ? MONTH_CHOICES : (options ?? []).map((o) => ({ value: o, label: o }))
+  } else if (field.kind === 'enum' || field.kind === 'boolean' || field.kind === 'month' || field.kind === 'year') {
+    const choices =
+      field.kind === 'boolean'
+        ? BOOLEAN_CHOICES
+        : field.kind === 'month'
+          ? MONTH_CHOICES
+          : field.kind === 'year'
+            ? yearChoices()
+            : (options ?? []).map((o) => ({ value: o, label: etiqueta(field.name, o) }))
     const stored = values[field.name]
     // a value the catalog no longer offers (an imported record) is still shown, not silently dropped
-    const all = stored && !choices.some((c) => c.value === stored) ? [{ value: stored, label: stored }, ...choices] : choices
+    const all = stored && !choices.some((c) => c.value === stored) ? [{ value: stored, label: etiqueta(field.name, stored) }, ...choices] : choices
     control = (
       <select {...aria} {...form.register(field.name, rules)} className={selectClass}>
         <option value="">SELECCIONAR</option>
@@ -229,6 +237,9 @@ function Field({
 
 const MONTH_CHOICES = MESES.map((label, i) => ({ value: String(i + 1), label }))
 
+// the srtm's años de construcción: this one down to 1900
+const yearChoices = () => Array.from({ length: currentYear() - 1899 }, (_, i) => String(currentYear() - i)).map((year) => ({ value: year, label: year }))
+
 const BOOLEAN_CHOICES = [
   { value: 'true', label: 'SÍ' },
   { value: 'false', label: 'NO' }
@@ -264,7 +275,7 @@ function fromForm(fields: FieldSpec[], values: FormValues): Record<string, unkno
     fields.map((f) => {
       const text = (values[f.name] ?? '').trim()
       if (text === '') return [f.name, null]
-      if (f.kind === 'integer' || f.kind === 'month') return [f.name, Number.parseInt(text, 10)]
+      if (f.kind === 'integer' || f.kind === 'month' || f.kind === 'year') return [f.name, Number.parseInt(text, 10)]
       if (f.kind === 'decimal' || f.kind === 'money') return [f.name, Number(text.replace(',', '.'))]
       if (f.kind === 'boolean') return [f.name, text === 'true']
       if (f.kind === 'geometry') return [f.name, parseGeometry(text)]
