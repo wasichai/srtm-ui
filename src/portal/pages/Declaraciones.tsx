@@ -7,11 +7,14 @@ import { MarcaAnulada } from '../components/EstadoBadge'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
 import { NUMERICA } from '../components/tabla'
-import type { DeclaracionDetalle } from '../types'
+import type { Declaracion, DeclaracionDetalle } from '../types'
 
 // the declarations of a ficha. side is the ficha's own kind; each row shows the other side.
 // a declaration is created and edited only in the full declaración jurada (/declaraciones/:id)
 export type Side = 'contribuyente' | 'predio'
+
+// the most precise of its clase, sub clase and uso: one of the padrón may have its clase alone (srtm-backend#31)
+const usoDe = (d: Declaracion) => d.uso || d.sub_clase_uso || d.clase_uso
 
 function useDeclaraciones(side: Side, id: string, anio?: number) {
   return useQuery({
@@ -93,7 +96,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                     <MarcaAnulada declaracion={row.declaracion} />
                   </Td>
                   <Td {...NUMERICA}>{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
-                  <Td>{formatText(row.declaracion.uso)}</Td>
+                  <Td>{formatText(usoDe(row.declaracion))}</Td>
                   <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
                   <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                   <Td>
@@ -175,7 +178,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                       <OtherSide side={side} detalle={row} />
                     </Td>
                     <Td>{formatText(row.declaracion.secuencia_uso)}</Td>
-                    <Td>{formatText(row.declaracion.uso)}</Td>
+                    <Td>{formatText(usoDe(row.declaracion))}</Td>
                     <Td>{formatText(row.declaracion.estado_construccion)}</Td>
                     <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
                     <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>

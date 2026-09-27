@@ -22,7 +22,9 @@ const declaracion = (valores: Record<string, unknown>) => ({
   predio: 'p1',
   anio: year,
   secuencia_uso: '1',
-  uso: 'RESIDENCIAL - CASA HABITACION',
+  clase_uso: 'RESIDENCIAL',
+  sub_clase_uso: 'UNIFAMILIAR',
+  uso: 'CASA HABITACIÓN',
   valor_autoavaluo: 10000.5,
   deduccion: null,
   ...valores

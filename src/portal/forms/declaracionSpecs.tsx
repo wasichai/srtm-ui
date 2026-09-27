@@ -9,7 +9,7 @@ import { RENIEC } from './reniec'
 import { AUTO, conRuc, numeroSegunTipo, sinRuc, type FormValues, type SectionSpec } from './specs'
 import { UbigeoFields } from './UbigeoFields'
 import type { Elegido } from './ubicacion'
-import { UsoFields, usoDelPadron } from './UsoFields'
+import { UsoFields } from './UsoFields'
 
 // the srtm's declaración jurada predial, tab by tab (Presentacion2_.pdf, pages 11 to 21)
 
@@ -217,8 +217,8 @@ export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
     fields: [
       // chained over the srtm's catalog of usos; the ficha still lists the three
       { name: 'uso_cascada', label: 'Uso del predio', kind: 'custom', span: 6, render: (form) => <UsoFields form={form} /> },
-      { name: 'clase_uso', label: 'Clase de uso', kind: 'hidden', required: (v) => !usoDelPadron(v), shownInFicha: true, span: 2 },
-      { name: 'sub_clase_uso', label: 'Sub clase de uso', kind: 'hidden', required: (v) => !usoDelPadron(v), shownInFicha: true, span: 2 },
+      { name: 'clase_uso', label: 'Clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
+      { name: 'sub_clase_uso', label: 'Sub clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
       { name: 'uso', label: 'Uso del predio', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
       { name: 'clasificacion', label: 'Clasificación', kind: 'enum', span: 3 },
       { name: 'estado_construccion', label: 'Estado de construcción', kind: 'enum', span: 3 },

@@ -190,7 +190,8 @@ describe('a nivel de construcción (page 16)', () => {
     const greyed = [/^Pisos/, /^Revestimientos/, /^Baños/, /^Instalaciones de E\/S/]
     for (const label of greyed) expect(screen.getByLabelText(label)).toBeDisabled()
     for (const label of [/^Muros y columnas/, /^Techos/, /^Puertas y ventanas/]) expect(screen.getByLabelText(label)).toBeEnabled()
-    await userEvent.selectOptions(screen.getByLabelText(/Año construcción/), '2023')
+    // the last cuadro of seven columns (letrasCategoria.test.tsx)
+    await userEvent.selectOptions(screen.getByLabelText(/Año construcción/), '2022')
     for (const label of greyed) expect(screen.getByLabelText(label)).toBeEnabled()
   })
 })
