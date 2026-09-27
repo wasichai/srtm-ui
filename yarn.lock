@@ -1373,6 +1373,16 @@
   dependencies:
     lucide-react "^1.47.0"
 
+"@wasichai/gis@0.2.1":
+  version "0.2.1"
+  resolved "https://npm.pkg.github.com/download/@wasichai/gis/0.2.1/2102cf4e7aa2a4afbb30cd88a693cdd2e58680ac#2102cf4e7aa2a4afbb30cd88a693cdd2e58680ac"
+  integrity sha512-u9XLr8oNrINy2YzI94+zEurtwVAKZir/b+ztyxPLd8oC55HtT80TDSuddaqpDdUsnkh5gkNbypqGHf0nGcJbBQ==
+  dependencies:
+    lucide-react "^1.47.0"
+    maplibre-gl "6.10.0"
+    terra-draw "1.33.0"
+    terra-draw-maplibre-gl-adapter "1.4.1"
+
 "@wasichai/pages@0.2.1":
   version "0.2.1"
   resolved "https://npm.pkg.github.com/download/@wasichai/pages/0.2.1/dbe0def20cbfeb502631ecf6382157faa4a35290#dbe0def20cbfeb502631ecf6382157faa4a35290"

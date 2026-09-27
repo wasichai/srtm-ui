@@ -21,6 +21,7 @@
         "@wasichai/core": "0.2.1",
         "@wasichai/documents": "0.2.1",
         "@wasichai/forms": "0.2.1",
+        "@wasichai/gis": "0.2.1",
         "@wasichai/pages": "0.2.1",
         "@wasichai/ui": "0.2.1",
         "@wasichai/views": "0.2.1",
