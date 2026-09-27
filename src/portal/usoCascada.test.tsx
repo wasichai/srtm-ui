@@ -168,27 +168,81 @@ describe('clase, sub clase and uso of the predio', () => {
     expect(panel.getByText('CASA HABITACIÓN')).toBeInTheDocument()
   })
 
-  it("keeps the padron's uso, stored without clase, through an edit that does not touch it", async () => {
-    const panel = await editar({ uso: 'RESIDENCIAL - CASA HABITACION' })
-    expect(panel.getByLabelText(/Uso del predio/)).toHaveValue('RESIDENCIAL - CASA HABITACION')
-    // nothing to choose it from: clase and sub clase are not asked for
-    expect(panel.getByText('Clase de uso')).not.toHaveTextContent('*')
+  // srtm-backend#31: the padrón's grupos de uso are clases now (model/migrar_usos_padron.py). "TERRENO" is the clase
+  // TERRENO with no sub clase nor uso, which the declaration asks for when it is edited
+  it("shows a declaration with only its clase, as the padron's grupo became, and asks for sub clase and uso", async () => {
+    const panel = await editar({ clase_uso: 'RESIDENCIAL' })
+    expect(panel.getByLabelText(/Clase de uso/)).toHaveValue('RESIDENCIAL')
+    expect(panel.getByLabelText(/Sub clase de uso/)).toHaveValue('')
+    expect(panel.getByLabelText(/Uso del predio/)).toHaveValue('')
+    expect(opciones(panel.getByLabelText(/Sub clase de uso/))).toEqual(['SELECCIONAR', 'UNIFAMILIAR', 'MULTIFAMILIAR'])
     await userEvent.clear(panel.getByLabelText(/Área del terreno/))
     await userEvent.type(panel.getByLabelText(/Área del terreno/), '150')
     await guardar()
 
-    expect((await put()).body).toMatchObject({ uso: 'RESIDENCIAL - CASA HABITACION', clase_uso: null, sub_clase_uso: null, area_terreno: 150 })
-  })
-
-  it("drops the padron's uso once a clase is chosen, and then asks for the three", async () => {
-    const panel = await editar({ uso: 'RESIDENCIAL - CASA HABITACION' })
-    await userEvent.selectOptions(panel.getByLabelText(/Clase de uso/), 'RESIDENCIAL')
-    expect(panel.getByLabelText(/Uso del predio/)).toHaveValue('')
-    expect(opciones(panel.getByLabelText(/Uso del predio/))).toEqual(['SELECCIONAR'])
-    await guardar()
-
     await waitFor(() => expect(panel.getByLabelText(/Sub clase de uso/)).toHaveAttribute('aria-invalid', 'true'))
     expect(panel.getByLabelText(/Uso del predio/)).toHaveAttribute('aria-invalid', 'true')
+    expect(panel.getByLabelText(/Clase de uso/)).not.toHaveAttribute('aria-invalid')
     expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+
+    await userEvent.selectOptions(panel.getByLabelText(/Sub clase de uso/), 'UNIFAMILIAR')
+    await userEvent.selectOptions(panel.getByLabelText(/Uso del predio/), 'CASA HABITACIÓN')
+    await guardar()
+    expect((await put()).body).toMatchObject({ clase_uso: 'RESIDENCIAL', sub_clase_uso: 'UNIFAMILIAR', uso: 'CASA HABITACIÓN', area_terreno: 150 })
+  })
+
+  it('asks for clase and sub clase even when a uso is stored without them', async () => {
+    const panel = await editar({ uso: 'CASA HABITACIÓN' })
+    for (const nombre of ['Clase de uso', 'Sub clase de uso', 'Uso del predio']) {
+      expect(panel.getByText(nombre, { selector: 'label' })).toHaveTextContent('*')
+    }
+    await userEvent.clear(panel.getByLabelText(/Área del terreno/))
+    await userEvent.type(panel.getByLabelText(/Área del terreno/), '150')
+    await guardar()
+
+    await waitFor(() => expect(panel.getByLabelText(/Clase de uso/)).toHaveAttribute('aria-invalid', 'true'))
+    expect(panel.getByLabelText(/Sub clase de uso/)).toHaveAttribute('aria-invalid', 'true')
+    expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+  })
+
+  it('lists, in the ficha, a declaration with only its clase as it is', async () => {
+    localStorage.setItem('srtm.token', 't')
+    localStorage.setItem('srtm.user', JSON.stringify(admin))
+    window.history.pushState({}, '', '/declaraciones/d1?tab=caracteristicas')
+    fetch = mockFetch(routes({ estado: 'ANULADA', clase_uso: 'TERRENO' }))
+    render(<PortalApp />)
+    const panel = within(await screen.findByRole('tabpanel'))
+    const dato = async (nombre: string) => (await panel.findByText(nombre, { selector: 'dt' })).nextElementSibling
+    expect(await dato('Clase de uso')).toHaveTextContent('TERRENO')
+    expect(await dato('Sub clase de uso')).toHaveTextContent('—')
+    expect(await dato('Uso del predio')).toHaveTextContent('—')
+  })
+})
+
+describe('the uso in the lists of declarations', () => {
+  const casa = { ...declaracion, clase_uso: 'RESIDENCIAL', sub_clase_uso: 'UNIFAMILIAR', uso: 'CASA HABITACIÓN' }
+  const terreno = { ...declaracion, id: 'd2', predio: 'p2', clase_uso: 'TERRENO' }
+  const otro = { ...predio, id: 'p2', codigo: '01-01-0002' }
+
+  it('shows the most precise of clase, sub clase and uso the declaration has', async () => {
+    localStorage.setItem('srtm.token', 't')
+    localStorage.setItem('srtm.user', JSON.stringify(admin))
+    window.history.pushState({}, '', '/contribuyentes/c1?tab=predios')
+    fetch = mockFetch([
+      { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
+      { path: '/auth/me/preferences', body: { theme: 'system', locale: null } },
+      { path: '/srtm/catalogos', body: {} },
+      { path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 2, totales: { declaraciones: 2, autoavaluo: 0, valor_afecto: 0 } } },
+      {
+        path: '/srtm/contribuyentes/c1/declaraciones',
+        body: [
+          { declaracion: casa, predio, contribuyente: null },
+          { declaracion: terreno, predio: otro, contribuyente: null }
+        ]
+      }
+    ])
+    render(<PortalApp />)
+    expect((await screen.findByText('01-01-0001')).closest('tr')).toHaveTextContent('CASA HABITACIÓN')
+    expect(screen.getByText('01-01-0002').closest('tr')).toHaveTextContent('TERRENO')
   })
 })

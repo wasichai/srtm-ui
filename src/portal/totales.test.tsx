@@ -24,7 +24,9 @@ const declaracion = (id: string, contribuyente: string, predio: string, valores:
   predio,
   anio: year,
   secuencia_uso: '1',
-  uso: 'RESIDENCIAL - CASA HABITACION',
+  clase_uso: 'RESIDENCIAL',
+  sub_clase_uso: 'UNIFAMILIAR',
+  uso: 'CASA HABITACIÓN',
   ...valores
 })
 const deJuan = declaracion('d1', 'c1', 'p1', {
