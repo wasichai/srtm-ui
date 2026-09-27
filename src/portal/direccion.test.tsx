@@ -181,7 +181,7 @@ describe('the ubicacion of a predio', () => {
   it("a new declaration's secuencia de uso has the padron's three digits", async () => {
     const contribuyente = { id: 'c1', tipo_persona: 'NATURAL', numero_documento: '20529936', nombre_completo: 'QUISPE MAMANI JUAN' }
     start('/contribuyentes/c1/declaraciones/nueva', [{ path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 0, totales } }])
-    expect(await screen.findByLabelText('Secuencia de uso')).toHaveValue('001')
+    expect(await screen.findByLabelText(/Secuencia de uso/)).toHaveValue('001')
   })
 
   it('a new predio has no stored direccion, only the preview', async () => {

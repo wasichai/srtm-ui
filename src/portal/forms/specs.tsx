@@ -92,9 +92,10 @@ export function vacioDe(field: FieldSpec, values: FormValues, guardado: boolean)
 }
 
 // a persona natural (or sociedad conyugal) has surnames and names; everyone else a razón social.
-// imported contribuyentes have no tipo_contribuyente yet: their tipo_persona decides
+// imported contribuyentes have no tipo_contribuyente yet: their tipo_persona decides (a SUCESION has a razón social).
+// a new one without either shows the names, as the srtm's empty form
 export const esPersonaNatural = (v: FormValues) =>
-  v.tipo_contribuyente ? ['PERSONA NATURAL', 'SOCIEDAD CONYUGAL'].includes(v.tipo_contribuyente) : v.tipo_persona !== 'JURIDICA'
+  v.tipo_contribuyente ? ['PERSONA NATURAL', 'SOCIEDAD CONYUGAL'].includes(v.tipo_contribuyente) : !v.tipo_persona || v.tipo_persona === 'NATURAL'
 
 export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
   {

@@ -39,6 +39,8 @@ export function FieldGrid({ sections, values }: { sections: SectionSpec[]; value
 }
 
 function display(field: FieldSpec, value: unknown, values: FormValues): string {
+  // greyed by the field it depends on: what the form shows then (saving it sends it empty)
+  if (field.enabledWhen && !field.enabledWhen(values)) return formatText(field.greyedValue?.(values, values))
   // a stored record without the backend's code: it is not coming
   if (field.placeholder === AUTO && (value === null || value === undefined || value === '')) return vacioDe(field, values, true) ?? '—'
   if (field.kind === 'money') return formatMoney(value as number | null)

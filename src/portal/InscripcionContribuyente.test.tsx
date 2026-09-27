@@ -160,7 +160,11 @@ describe('inscripción de contribuyente', () => {
     await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'MARGINAL')
     await userEvent.type(within(dialog).getByLabelText(/Descripción unidad urbana/), 'II MESETA')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')!)
+    const post = await waitFor(() => {
+      const call = fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(post.body).toMatchObject({ tipo_domicilio: 'FISCAL', estado: 'ACTIVO' })
   })
 

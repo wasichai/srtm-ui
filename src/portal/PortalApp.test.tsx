@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
+import { mockFetch, type FetchMock, type MockRoute, type RecordedCall } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
 import type { LotesMapProps } from './components/LotesMap'
 
@@ -286,6 +286,14 @@ function start(path: string, extra: MockRoute[] = [], signedIn = true) {
   render(<PortalApp />)
 }
 
+// the first call that matches, once it is made: waitFor retries only while its callback throws
+const called = (match: (c: RecordedCall) => boolean) =>
+  waitFor(() => {
+    const call = fetch!.calls.find(match)
+    expect(call).toBeDefined()
+    return call!
+  })
+
 const tabBar = () => screen.getByRole('navigation', { name: 'Fichas abiertas' })
 
 describe('portal', () => {
@@ -412,7 +420,7 @@ describe('portal', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Sexo/), 'HOMBRE')
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes')
     expect(post.body).toMatchObject({
       tipo_contribuyente: 'PERSONA NATURAL',
       numero_documento: '43554564',
@@ -460,7 +468,7 @@ describe('portal', () => {
     expect(within(dialog).getByText('AV. MARGINAL, N° 234, CERCADO II MESETA, JUNIN-SATIPO-SATIPO')).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
 
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')
     expect(post.body).toMatchObject({
       tipo_domicilio: 'FISCAL',
       departamento: 'JUNIN',
@@ -517,7 +525,7 @@ describe('portal', () => {
     expect(within(screen.getByTestId('lotes-map')).getByTestId('lote-elegido')).toHaveTextContent('lote-del-predio')
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')
     expect(post.body).toMatchObject({
       declaracion: { tipo_adquisicion: 'COMPRA', folios: 2, documentos_sustento: 'MINUTA', otros_datos: 'LINDA CON EL RIO' },
       predio: {
@@ -556,7 +564,7 @@ describe('portal', () => {
     expect(within(dialog).getByRole('alert')).toHaveTextContent(/descripción de la vía/)
     await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'LIMA')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
-    const call = await waitFor(() => fetch!.calls.find((c) => c.path.startsWith('/srtm/predios/buscar'))!)
+    const call = await called((c) => c.path.startsWith('/srtm/predios/buscar'))
     expect(call.path).toContain('via=LIMA')
     expect(call.path).toContain('tipo_predio=PREDIO+URBANO')
     // the row and the lote on the map are the same pick
@@ -566,7 +574,7 @@ describe('portal', () => {
 
     expect(await screen.findByText(/La declaración será sobre el predio/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')
     expect(post.body).toMatchObject({ predio_id: 'p1', declaracion: { tipo_adquisicion: 'HERENCIA', documentos_sustento: 'DECLARATORIA DE HEREDEROS' } })
     expect(post.body).not.toHaveProperty('predio')
   })
@@ -590,7 +598,7 @@ describe('portal', () => {
     expect(fetch!.calls.some((c) => c.method === 'POST' && c.path === '/srtm/declaraciones/d1/niveles')).toBe(false)
     await userEvent.selectOptions(within(dialog).getByLabelText(/Puertas y ventanas/), 'D')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/declaraciones/d1/niveles')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/declaraciones/d1/niveles')
     expect(post.body).toMatchObject({
       tipo_nivel: 'PISO',
       numero_piso: 1,
@@ -630,7 +638,7 @@ describe('portal', () => {
     await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'CACERES')
     await userEvent.type(within(dialog).getByLabelText('Manzana'), 'C')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
-    const call = await waitFor(() => fetch!.calls.find((c) => c.path.startsWith('/srtm/catastro?'))!)
+    const call = await called((c) => c.path.startsWith('/srtm/catastro?'))
     expect(call.path).toContain('via=CACERES')
     expect(call.path).toContain('manzana=C')
     expect(call.path).toContain('size=5')
@@ -644,7 +652,7 @@ describe('portal', () => {
     expect(screen.getByLabelText(/Descripción de la vía/)).toHaveValue('ANDRES AVELINO CACERES')
     expect(screen.getByLabelText(/Descripción de la zona/)).toHaveValue('SOL DE LA ALAMEDA')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    const put = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')!)
+    const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')
     expect(put.body).toMatchObject({ codigo_cpu: '54102166-0001-2', manzana: 'C', lote: '19', lote_geom: SQUARE, partida_registral: '11002233' })
   })
 
@@ -658,10 +666,10 @@ describe('portal', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'RUSTICO')
     await userEvent.type(screen.getByLabelText('Otros datos'), 'CON RIEGO')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    const declaracionPut = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')!)
+    const declaracionPut = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
     expect(declaracionPut.body).toMatchObject({ otros_datos: 'CON RIEGO', numero_declaracion: 39147 })
     expect(declaracionPut.body).not.toHaveProperty('condicion')
-    const predioPut = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')!)
+    const predioPut = await called((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')
     expect(predioPut.body).toMatchObject({ condicion: 'RUSTICO', codigo: '01-01-0001' })
   })
 
@@ -736,7 +744,7 @@ describe('portal', () => {
     await userEvent.click(within(mapa).getByRole('button', { name: 'Aceptar' }))
     expect(await within(dialog).findByRole('button', { name: 'Ubicado en el mapa' })).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')
     expect(post.body).toMatchObject({ ubicacion: { type: 'Point', coordinates: [-75.2247, -10.9475] } })
   })
 })

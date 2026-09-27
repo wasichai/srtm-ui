@@ -195,6 +195,7 @@ describe('the selects show the srtm wording', () => {
       medio_presentacion: 'FISICO',
       fecha_presentacion: '2026-09-24',
       anio: 2026,
+      secuencia_uso: '001',
       tipo_adquisicion: 'COMPRA',
       fecha_adquisicion: '2024-09-04',
       condicion_propiedad: 'PROPIETARIO UNICO',

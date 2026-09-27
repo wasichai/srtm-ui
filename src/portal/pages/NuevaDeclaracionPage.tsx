@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
 import { useSalidaConCambios } from '../components/CambiosPendientes'
@@ -10,14 +10,14 @@ import { currentYear, today } from '../components/format'
 import { QueryState } from '../components/QueryState'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
-import { useGrupoFormularios } from '../forms/grupo'
+import { useComun, useGrupoFormularios } from '../forms/grupo'
 import { RecordForm } from '../forms/RecordForm'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
 import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Contribuyente, Declaracion, Predio } from '../types'
-import { DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
+import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 
 const DATOS_FORM = 'dj-datos'
 const UBICACION_FORM = 'dj-ubicacion'
@@ -40,8 +40,8 @@ export function NuevaDeclaracionRoute() {
 
 // the srtm's "declaración jurada y registro de predio": step one the datos del predio, step two the ubicación, of a
 // predio already in the padrón or of one registered here. "Siguiente" there presents it (it gets its number) and the
-// wizard goes on in it, from its next pending tab. it comes with its contribuyente, or with its predio (then the
-// contribuyente is looked up in step one)
+// wizard goes on in it, from its next pending tab; what the backend refuses goes back to the step it is about. it comes
+// with its contribuyente, or with its predio (then the contribuyente is looked up in step one)
 function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: string; predio?: string }) {
   const navigate = useNavigate()
   const catalogos = useCatalogos()
@@ -67,40 +67,58 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
   const grupo = useGrupoFormularios(['datos', 'ubicacion'] as const)
+  // the tipo de predio of both steps is one value
+  const comun = useComun(COMUNES)
   const salida = useSalidaConCambios(grupo.pendientes.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
   const [sections] = useState(() =>
     ubicacionSections((elegido: Elegido) => {
       const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
       if (!predio) return false
       setBuscado(predio)
+      // the declaration is on that predio: its tipo is the predio's
+      if (predio.condicion) comun.cambiar('condicion', predio.condicion)
       setError(null)
       return true
     })
   )
+  const tipoPredio = comun.valores.condicion ?? (datos as DatosDelPredio | null)?.condicion ?? 'URBANO'
 
+  // one presentation at a time: a second "Siguiente" would register the declaration twice
+  const enviando = useRef(false)
   const presentar = async (predio: { predio?: Predio; predio_id?: string }) => {
-    if (!datos || !titular) return
-    // datos del predio carries the predio's tipo; the declaration does not keep it
-    const declaracion = Object.fromEntries(Object.entries(datos).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
-    const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
-    await refresh()
-    salida.permitir()
-    // just presented: no transferentes yet
-    navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0)}&asistente=1`, { replace: true })
-  }
-  const presentarExistente = async () => {
-    if (!existente) return
+    if (!titular || enviando.current) return
+    enviando.current = true
     setError(null)
     setBusy(true)
     try {
-      await presentar({ predio_id: existente.id })
+      // datos del predio as it is now: the clerk may have gone back to it
+      const actual = (await grupo.valores('datos')) as DatosDelPredio | null
+      if (!actual) {
+        setTab('datos')
+        return
+      }
+      // datos del predio carries the predio's tipo; the declaration does not keep it. a predio of the padrón gets a
+      // changed one saved first, over the predio as it is now (core's update replaces every field)
+      const declaracion = Object.fromEntries(Object.entries(actual).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
+      if (predio.predio_id && actual.condicion && actual.condicion !== existente?.condicion) {
+        const { predio: latest } = await rentas.predio(predio.predio_id, currentYear())
+        await rentas.actualizarPredio(predio.predio_id, { ...latest, condicion: actual.condicion })
+      }
+      const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
+      await refresh()
+      salida.permitir()
+      // just presented: no transferentes yet
+      navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0)}&asistente=1`, { replace: true })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo guardar')
+      // what was refused goes under its field, in its step (this one, when the field is in both)
+      const con = grupo.errores(e, ['datos', 'ubicacion'])
+      if (con.length > 0) setTab(con.includes(tab) ? tab : con[0])
+      else setError(e instanceof Error ? e.message : 'No se pudo guardar')
     } finally {
+      enviando.current = false
       setBusy(false)
     }
   }
-  const tipoPredio = (datos as DatosDelPredio | null)?.condicion ?? 'URBANO'
 
   const c = ficha.data?.contribuyente
   return (
@@ -128,12 +146,12 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
               Siguiente
             </Button>
           ) : !existente ? (
-            <Button type="submit" form={UBICACION_FORM}>
+            <Button type="submit" form={UBICACION_FORM} disabled={busy}>
               <ArrowRight className="size-4" />
-              Siguiente
+              {busy ? 'Guardando…' : 'Siguiente'}
             </Button>
           ) : (
-            <Button onClick={() => void presentarExistente()} disabled={busy}>
+            <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy}>
               <ArrowRight className="size-4" />
               {busy ? 'Guardando…' : 'Siguiente'}
             </Button>
@@ -159,6 +177,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                     <RecordForm
                       formId={DATOS_FORM}
                       enlace={grupo.enlaces.datos}
+                      comun={comun}
                       hideActions
                       sections={DJ_DATOS_SECTIONS}
                       options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
@@ -219,17 +238,13 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                           </Button>
                         )}
                       </div>
-                      <FieldGrid sections={UBICACION_SECTIONS} values={existente} />
-                      {error && (
-                        <p role="alert" className="text-sm text-danger">
-                          {error}
-                        </p>
-                      )}
+                      <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, condicion: tipoPredio }} />
                     </div>
                   ) : (
                     <RecordForm
                       formId={UBICACION_FORM}
                       enlace={grupo.enlaces.ubicacion}
+                      comun={comun}
                       hideActions
                       sections={sections}
                       options={catalogos.data?.predio}
@@ -237,6 +252,11 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       submitLabel="Guardar"
                       onSubmit={(predio) => presentar({ predio })}
                     />
+                  )}
+                  {error && (
+                    <p role="alert" className="text-sm text-danger">
+                      {error}
+                    </p>
                   )}
                 </div>
               )

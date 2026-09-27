@@ -9,8 +9,16 @@ export const currentYear = () => new Date().getFullYear()
 // the years a clerk picks from: this one and the four before
 export const recentYears = () => Array.from({ length: 5 }, (_, i) => currentYear() - i)
 
-// iso date (what the backend and <input type=date> use) -> DD/MM/YYYY, as the srtm shows it
+// an instant (a record's last update) is on the day it was in Perú, not in UTC: at night there it is already tomorrow
+const LIMA = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' })
+const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/
+
+// iso date (what the backend and <input type=date> use) or instant -> DD/MM/YYYY, as the srtm shows it
 export const formatDate = (value: string | null | undefined) => {
+  if (value && INSTANT.test(value)) {
+    const parts = Object.fromEntries(LIMA.formatToParts(new Date(value)).map((p) => [p.type, p.value]))
+    return `${parts.day}/${parts.month}/${parts.year}`
+  }
   const match = value ? /^(\d{4})-(\d{2})-(\d{2})/.exec(value) : null
   return match ? `${match[3]}/${match[2]}/${match[1]}` : formatText(value)
 }
