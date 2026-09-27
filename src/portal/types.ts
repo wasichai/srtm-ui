@@ -77,6 +77,8 @@ export interface Domicilio {
 export interface Relacionado {
   id?: string
   contribuyente?: string | null
+  // the backend's: 001, 002... under its contribuyente
+  codigo?: string | null
   tipo_relacionado: string | null
   tipo_documento: string | null
   numero_documento: string | null
@@ -84,6 +86,8 @@ export interface Relacionado {
   apellido_paterno: string | null
   apellido_materno: string | null
   nombres: string | null
+  // with RUC, instead of the names
+  razon_social: string | null
   telefono_celular: string | null
   telefono_fijo: string | null
   anexo: string | null
@@ -231,6 +235,8 @@ export interface Declaracion {
 export interface Transferente {
   id?: string
   declaracion?: string | null
+  // the backend's: 001, 002... under its declaración
+  codigo?: string | null
   porcentaje_transferido: number | null
   tipo_documento: string | null
   numero_documento: string | null
@@ -238,6 +244,8 @@ export interface Transferente {
   apellido_paterno: string | null
   apellido_materno: string | null
   nombres: string | null
+  // with RUC, instead of the names
+  razon_social: string | null
   fecha_nacimiento: string | null
   estado_civil: string | null
   sexo: string | null

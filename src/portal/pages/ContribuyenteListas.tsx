@@ -6,6 +6,7 @@ import {
   DOMICILIO_SECTIONS,
   emptyOf,
   MEDIO_CONTACTO_SECTIONS,
+  nombreORazonSocial,
   RELACIONADO_SECTIONS,
   SUSTENTO_SECTIONS,
   type FormValues
@@ -93,9 +94,10 @@ export function RelacionadosPanel({ contribuyente }: { contribuyente: string }) 
       wide
       nuevo={() => emptyOf<Relacionado>(RELACIONADO_SECTIONS, { tipo_documento: 'DNI', fuente_informacion: 'MANUAL', estado: 'ACTIVO' })}
       columns={[
+        { label: 'Código', render: (r) => formatText(r.codigo) },
         { label: 'Tipo de relacionado', render: (r) => formatText(r.tipo_relacionado) },
         { label: 'Documento', render: (r) => `${r.tipo_documento ?? ''} ${r.numero_documento ?? ''}`.trim() || '—' },
-        { label: 'Apellidos y nombres', render: (r) => [r.apellido_paterno, r.apellido_materno, r.nombres].filter(Boolean).join(' ') || '—' },
+        { label: 'Apellidos y nombres / Razón social', render: nombreORazonSocial },
         { label: 'Teléfono', render: (r) => formatText(r.telefono_celular ?? r.telefono_fijo) },
         { label: 'Correo', render: (r) => formatText(r.correo) }
       ]}
