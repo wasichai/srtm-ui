@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
 import { formatDate, MESES } from '../components/format'
 import { parseGeometry } from '../components/geo'
+import { BLOQUEADOS, bloqueados as bloqueadosDe } from './bloqueo'
 import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, selectClass, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
@@ -24,6 +25,8 @@ interface RecordFormProps<T> {
   hideActions?: boolean
   // below the sections, with the live values (the domicilio's address preview)
   footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
+  // fields that start greyed: what a lote of the catastro filled (forms/bloqueo.ts)
+  bloqueados?: string[]
 }
 
 // one form for every entity. the backend validates again and names the field it rejects:
@@ -39,10 +42,11 @@ export function RecordForm<T extends object>({
   children,
   formId,
   hideActions,
-  footer
+  footer,
+  bloqueados
 }: RecordFormProps<T>) {
   const fields = dataFields(sections)
-  const form = useForm<FormValues>({ defaultValues: toForm(fields, initial as Record<string, unknown>) })
+  const form = useForm<FormValues>({ defaultValues: { ...toForm(fields, initial as Record<string, unknown>), [BLOQUEADOS]: (bloqueados ?? []).join(',') } })
   const {
     handleSubmit,
     setError,
@@ -118,6 +122,7 @@ function Field({ field, form, values, options }: { field: FieldSpec; form: UseFo
   const id = `field-${field.name}`
   const error = form.formState.errors[field.name]?.message
   const enabled = !field.enabledWhen || field.enabledWhen(values)
+  const locked = bloqueadosDe(values).includes(field.name)
   const required = enabled && isRequired(field, values)
   const aria = { id, 'aria-invalid': error ? true : undefined, 'aria-describedby': error ? `${id}-error` : undefined }
 
@@ -125,7 +130,9 @@ function Field({ field, form, values, options }: { field: FieldSpec; form: UseFo
   if (!enabled && !field.readOnly) {
     const shown = field.greyedValue?.(values, form.formState.defaultValues as FormValues) ?? ''
     control = <Input {...aria} disabled value={shown} placeholder={field.kind === 'date' ? 'DD/MM/AAAA' : field.kind === 'enum' ? 'SELECCIONAR' : ''} />
-  } else if (field.readOnly) {
+  } else if (field.readOnly || locked) {
+    // a locked field is still the form's: registered, so it is validated and sent
+    if (locked) form.register(field.name, rules)
     const value = values[field.name] ?? ''
     // empty stays empty, so the placeholder ("(AUTOGENERADO)") shows instead of a dash
     control = <Input {...aria} disabled value={field.kind === 'date' && value ? formatDate(value) : value} placeholder={field.placeholder} />

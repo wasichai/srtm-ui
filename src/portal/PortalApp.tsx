@@ -11,6 +11,7 @@ import { ContribuyenteRoute } from './pages/ContribuyentePage'
 import { DeclaracionRoute } from './pages/DeclaracionPage'
 import { NuevaDeclaracionRoute } from './pages/NuevaDeclaracionPage'
 import { InicioPage } from './pages/InicioPage'
+import { LoteCatastroRoute, NuevoLotePage } from './pages/LoteCatastroPage'
 import { ContribuyentesPage, PrediosPage } from './pages/Listas'
 import { NuevoContribuyentePage } from './pages/NuevoContribuyentePage'
 import { NuevoPredioPage } from './pages/Nuevos'
@@ -57,6 +58,8 @@ export function PortalApp() {
             <Route path="predios" element={<PrediosPage />} />
             <Route path="predios/nuevo" element={<NuevoPredioPage />} />
             <Route path="predios/:id" element={<PredioRoute />} />
+            <Route path="catastro/nuevo" element={<NuevoLotePage />} />
+            <Route path="catastro/:id" element={<LoteCatastroRoute />} />
             <Route path="*" element={<EmptyState title="Esta página no existe" />} />
           </Route>
         </Routes>

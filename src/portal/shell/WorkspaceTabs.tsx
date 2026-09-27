@@ -8,7 +8,7 @@ import { TABS_KEY } from '../auth/session'
 export interface WorkspaceTab {
   path: string
   label: string
-  kind: 'contribuyente' | 'predio' | 'declaracion'
+  kind: 'contribuyente' | 'predio' | 'declaracion' | 'lote'
 }
 
 interface WorkspaceTabs {
