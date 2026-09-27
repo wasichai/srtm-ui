@@ -1,3 +1,4 @@
+import { formatText } from '../components/format'
 import { ABREVIATURA_VIA } from './direccion'
 
 // how the srtm writes an option the model keeps plain (Presentacion2_.pdf, pages 2 to 21, and the M01 manuals): with
@@ -65,3 +66,6 @@ const POR_CAMPO: Record<string, Record<string, string>> = { tipo_via: ABREVIATUR
 export function etiqueta(campo: string, valor: string): string {
   return POR_CAMPO[campo]?.[valor] ?? ETIQUETAS[valor] ?? valor
 }
+
+// what a list's cell shows for an option: its label, or the dash of an empty cell
+export const celda = (campo: string, valor: string | null | undefined) => formatText(valor ? etiqueta(campo, valor) : valor)

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
+import { currentYear } from '../components/format'
 import { COLUMNAS_CATEGORIA } from '../types'
 import type { FormValues } from './specs'
 import { selectClass } from './styles'
@@ -10,13 +11,19 @@ import { selectClass } from './styles'
 export const COLUMNAS = [
   { field: 'muros_columnas', label: 'Muros y columnas', required: true },
   { field: 'techos', label: 'Techos', required: true },
-  { field: 'pisos', label: 'Pisos', required: false },
+  { field: 'pisos', label: 'Pisos', required: false, enabledWhen: deOtroAnio },
   { field: 'puertas_ventanas', label: 'Puertas y ventanas', required: true },
-  { field: 'revestimientos', label: 'Revestimientos', required: false },
-  { field: 'banos', label: 'Baños', required: false },
+  { field: 'revestimientos', label: 'Revestimientos', required: false, enabledWhen: deOtroAnio },
+  { field: 'banos', label: 'Baños', required: false, enabledWhen: deOtroAnio },
   // eléctricas y sanitarias, as the srtm writes it (page 16)
-  { field: 'instalaciones', label: 'Instalaciones de E/S', required: false }
-] satisfies { field: (typeof COLUMNAS_CATEGORIA)[number]; label: string; required: boolean }[]
+  { field: 'instalaciones', label: 'Instalaciones de E/S', required: false, enabledWhen: deOtroAnio }
+] satisfies { field: (typeof COLUMNAS_CATEGORIA)[number]; label: string; required: boolean; enabledWhen?: (values: FormValues) => boolean }[]
+
+// the srtm's manual (M01-1-014, niveles de construcción): pisos, revestimiento, baños and instalaciones "no son
+// modificables" for a construction of this year, greyed as on page 16
+function deOtroAnio(values: FormValues): boolean {
+  return values.anio_construccion !== String(currentYear())
+}
 
 export function useCategoriasValor() {
   return useQuery({ queryKey: ['categorias-valor'], queryFn: rentas.categoriasValor, staleTime: Infinity })
@@ -34,7 +41,8 @@ export function CategoriasFields({ form }: { form: UseFormReturn<FormValues> }) 
       </div>
       {COLUMNAS.map((columna, index) => {
         const letras = categorias.filter((c) => c.columna === index + 1)
-        const value = values[columna.field] ?? ''
+        const enabled = columna.enabledWhen?.(values) ?? true
+        const value = enabled ? (values[columna.field] ?? '') : ''
         const id = `field-${columna.field}`
         const error = form.formState.errors[columna.field]?.message
         const descripcion = letras.find((c) => c.letra === value)?.descripcion ?? ''
@@ -42,12 +50,13 @@ export function CategoriasFields({ form }: { form: UseFormReturn<FormValues> }) 
           <div key={columna.field} className="grid grid-cols-[minmax(0,12rem)_6rem_minmax(0,1fr)] items-start gap-x-4">
             <label htmlFor={id} className="pt-2 text-sm text-ink">
               {columna.label}
-              {columna.required && <span className="text-danger"> *</span>}
+              {columna.required && enabled && <span className="text-danger"> *</span>}
             </label>
             <div>
               <select
                 id={id}
                 value={value}
+                disabled={!enabled}
                 onChange={(e) => form.setValue(columna.field, e.target.value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${id}-error` : `${id}-descripcion`}

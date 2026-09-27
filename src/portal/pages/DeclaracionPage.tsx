@@ -8,7 +8,7 @@ import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPen
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { QueryState } from '../components/QueryState'
-import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
+import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { useComun, useGrupoFormularios } from '../forms/grupo'
 import { RecordForm } from '../forms/RecordForm'
@@ -265,14 +265,7 @@ function DeclaracionPage({ id }: { id: string }) {
                   {
                     ...DECLARACION_TABS[0],
                     icon: FileText,
-                    render: () => (
-                      <div className="px-6 pt-5">
-                        {formulario('datos', DJ_DATOS_SECTIONS, datos, {
-                          ...catalogos.data?.declaracion_predial,
-                          condicion: catalogos.data?.predio?.condicion ?? []
-                        })}
-                      </div>
-                    )
+                    render: () => <div className="px-6 pt-5">{formulario('datos', DJ_DATOS_SECTIONS, datos, opcionesDatos(catalogos.data))}</div>
                   },
                   {
                     ...DECLARACION_TABS[1],

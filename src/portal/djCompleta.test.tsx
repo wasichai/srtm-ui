@@ -148,7 +148,11 @@ describe('the full declaración jurada', () => {
   })
 
   it('presents a new declaration from the predio in the wizard, with the predio fixed and the contribuyente looked up', async () => {
-    start('/predios/p1?tab=declaraciones', [{ method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }])
+    start('/predios/p1?tab=declaraciones', [
+      // no titular yet this year: one would be joined as a condómino instead (grisObligatorio.test.tsx)
+      { path: '/srtm/predios/p1/declaraciones', body: [] },
+      { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }
+    ])
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva declaración' }))
     expect(await screen.findByRole('heading', { name: 'Nueva declaración jurada predial' })).toBeInTheDocument()
     // the predio is known: its code, registration and tipo show in datos del predio

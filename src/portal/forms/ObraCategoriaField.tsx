@@ -1,19 +1,28 @@
 import { useQuery } from '@tanstack/react-query'
 import { Label, Textarea } from '@wasichai/ui'
+import { useEffect } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
+import { bloquear, desbloquear } from './bloqueo'
 import type { FormValues } from './specs'
 import { selectClass } from './styles'
 
 export const etiquetaObra = (c: { numero: number; descripcion: string }) => `${c.numero}. ${c.descripcion}`
 
 // the srtm's "categoría" of an obra complementaria (pages 18-19): a partida of the instructivo for the tipo de obra
-// chosen, which also sets the unidad de medida. while the catalog (model/data/obras_complementarias.csv) is not
-// loaded, or has nothing for that tipo, the categoría is written by hand
+// chosen, which also sets the unidad de medida: greyed then (bloqueo.ts), as on page 19. while the catalog
+// (model/data/obras_complementarias.csv) is not loaded, or has nothing for that tipo, the categoría is written by hand
+// and so is its unidad
 export function ObraCategoriaField({ form }: { form: UseFormReturn<FormValues> }) {
   const catalogo = useQuery({ queryKey: ['obras-categorias'], queryFn: rentas.obrasCategorias, staleTime: Infinity })
   const [tipo = '', categoria = ''] = form.watch(['tipo_obra', 'categoria'])
   const opciones = (catalogo.data ?? []).filter((c) => c.tipo_obra === tipo)
+  const delCatalogo = opciones.some((c) => etiquetaObra(c) === categoria)
+  useEffect(() => {
+    bloquear(form, delCatalogo ? ['unidad_medida'] : [])
+    // con valorización has no categoría
+    return () => desbloquear(form)
+  }, [form, delCatalogo])
   const error = form.formState.errors.categoria?.message
   const set = (name: string, value: string) => form.setValue(name, value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
   const common = {

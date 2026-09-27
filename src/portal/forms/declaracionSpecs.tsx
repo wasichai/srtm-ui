@@ -1,4 +1,5 @@
 import { rentas } from '../api'
+import type { Catalogos } from '../types'
 import { BuscarPrediosButton } from './BuscarPrediosButton'
 import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
@@ -30,6 +31,21 @@ export const DOCUMENTOS_ADQUISICION = [
 // will get no number
 const DEL_PREDIO = { readOnly: true, placeholder: AUTO, existe: (v: FormValues) => Boolean(v.codigo_predio) }
 
+const CONDOMINO = 'CONDOMINO'
+const esCondomino = (v: FormValues) => v.condicion_propiedad === CONDOMINO
+const conResolucion = (v: FormValues) => Boolean(v.inhabitable_numero_resolucion)
+
+// the options of datos del predio: the predio's tipo beside the declaration's. CONDÓMINO is not picked: a titular
+// joins a condominio from "datos de los condóminos" of the declaración that holds the predio
+export function opcionesDatos(catalogos: Catalogos | undefined): Record<string, string[]> {
+  const declaracion = catalogos?.declaracion_predial ?? {}
+  return {
+    ...declaracion,
+    condicion: catalogos?.predio?.condicion ?? [],
+    condicion_propiedad: (declaracion.condicion_propiedad ?? []).filter((o) => o !== CONDOMINO)
+  }
+}
+
 // datos del predio: the declaration itself
 export const DJ_DATOS_SECTIONS: SectionSpec[] = [
   {
@@ -41,10 +57,11 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
       { name: 'condicion', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
       { name: 'numero_declaracion', label: 'Número de declaración jurada', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
       { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACIÓN JURADA', span: 2 },
-      { name: 'medio_presentacion', label: 'Medio de presentación', kind: 'enum', required: true, span: 2 },
+      // greyed in the srtm (pages 11 and 12): FÍSICO and the day it is presented
+      { name: 'medio_presentacion', label: 'Medio de presentación', kind: 'enum', readOnly: true, span: 2 },
       { name: 'modificacion_oficio', label: 'Modificación de oficio', kind: 'enum', readOnly: true, span: 2 },
       { name: 'motivo', label: 'Motivo de modificación', kind: 'enum', readOnly: true, placeholder: 'INSCRIPCION', span: 2 },
-      { name: 'fecha_presentacion', label: 'Fecha de presentación', kind: 'date', required: true, span: 2 },
+      { name: 'fecha_presentacion', label: 'Fecha de presentación', kind: 'date', readOnly: true, span: 2 },
       { name: 'anio', label: 'Año', kind: 'integer', required: true, span: 1 },
       { name: 'secuencia_uso', label: 'Secuencia de uso', required: true, span: 1 }
     ]
@@ -55,8 +72,19 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
       { name: 'tipo_adquisicion', label: 'Tipo de adquisición', kind: 'enum', required: true, span: 2 },
       { name: 'fecha_adquisicion', label: 'Fecha de adquisición', kind: 'date', required: true, span: 2 },
       { name: 'fecha_actualizacion', label: 'Fecha de actualización', kind: 'date', readOnly: true, placeholder: AUTO, span: 2 },
-      { name: 'condicion_propiedad', label: 'Tipo de propiedad', kind: 'enum', required: true, span: 2 },
-      { name: 'porcentaje_condominio', label: '% de propiedad', kind: 'decimal', required: true, span: 1 },
+      // the backend's (srtm-backend#4): CONDÓMINO while the predio has other titulares that year and secuencia, greyed
+      // then; a sole titular picks among the rest (opcionesDatos)
+      { name: 'condicion_propiedad', label: 'Tipo de propiedad', kind: 'enum', required: true, span: 2, lockedWhen: esCondomino },
+      // a condómino's own; a sole titular's is 100, greyed as in the srtm (page 12)
+      {
+        name: 'porcentaje_condominio',
+        label: '% de propiedad',
+        kind: 'decimal',
+        required: true,
+        span: 1,
+        enabledWhen: esCondomino,
+        greyedValue: (_, stored) => stored.porcentaje_condominio || '100'
+      },
       { name: 'folios', label: 'Folios', kind: 'integer', required: true, span: 1 },
       { name: 'documentos_sustento', label: 'Documentos de sustento', kind: 'multi', choices: DOCUMENTOS_ADQUISICION, required: true, span: 4 }
     ]
@@ -76,13 +104,12 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
   },
   {
     title: 'Predio inhabitable',
+    // as the srtm (pages 11 and 12): the número de resolución opens the rest
     fields: [
-      { name: 'inhabitable_tipo_documento', label: 'Tipo documento', kind: 'enum', span: 2 },
-      ...[
-        { name: 'inhabitable_numero_resolucion', label: 'Número de resolución', span: 2 as const },
-        { name: 'inhabitable_fecha_resolucion', label: 'Fecha de resolución', kind: 'date' as const, span: 1 as const },
-        { name: 'inhabitable_fecha_inicio', label: 'Fecha de inicio de resolución', kind: 'date' as const, span: 1 as const }
-      ].map((f) => ({ ...f, enabledWhen: (v: Record<string, string>) => Boolean(v.inhabitable_tipo_documento) }))
+      { name: 'inhabitable_tipo_documento', label: 'Tipo documento', kind: 'enum', span: 2, enabledWhen: conResolucion },
+      { name: 'inhabitable_numero_resolucion', label: 'Número de resolución', span: 2 },
+      { name: 'inhabitable_fecha_resolucion', label: 'Fecha de resolución', kind: 'date', span: 1, enabledWhen: conResolucion },
+      { name: 'inhabitable_fecha_inicio', label: 'Fecha de inicio de resolución', kind: 'date', span: 1, enabledWhen: conResolucion }
     ]
   },
   {
@@ -93,6 +120,10 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
 
 // fields of the datos-del-predio form that belong to the predio, not to the declaration
 export const DATOS_DEL_PREDIO = ['codigo_predio', 'numero_registro', 'condicion', 'fecha_actualizacion']
+
+// a predio being registered: a stored one always has its dirección. one of the padrón keeps its text while it has no
+// tipo de vía
+const predioNuevo = (v: FormValues) => !v.direccion
 
 // datos de la ubicación: the predio's. onPredio: what "buscar predios" does with a predio of the padrón (by default
 // its ubicación is copied into the form)
@@ -119,7 +150,8 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
         { name: 'provincia', label: 'Provincia', kind: 'hidden', required: true },
         { name: 'distrito', label: 'Distrito', kind: 'hidden', required: true },
         { name: 'region', label: 'Región', kind: 'enum', required: true, span: 1 },
-        { name: 'tipo_via', label: 'Tipo de vía', kind: 'enum', required: true, span: 1 },
+        // optional in the srtm (page 14), but a new predio's dirección is built from it (the backend's)
+        { name: 'tipo_via', label: 'Tipo de vía', kind: 'enum', required: predioNuevo, span: 1 },
         {
           name: 'via',
           label: 'Descripción de la vía',
@@ -166,7 +198,8 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
     {
       title: 'Predio de catastro fiscal',
       fields: [
-        { name: 'codigo_cpu', label: 'Código CPU', span: 2 },
+        // asked in the srtm (page 14): a new predio is a lote of the catastro fiscal. one of the padrón may have none yet
+        { name: 'codigo_cpu', label: 'Código CPU', required: predioNuevo, span: 2 },
         { name: 'codigo', label: 'Código de predio municipal', readOnly: true, placeholder: AUTO, span: 2 },
         { name: 'mapa', label: 'Mapa', kind: 'custom', span: 6, render: (form) => <CatastroMapa form={form} /> },
         { name: 'lote_geom', label: 'Lote', kind: 'geometry' }
@@ -250,6 +283,7 @@ export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   }
 ]
 
+// a nivel, an obra and an otro frente have no estado in the srtm (pages 16 to 21): a new one is ACTIVO (the backend's)
 export const NIVEL_SECTIONS: SectionSpec[] = [
   {
     title: 'Datos del nivel',
@@ -260,7 +294,7 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
       { name: 'mes_construccion', label: 'Mes construcción', kind: 'month', required: true, span: 2 },
       { name: 'material', label: 'Material predominante', kind: 'enum', required: true, span: 2 },
       { name: 'estado_conservacion', label: 'Estado de conservación', kind: 'enum', required: true, span: 2 },
-      { name: 'estado', label: 'Estado', kind: 'enum', span: 2 },
+      // no asterisk on page 16, but the model asks for it: the nivel's value is its area times its unit value
       { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', required: true, span: 2 },
       { name: 'area_comun', label: 'Área común construida (m2)', kind: 'decimal', span: 2 },
       { name: 'porcentaje_area_comun', label: '% área común construida', kind: 'decimal', span: 2 }
@@ -270,7 +304,13 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
     title: 'Datos de la categoría',
     fields: [
       { name: 'categorias', label: 'Categorías', kind: 'custom', span: 6, render: (form) => <CategoriasFields form={form} /> },
-      ...COLUMNAS.map((c) => ({ name: c.field, label: c.label, kind: 'hidden' as const, required: c.required }))
+      ...COLUMNAS.map((c) => ({
+        name: c.field,
+        label: c.label,
+        kind: 'hidden' as const,
+        required: c.required,
+        enabledWhen: c.enabledWhen
+      }))
     ]
   }
 ]
@@ -297,8 +337,8 @@ export const OBRA_SECTIONS: SectionSpec[] = [
       { name: 'numero_piso', label: 'Número de piso', kind: 'integer', required: true, span: 1 },
       { name: 'cantidad', label: 'Cantidad', kind: 'decimal', required: true, span: 1 },
       { name: 'metrado', label: 'Metrado', kind: 'decimal', required: true, span: 1 },
-      { name: 'unidad_medida', label: 'Unidad de medida', kind: 'enum', span: 1 },
-      { name: 'estado', label: 'Estado', kind: 'enum', span: 2 }
+      // greyed while its categoría is one of the instructivo's, which sets it (ObraCategoriaField)
+      { name: 'unidad_medida', label: 'Unidad de medida', kind: 'enum', span: 1 }
     ]
   }
 ]
@@ -321,8 +361,7 @@ export const FRENTE_SECTIONS: SectionSpec[] = [
       { name: 'frontis', label: 'Frontis (m)', kind: 'decimal', required: true, span: 1 },
       { name: 'lote', label: 'Lote', span: 1 },
       { name: 'cuadra', label: 'Cuadra', span: 1 },
-      { name: 'lado', label: 'Lado', kind: 'enum', span: 1 },
-      { name: 'estado', label: 'Estado', kind: 'enum', span: 1 }
+      { name: 'lado', label: 'Lado', kind: 'enum', span: 1 }
     ]
   }
 ]
