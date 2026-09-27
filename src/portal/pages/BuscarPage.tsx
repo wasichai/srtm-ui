@@ -11,7 +11,7 @@ export function BuscarPage() {
   const predios = usePredios(q, 0)
   const all = (path: string, total: number) =>
     total > 0 && (
-      <Link to={`${path}?q=${encodeURIComponent(q)}`} className="text-sm font-normal text-brand hover:underline">
+      <Link to={`${path}?q=${encodeURIComponent(q)}`} className="text-sm font-normal text-link hover:underline">
         Ver los {total.toLocaleString('es-PE')}
       </Link>
     )

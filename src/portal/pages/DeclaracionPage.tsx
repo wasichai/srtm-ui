@@ -1,16 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { Badge, Button, Card } from '@wasichai/ui'
+import { Badge, Card } from '@wasichai/ui'
 import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPendientes'
+import { Button } from '../components/controles'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
+import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { useComun, useGrupoFormularios } from '../forms/grupo'
+import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
 import { RecordForm } from '../forms/RecordForm'
 import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
@@ -197,7 +201,7 @@ function DeclaracionPage({ id }: { id: string }) {
           <div className="space-y-5">
             <FichaHeader
               kind={
-                <Link to={`/contribuyentes/${contribuyente.id}`} className="hover:text-brand hover:underline">
+                <Link to={`/contribuyentes/${contribuyente.id}`} className="hover:text-link hover:underline">
                   {contribuyente.codigo ? `Contribuyente Nº ${contribuyente.codigo}` : 'Contribuyente'} - {contribuyente.nombre_completo}
                 </Link>
               }
@@ -207,7 +211,7 @@ function DeclaracionPage({ id }: { id: string }) {
                   <EstadoBadge estado={declaracion.estado ?? 'VIGENTE'} />
                   {declaracion.anio && <Badge>{declaracion.anio}</Badge>}
                   {declaracion.condicion_propiedad && <Badge>{declaracion.condicion_propiedad}</Badge>}
-                  <Link to={`/predios/${predio.id}`} className="font-medium text-brand hover:underline">
+                  <Link to={`/predios/${predio.id}`} className="font-medium text-link hover:underline">
                     {predio.codigo}
                   </Link>
                   <span>· {predio.direccion}</span>
@@ -241,9 +245,9 @@ function DeclaracionPage({ id }: { id: string }) {
                         ))}
                     </div>
                     {error && (
-                      <p role="alert" className="max-w-md text-right text-sm text-danger">
+                      <Alerta tono="error" className="max-w-md text-right">
                         {error}
-                      </p>
+                      </Alerta>
                     )}
                     {guardado && !hayCambios && (
                       <p role="status" className="text-sm text-ink-muted">
@@ -254,6 +258,10 @@ function DeclaracionPage({ id }: { id: string }) {
                 )
               }
             />
+            {/* every tab is open: a step goes to its tab, as the tab does, still in the wizard */}
+            {asistente && (
+              <PasosAsistente pasos={DECLARACION_TABS} actual={activa} onIr={(tab) => abrir(tab)} instruccion={INSTRUCCIONES_DECLARACION[activa]} />
+            )}
             {soloLectura && <AvisoAnulada declaracion={declaracion} />}
             <Card className="pb-4">
               <FichaTabs

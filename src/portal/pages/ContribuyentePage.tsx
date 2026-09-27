@@ -6,9 +6,11 @@ import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, formatMoney } from '../components/format'
+import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
 import { StatCard } from '../components/StatCard'
 import { YearSelect } from '../components/YearSelect'
+import { INSTRUCCIONES_INSCRIPCION } from '../forms/instrucciones'
 import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
@@ -56,6 +58,9 @@ function ContribuyentePage({ id }: { id: string }) {
     setAlcanzado((a) => Math.max(a, PASOS[tab] ?? 0))
     setParams(inscripcion ? { tab, inscripcion: '1' } : { tab }, { replace: true })
   }
+  // the step the inscription is on: the open tab, when it is one of the srtm's (rentas' own come after its last)
+  const activa = params.get('tab') ?? 'datos'
+  const paso = inscripcion ? CONTRIBUYENTE_TABS.find((tab) => tab.id === activa && habilitada(tab.id))?.id : undefined
   const c = ficha.data?.contribuyente
   useWorkspaceTab(c ? { path: `/contribuyentes/${id}`, label: `${c.numero_documento ?? ''} ${c.nombre_completo ?? ''}`.trim(), kind: 'contribuyente' } : null)
 
@@ -89,10 +94,12 @@ function ContribuyentePage({ id }: { id: string }) {
             <StatCard icon={Receipt} label={`Autoavalúo ${anio}`} value={formatMoney(totales.autoavaluo)} />
             <StatCard icon={Coins} label={`Valor afecto ${anio}`} value={formatMoney(totales.valor_afecto)} />
           </div>
+          {/* the inscription goes on here after Nuevo contribuyente: its steps, as there */}
+          {paso && <PasosAsistente pasos={CONTRIBUYENTE_TABS} actual={paso} onIr={abrir} puedeIr={habilitada} instruccion={INSTRUCCIONES_INSCRIPCION[paso]} />}
           <Card className="pb-4">
             <FichaTabs
               label="Secciones del contribuyente"
-              active={params.get('tab') ?? 'datos'}
+              active={activa}
               onChange={abrir}
               tabs={[
                 {

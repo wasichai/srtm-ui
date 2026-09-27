@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { ApiError, createRegistry, createWasichaiI18n, resolveConfig, WasichaiProviders } from '@wasichai/core'
 import { useState } from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router'
+import { SRTM_THEMES, srtmModule } from '../themes'
 import { client } from './api'
 import { LoginPage } from './auth/LoginPage'
 import { RequireSession } from './auth/RequireSession'
@@ -55,11 +56,12 @@ const rutas = createRoutesFromElements(
 
 // the end-user portal: municipal staff looking up and keeping contribuyentes, predios and declarations.
 // under core's providers, like the admin: one session, and the theme the user picked (stored for them) on both sides.
-// no modules: the portal draws its own screens. spanish only, so a locale picked in the admin is left alone
+// no screen modules: the portal draws its own screens; srtmModule only brings the labels of srtm's themes, which it
+// registers like the admin does. spanish only, so a locale picked in the admin is left alone
 export function PortalApp() {
   const [app] = useState(() => {
-    const config = resolveConfig({ apiBaseUrl: '/api', storagePrefix: 'srtm', appName: 'Rentas municipales', languages: ['es'] })
-    const registry = createRegistry([])
+    const config = resolveConfig({ apiBaseUrl: '/api', storagePrefix: 'srtm', appName: 'Rentas municipales', languages: ['es'], themes: SRTM_THEMES })
+    const registry = createRegistry([srtmModule])
     const i18n = createWasichaiI18n({ languages: config.languages, storageKey: client.keys.lang, modules: registry.modules })
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry, refetchOnWindowFocus: false } } })
     return { config, registry, i18n, queryClient, router: createBrowserRouter(rutas) }

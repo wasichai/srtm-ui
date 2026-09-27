@@ -1,17 +1,31 @@
 import { Badge, cn } from '@wasichai/ui'
+import { useVarianteTema } from '../../themes'
+import { tonoDeEstado, type Tono } from './tono'
 
 // a list row's ACTIVO / INACTIVO (none is ACTIVO), or a declaración's VIGENTE / ANULADA (none is VIGENTE)
 const ETIQUETAS: Record<string, string> = { ACTIVO: 'Activo', VIGENTE: 'Vigente', ANULADA: 'Anulada' }
 
-// the srtm's dark pill: "● Activo"
+const COLOR: Record<Tono, string> = { verde: 'text-success', ambar: 'text-warning', rojo: 'text-danger', '': 'text-ink' }
+
+// the srtm's dark pill: "● Activo". the portal-tributario theme writes it as bold text in its tone, no pill
 export function EstadoBadge({ estado }: { estado: string | null | undefined }) {
+  const variante = useVarianteTema()
   const valor = estado ?? 'ACTIVO'
+  const texto = ETIQUETAS[valor] ?? 'Inactivo'
+  if (variante === 'portal') {
+    const tono = tonoDeEstado(texto)
+    return (
+      <span data-ui="estado" data-tono={tono} className={cn('text-[12.5px] font-bold', COLOR[tono])}>
+        {texto}
+      </span>
+    )
+  }
   const activo = valor === 'ACTIVO' || valor === 'VIGENTE'
   const anulado = valor === 'ANULADA'
   return (
     <Badge className={cn('gap-1', activo ? 'bg-ink text-surface' : anulado ? 'bg-danger/10 text-danger' : 'bg-surface-muted text-ink-muted')}>
       <span className={cn('size-1.5 rounded-full', activo ? 'bg-surface' : anulado ? 'bg-danger' : 'bg-ink-muted')} />
-      {ETIQUETAS[valor] ?? 'Inactivo'}
+      {texto}
     </Badge>
   )
 }

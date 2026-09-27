@@ -86,6 +86,20 @@ describe('admin', () => {
     }
   })
 
+  // the portal's themes are the admin's too: a pick on either side shows on the other
+  it('offers the srtm themes, and opens on the one the portal stored', async () => {
+    localStorage.setItem('srtm.theme', 'portal-tributario')
+    await signIn()
+    expect(document.documentElement.dataset.theme).toBe('portal-tributario')
+    const theme = screen.getByRole('combobox', { name: 'Tema' })
+    expect(theme).toHaveValue('portal-tributario')
+    expect(screen.getByRole('option', { name: 'Portal tributario' })).toBeInTheDocument()
+
+    await userEvent.selectOptions(theme, 'dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('srtm.theme')).toBe('dark')
+  })
+
   // lote_geom and ubicacion are GEOMETRY fields: without wasichai-gis the admin cannot show or edit them
   it('knows the geometry of the spatial objects', async () => {
     await signIn([predio])

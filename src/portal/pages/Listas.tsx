@@ -56,7 +56,7 @@ export function ContribuyentesPage() {
               <EmptyState title={q ? `Nada coincide con “${q}”` : 'Aún no hay contribuyentes'} />
             ) : (
               <>
-                <Table>
+                <Table data-ui="table">
                   <thead>
                     <tr>
                       <Th>Documento</Th>
@@ -71,7 +71,7 @@ export function ContribuyentesPage() {
                         <Td className="whitespace-nowrap">
                           <span className="text-xs text-ink-muted">{c.tipo_documento}</span>
                           <br />
-                          <Link to={`/contribuyentes/${c.id}`} className="font-medium text-brand hover:underline" onClick={(e) => e.stopPropagation()}>
+                          <Link to={`/contribuyentes/${c.id}`} className="font-medium text-link hover:underline" onClick={(e) => e.stopPropagation()}>
                             {formatText(c.numero_documento)}
                           </Link>
                         </Td>
@@ -127,7 +127,7 @@ export function PrediosPage() {
               <EmptyState title={q ? `Nada coincide con “${q}”` : 'Aún no hay predios'} />
             ) : (
               <>
-                <Table>
+                <Table data-ui="table">
                   <thead>
                     <tr>
                       <Th>Código</Th>
@@ -140,7 +140,7 @@ export function PrediosPage() {
                     {result.content.map((p) => (
                       <tr key={p.id} className="cursor-pointer hover:bg-surface-muted/60" onClick={() => navigate(`/predios/${p.id}`)}>
                         <Td className="whitespace-nowrap">
-                          <Link to={`/predios/${p.id}`} className="font-medium text-brand hover:underline" onClick={(e) => e.stopPropagation()}>
+                          <Link to={`/predios/${p.id}`} className="font-medium text-link hover:underline" onClick={(e) => e.stopPropagation()}>
                             {formatText(p.codigo)}
                           </Link>
                         </Td>

@@ -1,22 +1,27 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Button, Card } from '@wasichai/ui'
+import { Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { useSalidaConCambios } from '../components/CambiosPendientes'
+import { Button } from '../components/controles'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
+import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { useComun, useGrupoFormularios } from '../forms/grupo'
+import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordForm } from '../forms/RecordForm'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
 import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Contribuyente, Declaracion, Predio } from '../types'
+import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
 
@@ -129,53 +134,55 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
     }
   }
 
+  // where the tabs (and the steps, with the portal's theme) can go: datos del predio, and the ubicación once it is in
+  const abierta = (t: string) => t === 'datos' || (t === 'ubicacion' && Boolean(datos))
+  const ir = (next: string) => setTab(next === 'ubicacion' && datos ? 'ubicacion' : 'datos')
+
   const c = ficha.data?.contribuyente
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
-            {c
-              ? `${c.codigo ? `Contribuyente Nº ${c.codigo}` : 'Contribuyente'} - ${c.nombre_completo ?? ''}`
-              : predioFijo
-                ? `Predio ${predioFijo.codigo ?? ''} - ${predioFijo.direccion ?? ''}`
-                : 'Contribuyente'}
-          </p>
-          <h1 className="text-xl font-semibold text-ink uppercase">Nueva declaración jurada predial</h1>
-          <p className="text-xs font-semibold tracking-wide text-brand uppercase italic">Declaración jurada y registro de predio</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            <X className="size-4" />
-            Cancelar
+      <CabeceraAsistente
+        kind={
+          c
+            ? `${c.codigo ? `Contribuyente Nº ${c.codigo}` : 'Contribuyente'} - ${c.nombre_completo ?? ''}`
+            : predioFijo
+              ? `Predio ${predioFijo.codigo ?? ''} - ${predioFijo.direccion ?? ''}`
+              : 'Contribuyente'
+        }
+        title="Nueva declaración jurada predial"
+        detalle="Declaración jurada y registro de predio"
+      >
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          <X className="size-4" />
+          Cancelar
+        </Button>
+        {tab === 'datos' ? (
+          <Button type="submit" form={DATOS_FORM}>
+            <ArrowRight className="size-4" />
+            Siguiente
           </Button>
-          {tab === 'datos' ? (
-            <Button type="submit" form={DATOS_FORM}>
-              <ArrowRight className="size-4" />
-              Siguiente
-            </Button>
-          ) : !existente ? (
-            <Button type="submit" form={UBICACION_FORM} disabled={busy}>
-              <ArrowRight className="size-4" />
-              {busy ? 'Guardando…' : 'Siguiente'}
-            </Button>
-          ) : (
-            <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy || titulares.length > 0}>
-              <ArrowRight className="size-4" />
-              {busy ? 'Guardando…' : 'Siguiente'}
-            </Button>
-          )}
-        </div>
-      </div>
+        ) : !existente ? (
+          <Button type="submit" form={UBICACION_FORM} disabled={busy}>
+            <ArrowRight className="size-4" />
+            {busy ? 'Guardando…' : 'Siguiente'}
+          </Button>
+        ) : (
+          <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy || titulares.length > 0}>
+            <ArrowRight className="size-4" />
+            {busy ? 'Guardando…' : 'Siguiente'}
+          </Button>
+        )}
+      </CabeceraAsistente>
+      <PasosAsistente pasos={DECLARACION_TABS} actual={tab} onIr={ir} puedeIr={abierta} instruccion={INSTRUCCIONES_NUEVA_DECLARACION[tab]} />
       <Card className="pb-5">
         <FichaTabs
           label="Declaración jurada predial"
           active={tab}
-          onChange={(next) => setTab(next === 'ubicacion' && datos ? 'ubicacion' : 'datos')}
+          onChange={ir}
           tabs={DECLARACION_TABS.map((t) => ({
             ...t,
             icon: t.id === 'ubicacion' ? MapPin : FileText,
-            disabled: t.id === 'ubicacion' ? !datos : t.id !== 'datos',
+            disabled: !abierta(t.id),
             render: () =>
               t.id === 'datos' ? (
                 <div className="px-6 pt-5">
@@ -263,11 +270,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       onSubmit={(predio) => presentar({ predio })}
                     />
                   )}
-                  {error && (
-                    <p role="alert" className="text-sm text-danger">
-                      {error}
-                    </p>
-                  )}
+                  {error && <Alerta tono="error">{error}</Alerta>}
                 </div>
               )
           }))}

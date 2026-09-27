@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { Label } from '@wasichai/ui'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
+import { NativeSelect } from '../components/controles'
 import type { UsoPredio } from '../types'
 import { useCampoId } from './campoId'
 import type { FormValues } from './specs'
-import { selectClass } from './styles'
 
 const distinct = (values: string[]) => [...new Set(values)]
 
@@ -63,14 +63,13 @@ export function UsoFields({ form }: { form: UseFormReturn<FormValues> }) {
               {level.label}
               <span className="text-danger"> *</span>
             </Label>
-            <select
+            <NativeSelect
               id={id}
               value={level.value}
               onChange={(e) => level.change(e.target.value)}
               disabled={catalogo.isPending}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? `${id}-error` : undefined}
-              className={selectClass}
             >
               <option value="">{catalogo.isPending ? 'Cargando…' : 'SELECCIONAR'}</option>
               {options.map((o) => (
@@ -78,7 +77,7 @@ export function UsoFields({ form }: { form: UseFormReturn<FormValues> }) {
                   {o}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             {error && (
               <p id={`${id}-error`} className="text-xs text-danger">
                 {error}

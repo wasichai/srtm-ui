@@ -1,9 +1,11 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, Table, Td, Th } from '@wasichai/ui'
+import { cn, Dialog, DialogContent, DialogDescription, DialogTitle, Label, Table, Td, Th } from '@wasichai/ui'
 import { Camera, FileText, Pencil, Plus, RotateCcw, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
+import { Button, Input, NativeSelect } from '../components/controles'
 import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
 import { recordIdOf } from '../components/geo'
@@ -11,7 +13,6 @@ import { LotesMap } from '../components/LotesMap'
 import { Paginador } from '../components/Paginador'
 import { EmptyState } from '../components/QueryState'
 import { etiqueta } from '../forms/etiquetas'
-import { selectClass } from '../forms/styles'
 import { SuggestInput } from '../forms/SuggestInput'
 import type { Elegido } from '../forms/ubicacion'
 import { useCatalogos } from '../queries'
@@ -183,14 +184,14 @@ function Busqueda({
       <Label htmlFor={`filtro-${name}`} className="block truncate text-xs">
         {label}
       </Label>
-      <select id={`filtro-${name}`} value={filtros[name] ?? ''} onChange={(e) => set(name, e.target.value)} className={selectClass}>
+      <NativeSelect id={`filtro-${name}`} value={filtros[name] ?? ''} onChange={(e) => set(name, e.target.value)}>
         <option value="">SELECCIONAR</option>
         {options.map((o) => (
           <option key={o} value={o}>
             {etiqueta(name, o)}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </div>
   )
 
@@ -225,9 +226,9 @@ function Busqueda({
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {aviso && (
-          <p role="alert" className="mr-auto text-sm text-danger">
+          <Alerta tono="error" className="mr-auto">
             {aviso}
-          </p>
+          </Alerta>
         )}
         <Button variant="secondary" onClick={limpiar}>
           <RotateCcw className="size-4" />
@@ -247,7 +248,7 @@ function Busqueda({
           <EmptyState title="No se encontraron resultados" />
         ) : (
           <div className="rounded-md border border-border">
-            <Table aria-label="Resultados">
+            <Table data-ui="table" aria-label="Resultados">
               <thead>
                 {donde === 'catastro' ? (
                   <tr>

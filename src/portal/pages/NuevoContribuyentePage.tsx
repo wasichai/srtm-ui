@@ -1,14 +1,18 @@
-import { Button, Card } from '@wasichai/ui'
+import { Card } from '@wasichai/ui'
 import { ArrowRight, FileText, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { rentas } from '../api'
+import { Button } from '../components/controles'
 import { FichaTabs } from '../components/FichaTabs'
 import { today } from '../components/format'
+import { PasosAsistente } from '../components/PasosAsistente'
+import { INSTRUCCIONES_INSCRIPCION } from '../forms/instrucciones'
 import { RecordForm } from '../forms/RecordForm'
 import { CONTRIBUYENTE_SECTIONS, emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Contribuyente } from '../types'
+import { CabeceraAsistente } from './CabeceraAsistente'
 import { CONTRIBUYENTE_TABS } from './ContribuyentePage'
 
 const FORM_ID = 'nuevo-contribuyente'
@@ -41,22 +45,18 @@ export function NuevoContribuyentePage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-ink uppercase">Nuevo contribuyente</h1>
-          <p className="text-xs font-semibold tracking-wide text-brand uppercase italic">Insertar contribuyente</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            <X className="size-4" />
-            Cancelar
-          </Button>
-          <Button type="submit" form={FORM_ID} disabled={saving}>
-            <ArrowRight className="size-4" />
-            {saving ? 'Guardando…' : 'Siguiente'}
-          </Button>
-        </div>
-      </div>
+      <CabeceraAsistente title="Nuevo contribuyente" detalle="Insertar contribuyente">
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          <X className="size-4" />
+          Cancelar
+        </Button>
+        <Button type="submit" form={FORM_ID} disabled={saving}>
+          <ArrowRight className="size-4" />
+          {saving ? 'Guardando…' : 'Siguiente'}
+        </Button>
+      </CabeceraAsistente>
+      {/* the inscription's first step: the other tabs wait for it, so there is no step to go to */}
+      <PasosAsistente pasos={CONTRIBUYENTE_TABS} actual="datos" instruccion={INSTRUCCIONES_INSCRIPCION.datos} />
       <Card className="pb-5">
         <FichaTabs
           label="Registro de contribuyente"

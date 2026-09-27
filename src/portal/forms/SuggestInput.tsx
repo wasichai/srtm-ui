@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { Input } from '@wasichai/ui'
 import { useEffect, useId, useState, type ComponentProps } from 'react'
+import { Input } from '../components/controles'
 
 // free text with catalog suggestions (a native datalist): a vía missing from the catalog can still be typed
 export function SuggestInput({

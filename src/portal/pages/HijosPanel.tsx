@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
+import { cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
 import { Box, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { HijosApi } from '../api'
+import { Alerta } from '../components/Alerta'
+import { Button } from '../components/controles'
 import { EstadoBadge } from '../components/EstadoBadge'
 import { Paginador } from '../components/Paginador'
 import { EmptyState, QueryState } from '../components/QueryState'
+import { NUMERICA } from '../components/tabla'
 import { RecordForm } from '../forms/RecordForm'
 import type { FormValues, SectionSpec } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
@@ -16,6 +19,8 @@ export interface Columna<T> {
   label: string
   render: (row: T) => ReactNode
   className?: string
+  // figures (areas, amounts, %): right aligned with digits of one width, and marked for the theme
+  numeric?: boolean
 }
 
 interface HijosPanelProps<T> {
@@ -152,11 +157,11 @@ export function HijosPanel<T extends Hijo>({
           rows.length === 0 ? (
             <EmptyState title="No se encontraron resultados!" icon={Box} />
           ) : (
-            <Table role="grid" aria-label={`Listado de ${plural}`}>
+            <Table data-ui="table" role="grid" aria-label={`Listado de ${plural}`}>
               <thead>
                 <tr>
                   {columns.map((c) => (
-                    <Th key={c.label} className={c.className}>
+                    <Th key={c.label} data-numeric={c.numeric || undefined} className={cn(c.numeric && NUMERICA.className, c.className)}>
                       {c.label}
                     </Th>
                   ))}
@@ -182,7 +187,11 @@ export function HijosPanel<T extends Hijo>({
                       )}
                     >
                       {columns.map((c) => (
-                        <Td key={c.label} className={cn(c.className, isSelected && 'text-brand-strong')}>
+                        <Td
+                          key={c.label}
+                          data-numeric={c.numeric || undefined}
+                          className={cn(c.numeric && NUMERICA.className, c.className, isSelected && 'text-brand-strong')}
+                        >
                           {c.render(row)}
                         </Td>
                       ))}
@@ -238,9 +247,9 @@ export function HijosPanel<T extends Hijo>({
             <DialogTitle className="text-lg font-semibold">¿Eliminar este {singular}?</DialogTitle>
             <DialogDescription className="mt-2 text-sm text-ink-muted">Se quita de la ficha. El historial del registro lo conserva.</DialogDescription>
             {removeError && (
-              <p role="alert" className="mt-3 text-sm text-danger">
+              <Alerta tono="error" className="mt-3">
                 {removeError}
-              </p>
+              </Alerta>
             )}
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setRemoving(null)}>

@@ -6,6 +6,7 @@ import { rentas } from '../api'
 import { MarcaAnulada } from '../components/EstadoBadge'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
+import { NUMERICA } from '../components/tabla'
 import type { Declaracion, DeclaracionDetalle } from '../types'
 
 // the declarations of a ficha. side is the ficha's own kind; each row shows the other side.
@@ -38,7 +39,7 @@ function OtherSide({ side, detalle }: { side: Side; detalle: DeclaracionDetalle 
     if (!p) return <span className="text-ink-muted">—</span>
     return (
       <div>
-        <Link to={`/predios/${p.id}`} className="font-medium text-brand hover:underline">
+        <Link to={`/predios/${p.id}`} className="font-medium text-link hover:underline">
           {p.codigo}
         </Link>
         <p className="text-xs text-ink-muted">{p.direccion}</p>
@@ -49,7 +50,7 @@ function OtherSide({ side, detalle }: { side: Side; detalle: DeclaracionDetalle 
   if (!c) return <span className="text-ink-muted">—</span>
   return (
     <div>
-      <Link to={`/contribuyentes/${c.id}`} className="font-medium text-brand hover:underline">
+      <Link to={`/contribuyentes/${c.id}`} className="font-medium text-link hover:underline">
         {c.nombre_completo}
       </Link>
       <p className="text-xs text-ink-muted">
@@ -72,15 +73,15 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
             <p>Registra una en la pestaña Declaraciones.</p>
           </EmptyState>
         ) : (
-          <Table>
+          <Table data-ui="table">
             <thead>
               <tr>
                 <Th>{otherTitle}</Th>
                 <Th>Condición</Th>
-                <Th className="text-right">% condominio</Th>
+                <Th {...NUMERICA}>% condominio</Th>
                 <Th>Uso</Th>
-                <Th className="text-right">Autoavalúo</Th>
-                <Th className="text-right">Valor afecto</Th>
+                <Th {...NUMERICA}>Autoavalúo</Th>
+                <Th {...NUMERICA}>Valor afecto</Th>
                 <Th>DJ</Th>
               </tr>
             </thead>
@@ -94,13 +95,13 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                     {row.declaracion.condicion_propiedad ? <Badge>{row.declaracion.condicion_propiedad}</Badge> : '—'}
                     <MarcaAnulada declaracion={row.declaracion} />
                   </Td>
-                  <Td className="text-right tabular-nums">{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
+                  <Td {...NUMERICA}>{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
                   <Td>{formatText(usoDe(row.declaracion))}</Td>
-                  <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
-                  <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_afecto)}</Td>
+                  <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
+                  <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                   <Td>
                     {/* straight to what is declared of the predio: características, niveles and obras */}
-                    <Link to={`/declaraciones/${row.declaracion.id}?tab=caracteristicas`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                    <Link to={`/declaraciones/${row.declaracion.id}?tab=caracteristicas`} className="inline-flex items-center gap-1 text-link hover:underline">
                       <FileText className="size-3.5" />
                       {row.declaracion.numero_declaracion ?? 'Abrir'}
                     </Link>
@@ -111,8 +112,8 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
             <tfoot>
               <tr className="font-semibold">
                 <Td colSpan={4}>Total {anio}</Td>
-                <Td className="text-right tabular-nums">{formatMoney(totales?.autoavaluo)}</Td>
-                <Td className="text-right tabular-nums">{formatMoney(totales?.valor_afecto)}</Td>
+                <Td {...NUMERICA}>{formatMoney(totales?.autoavaluo)}</Td>
+                <Td {...NUMERICA}>{formatMoney(totales?.valor_afecto)}</Td>
                 <Td />
               </tr>
             </tfoot>
@@ -145,7 +146,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
           rows.length === 0 ? (
             <EmptyState title="Aún no hay declaraciones" />
           ) : (
-            <Table>
+            <Table data-ui="table">
               <thead>
                 <tr>
                   <Th>Año</Th>
@@ -154,8 +155,8 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                   <Th>Sec.</Th>
                   <Th>Uso</Th>
                   <Th>Estado</Th>
-                  <Th className="text-right">Autoavalúo</Th>
-                  <Th className="text-right">Valor afecto</Th>
+                  <Th {...NUMERICA}>Autoavalúo</Th>
+                  <Th {...NUMERICA}>Valor afecto</Th>
                   {/* relative: the sr-only text is absolute and would otherwise widen the page past the table's scroll */}
                   <Th className="relative">
                     <span className="sr-only">Acciones</span>
@@ -167,7 +168,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                   <tr key={row.declaracion.id} className="hover:bg-surface-muted/60">
                     <Td className="font-medium">{row.declaracion.anio}</Td>
                     <Td>
-                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-link hover:underline">
                         <FileText className="size-3.5" />
                         {row.declaracion.numero_declaracion ?? 'Abrir'}
                       </Link>
@@ -179,8 +180,8 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                     <Td>{formatText(row.declaracion.secuencia_uso)}</Td>
                     <Td>{formatText(usoDe(row.declaracion))}</Td>
                     <Td>{formatText(row.declaracion.estado_construccion)}</Td>
-                    <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
-                    <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_afecto)}</Td>
+                    <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
+                    <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                     <Td className="text-right">
                       <Button asChild variant="ghost" size="icon">
                         <Link to={`/declaraciones/${row.declaracion.id}`} aria-label={`Editar declaración ${row.declaracion.anio}`}>

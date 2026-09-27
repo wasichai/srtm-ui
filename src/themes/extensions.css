@@ -1,0 +1,37 @@
+/* extension tokens: colours the base theme (@wasichai/ui/theme.css) has no token for. every theme gets them
+   derived from its own base tokens, so light and dark only gain utilities; a theme may set them exactly.
+   the mixes are in oklab: in oklch a tint towards the near-grey surface drifts to the surface's hue
+   (light "success-soft" would come out blue and "danger-soft" lilac).
+   the soft tints stay light enough for text-danger on bg-danger-soft (@wasichai/documents uses it) to keep 4.5:1 */
+:root {
+    --success-soft: color-mix(in oklab, var(--success) 8%, var(--surface));
+    --danger-soft: color-mix(in oklab, var(--danger) 8%, var(--surface));
+    --notice: color-mix(in oklab, var(--warning) 70%, var(--ink));
+    --notice-soft: color-mix(in oklab, var(--warning-soft) 50%, var(--surface));
+    --link: var(--brand);
+    --focus: var(--brand);
+    --table-head: var(--surface-muted);
+    --table-stripe: color-mix(in oklab, var(--surface-muted) 50%, var(--surface));
+    --line: var(--border);
+    /* the one fixed value: the orange the lotes map has always used for the selection, in every theme */
+    --map-selected: #e8590c;
+}
+
+@theme inline {
+    --color-success-soft: var(--success-soft);
+    --color-danger-soft: var(--danger-soft);
+    --color-notice: var(--notice);
+    --color-notice-soft: var(--notice-soft);
+    --color-link: var(--link);
+    --color-focus: var(--focus);
+    --color-table-head: var(--table-head);
+    --color-table-stripe: var(--table-stripe);
+    --color-line: var(--line);
+    --color-map-selected: var(--map-selected);
+}
+
+/* the bare `rounded` reads --radius, which tailwind inlines as 0.25rem; as a theme variable (same value) a theme can
+   change it like --radius-sm..xl */
+@theme {
+    --radius: 0.25rem;
+}

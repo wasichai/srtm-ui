@@ -1,16 +1,30 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { GeoJSONSource, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapLayerMouseEvent, type StyleSpecification } from 'maplibre-gl'
+import {
+  GeoJSONSource,
+  Map as MapLibreMap,
+  NavigationControl,
+  ScaleControl,
+  setWorkerUrl,
+  type ExpressionSpecification,
+  type MapLayerMouseEvent,
+  type StyleSpecification
+} from 'maplibre-gl'
 import { useEffect, useRef, useState } from 'react'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { boundsOf, PERENE, recordIdOf, type Geometry } from './geo'
 import type { LotesMapProps } from './LotesMap'
 import { mapWorkerUrl } from './mapWorker'
+import { mapColors, watchTheme, type MapColors } from './themeColors'
 
 const LOTES = 'srtm-lotes'
+const FILL = 'srtm-lotes-fill'
+const LINE = 'srtm-lotes-line'
 const PUNTO = 'srtm-punto'
-const BRAND = '#3b5bdb'
-const SELECTED = '#e8590c'
+const IS_SELECTED: ExpressionSpecification = ['boolean', ['get', '__selected'], false]
+
+// a lote in the theme's brand, the selected one in its map-selected
+const loteColor = ({ brand, selected }: MapColors): ExpressionSpecification => ['case', IS_SELECTED, selected, brand]
 
 // the OpenStreetMap raster tiles: needs internet. a municipal WMS/WMTS can replace it here
 const STYLE: StyleSpecification = {
@@ -46,24 +60,27 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
     })
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
     instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
+    let stopTheme: (() => void) | undefined
     instance.on('load', () => {
+      // the colours of the active theme (themeColors.ts)
+      const colors = mapColors()
       instance.addSource(LOTES, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       instance.addLayer({
-        id: `${LOTES}-fill`,
+        id: FILL,
         type: 'fill',
         source: LOTES,
         paint: {
-          'fill-color': ['case', ['boolean', ['get', '__selected'], false], SELECTED, BRAND],
-          'fill-opacity': ['case', ['boolean', ['get', '__selected'], false], 0.45, 0.18]
+          'fill-color': loteColor(colors),
+          'fill-opacity': ['case', IS_SELECTED, 0.45, 0.18]
         }
       })
       instance.addLayer({
-        id: `${LOTES}-line`,
+        id: LINE,
         type: 'line',
         source: LOTES,
         paint: {
-          'line-color': ['case', ['boolean', ['get', '__selected'], false], SELECTED, BRAND],
-          'line-width': ['case', ['boolean', ['get', '__selected'], false], 3, 1.5]
+          'line-color': loteColor(colors),
+          'line-width': ['case', IS_SELECTED, 3, 1.5]
         }
       })
       instance.addSource(PUNTO, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -71,16 +88,24 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
         id: PUNTO,
         type: 'circle',
         source: PUNTO,
-        paint: { 'circle-radius': 7, 'circle-color': SELECTED, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }
+        paint: { 'circle-radius': 7, 'circle-color': colors.selected, 'circle-stroke-color': colors.surface, 'circle-stroke-width': 2 }
       })
-      instance.on('click', `${LOTES}-fill`, (event: MapLayerMouseEvent) => {
+      // another theme repaints the same layers: the map, its lotes, the one picked and the view stay
+      stopTheme = watchTheme(() => {
+        const next = mapColors()
+        instance.setPaintProperty(FILL, 'fill-color', loteColor(next))
+        instance.setPaintProperty(LINE, 'line-color', loteColor(next))
+        instance.setPaintProperty(PUNTO, 'circle-color', next.selected)
+        instance.setPaintProperty(PUNTO, 'circle-stroke-color', next.surface)
+      })
+      instance.on('click', FILL, (event: MapLayerMouseEvent) => {
         const id = event.features?.[0]?.properties?.__rid
         if (typeof id === 'string' && !latest.current.draw) latest.current.onSelect?.(id)
       })
-      instance.on('mouseenter', `${LOTES}-fill`, () => {
+      instance.on('mouseenter', FILL, () => {
         if (latest.current.onSelect) instance.getCanvas().style.cursor = 'pointer'
       })
-      instance.on('mouseleave', `${LOTES}-fill`, () => {
+      instance.on('mouseleave', FILL, () => {
         instance.getCanvas().style.cursor = ''
       })
       instance.on('click', (event) => {
@@ -106,6 +131,7 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
       }
     })
     return () => {
+      stopTheme?.()
       resize.disconnect()
       terra.current?.stop()
       terra.current = null

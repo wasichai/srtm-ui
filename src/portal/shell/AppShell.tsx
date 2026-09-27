@@ -1,86 +1,58 @@
-import { useTheme } from '@wasichai/core'
 import { cn } from '@wasichai/ui'
-import { Home, Landmark, LogOut, MapPinned, Menu, Monitor, Moon, Search, Settings, Sun, Users } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { Landmark, LogOut, Menu, Settings } from 'lucide-react'
+import { NavLink, Outlet } from 'react-router'
+import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
+import { ENTIDAD, GlobalSearch, initials, NAV, type LateralProps, type PiezasShell } from './comun'
+import { usePanelLateral } from './panelLateral'
+import { PortalShell } from './PortalShell'
 import { TabBar } from './TabBar'
+import { ThemeMenu } from './ThemeMenu'
 
-const NAV = [
-  { to: '/', label: 'Inicio', icon: Home, end: true },
-  { to: '/contribuyentes', label: 'Contribuyentes', icon: Users, end: false },
-  { to: '/predios', label: 'Predios', icon: MapPinned, end: false }
-]
-
-// gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs over the content
+// gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs over the content.
+// under the portal-tributario theme it delegates to PortalShell (brand bar, the tree of trámites, footer). one frame for
+// both, each variant bringing its pieces: a theme switch redraws the bar, the lateral and the footer but keeps the
+// page (and whatever is not saved in it) and the theme menu, with its focus and its error, mounted
 export function AppShell() {
-  const { user, isAdmin, signOut } = useSession()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { isAdmin } = useSession()
+  const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
+  const { Marca, Sesion, Lateral, Pie } = piezas
+  const lateral = usePanelLateral(piezas.plegable === true)
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-surface px-4">
+      <header className={piezas.cabecera}>
         <button
+          ref={lateral.boton}
           type="button"
-          className="rounded p-1.5 text-ink-muted hover:bg-surface-muted md:hidden"
-          aria-label="Menú"
-          aria-expanded={menuOpen}
+          className={piezas.botonMenu}
+          // a foldable lateral folds itself: this one only brings it back
+          hidden={piezas.plegable && lateral.abierto}
+          aria-label={piezas.plegable ? 'Mostrar el menú' : 'Menú'}
+          aria-expanded={lateral.abierto}
           aria-controls="sidebar"
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={lateral.alternar}
         >
           <Menu className="size-5" />
         </button>
-        <div className="flex items-center gap-2">
-          <Landmark className="size-5 text-brand" />
-          <span className="text-sm font-bold text-brand">Rentas municipales</span>
-          <span className="hidden truncate text-sm text-ink-muted lg:inline">Municipalidad Distrital de Perené</span>
-        </div>
+        <Marca />
         <div className="flex flex-1 justify-center">
-          <GlobalSearch />
+          <GlobalSearch inputClassName={piezas.busqueda} />
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <a
-              href="/admin"
-              className="hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink sm:flex"
-            >
+            <a href="/admin" className={piezas.admin}>
               <Settings className="size-4" />
               Administración
             </a>
           )}
-          <ThemeButton />
-          <span title={user?.email} className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand-strong">
-            {initials(user?.displayName ?? user?.email ?? '')}
-          </span>
-          <button type="button" onClick={signOut} aria-label="Cerrar sesión" className="rounded p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink">
-            <LogOut className="size-4" />
-          </button>
+          <ThemeMenu className={piezas.tema} />
+          <Sesion />
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
-        <nav id="sidebar" aria-label="Secciones" className={cn('w-60 shrink-0 bg-shell p-3 md:block', menuOpen ? 'block' : 'hidden')}>
-          <ul className="space-y-1">
-            {NAV.map(({ to, label, icon: Icon, end }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  end={end}
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm',
-                      isActive ? 'bg-shell-ink/10 text-shell-ink' : 'text-shell-muted hover:bg-shell-ink/5 hover:text-shell-ink'
-                    )
-                  }
-                >
-                  <Icon className="size-4" />
-                  {label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} onPlegar={lateral.plegar} />
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
           <Breadcrumbs />
@@ -89,68 +61,67 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      {Pie && <Pie />}
     </div>
   )
 }
 
-function GlobalSearch() {
-  const navigate = useNavigate()
-  const [text, setText] = useState('')
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    const q = text.trim()
-    if (q) navigate(`/buscar?q=${encodeURIComponent(q)}`)
-  }
+const CLASICO: PiezasShell = {
+  cabecera: 'flex h-14 shrink-0 items-center gap-4 border-b border-border bg-surface px-4',
+  botonMenu: 'rounded p-1.5 text-ink-muted hover:bg-surface-muted md:hidden',
+  admin: 'hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink sm:flex',
+  Marca: MarcaClasica,
+  Sesion: SesionClasica,
+  Lateral: LateralClasico
+}
+
+function MarcaClasica() {
   return (
-    <form role="search" onSubmit={submit} className="relative w-full max-w-md">
-      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
-      <input
-        type="search"
-        aria-label="Buscar"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="DNI, RUC, nombre, código o dirección"
-        className="h-9 w-full rounded-md border border-border bg-surface-muted pr-3 pl-9 text-sm placeholder:text-ink-muted/70 focus:bg-surface"
-      />
-    </form>
+    <div className="flex items-center gap-2">
+      <Landmark className="size-5 text-brand" />
+      <span className="text-sm font-bold text-brand">Rentas municipales</span>
+      <span className="hidden truncate text-sm text-ink-muted lg:inline">{ENTIDAD}</span>
+    </div>
   )
 }
 
-const THEMES = [
-  { id: 'system', label: 'Sistema', icon: Monitor },
-  { id: 'light', label: 'Claro', icon: Sun },
-  { id: 'dark', label: 'Oscuro', icon: Moon }
-]
-
-// cycles system, light, dark. core's ThemeProvider applies it and stores it for the user, so the admin follows
-function ThemeButton() {
-  const { preference, setPreference } = useTheme()
-  const [error, setError] = useState<string | null>(null)
-  const index = Math.max(
-    0,
-    THEMES.findIndex((theme) => theme.id === preference)
-  )
-  const current = THEMES[index]
-  const next = THEMES[(index + 1) % THEMES.length]
-  const Icon = current.icon
-  const change = () => {
-    setError(null)
-    setPreference(next.id).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))
-  }
+function SesionClasica() {
+  const { user, signOut } = useSession()
   return (
-    <button
-      type="button"
-      onClick={change}
-      aria-label={`Tema: ${current.label}. Cambiar a ${next.label.toLowerCase()}`}
-      title={error ?? `Tema: ${current.label}`}
-      className={cn('rounded p-1.5 hover:bg-surface-muted hover:text-ink', error ? 'text-danger' : 'text-ink-muted')}
-    >
-      <Icon className="size-4" />
-    </button>
+    <>
+      <span title={user?.email} className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand-strong">
+        {initials(user?.displayName ?? user?.email ?? '')}
+      </span>
+      <button type="button" onClick={signOut} aria-label="Cerrar sesión" className="rounded p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink">
+        <LogOut className="size-4" />
+      </button>
+    </>
   )
 }
 
-function initials(name: string): string {
-  const parts = name.split(/[\s@.]+/).filter(Boolean)
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?'
+function LateralClasico({ abierto, onNavegar }: LateralProps) {
+  return (
+    <nav id="sidebar" aria-label="Secciones" className={cn('w-60 shrink-0 bg-shell p-3 md:block', abierto ? 'block' : 'hidden')}>
+      <ul className="space-y-1">
+        {NAV.map(({ to, label, icon: Icon, end }) => (
+          <li key={to}>
+            <NavLink
+              to={to}
+              end={end}
+              onClick={onNavegar}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm',
+                  isActive ? 'bg-shell-ink/10 text-shell-ink' : 'text-shell-muted hover:bg-shell-ink/5 hover:text-shell-ink'
+                )
+              }
+            >
+              <Icon className="size-4" />
+              {label}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
 }

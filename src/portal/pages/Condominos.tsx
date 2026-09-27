@@ -7,6 +7,7 @@ import { rentas } from '../api'
 import { anulada } from '../components/EstadoBadge'
 import { currentYear, formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
+import { NUMERICA } from '../components/tabla'
 import { RecordForm } from '../forms/RecordForm'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { SectionSpec } from '../forms/specs'
@@ -75,16 +76,16 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
           rows.length === 0 ? (
             <EmptyState title="No se encontraron resultados" />
           ) : (
-            <Table>
+            <Table data-ui="table">
               <thead>
                 <tr>
                   <Th>Titular</Th>
                   <Th>Condición</Th>
-                  <Th className="text-right">Autoavalúo</Th>
-                  <Th className="text-right">% de propiedad</Th>
-                  <Th className="text-right">Valor condominio</Th>
-                  <Th className="text-right">Deducción</Th>
-                  <Th className="text-right">Valor afecto</Th>
+                  <Th {...NUMERICA}>Autoavalúo</Th>
+                  <Th {...NUMERICA}>% de propiedad</Th>
+                  <Th {...NUMERICA}>Valor condominio</Th>
+                  <Th {...NUMERICA}>Deducción</Th>
+                  <Th {...NUMERICA}>Valor afecto</Th>
                   <Th>DJ</Th>
                   {/* relative: the sr-only text is absolute and would otherwise widen the page past the table's scroll */}
                   <Th className="relative">
@@ -98,7 +99,7 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
                     <Td>
                       {row.contribuyente ? (
                         <div>
-                          <Link to={`/contribuyentes/${row.contribuyente.id}`} className="font-medium text-brand hover:underline">
+                          <Link to={`/contribuyentes/${row.contribuyente.id}`} className="font-medium text-link hover:underline">
                             {row.contribuyente.nombre_completo}
                           </Link>
                           <p className="text-xs text-ink-muted">
@@ -110,13 +111,13 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
                       )}
                     </Td>
                     <Td>{row.declaracion.condicion_propiedad ? <Badge>{row.declaracion.condicion_propiedad}</Badge> : '—'}</Td>
-                    <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
-                    <Td className="text-right tabular-nums">{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
-                    <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_condominio)}</Td>
-                    <Td className="text-right tabular-nums">{formatMoney(row.declaracion.deduccion)}</Td>
-                    <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_afecto)}</Td>
+                    <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
+                    <Td {...NUMERICA}>{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
+                    <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_condominio)}</Td>
+                    <Td {...NUMERICA}>{formatMoney(row.declaracion.deduccion)}</Td>
+                    <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                     <Td>
-                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-link hover:underline">
                         <FileText className="size-3.5" />
                         {row.declaracion.numero_declaracion ?? 'Abrir'}
                       </Link>
@@ -136,9 +137,9 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
               <tfoot>
                 <tr className="font-semibold">
                   <Td colSpan={2}>Total {anio}</Td>
-                  <Td className="text-right tabular-nums">{formatMoney(totales?.autoavaluo)}</Td>
+                  <Td {...NUMERICA}>{formatMoney(totales?.autoavaluo)}</Td>
                   <Td colSpan={3} />
-                  <Td className="text-right tabular-nums">{formatMoney(totales?.valor_afecto)}</Td>
+                  <Td {...NUMERICA}>{formatMoney(totales?.valor_afecto)}</Td>
                   <Td colSpan={2} />
                 </tr>
               </tfoot>
