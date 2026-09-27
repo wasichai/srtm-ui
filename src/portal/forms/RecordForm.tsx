@@ -3,6 +3,7 @@ import { Button, cn, Input, Label, Textarea } from '@wasichai/ui'
 import { useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
 import { formatDate, MESES } from '../components/format'
+import { parseGeometry } from '../components/geo'
 import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, selectClass, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
@@ -22,7 +23,7 @@ interface RecordFormProps<T> {
   formId?: string
   hideActions?: boolean
   // below the sections, with the live values (the domicilio's address preview)
-  footer?: (values: FormValues) => ReactNode
+  footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
 }
 
 // one form for every entity. the backend validates again and names the field it rejects:
@@ -68,11 +69,12 @@ export function RecordForm<T extends object>({
       {children}
       {sections.map((section) => (
         <fieldset key={section.title}>
-          <legend className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink uppercase">
+          <legend className="mb-3 flex w-full items-center gap-2 text-xs font-semibold tracking-wide text-ink uppercase">
             {section.number !== undefined && (
               <span className="flex size-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-on-brand">{section.number}</span>
             )}
             {section.title}
+            {section.action && <span className="ml-auto font-normal tracking-normal normal-case">{section.action(form)}</span>}
           </legend>
           <div className={GRID}>
             {section.fields.map((field) => (
@@ -81,7 +83,7 @@ export function RecordForm<T extends object>({
           </div>
         </fieldset>
       ))}
-      {footer?.(values)}
+      {footer?.(values, form)}
       {formError && (
         <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
           {formError}
@@ -105,7 +107,7 @@ export function RecordForm<T extends object>({
 
 function Field({ field, form, values, options }: { field: FieldSpec; form: UseFormReturn<FormValues>; values: FormValues; options?: string[] }) {
   const rules: RegisterOptions<FormValues, string> = { validate: (value, all) => validate(field, value ?? '', all) }
-  if (field.kind === 'hidden') {
+  if (field.kind === 'hidden' || field.kind === 'geometry') {
     // no input: a custom field (the ubigeo cascade) writes it. registered so `required` still holds
     form.register(field.name, rules)
     return null
@@ -224,7 +226,14 @@ function validate(field: FieldSpec, value: string, values: FormValues): true | s
 }
 
 function toForm(fields: FieldSpec[], values: Record<string, unknown>): FormValues {
-  return Object.fromEntries(fields.map((f) => [f.name, values[f.name] === null || values[f.name] === undefined ? '' : String(values[f.name])]))
+  return Object.fromEntries(
+    fields.map((f) => {
+      const value = values[f.name]
+      if (value === null || value === undefined) return [f.name, '']
+      // a geometry rides in its hidden field as geojson text
+      return [f.name, f.kind === 'geometry' ? JSON.stringify(value) : String(value)]
+    })
+  )
 }
 
 // blanks go back as null: the backend then clears the field instead of keeping the old value
@@ -236,6 +245,7 @@ function fromForm(fields: FieldSpec[], values: FormValues): Record<string, unkno
       if (f.kind === 'integer' || f.kind === 'month') return [f.name, Number.parseInt(text, 10)]
       if (f.kind === 'decimal' || f.kind === 'money') return [f.name, Number(text.replace(',', '.'))]
       if (f.kind === 'boolean') return [f.name, text === 'true']
+      if (f.kind === 'geometry') return [f.name, parseGeometry(text)]
       return [f.name, text]
     })
   )

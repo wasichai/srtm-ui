@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import type { UseFormReturn } from 'react-hook-form'
 import type { HijosApi } from '../api'
 import { EstadoBadge } from '../components/EstadoBadge'
+import { Paginador } from '../components/Paginador'
 import { EmptyState, QueryState } from '../components/QueryState'
 import { RecordForm } from '../forms/RecordForm'
 import type { FormValues, SectionSpec } from '../forms/specs'
@@ -30,7 +32,7 @@ interface HijosPanelProps<T> {
   // a new one's starting values, knowing the rows already there (the first domicilio is the fiscal one)
   nuevo: (rows: T[]) => T
   aviso?: (rows: T[]) => ReactNode
-  footer?: (values: FormValues) => ReactNode
+  footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
   wide?: boolean
 }
 
@@ -59,7 +61,12 @@ export function HijosPanel<T extends Hijo>({
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<T | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
+  // the srtm pages its lists: "Filas 10", "1 a 10 de 23 registros"
+  const [page, setPage] = useState(0)
+  const [size, setSize] = useState(10)
   const rows = query.data ?? []
+  const last = Math.max(0, Math.ceil(rows.length / size) - 1)
+  const shown = rows.slice(Math.min(page, last) * size, (Math.min(page, last) + 1) * size)
 
   const close = () => {
     setEditing(null)
@@ -115,31 +122,46 @@ export function HijosPanel<T extends Hijo>({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, index) => (
-                  <tr key={row.id} className="hover:bg-surface-muted/60">
-                    {columns.map((c) => (
-                      <Td key={c.label} className={c.className}>
-                        {c.render(row, index)}
+                {shown.map((row, shownIndex) => {
+                  const index = Math.min(page, last) * size + shownIndex
+                  return (
+                    <tr key={row.id} className="hover:bg-surface-muted/60">
+                      {columns.map((c) => (
+                        <Td key={c.label} className={c.className}>
+                          {c.render(row, index)}
+                        </Td>
+                      ))}
+                      <Td>
+                        <EstadoBadge estado={row.estado} />
                       </Td>
-                    ))}
-                    <Td>
-                      <EstadoBadge estado={row.estado} />
-                    </Td>
-                    <Td className="text-right whitespace-nowrap">
-                      <Button variant="ghost" size="icon" aria-label={`Editar ${singular} ${index + 1}`} onClick={() => setEditing(row)}>
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label={`Eliminar ${singular} ${index + 1}`} onClick={() => setRemoving(row)}>
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </Td>
-                  </tr>
-                ))}
+                      <Td className="text-right whitespace-nowrap">
+                        <Button variant="ghost" size="icon" aria-label={`Editar ${singular} ${index + 1}`} onClick={() => setEditing(row)}>
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label={`Eliminar ${singular} ${index + 1}`} onClick={() => setRemoving(row)}>
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </Td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </Table>
           )
         }
       </QueryState>
+      {rows.length > 0 && (
+        <Paginador
+          page={Math.min(page, last)}
+          size={size}
+          total={rows.length}
+          onPage={setPage}
+          onSize={(next) => {
+            setSize(next)
+            setPage(0)
+          }}
+        />
+      )}
 
       {open && (
         <Dialog open onOpenChange={(o) => !o && close()}>

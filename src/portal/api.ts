@@ -1,5 +1,7 @@
 import { createApiClient } from '@wasichai/core'
+import type { Bbox, FeatureCollection } from './components/geo'
 import type {
+  CatastroFiscal,
   Catalogos,
   CategoriaValor,
   Contribuyente,
@@ -7,10 +9,12 @@ import type {
   Declaracion,
   DeclaracionDetalle,
   DeclaracionJurada,
+  FiltrosPredio,
   Domicilio,
   MedioContacto,
   NivelConstruccion,
   NuevaDeclaracion,
+  ObraCategoria,
   ObraComplementaria,
   OtroFrente,
   Pagina,
@@ -87,6 +91,17 @@ export const rentas = {
   obras: hijos<ObraComplementaria>('declaraciones', 'obras'),
   frentes: hijos<OtroFrente>('declaraciones', 'frentes'),
   categoriasValor: () => get<CategoriaValor[]>('/srtm/categorias-valor'),
+  obrasCategorias: () => get<ObraCategoria[]>('/srtm/obras-categorias'),
+
+  // "buscar predios" (page 13): the padrón (tributario) and the catastro fiscal, same filters
+  buscarPredios: (filtros: FiltrosPredio, page: number, size: number) => get<Pagina<Predio>>(`/srtm/predios/buscar${query({ ...filtros, page, size })}`),
+  buscarCatastro: (filtros: FiltrosPredio, page: number, size: number) => get<Pagina<CatastroFiscal>>(`/srtm/catastro${query({ ...filtros, page, size })}`),
+  crearLote: (body: CatastroFiscal) => send<CatastroFiscal>('POST', '/srtm/catastro', body),
+  actualizarLote: (id: string, body: CatastroFiscal) => send<CatastroFiscal>('PUT', `/srtm/catastro/${id}`, body),
+
+  // the lotes on the map: wasichai-gis's features of an object, in the visible area
+  lotes: (objeto: 'predio' | 'catastro_fiscal', bbox: Bbox) =>
+    get<FeatureCollection>(`/gis/objects/${objeto}/features${query({ bbox: bbox.map((n) => n.toFixed(6)).join(','), geometry: 'lote_geom', limit: 500 })}`),
 
   predios: (q: string, page: number, size = PAGE_SIZE) => get<Pagina<Predio>>(`/srtm/predios${query({ q, page, size })}`),
   predio: (id: string, anio: number) => get<PredioFicha>(`/srtm/predios/${id}${query({ anio })}`),

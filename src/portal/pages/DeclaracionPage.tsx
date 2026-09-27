@@ -5,7 +5,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { QueryState } from '../components/QueryState'
-import { CARACTERISTICAS_SECTIONS, DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
+import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { dataFields, type SectionSpec } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
@@ -54,7 +54,13 @@ function DeclaracionPage({ id }: { id: string }) {
 
   const guardarDeclaracion = (sections: SectionSpec[]) => async (values: Declaracion) => {
     const latest = await rentas.declaracionJurada(id)
-    return rentas.actualizarDeclaracion(id, sobre(latest.declaracion, values, camposDe(sections)))
+    const campos = camposDe(sections).filter((c) => !DATOS_DEL_PREDIO.includes(c))
+    await rentas.actualizarDeclaracion(id, sobre(latest.declaracion, values, campos))
+    // the tipo de predio shown in datos del predio is the predio's
+    const condicion = (values as unknown as Record<string, unknown>).condicion
+    if (condicion !== undefined && condicion !== latest.predio.condicion) {
+      await rentas.actualizarPredio(latest.predio.id!, { ...latest.predio, condicion: (condicion as string | null) ?? null })
+    }
   }
   const guardarPredio = async (values: Predio) => {
     const latest = await rentas.declaracionJurada(id)
@@ -63,7 +69,15 @@ function DeclaracionPage({ id }: { id: string }) {
 
   return (
     <QueryState query={ficha}>
-      {({ declaracion, predio, contribuyente }) => {
+      {({ declaracion, predio, contribuyente, actualizado }) => {
+        // datos del predio shows a few of the predio's fields beside the declaration's
+        const datos = {
+          ...declaracion,
+          codigo_predio: predio.codigo,
+          numero_registro: predio.numero_registro,
+          condicion: predio.condicion,
+          fecha_actualizacion: actualizado ?? null
+        }
         const condominio = declaracion.condicion_propiedad === 'CONDOMINO'
         return (
           <div className="space-y-5">
@@ -98,8 +112,8 @@ function DeclaracionPage({ id }: { id: string }) {
                       <div className="px-6 pt-5">
                         <DatosPanel
                           sections={DJ_DATOS_SECTIONS}
-                          values={declaracion}
-                          options={catalogos.data?.declaracion_predial}
+                          values={datos}
+                          options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
                           save={guardarDeclaracion(DJ_DATOS_SECTIONS)}
                         />
                       </div>

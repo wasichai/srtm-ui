@@ -8,7 +8,7 @@ import { UbigeoFields } from './UbigeoFields'
 // the srtm screens lay a section out on six columns; span says how many a field takes
 
 export type FieldKind =
-  'text' | 'longtext' | 'enum' | 'integer' | 'decimal' | 'money' | 'date' | 'month' | 'boolean' | 'multi' | 'suggest' | 'hidden' | 'custom'
+  'text' | 'longtext' | 'enum' | 'integer' | 'decimal' | 'money' | 'date' | 'month' | 'boolean' | 'multi' | 'suggest' | 'hidden' | 'geometry' | 'custom'
 
 // the form's values, as the inputs hold them (strings)
 export type FormValues = Record<string, string>
@@ -39,6 +39,8 @@ export interface SectionSpec {
   title: string
   // the srtm's numbered circles: 1 datos de la declaración, 2 identificación...
   number?: number
+  // on the right of the section's title (the ubicación's "buscar predios")
+  action?: (form: UseFormReturn<FormValues>) => ReactNode
   fields: FieldSpec[]
 }
 
@@ -172,7 +174,9 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
       { name: 'ingreso', label: 'Ingreso / Puerta', span: 1 },
       { name: 'sub_zona', label: 'Sub zona', kind: 'enum', span: 1 },
       { name: 'descripcion_sub_zona', label: 'Descripción de la sub zona', span: 1 },
-      { name: 'referencia', label: 'Referencia', span: 4 }
+      { name: 'referencia', label: 'Referencia', span: 4 },
+      // "buscar dirección": the point marked on the map
+      { name: 'ubicacion', label: 'Ubicación', kind: 'geometry' }
     ]
   }
 ]
@@ -228,30 +232,6 @@ export const SUSTENTO_SECTIONS: SectionSpec[] = [
       { name: 'tipo_presentacion', label: 'Tipo de presentación', kind: 'enum', required: true, span: 3 },
       { name: 'folios', label: 'Folios', kind: 'integer', span: 1 },
       { name: 'estado', label: 'Estado', kind: 'enum', span: 2 }
-    ]
-  }
-]
-
-export const PREDIO_SECTIONS: SectionSpec[] = [
-  {
-    title: 'Identificación',
-    fields: [
-      { name: 'codigo', label: 'Código', required: true, span: 2 },
-      { name: 'condicion', label: 'Condición', kind: 'enum', span: 2 },
-      { name: 'sector_catastral', label: 'Sector catastral', span: 2 },
-      { name: 'manzana_catastral', label: 'Manzana catastral', span: 2 }
-    ]
-  },
-  {
-    title: 'Ubicación',
-    fields: [
-      { name: 'direccion', label: 'Dirección', required: true, span: 6 },
-      { name: 'via', label: 'Vía', span: 6 },
-      { name: 'numero', label: 'Número', span: 2 },
-      { name: 'manzana', label: 'Manzana', span: 2 },
-      { name: 'lote', label: 'Lote', span: 2 },
-      { name: 'habilitacion_urbana', label: 'Habilitación urbana', span: 6 },
-      { name: 'ubicacion_area_verde', label: 'Ubicación respecto a áreas verdes', kind: 'enum', span: 6 }
     ]
   }
 ]
