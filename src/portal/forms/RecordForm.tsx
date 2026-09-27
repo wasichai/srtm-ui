@@ -123,7 +123,8 @@ function Field({ field, form, values, options }: { field: FieldSpec; form: UseFo
 
   let control: ReactNode
   if (!enabled && !field.readOnly) {
-    control = <Input {...aria} disabled value="" placeholder={field.kind === 'date' ? 'DD/MM/AAAA' : field.kind === 'enum' ? 'SELECCIONAR' : ''} />
+    const shown = field.greyedValue?.(values, form.formState.defaultValues as FormValues) ?? ''
+    control = <Input {...aria} disabled value={shown} placeholder={field.kind === 'date' ? 'DD/MM/AAAA' : field.kind === 'enum' ? 'SELECCIONAR' : ''} />
   } else if (field.readOnly) {
     const value = values[field.name] ?? ''
     // empty stays empty, so the placeholder ("(AUTOGENERADO)") shows instead of a dash
@@ -222,7 +223,7 @@ function validate(field: FieldSpec, value: string, values: FormValues): true | s
   if (!text) return isRequired(field, values) ? 'Este dato es obligatorio' : true
   if (field.kind === 'integer') return /^-?\d+$/.test(text) || 'Debe ser un número entero'
   if (field.kind === 'decimal' || field.kind === 'money') return /^-?\d+([.,]\d+)?$/.test(text) || 'Debe ser un número'
-  return true
+  return field.validate ? field.validate(text, values) : true
 }
 
 function toForm(fields: FieldSpec[], values: Record<string, unknown>): FormValues {
