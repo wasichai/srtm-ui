@@ -3,11 +3,12 @@ import { Badge, Button, Table, Td, Th } from '@wasichai/ui'
 import { FileText, Pencil, Plus } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { rentas } from '../api'
-import { MarcaAnulada } from '../components/EstadoBadge'
+import { anulada, MarcaAnulada } from '../components/EstadoBadge'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
 import { NUMERICA } from '../components/tabla'
 import type { Declaracion, DeclaracionDetalle } from '../types'
+import { PuDeFila } from './VerPdf'
 
 // the declarations of a ficha. side is the ficha's own kind; each row shows the other side.
 // a declaration is created and edited only in the full declaración jurada (/declaraciones/:id)
@@ -83,6 +84,8 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                 <Th {...NUMERICA}>Autoavalúo</Th>
                 <Th {...NUMERICA}>Valor afecto</Th>
                 <Th>DJ</Th>
+                {/* the PU of each predio, as this contribuyente's (wasichai/srtm-ui#61) */}
+                {side === 'contribuyente' && <Th>PU</Th>}
               </tr>
             </thead>
             <tbody>
@@ -106,6 +109,13 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                       {row.declaracion.numero_declaracion ?? 'Abrir'}
                     </Link>
                   </Td>
+                  {side === 'contribuyente' && (
+                    <Td>
+                      {row.predio?.id && !anulada(row.declaracion) && (
+                        <PuDeFila predio={row.predio.id} codigo={row.predio.codigo ?? row.predio.id} contribuyente={id} anio={anio} />
+                      )}
+                    </Td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -115,6 +125,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                 <Td {...NUMERICA}>{formatMoney(totales?.autoavaluo)}</Td>
                 <Td {...NUMERICA}>{formatMoney(totales?.valor_afecto)}</Td>
                 <Td />
+                {side === 'contribuyente' && <Td />}
               </tr>
             </tfoot>
           </Table>
