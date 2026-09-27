@@ -1,4 +1,4 @@
-import { createApiClient } from '@wasichai/core'
+import { ApiError, createApiClient, getActiveApiClient } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
   CatastroFiscal,
@@ -12,6 +12,8 @@ import type {
   DeclaracionJurada,
   FiltrosPredio,
   Domicilio,
+  Emision,
+  FormatoEmision,
   MedioContacto,
   NivelConstruccion,
   NuevaDeclaracion,
@@ -48,6 +50,28 @@ function query(params: Record<string, string | number | null | undefined>): stri
 
 export const PAGE_SIZE = 20
 
+// a file the backend sends (a pdf, a zip), with the name its Content-Disposition gives. a refusal comes as problem+json:
+// an ApiError that carries its fields too (title, detail, errors and whatever else the route adds)
+async function blob(path: string): Promise<{ blob: Blob; filename: string }> {
+  const active = getActiveApiClient()
+  const token = active.getToken()
+  const response = await fetch(`${active.baseUrl}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!response.ok) {
+    const text = await response.text()
+    let problem: Record<string, unknown> = {}
+    try {
+      problem = text ? (JSON.parse(text) as Record<string, unknown>) : {}
+    } catch {
+      // not problem+json: the status says it all
+    }
+    const message = String(problem.detail ?? problem.title ?? response.statusText)
+    throw Object.assign(new ApiError(response.status, message, (problem.errors as ApiError['violations']) ?? []), problem, { status: response.status })
+  }
+  const disposition = response.headers.get('Content-Disposition') ?? ''
+  const filename = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1] ?? /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? path.split('/').pop() ?? 'archivo'
+  return { blob: await response.blob(), filename: decodeURIComponent(filename) }
+}
+
 // a list that hangs from a record (a contribuyente, a declaración): listed and added under it, changed and removed
 // by its own id
 export interface HijosApi<T> {
@@ -67,6 +91,7 @@ function hijos<T>(parent: 'contribuyentes' | 'declaraciones', segment: string): 
 }
 
 export const rentas = {
+  blob,
   resumen: () => get<Resumen>('/srtm/resumen'),
   catalogos: () => get<Catalogos>('/srtm/catalogos'),
   ubigeos: () => get<Ubigeo[]>('/srtm/ubigeos'),
@@ -124,5 +149,9 @@ export const rentas = {
   // refused (409, with why) while it has declaraciones
   borrarPredio: (id: string) => remove(`/srtm/predios/${id}`),
 
-  actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body)
+  actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body),
+
+  // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
+  emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),
+  emitir: (anio: number, formato: FormatoEmision) => send<Emision>('POST', '/srtm/emisiones', { anio, formato })
 }

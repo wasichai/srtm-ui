@@ -483,3 +483,25 @@ export type CatalogKey =
   | 'catastro_fiscal'
   | 'obra_categoria'
 export type Catalogos = Partial<Record<CatalogKey, Record<string, string[]>>>
+
+// the emisión masiva of a year's HR and PU (GET /srtm/emisiones): a job the backend runs in the background
+export type FormatoEmision = 'PDF' | 'ZIP'
+export type EstadoEmision = 'PENDIENTE' | 'EN_PROCESO' | 'TERMINADA' | 'FALLIDA'
+
+export interface Emision {
+  id: string
+  anio: number
+  formato: FormatoEmision
+  estado: EstadoEmision
+  total: number
+  procesados: number
+  // the contribuyentes it could not emit; the rest are in the file
+  errores: { contribuyente: string; mensaje: string }[]
+  archivo: string | null
+  // bytes of the file
+  tamano: number | null
+  // why a FALLIDA one failed
+  mensaje: string | null
+  iniciado: string | null
+  terminado: string | null
+}
