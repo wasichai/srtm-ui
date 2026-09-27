@@ -16,8 +16,8 @@ export function FieldGrid({ sections, values }: { sections: SectionSpec[]; value
         )
         if (shown.length === 0) return null
         return (
-          <section key={section.title}>
-            <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink uppercase">
+          <section key={section.title} data-ui="ficha-seccion">
+            <h3 data-ui="ficha-titulo" className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink uppercase">
               {section.number !== undefined && (
                 <span className="flex size-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-on-brand">{section.number}</span>
               )}

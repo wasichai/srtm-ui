@@ -237,4 +237,14 @@ describe('the read-only ficha', () => {
     expect(ficha).toHaveAttribute('data-ui', 'ficha-kv')
     expect(within(ficha!).getByText('QUISPE').tagName).toBe('DD')
   })
+
+  it('marks each section and its title, so the theme can draw them as a group with its title on the border', () => {
+    renderIn(
+      'light',
+      <FieldGrid sections={[{ title: 'Datos', number: 1, fields: [{ name: 'nombres', label: 'Nombres', kind: 'text' }] }]} values={{ nombres: 'JUAN' }} />
+    )
+    const titulo = screen.getByRole('heading', { name: /Datos/ })
+    expect(titulo).toHaveAttribute('data-ui', 'ficha-titulo')
+    expect(titulo.closest('section')).toHaveAttribute('data-ui', 'ficha-seccion')
+  })
 })

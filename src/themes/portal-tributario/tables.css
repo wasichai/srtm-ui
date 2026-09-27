@@ -5,6 +5,11 @@
    #ccc, #f0f0f0) are the prototype's */
 
 /* header: bold sentence case over the table-head grey, on one line */
+/* a code in a cell (predio, dj) stays on one line: 01-01-0001 must not break at its hyphens */
+[data-theme='portal-tributario'] [data-ui='table'] td a {
+    white-space: nowrap;
+}
+
 [data-theme='portal-tributario'] [data-ui='table'] th {
     padding: 11px 18px;
     font-size: 13.5px;
@@ -45,6 +50,32 @@
 
 /* the read-only ficha as key-value rows: label beside value, alternate rows striped. one column, two from 64rem
    (tailwind's lg), where a row is every other pair of items. the items drop their spans so rows stay even */
+/* a read-only section is a group with its title on the border, like the form's fieldsets (tabs.css): the prototype's
+   "ficha del contribuyente". the title is an h3 (fieldsets are for controls), so it sits on the border by position */
+[data-theme='portal-tributario'] [data-ui='ficha-seccion'] {
+    position: relative;
+    margin-top: 10px;
+    padding: 18px 6px 6px;
+    border: 1px solid var(--brand);
+    border-radius: 3px;
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-titulo'] {
+    position: absolute;
+    top: 0;
+    left: 12px;
+    margin: 0;
+    padding-inline: 6px;
+    transform: translateY(-50%);
+    background-color: var(--surface);
+    color: var(--shell);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: normal;
+    line-height: 1.45;
+    text-transform: none;
+}
+
 [data-theme='portal-tributario'] [data-ui='ficha-kv'] {
     display: grid;
     grid-template-columns: minmax(0, 1fr);

@@ -123,6 +123,21 @@ describe('tables.css of portal-tributario', () => {
     }
   })
 
+  it('draws a read-only section as a group with its title on the border, like the form fieldsets', () => {
+    const seccion = rule(tables, `${PORTAL} [data-ui='ficha-seccion']`)
+    expect(seccion.get('border')).toBe('1px solid var(--brand)')
+    expect(seccion.get('border-radius')).toBe('3px')
+    const titulo = rule(tables, `${PORTAL} [data-ui='ficha-titulo']`)
+    expect(titulo.get('color')).toBe('var(--shell)')
+    expect(titulo.get('font-size')).toBe('15px')
+    expect(titulo.get('text-transform')).toBe('none')
+    expect(titulo.get('background-color')).toBe('var(--surface)')
+  })
+
+  it('keeps the codes in a cell on one line', () => {
+    expect(rule(tables, `${TABLE} td a`).get('white-space')).toBe('nowrap')
+  })
+
   it('writes the paginators as a muted note under the table', () => {
     const paginador = rule(tables, `${PORTAL} [data-ui='paginador']`)
     expect(paginador.get('background-color')).toBe('var(--table-stripe)')
