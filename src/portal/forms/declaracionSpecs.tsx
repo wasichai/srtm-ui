@@ -2,6 +2,7 @@ import { rentas } from '../api'
 import { BuscarPrediosButton } from './BuscarPrediosButton'
 import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
+import { DireccionPreview } from './DireccionPreview'
 import { ObraCategoriaField } from './ObraCategoriaField'
 import type { SectionSpec } from './specs'
 import { UbigeoFields } from './UbigeoFields'
@@ -149,8 +150,10 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
         { name: 'partida_registral', label: 'Partida registral', span: 1 },
         { name: 'ubicacion_area_verde', label: 'Ubicación respecto a áreas verdes', kind: 'enum', span: 3 },
         { name: 'referencia', label: 'Referencia', span: 3 },
-        // built by the backend from the fields above
-        { name: 'direccion', label: 'Dirección', kind: 'hidden' }
+        // built by the backend from the fields above (a predio of the padrón keeps its text until it has a tipo de vía):
+        // what is stored, then what saving will write
+        { name: 'direccion', label: 'Dirección actual', readOnly: true, span: 6, when: (v) => Boolean(v.direccion) },
+        { name: 'direccion_vista', label: 'Vista previa de la dirección', kind: 'custom', span: 6, render: (form) => <DireccionPreview form={form} /> }
       ]
     },
     {
