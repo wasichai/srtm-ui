@@ -39,7 +39,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
       { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', ...DEL_PREDIO, span: 2 },
       { name: 'condicion', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
       { name: 'numero_declaracion', label: 'Número de declaración jurada', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
-      { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACION JURADA', span: 2 },
+      { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACIÓN JURADA', span: 2 },
       { name: 'medio_presentacion', label: 'Medio de presentación', kind: 'enum', required: true, span: 2 },
       { name: 'modificacion_oficio', label: 'Modificación de oficio', kind: 'enum', readOnly: true, span: 2 },
       { name: 'motivo', label: 'Motivo de modificación', kind: 'enum', readOnly: true, placeholder: 'INSCRIPCION', span: 2 },
@@ -255,7 +255,7 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
     fields: [
       { name: 'tipo_nivel', label: 'Tipo de nivel', kind: 'enum', required: true, span: 2 },
       { name: 'numero_piso', label: 'Número de piso', kind: 'integer', required: true, span: 1 },
-      { name: 'anio_construccion', label: 'Año construcción', kind: 'integer', required: true, span: 1 },
+      { name: 'anio_construccion', label: 'Año construcción', kind: 'year', required: true, span: 1 },
       { name: 'mes_construccion', label: 'Mes construcción', kind: 'month', required: true, span: 2 },
       { name: 'material', label: 'Material predominante', kind: 'enum', required: true, span: 2 },
       { name: 'estado_conservacion', label: 'Estado de conservación', kind: 'enum', required: true, span: 2 },
@@ -282,7 +282,7 @@ export const OBRA_SECTIONS: SectionSpec[] = [
       { name: 'material', label: 'Material predominante', kind: 'enum', required: true, span: 2 },
       { name: 'tipo_obra', label: 'Tipo de obra', kind: 'enum', required: true, span: 2 },
       { name: 'estado_conservacion', label: 'Estado de conservación', kind: 'enum', required: true, span: 2 },
-      { name: 'anio_construccion', label: 'Año construcción', kind: 'integer', required: true, span: 2 },
+      { name: 'anio_construccion', label: 'Año construcción', kind: 'year', required: true, span: 2 },
       { name: 'mes_construccion', label: 'Mes construcción', kind: 'month', required: true, span: 2 },
       {
         name: 'categoria_catalogo',

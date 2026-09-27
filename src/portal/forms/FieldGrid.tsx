@@ -1,5 +1,6 @@
 import { cn } from '@wasichai/ui'
 import { formatDate, formatMoney, formatNumber, formatText, MESES } from '../components/format'
+import { etiqueta } from './etiquetas'
 import { AUTO, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, SPAN } from './styles'
 
@@ -45,5 +46,14 @@ function display(field: FieldSpec, value: unknown, values: FormValues): string {
   if (field.kind === 'date') return formatDate(value as string | null)
   if (field.kind === 'month') return typeof value === 'number' ? (MESES[value - 1] ?? String(value)) : '—'
   if (field.kind === 'boolean') return value === true ? 'SÍ' : value === false ? 'NO' : '—'
+  if (field.kind === 'enum' && typeof value === 'string') return formatText(etiqueta(field.name, value))
+  // several options, kept as one text
+  if (field.kind === 'multi' && typeof value === 'string')
+    return formatText(
+      value
+        .split(',')
+        .map((v) => etiqueta(field.name, v.trim()))
+        .join(', ')
+    )
   return formatText(value as string | number | null)
 }

@@ -9,7 +9,22 @@ import { UbigeoFields } from './UbigeoFields'
 // the srtm screens lay a section out on six columns; span says how many a field takes
 
 export type FieldKind =
-  'text' | 'longtext' | 'enum' | 'integer' | 'decimal' | 'money' | 'date' | 'month' | 'boolean' | 'multi' | 'suggest' | 'hidden' | 'geometry' | 'custom'
+  | 'text'
+  | 'longtext'
+  | 'enum'
+  | 'integer'
+  | 'decimal'
+  | 'money'
+  | 'date'
+  | 'month'
+  // picked from this year down to 1900 (the srtm's año de construcción)
+  | 'year'
+  | 'boolean'
+  | 'multi'
+  | 'suggest'
+  | 'hidden'
+  | 'geometry'
+  | 'custom'
 
 // the form's values, as the inputs hold them (strings)
 export type FormValues = Record<string, string>
@@ -84,7 +99,7 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
       { name: 'numero_declaracion', label: 'Número de declaración', kind: 'integer', readOnly: true, placeholder: AUTO, span: 1 },
       { name: 'fecha_registro', label: 'Fecha del registro', kind: 'date', readOnly: true, placeholder: AUTO, span: 1 },
       { name: 'motivo', label: 'Motivo', kind: 'enum', readOnly: true, placeholder: 'INSCRIPCION', span: 1 },
-      { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACION JURADA', span: 1 },
+      { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACIÓN JURADA', span: 1 },
       { name: 'medio_presentacion', label: 'Medio de presentación', kind: 'enum', required: true, span: 1 },
       { name: 'modificacion_oficio', label: 'Modificación de oficio', kind: 'enum', readOnly: true, span: 1 },
       { name: 'fecha_presentacion', label: 'Fecha de presentación', kind: 'date', required: true, span: 1 },
