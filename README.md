@@ -60,8 +60,22 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Un error de validación del backend se muestra debajo de su campo.
 
 - **Tema**: sistema, claro, oscuro o *Portal tributario*, en el menú de tema de la cabecera.
+  - *Portal tributario* reproduce un portal tributario en línea: barra de marca azul, menú de trámites en árbol, pasos
+    en galón en los asistentes, banda de título, pestañas carpeta, fieldsets con la leyenda sobre el borde, tablas
+    cebra y alertas en cuatro tonos, en Arial 14px. A diferencia de claro y oscuro, cambia también la estructura del
+    portal; el admin solo toma sus colores. Detalle, decisiones y contrastes en `src/themes/portal-tributario/README.md`.
   - Los temas propios de srtm-ui están en `src/themes` (`SRTM_THEMES`); el portal y el admin los registran en core.
   - `useVarianteTema()` dice si el tema aplicado pide la estructura de portal (`'portal'`) o la clásica (`'clasico'`).
+  - **Añadir un tema**:
+    1. Un bloque `[data-theme='<id>']` en `src/themes/<id>/tokens.css` con los 18 tokens de `@wasichai/ui` y los de
+       extensión de `src/themes/extensions.css` (todos: un tema parcial hereda valores sueltos, ADR-034), importado
+       desde `src/themes/<id>/index.css` y este desde `src/index.css`.
+    2. Su entrada en `SRTM_THEMES` (`{ id, label, colorScheme }`, `id` en `^[a-z0-9-]{1,40}$`), su etiqueta en el
+       módulo i18n `srtm` de `src/themes/index.ts` y su `colorScheme` en el script de `index.html` (un test comprueba
+       que coinciden).
+    3. Si cambia la forma de los componentes, parciales `src/themes/<id>/*.css` fuera de capas, bajo el selector del
+       tema, enganchados en los atributos `data-ui` (catálogo en el README del tema). Si cambia la estructura, una
+       variante en `useVarianteTema`.
   - El portal monta los providers de core (`WasichaiProviders`), así que la sesión y el tema son los mismos que en el
     admin.
   - La elección se guarda en `srtm.theme` y, con un backend que tenga `PUT /auth/me/preferences` (wasichai ≥ 0.2.0),

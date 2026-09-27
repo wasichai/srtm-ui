@@ -1,10 +1,22 @@
 # Tema `portal-tributario`
 
-Tema claro basado en el prototipo "Sistema de Rentas y Tributos" (épica wasichai/srtm-ui#44): barra de marca azul,
-Arial 14px, radios de 3px, tablas cebra y alertas estilo Bootstrap 3. Solo tiene modo claro.
+Tema claro basado en el prototipo "Sistema de Rentas y Tributos" (épica wasichai/srtm-ui#44), un portal tributario
+en línea: barra de marca azul, menú de trámites en árbol, pasos en galón, formularios en grupos con la leyenda sobre
+el borde, tablas cebra y alertas estilo Bootstrap 3, en Arial 14px con radios de 3px. Solo tiene modo claro.
 
-Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la consola:
-`document.documentElement.dataset.theme = 'portal-tributario'`.
+Se elige en el menú de tema de la cabecera ("Portal tributario"), en el portal o en el admin: la preferencia es la
+misma para los dos. A diferencia de light y dark, **cambia también la estructura** del portal: con este tema,
+`useVarianteTema()` vale `'portal'` y el shell, las fichas y los asistentes dibujan las piezas del prototipo (ver
+[Estructura de portal](#estructura-de-portal-variante-portal)). El admin (`WasichaiApp`) solo toma los tokens.
+
+Tiene tres capas, de la más genérica a la más propia:
+
+1. **Tokens** (`tokens.css`): los 18 de `@wasichai/ui` más los de extensión, la fuente y los radios. Solo con esto,
+   todo lo que dibujan `@wasichai/*` y el portal ya toma los colores y la forma del tema.
+2. **Parciales de componentes** (`controls.css`, `tables.css`, `tabs.css`, `alerts.css`…): la forma exacta del
+   prototipo, enganchada en atributos `data-ui` que ponen los componentes. Light y dark no cambian.
+3. **Estructura de portal**: componentes React que solo se dibujan con la variante `portal` (barra de marca, árbol,
+   pasos en galón, banda de título), con tokens y un parcial para lo que no tiene token.
 
 ## Archivos
 
@@ -14,7 +26,7 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/extensions.css`                 | Tokens de extensión en `:root` para todos los temas y sus utilidades `--color-*`.                                                  |
 | `src/themes/portal-tributario/index.css`    | Punto de entrada del tema. Cada issue añade aquí el `@import` de su parcial.                                                       |
 | `src/themes/portal-tributario/tokens.css`   | El bloque `[data-theme='portal-tributario']` (tokens, fuente y radios), el cuerpo a 14px y el foco.                                |
-| `src/themes/portal-tributario/tables.css`   | Tablas cebra con fila de total, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-49)).                   |
+| `src/themes/portal-tributario/tables.css`   | Tablas cebra con fila de total, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-tablescss-49)).         |
 | `src/themes/portal-tributario/shell.css`    | El panel del menú de sesión de la barra de marca: borde, sombra y cabecera del prototipo (ver [Shell](#shell-52)).                 |
 | `src/themes/tokens.test.tsx`                | Tests de completitud, extensión y contraste WCAG.                                                                                  |
 | `src/themes/tablas.test.tsx`                | Tests de `tables.css`: importado tras los tokens, fuera de capas, solo bajo el tema y con los valores del prototipo.               |
@@ -169,6 +181,59 @@ En light y dark solo aparecen los atributos.
   paginadores los pinta `tables.css` (#49). Cuando wasichai/wasichai-ui#12 ponga ganchos `data-slot` en la librería, `controles.tsx` sobrará y los
   selectores pasarán a esos ganchos.
 
+### Tablas, ficha clave-valor y estados (`tables.css`, #49)
+
+`tables.css` va fuera de capas (gana a las utilidades de Tailwind) y todas sus reglas empiezan por
+`[data-theme='portal-tributario']`, así que light y dark no cambian. Se engancha en atributos que ponen los
+componentes:
+
+| Gancho                           | Dónde                                                                                            | Qué pinta el tema                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `data-ui="table"`                | el `<table>` de cada `Table` del portal (`Table` de `@wasichai/ui` reenvía los `data-*`)         | `th`, `td`, filas cebra, hover y `tfoot`                                            |
+| `data-numeric`                   | las celdas de cifras (`NUMERICA` de `src/portal/components/tabla.ts`, `numeric` en `HijosPanel`) | derecha y `tabular-nums` (los componentes ya lo hacen en todos los temas)           |
+| `data-ui="ficha-kv"`             | el `<dl>` de `FieldGrid`, la ficha en solo lectura (Datos del contribuyente, del predio…)        | filas clave-valor alternas                                                          |
+| `data-tono="verde\|ambar\|rojo"` | una fila (hijo directo) de un `data-ui="ficha-kv"`                                               | la fila entera con el fondo de la alerta y el texto del tono                        |
+| `data-ui="paginador"`            | `Paginador` y `Pagination`                                                                       | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
+| `data-ui="estado"` + `data-tono` | `EstadoBadge` con la variante `portal`                                                           | nada: el tono lo ponen sus clases (`text-success`…); el gancho queda para el tema   |
+
+**Tablas.** Como el prototipo:
+
+- `th`: `padding: 11px 18px`, 13.5px en negrita `#444` sobre `var(--table-head)`, sin mayúsculas ni salto de línea,
+  con `border-bottom: 1px solid #DDD`.
+- `td`: 14.5px, `padding: 10px 18px` (el prototipo no lo fija; 18px alinea con la cabecera) y
+  `border-bottom: 1px solid var(--line)`. El color del texto no se toca: `td` ya es `ink` (`#333`) y así una fila
+  seleccionada conserva su `text-brand-strong`.
+- Cebra `var(--table-stripe)` en las filas pares. Las filas con `aria-selected="true"` (listas de `HijosPanel` y
+  del buscador de predios) quedan fuera y conservan su `bg-brand-soft`. El prototipo no define hover y el tema no
+  añade uno: sobre un gris que se note (`#F0F0F0`), el texto `warning` bajaría a 4.25:1.
+- `tfoot td`: negrita sobre `var(--surface-muted)` (`#F6F6F6`) con `border-top: 2px solid #DDD`.
+- Las líneas finas de fila usan `var(--line)` (`#E4E4E4`), como pide el issue, en vez del `#F0F0F0` del prototipo;
+  la de la cabecera y la del total conservan el `#DDD`, más marcado.
+
+**Estados por tono.** `tonoDeEstado(texto)` (`src/portal/components/tono.ts`) aplica la regla `tono()` del
+prototipo, sin distinguir mayúsculas ni tildes: `vencida|coactiva|denegado|inactivo|baja` → rojo,
+`por vencer|en trámite|observ` → ámbar, `activo|habido|vigente|cancelada|conforme` → verde. Añade `anulad` (rojo)
+y `no habido` (rojo, porque contiene `habido`). Con la variante `portal` de `useVarianteTema()`, `EstadoBadge` es
+texto de 12.5px en negrita con `text-success`, `text-warning` o `text-danger` y `data-tono`; en light y dark sigue la
+pastilla. El texto es el mismo. Los tonos pasan AA sobre blanco y cebra (`src/themes/tablas.test.tsx`).
+`text-warning` sobre `brand-soft` (fila seleccionada) queda en 4.44:1, pero `EstadoBadge` solo escribe Activo,
+Vigente, Anulada e Inactivo, que son verde o rojo (5.00 y 5.36:1 sobre `brand-soft`).
+
+**Ficha clave-valor.** Bajo el tema, el `<dl>` de `FieldGrid` pasa de la rejilla de 6 columnas a filas clave-valor
+(etiqueta al 40 %, 13.5px `ink-muted`; valor 14.5px `ink`) en una columna, y en dos desde 64rem (el `lg` de
+Tailwind). La cebra va por fila visual: pares en una columna, `4n+3` y `4n+4` en dos. Por eso los campos pierden su
+`col-span` bajo el tema. `FieldGrid` no pone `data-tono` en ninguna fila (hoy ningún campo lo necesita); el estilo
+queda listo para una ficha que lo marque, por ejemplo con `tonoDeEstado`.
+
+**Secciones de la ficha.** Cada sección de `FieldGrid` (`data-ui="ficha-seccion"`) se dibuja bajo el tema como los
+fieldsets del formulario: borde de 1px `brand`, radio 3px y el título (`data-ui="ficha-titulo"`, un `h3`) sobre el
+borde, en `shell`, 15px en negrita y sin mayúsculas, como la "ficha del contribuyente" del prototipo. En las tablas,
+un código enlazado (el predio `01-01-0001`) no se corta en los guiones.
+
+**Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
+hover `#F0F0F0`) con CSS propio, acotado a `[data-ui='paginador']`. Podría delegarse en los ganchos de botón de
+`controls.css` si los paginadores pasan a `controles.tsx`.
+
 ### Pestañas y fieldsets (`tabs.css`, #48)
 
 Ganchos: `data-ui="ficha-tabs"` (el contenedor de `FichaTabs`), `"ficha-tab"` (cada pestaña, con su
@@ -220,6 +285,139 @@ inicio: "Atención.", "Sr. contribuyente,"), `children`, `onCerrar?` (un botón 
   `danger-soft`/`danger`, `notice-soft`/`notice`; su contraste lo comprueba `tokens.test.tsx`) con el borde de
   Bootstrap 3 en hex (`#D6E9C6`, `#FAEBCC`, `#EBCCD1`, `#E8E0C4`). El botón de cerrar queda arriba a la derecha.
 - El toast queda fuera de alcance: el portal no tiene toasts.
+
+## Tokens de extensión en light y dark
+
+`extensions.css` los deriva en `:root` de los tokens base del tema activo. `data-theme` está en `<html>`, así que
+se recalculan con cada tema. La única excepción es `map-selected`:
+
+| Token           | Derivación                           | light ≈       | dark ≈        |
+| --------------- | ------------------------------------ | ------------- | ------------- |
+| `success-soft`  | `success` 8 % sobre `surface`        | `#EBF3EF`     | `#1D2629`     |
+| `danger-soft`   | `danger` 8 % sobre `surface`         | `#FAECEC`     | `#272127`     |
+| `notice`        | `warning` 70 % con `ink`             | `#6B431A`     | `#E9C487`     |
+| `notice-soft`   | `warning-soft` 50 % sobre `surface`  | `#FDF4E3`     | `#33281B`     |
+| `link`, `focus` | `brand`                              | igual que hoy | igual que hoy |
+| `table-head`    | `surface-muted`                      | igual que hoy | igual que hoy |
+| `table-stripe`  | `surface-muted` 50 % sobre `surface` | `#F7F8FA`     | `#13161D`     |
+| `line`          | `border`                             | igual que hoy | igual que hoy |
+| `map-selected`  | fijo, `#E8590C`                      | igual que hoy | igual que hoy |
+
+- **`oklab` y no `oklch`.** El issue pedía `color-mix(in oklch, …)`, pero en oklch el tono se interpola por el
+  círculo. Al teñir la `surface` casi gris, el resultado toma su tono: en light `success-soft` saldría azul (`#EBF2F9`)
+  y `danger-soft` lila (`#EBF0FC`). En oklab el tinte conserva el tono del color de origen.
+- **Efecto visible en light y dark.** `@wasichai/documents` ya usa `bg-danger-soft` en sus mensajes de error
+  (`RecordDocuments` y `DocumentTypesPage`). Hasta ahora esa clase no generaba nada. Con el token, esos mensajes
+  tienen un fondo rojo muy suave, que es lo que el componente quería mostrar. El 8 % está elegido para que
+  `text-danger` sobre él siga en AA: 4.66:1 en light y 5.06:1 en dark (antes 5.20 y 5.57 sobre `surface`).
+- En light, `success` ya se queda en 3.92:1 sobre `surface` con la paleta base de wasichai. Una alerta de éxito en
+  light o dark (#50) necesita un texto más oscuro que `success`.
+- **`map-selected` no se deriva.** En `:root` vale `#E8590C`, el naranja que el mapa de lotes usa hoy para la
+  selección. Así el mapa de light y dark no cambia cuando #51 pase a leer la variable. `portal-tributario` lo fija
+  en `#C9302C`.
+
+## Tailwind 4
+
+Comprobado en el CSS de `yarn build`:
+
+- `rounded-sm`, `rounded-md`, `rounded-lg` y `rounded-card` generan `border-radius: var(--radius-*)`.
+- `rounded` a secas generaba `0.25rem` fijo, porque Tailwind trae `--radius` como `inline`. `extensions.css` lo
+  declara en `@theme { --radius: 0.25rem }`: el valor es el mismo, pero ahora `rounded` genera `var(--radius)` y el
+  tema lo cambia a 3px. Así cambian también las clases `rounded` de `@wasichai/*` y de la app. `rounded-full` no
+  cambia.
+- La fuente del documento sale de `html { font-family: var(--default-font-family, …) }`, con
+  `--default-font-family: var(--font-sans)` en `:root`. `data-theme` está en `<html>`, así que el `--font-sans` del
+  tema se aplica a todo. `font-sans` como clase también genera `var(--font-sans)`.
+- Las variables del tema son CSS normal, no `@theme`, así que siempre se emiten completas bajo
+  `[data-theme=portal-tributario]`. `@theme` solo emite las que se usan, pero eso no afecta a este bloque.
+- `body` y `*:focus-visible` van en `@layer base`, junto a los valores por defecto de `@wasichai/ui` que sustituyen.
+  Así, las utilidades propias de un componente siguen ganando. Por ejemplo, el contorno interior de las filas de
+  `HijosPanel` (`focus-visible:-outline-offset-2`) se mantiene. Los parciales de componentes van fuera de capas.
+- El tamaño base de 14px se aplica a `body`, no a `html`. Los espaciados en `rem` no cambian, y las clases `text-*`
+  (`text-sm` = 14px) siguen con su tamaño.
+
+## Estructura de portal (variante `portal`)
+
+`useVarianteTema()` (`src/themes/useVarianteTema.ts`) lee el tema que core aplicó: `'portal'` con
+`portal-tributario`, `'clasico'` con light, dark, el del sistema o un id desconocido. Lo que sigue solo se dibuja con
+`'portal'`; con `'clasico'` el DOM es el de siempre. Son componentes con tokens y utilidades, y cada uno tiene su
+parcial para los valores sin token.
+
+| Pieza                        | Componente                                                | Dónde                                                                        |
+| ---------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Barra de marca, sesión y pie | `PortalShell.tsx`, `MenuSesion.tsx` (`src/portal/shell/`) | el marco de `AppShell`, en todas las pantallas                               |
+| Menú de trámites en árbol    | `ArbolNav.tsx`, `navTree.ts`, `LateralPortal.tsx`         | el lateral de `AppShell`                                                     |
+| Pasos en galón e instrucción | `PasosAsistente`, `PasosGalon`, `BarraInstruccion`        | Nuevo contribuyente, ficha con `?inscripcion=1`, Nueva DJ, DJ `?asistente=1` |
+| Banda de título              | `BandaTitulo`, `CabeceraBanda`, `CabeceraAsistente`       | `FichaHeader` (fichas) y los asistentes                                      |
+| Estado como texto con tono   | `EstadoBadge` + `tonoDeEstado`                            | listas y fichas                                                              |
+
+El marco (`AppShell`) es el mismo para todos los temas: al cambiar de tema no se desmonta la página abierta ni se
+pierde lo escrito en un formulario.
+
+### Shell (#52)
+
+Con este tema, `useVarianteTema()` vale `'portal'` y `AppShell` (`src/portal/shell/`) dibuja en su marco las piezas
+de `PortalShell`: la barra de marca (escudo, título, búsqueda, Administración, tema y `MenuSesion`), un lateral claro
+con el árbol de trámites (`LateralPortal`, ver [Menú en árbol](#menú-en-árbol-53)) y el pie institucional. Son componentes con tokens y
+utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`, `text-link`, `bg-table-stripe`, `border-line`…). El
+marco es el mismo para todos los temas: al cambiar de tema, la página abierta y el menú de tema no se desmontan.
+
+`shell.css` solo añade lo que no tiene token:
+
+| Regla                              | Valor                                                     | Origen en el prototipo   |
+| ---------------------------------- | --------------------------------------------------------- | ------------------------ |
+| `[data-ui='menu-sesion-panel']`    | borde `#C8D4DE`, sombra `0 6px 22px rgb(13 95 168 / 22%)` | panel del menú de sesión |
+| `[data-ui='menu-sesion-cabecera']` | fondo `#F6F9FC`, borde `#C8D4DE`                          | cabecera del panel       |
+
+Desvíos del prototipo, por contraste:
+
+- El círculo de las iniciales lleva un 15 % de blanco sobre `shell`, no un 22 %: el texto blanco da 4.73:1 (con el
+  22 %, 4.08:1).
+- El foco de los controles de la barra es blanco (`shell-ink`, 6.52:1). El azul de foco (`#1BA0D7`) sobre `shell` da
+  2.19:1.
+- La hoja activa del lateral: ver [Menú en árbol](#menú-en-árbol-53).
+
+### Menú en árbol (#53)
+
+Con la variante `portal`, el lateral (`LateralPortal`) es el árbol de trámites del prototipo: `ArbolNav`
+(`src/portal/shell/ArbolNav.tsx`), un componente genérico que recibe el árbol, con el contenido declarado en
+`NAV_TREE` (`src/portal/shell/navTree.ts`). El shell clásico de light y dark conserva `NAV` y su menú de móvil.
+
+- **Panel** de 292px (`w-73`) sobre `table-head` con borde `border`. Arriba, "Ir al inicio" (16px, `link`, con
+  `aria-current` en `/`) y el botón "Ocultar el menú"; debajo, el título "Mis trámites" (18px, negrita, `link`).
+- **Grupos**: `<button aria-expanded aria-controls>` de 17px en negrita `ink`, con un caret que gira 90° en 0.13s
+  (`transition-transform duration-130`, quieto con `prefers-reduced-motion`). Plegado, su lista lleva `hidden`.
+  **Subgrupos** (opcionales, ninguno hoy): 16px con sangría de 26px.
+- **Hojas**: 15px en `link`, sangría de 34px (48px bajo un subgrupo). La activa lleva `aria-current="page"`, borde
+  izquierdo de 4px `link`, negrita y un chevron. Una ruta hija marca su hoja: gana la más específica
+  (`/contribuyentes/123` → Buscar contribuyentes, `/contribuyentes/nuevo` → Nuevo contribuyente) y una hoja puede
+  declarar otras rutas de su pantalla (`tambienEn`: el asistente abierto desde la ficha marca Nueva declaración).
+  Las fichas sin hoja propia (una declaración, un lote) no marcan ninguna. Las hojas son `Link` con el
+  `aria-current` calculado, no `NavLink`: su coincidencia por prefijo marcaría a la vez Buscar y Nuevo contribuyente.
+- **Administración** va al final, solo para administradores, como un enlace normal (`<a href="/admin">`, otra app)
+  con la letra de los grupos y un ícono en el sitio del caret.
+- **Plegado**: el botón del panel lo oculta en cualquier ancho y aparece la hamburguesa de la barra de marca (30px,
+  borde `shell-ink` al 50 %), que lo reabre; es el mismo botón `aria-controls="sidebar"` del menú de móvil clásico
+  y el foco pasa de uno a otro. Con 1080px o menos, el panel empieza plegado y se pliega al elegir una hoja; en un
+  teléfono ocupa todo el ancho. En el prototipo el panel solo se oculta en pantallas estrechas (en las anchas la
+  hamburguesa aparecía sin ocultarlo); aquí se oculta siempre. Estos botones no son el `Button` de #47: los del
+  árbol son controles sin caja del prototipo y la hamburguesa es el botón del marco común (el clásico no cambia).
+- **Memoria**: el estado del panel y de los grupos se guarda en `sessionStorage['srtm.nav']` (con try/catch), como
+  las pestañas de trabajo. En una pantalla estrecha el panel empieza plegado aunque se guardara abierto, y el
+  plegado automático al navegar no se guarda.
+
+`nav.css` fija lo que el componente aproxima con tokens (`bg-ink/6` y `bg-ink/4` sobre `table-head`,
+`text-ink-muted` en los carets):
+
+| Regla                                         | Valor                            | Contraste                 |
+| --------------------------------------------- | -------------------------------- | ------------------------- |
+| `[data-ui='arbol-hoja'][aria-current='page']` | texto `#0D4D80`, fondo `#E6E6E6` | 7.04:1                    |
+| `[data-ui='arbol-hoja']:hover`                | fondo `#E9E9E9`                  | `link` encima: 4.70:1     |
+| `[data-ui='arbol-grupo']:hover`               | texto `#0D4D80`                  | 7.85:1 sobre `table-head` |
+| `[data-ui='arbol-caret']`                     | `#555555`                        | 6.66:1 sobre `table-head` |
+
+Tests: `src/portal/arbolNav.test.tsx` (árbol, hoja activa, plegado, memoria, pantalla estrecha, clásico intacto) y el
+bloque `nav.css` de `src/themes/parciales.test.tsx` (valores y contrastes).
 
 ### Pasos en galón y barra de instrucción (`pasos.css`, #54)
 
@@ -301,164 +499,36 @@ dibuja con la variante `portal`:
   autoavalúo, valor afecto) y en los asistentes los pasos en galón con su barra de instrucción (#54) siguen entre la
   cabecera y las pestañas, con el espacio de la página: banda → fila → (tarjetas) → (pasos) → pestañas.
 
-## Tokens de extensión en light y dark
+## Ganchos `data-ui`
 
-`extensions.css` los deriva en `:root` de los tokens base del tema activo. `data-theme` está en `<html>`, así que
-se recalculan con cada tema. La única excepción es `map-selected`:
+Los atributos que ponen los componentes para que un tema los pinte desde CSS. En light y dark no hacen nada.
 
-| Token           | Derivación                           | light ≈       | dark ≈        |
-| --------------- | ------------------------------------ | ------------- | ------------- |
-| `success-soft`  | `success` 8 % sobre `surface`        | `#EBF3EF`     | `#1D2629`     |
-| `danger-soft`   | `danger` 8 % sobre `surface`         | `#FAECEC`     | `#272127`     |
-| `notice`        | `warning` 70 % con `ink`             | `#6B431A`     | `#E9C487`     |
-| `notice-soft`   | `warning-soft` 50 % sobre `surface`  | `#FDF4E3`     | `#33281B`     |
-| `link`, `focus` | `brand`                              | igual que hoy | igual que hoy |
-| `table-head`    | `surface-muted`                      | igual que hoy | igual que hoy |
-| `table-stripe`  | `surface-muted` 50 % sobre `surface` | `#F7F8FA`     | `#13161D`     |
-| `line`          | `border`                             | igual que hoy | igual que hoy |
-| `map-selected`  | fijo, `#E8590C`                      | igual que hoy | igual que hoy |
+| Grupo             | Ganchos                                                                                                                                                                                             | Componente                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Controles         | `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select`                                                                                                                             | `controles.tsx`                                                           |
+| Formularios       | `record-fieldset`, `record-legend`, `record-number`, `record-title`, `record-action`, `record-acciones`, `record-nota`                                                                              | `RecordForm`                                                              |
+| Fichas            | `ficha-seccion`, `ficha-titulo`, `ficha-kv` (+ `data-tono` por fila)                                                                                                                                | `FieldGrid`                                                               |
+| Pestañas          | `ficha-tabs`, `ficha-tab`, `ficha-panel`, `workspace-tabs`, `workspace-tab`                                                                                                                         | `FichaTabs`, `TabBar`                                                     |
+| Tablas            | `table` (+ `data-numeric` en las celdas de cifras), `paginador`, `estado` (+ `data-tono`)                                                                                                           | páginas con `Table`, `Paginador`, `Pagination`, `EstadoBadge`             |
+| Alertas           | `alerta` (+ `data-tono`), `alerta-texto`, `alerta-cerrar`                                                                                                                                           | `Alerta`                                                                  |
+| Estructura portal | `menu-sesion-panel`, `menu-sesion-cabecera`, `arbol-nav`, `arbol-grupo`, `arbol-hoja`, `arbol-caret`, `pasos-galon`, `paso`, `barra-instruccion`, `banda-titulo`, `cabecera-banda`, `cabecera-fila` | `MenuSesion`, `ArbolNav`, `PasosGalon`, `BarraInstruccion`, `BandaTitulo` |
 
-- **`oklab` y no `oklch`.** El issue pedía `color-mix(in oklch, …)`, pero en oklch el tono se interpola por el
-  círculo. Al teñir la `surface` casi gris, el resultado toma su tono: en light `success-soft` saldría azul (`#EBF2F9`)
-  y `danger-soft` lila (`#EBF0FC`). En oklab el tinte conserva el tono del color de origen.
-- **Efecto visible en light y dark.** `@wasichai/documents` ya usa `bg-danger-soft` en sus mensajes de error
-  (`RecordDocuments` y `DocumentTypesPage`). Hasta ahora esa clase no generaba nada. Con el token, esos mensajes
-  tienen un fondo rojo muy suave, que es lo que el componente quería mostrar. El 8 % está elegido para que
-  `text-danger` sobre él siga en AA: 4.66:1 en light y 5.06:1 en dark (antes 5.20 y 5.57 sobre `surface`).
-- En light, `success` ya se queda en 3.92:1 sobre `surface` con la paleta base de wasichai. Una alerta de éxito en
-  light o dark (#50) necesita un texto más oscuro que `success`.
-- **`map-selected` no se deriva.** En `:root` vale `#E8590C`, el naranja que el mapa de lotes usa hoy para la
-  selección. Así el mapa de light y dark no cambia cuando #51 pase a leer la variable. `portal-tributario` lo fija
-  en `#C9302C`.
+## Qué subir a wasichai-ui
 
-## Tailwind 4
+Para wasichai/wasichai-ui#12, cuando se acepte el tema:
 
-Comprobado en el CSS de `yarn build`:
+1. **Tokens de extensión** (`src/themes/extensions.css`) a `packages/ui/src/theme.css`, con valor propio en light y
+   dark (hoy se derivan con `color-mix` en oklab; `map-selected` es fijo) y su `@theme inline`. El test de
+   `theme.test.ts` de la librería ya exige que dark defina los mismos tokens que light.
+2. **`--radius` en `@theme`** (no `inline`), para que `rounded` siga al tema, y la nota de que un tema puede redefinir
+   `--font-sans` y `--radius-*`.
+3. **El tema**, como hoja opcional (`@wasichai/ui/themes/portal-tributario.css`: `tokens.css` más los parciales) y su
+   `ThemeDefinition` exportada desde `@wasichai/core`, para que una app lo registre en `config.themes`.
+4. **Ganchos `data-slot`** en `Button` (`data-variant`, `data-size`), `Input`, `Textarea`, `Select`, `Table`, `Tabs` y
+   `Badge`: con ellos sobra `src/portal/components/controles.tsx` y los parciales pasan a esos selectores.
+5. **Componentes genéricos**, sin nada del SRTM: `Alerta`, `PasosGalon`, `BarraInstruccion`, `ArbolNav` (recibe el
+   árbol) y `BandaTitulo`. Y, si wasichai quiere shells por tema, la idea de `useVarianteTema`.
+6. **El script de arranque de `index.html`** con el mapa id → `colorScheme`, documentado para temas propios.
 
-- `rounded-sm`, `rounded-md`, `rounded-lg` y `rounded-card` generan `border-radius: var(--radius-*)`.
-- `rounded` a secas generaba `0.25rem` fijo, porque Tailwind trae `--radius` como `inline`. `extensions.css` lo
-  declara en `@theme { --radius: 0.25rem }`: el valor es el mismo, pero ahora `rounded` genera `var(--radius)` y el
-  tema lo cambia a 3px. Así cambian también las clases `rounded` de `@wasichai/*` y de la app. `rounded-full` no
-  cambia.
-- La fuente del documento sale de `html { font-family: var(--default-font-family, …) }`, con
-  `--default-font-family: var(--font-sans)` en `:root`. `data-theme` está en `<html>`, así que el `--font-sans` del
-  tema se aplica a todo. `font-sans` como clase también genera `var(--font-sans)`.
-- Las variables del tema son CSS normal, no `@theme`, así que siempre se emiten completas bajo
-  `[data-theme=portal-tributario]`. `@theme` solo emite las que se usan, pero eso no afecta a este bloque.
-- `body` y `*:focus-visible` van en `@layer base`, junto a los valores por defecto de `@wasichai/ui` que sustituyen.
-  Así, las utilidades propias de un componente siguen ganando. Por ejemplo, el contorno interior de las filas de
-  `HijosPanel` (`focus-visible:-outline-offset-2`) se mantiene. Los parciales de componentes van fuera de capas.
-- El tamaño base de 14px se aplica a `body`, no a `html`. Los espaciados en `rem` no cambian, y las clases `text-*`
-  (`text-sm` = 14px) siguen con su tamaño.
-
-## Tablas, ficha clave-valor y estados (#49)
-
-`tables.css` va fuera de capas (gana a las utilidades de Tailwind) y todas sus reglas empiezan por
-`[data-theme='portal-tributario']`, así que light y dark no cambian. Se engancha en atributos que ponen los
-componentes:
-
-| Gancho                           | Dónde                                                                                            | Qué pinta el tema                                                                   |
-| -------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `data-ui="table"`                | el `<table>` de cada `Table` del portal (`Table` de `@wasichai/ui` reenvía los `data-*`)         | `th`, `td`, filas cebra, hover y `tfoot`                                            |
-| `data-numeric`                   | las celdas de cifras (`NUMERICA` de `src/portal/components/tabla.ts`, `numeric` en `HijosPanel`) | derecha y `tabular-nums` (los componentes ya lo hacen en todos los temas)           |
-| `data-ui="ficha-kv"`             | el `<dl>` de `FieldGrid`, la ficha en solo lectura (Datos del contribuyente, del predio…)        | filas clave-valor alternas                                                          |
-| `data-tono="verde\|ambar\|rojo"` | una fila (hijo directo) de un `data-ui="ficha-kv"`                                               | la fila entera con el fondo de la alerta y el texto del tono                        |
-| `data-ui="paginador"`            | `Paginador` y `Pagination`                                                                       | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
-| `data-ui="estado"` + `data-tono` | `EstadoBadge` con la variante `portal`                                                           | nada: el tono lo ponen sus clases (`text-success`…); el gancho queda para el tema   |
-
-**Tablas.** Como el prototipo:
-
-- `th`: `padding: 11px 18px`, 13.5px en negrita `#444` sobre `var(--table-head)`, sin mayúsculas ni salto de línea,
-  con `border-bottom: 1px solid #DDD`.
-- `td`: 14.5px, `padding: 10px 18px` (el prototipo no lo fija; 18px alinea con la cabecera) y
-  `border-bottom: 1px solid var(--line)`. El color del texto no se toca: `td` ya es `ink` (`#333`) y así una fila
-  seleccionada conserva su `text-brand-strong`.
-- Cebra `var(--table-stripe)` en las filas pares. Las filas con `aria-selected="true"` (listas de `HijosPanel` y
-  del buscador de predios) quedan fuera y conservan su `bg-brand-soft`. El prototipo no define hover y el tema no
-  añade uno: sobre un gris que se note (`#F0F0F0`), el texto `warning` bajaría a 4.25:1.
-- `tfoot td`: negrita sobre `var(--surface-muted)` (`#F6F6F6`) con `border-top: 2px solid #DDD`.
-- Las líneas finas de fila usan `var(--line)` (`#E4E4E4`), como pide el issue, en vez del `#F0F0F0` del prototipo;
-  la de la cabecera y la del total conservan el `#DDD`, más marcado.
-
-**Estados por tono.** `tonoDeEstado(texto)` (`src/portal/components/tono.ts`) aplica la regla `tono()` del
-prototipo, sin distinguir mayúsculas ni tildes: `vencida|coactiva|denegado|inactivo|baja` → rojo,
-`por vencer|en trámite|observ` → ámbar, `activo|habido|vigente|cancelada|conforme` → verde. Añade `anulad` (rojo)
-y `no habido` (rojo, porque contiene `habido`). Con la variante `portal` de `useVarianteTema()`, `EstadoBadge` es
-texto de 12.5px en negrita con `text-success`, `text-warning` o `text-danger` y `data-tono`; en light y dark sigue la
-pastilla. El texto es el mismo. Los tonos pasan AA sobre blanco y cebra (`src/themes/tablas.test.tsx`).
-`text-warning` sobre `brand-soft` (fila seleccionada) queda en 4.44:1, pero `EstadoBadge` solo escribe Activo,
-Vigente, Anulada e Inactivo, que son verde o rojo (5.00 y 5.36:1 sobre `brand-soft`).
-
-**Ficha clave-valor.** Bajo el tema, el `<dl>` de `FieldGrid` pasa de la rejilla de 6 columnas a filas clave-valor
-(etiqueta al 40 %, 13.5px `ink-muted`; valor 14.5px `ink`) en una columna, y en dos desde 64rem (el `lg` de
-Tailwind). La cebra va por fila visual: pares en una columna, `4n+3` y `4n+4` en dos. Por eso los campos pierden su
-`col-span` bajo el tema. `FieldGrid` no pone `data-tono` en ninguna fila (hoy ningún campo lo necesita); el estilo
-queda listo para una ficha que lo marque, por ejemplo con `tonoDeEstado`.
-
-**Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
-hover `#F0F0F0`) con CSS propio. Cuando llegue #47 (`controls.css`) se puede delegar en sus ganchos de botón.
-
-## Shell (#52)
-
-Con este tema, `useVarianteTema()` vale `'portal'` y `AppShell` (`src/portal/shell/`) dibuja en su marco las piezas
-de `PortalShell`: la barra de marca (escudo, título, búsqueda, Administración, tema y `MenuSesion`), un lateral claro
-con el árbol de trámites (`LateralPortal`, ver [Menú en árbol](#menú-en-árbol-53)) y el pie institucional. Son componentes con tokens y
-utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`, `text-link`, `bg-table-stripe`, `border-line`…). El
-marco es el mismo para todos los temas: al cambiar de tema, la página abierta y el menú de tema no se desmontan.
-
-`shell.css` solo añade lo que no tiene token:
-
-| Regla                              | Valor                                                     | Origen en el prototipo   |
-| ---------------------------------- | --------------------------------------------------------- | ------------------------ |
-| `[data-ui='menu-sesion-panel']`    | borde `#C8D4DE`, sombra `0 6px 22px rgb(13 95 168 / 22%)` | panel del menú de sesión |
-| `[data-ui='menu-sesion-cabecera']` | fondo `#F6F9FC`, borde `#C8D4DE`                          | cabecera del panel       |
-
-Desvíos del prototipo, por contraste:
-
-- El círculo de las iniciales lleva un 15 % de blanco sobre `shell`, no un 22 %: el texto blanco da 4.73:1 (con el
-  22 %, 4.08:1).
-- El foco de los controles de la barra es blanco (`shell-ink`, 6.52:1). El azul de foco (`#1BA0D7`) sobre `shell` da
-  2.19:1.
-- La hoja activa del lateral: ver [Menú en árbol](#menú-en-árbol-53).
-
-## Menú en árbol (#53)
-
-Con la variante `portal`, el lateral (`LateralPortal`) es el árbol de trámites del prototipo: `ArbolNav`
-(`src/portal/shell/ArbolNav.tsx`), un componente genérico que recibe el árbol, con el contenido declarado en
-`NAV_TREE` (`src/portal/shell/navTree.ts`). El shell clásico de light y dark conserva `NAV` y su menú de móvil.
-
-- **Panel** de 292px (`w-73`) sobre `table-head` con borde `border`. Arriba, "Ir al inicio" (16px, `link`, con
-  `aria-current` en `/`) y el botón "Ocultar el menú"; debajo, el título "Mis trámites" (18px, negrita, `link`).
-- **Grupos**: `<button aria-expanded aria-controls>` de 17px en negrita `ink`, con un caret que gira 90° en 0.13s
-  (`transition-transform duration-130`, quieto con `prefers-reduced-motion`). Plegado, su lista lleva `hidden`.
-  **Subgrupos** (opcionales, ninguno hoy): 16px con sangría de 26px.
-- **Hojas**: 15px en `link`, sangría de 34px (48px bajo un subgrupo). La activa lleva `aria-current="page"`, borde
-  izquierdo de 4px `link`, negrita y un chevron. Una ruta hija marca su hoja: gana la más específica
-  (`/contribuyentes/123` → Buscar contribuyentes, `/contribuyentes/nuevo` → Nuevo contribuyente) y una hoja puede
-  declarar otras rutas de su pantalla (`tambienEn`: el asistente abierto desde la ficha marca Nueva declaración).
-  Las fichas sin hoja propia (una declaración, un lote) no marcan ninguna. Las hojas son `Link` con el
-  `aria-current` calculado, no `NavLink`: su coincidencia por prefijo marcaría a la vez Buscar y Nuevo contribuyente.
-- **Administración** va al final, solo para administradores, como un enlace normal (`<a href="/admin">`, otra app)
-  con la letra de los grupos y un ícono en el sitio del caret.
-- **Plegado**: el botón del panel lo oculta en cualquier ancho y aparece la hamburguesa de la barra de marca (30px,
-  borde `shell-ink` al 50 %), que lo reabre; es el mismo botón `aria-controls="sidebar"` del menú de móvil clásico
-  y el foco pasa de uno a otro. Con 1080px o menos, el panel empieza plegado y se pliega al elegir una hoja; en un
-  teléfono ocupa todo el ancho. En el prototipo el panel solo se oculta en pantallas estrechas (en las anchas la
-  hamburguesa aparecía sin ocultarlo); aquí se oculta siempre. Estos botones no son el `Button` de #47: los del
-  árbol son controles sin caja del prototipo y la hamburguesa es el botón del marco común (el clásico no cambia).
-- **Memoria**: el estado del panel y de los grupos se guarda en `sessionStorage['srtm.nav']` (con try/catch), como
-  las pestañas de trabajo. En una pantalla estrecha el panel empieza plegado aunque se guardara abierto, y el
-  plegado automático al navegar no se guarda.
-
-`nav.css` fija lo que el componente aproxima con tokens (`bg-ink/6` y `bg-ink/4` sobre `table-head`,
-`text-ink-muted` en los carets):
-
-| Regla                                         | Valor                            | Contraste                 |
-| --------------------------------------------- | -------------------------------- | ------------------------- |
-| `[data-ui='arbol-hoja'][aria-current='page']` | texto `#0D4D80`, fondo `#E6E6E6` | 7.04:1                    |
-| `[data-ui='arbol-hoja']:hover`                | fondo `#E9E9E9`                  | `link` encima: 4.70:1     |
-| `[data-ui='arbol-grupo']:hover`               | texto `#0D4D80`                  | 7.85:1 sobre `table-head` |
-| `[data-ui='arbol-caret']`                     | `#555555`                        | 6.66:1 sobre `table-head` |
-
-Tests: `src/portal/arbolNav.test.tsx` (árbol, hoja activa, plegado, memoria, pantalla estrecha, clásico intacto) y el
-bloque `nav.css` de `src/themes/parciales.test.tsx` (valores y contrastes).
+Lo que se queda en srtm-ui: `navTree.ts` (los trámites), `instrucciones.ts` (los textos de cada paso), `tonoDeEstado`
+(los estados del SRTM) y la marca de la barra.
