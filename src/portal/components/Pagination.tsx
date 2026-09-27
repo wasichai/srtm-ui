@@ -13,7 +13,7 @@ export function Pagination({
   onPage: (page: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-3 text-sm text-ink-muted">
+    <div data-ui="paginador" className="flex items-center justify-between gap-4 border-t border-border px-4 py-3 text-sm text-ink-muted">
       <span>
         {totalElements.toLocaleString('es-PE')} {totalElements === 1 ? 'registro' : 'registros'}
       </span>

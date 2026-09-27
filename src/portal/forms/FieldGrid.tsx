@@ -23,7 +23,7 @@ export function FieldGrid({ sections, values }: { sections: SectionSpec[]; value
               )}
               {section.title}
             </h3>
-            <dl className={GRID}>
+            <dl data-ui="ficha-kv" className={GRID}>
               {shown.map((field) => (
                 <div key={field.name} className={cn(SPAN[field.span ?? 2])}>
                   <dt className="text-xs text-ink-muted">{field.label}</dt>

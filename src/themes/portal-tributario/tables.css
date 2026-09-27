@@ -1,0 +1,133 @@
+/* portal-tributario: the prototype's tables, read-only ficha and paginators (#49). out of layers, so these rules
+   beat tailwind's utilities, and only under the theme, so light and dark do not change. the components mark what
+   is styled here: data-ui="table" on the <table>, data-numeric on the cells of figures, data-ui="ficha-kv" on the
+   ficha's <dl> (data-tono on a row), data-ui="paginador" on the paginators. the greys with no token (#444, #ddd,
+   #ccc, #f0f0f0) are the prototype's */
+
+/* header: bold sentence case over the table-head grey, on one line */
+[data-theme='portal-tributario'] [data-ui='table'] th {
+    padding: 11px 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    color: #444;
+    background-color: var(--table-head);
+    border-bottom: 1px solid #ddd;
+}
+
+/* cells: the text colour stays the cell's own (ink, or a selected row's brand) */
+[data-theme='portal-tributario'] [data-ui='table'] td {
+    padding: 10px 18px;
+    font-size: 14.5px;
+    border-bottom: 1px solid var(--line);
+}
+
+/* zebra rows, white first. a selected row keeps its own background. no hover of its own: over a grey dark enough
+   to see, the warning tone would drop below AA */
+[data-theme='portal-tributario'] [data-ui='table'] > tbody > tr:nth-child(even):not([aria-selected='true']) {
+    background-color: var(--table-stripe);
+}
+
+/* the total row */
+[data-theme='portal-tributario'] [data-ui='table'] > tfoot td {
+    font-weight: 700;
+    background-color: var(--surface-muted);
+    border-top: 2px solid #ddd;
+}
+
+/* figures: the components already align them in every theme; here for any table that only marks them */
+[data-theme='portal-tributario'] [data-ui='table'] [data-numeric] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* the read-only ficha as key-value rows: label beside value, alternate rows striped. one column, two from 64rem
+   (tailwind's lg), where a row is every other pair of items. the items drop their spans so rows stay even */
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > * {
+    grid-column: auto;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 12px;
+    background-color: var(--surface);
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > * > dt {
+    flex: 0 0 40%;
+    font-size: 13.5px;
+    color: var(--ink-muted);
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > * > dd {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--ink);
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > :nth-child(even) {
+    background-color: var(--table-stripe);
+}
+
+@media (min-width: 64rem) {
+    [data-theme='portal-tributario'] [data-ui='ficha-kv'] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    [data-theme='portal-tributario'] [data-ui='ficha-kv'] > :nth-child(even) {
+        background-color: var(--surface);
+    }
+
+    [data-theme='portal-tributario'] [data-ui='ficha-kv'] > :nth-child(4n + 3),
+    [data-theme='portal-tributario'] [data-ui='ficha-kv'] > :nth-child(4n + 4) {
+        background-color: var(--table-stripe);
+    }
+}
+
+/* a row with a tone (data-tono, see tonoDeEstado): the whole row in the alert's background and the tone's text */
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > [data-tono='verde'] {
+    background-color: var(--success-soft);
+    color: var(--success);
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > [data-tono='ambar'] {
+    background-color: var(--warning-soft);
+    color: var(--warning);
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > [data-tono='rojo'] {
+    background-color: var(--danger-soft);
+    color: var(--danger);
+}
+
+[data-theme='portal-tributario'] [data-ui='ficha-kv'] > [data-tono] > :is(dt, dd) {
+    color: inherit;
+}
+
+/* the paginators: a muted note under the table */
+[data-theme='portal-tributario'] [data-ui='paginador'] {
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    background-color: var(--table-stripe);
+    border-top: 1px solid var(--line);
+}
+
+/* its page buttons as the prototype's secondary button: white, #ccc border, #f0f0f0 on hover */
+[data-theme='portal-tributario'] [data-ui='paginador'] button {
+    color: var(--ink);
+    background-color: var(--surface);
+    border: 1px solid #ccc;
+}
+
+[data-theme='portal-tributario'] [data-ui='paginador'] button:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}

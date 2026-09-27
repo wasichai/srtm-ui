@@ -247,7 +247,7 @@ function Busqueda({
           <EmptyState title="No se encontraron resultados" />
         ) : (
           <div className="rounded-md border border-border">
-            <Table aria-label="Resultados">
+            <Table data-ui="table" aria-label="Resultados">
               <thead>
                 {donde === 'catastro' ? (
                   <tr>

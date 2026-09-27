@@ -14,7 +14,9 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/extensions.css`               | Tokens de extensión en `:root` para todos los temas y sus utilidades `--color-*`.                                                  |
 | `src/themes/portal-tributario/index.css`  | Punto de entrada del tema. Cada issue añade aquí el `@import` de su parcial.                                                       |
 | `src/themes/portal-tributario/tokens.css` | El bloque `[data-theme='portal-tributario']` (tokens, fuente y radios), el cuerpo a 14px y el foco.                                |
+| `src/themes/portal-tributario/tables.css` | Tablas cebra con fila de total, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-49)).                   |
 | `src/themes/tokens.test.tsx`              | Tests de completitud, extensión y contraste WCAG.                                                                                  |
+| `src/themes/tablas.test.tsx`              | Tests de `tables.css`: importado tras los tokens, fuera de capas, solo bajo el tema y con los valores del prototipo.               |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -150,3 +152,50 @@ Comprobado en el CSS de `yarn build`:
   `HijosPanel` (`focus-visible:-outline-offset-2`) se mantiene. Los parciales de componentes van fuera de capas.
 - El tamaño base de 14px se aplica a `body`, no a `html`. Los espaciados en `rem` no cambian, y las clases `text-*`
   (`text-sm` = 14px) siguen con su tamaño.
+
+## Tablas, ficha clave-valor y estados (#49)
+
+`tables.css` va fuera de capas (gana a las utilidades de Tailwind) y todas sus reglas empiezan por
+`[data-theme='portal-tributario']`, así que light y dark no cambian. Se engancha en atributos que ponen los
+componentes:
+
+| Gancho                           | Dónde                                                                                            | Qué pinta el tema                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `data-ui="table"`                | el `<table>` de cada `Table` del portal (`Table` de `@wasichai/ui` reenvía los `data-*`)         | `th`, `td`, filas cebra, hover y `tfoot`                                            |
+| `data-numeric`                   | las celdas de cifras (`NUMERICA` de `src/portal/components/tabla.ts`, `numeric` en `HijosPanel`) | derecha y `tabular-nums` (los componentes ya lo hacen en todos los temas)           |
+| `data-ui="ficha-kv"`             | el `<dl>` de `FieldGrid`, la ficha en solo lectura (Datos del contribuyente, del predio…)        | filas clave-valor alternas                                                          |
+| `data-tono="verde\|ambar\|rojo"` | una fila (hijo directo) de un `data-ui="ficha-kv"`                                               | la fila entera con el fondo de la alerta y el texto del tono                        |
+| `data-ui="paginador"`            | `Paginador` y `Pagination`                                                                       | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
+| `data-ui="estado"` + `data-tono` | `EstadoBadge` con la variante `portal`                                                           | nada: el tono lo ponen sus clases (`text-success`…); el gancho queda para el tema   |
+
+**Tablas.** Como el prototipo:
+
+- `th`: `padding: 11px 18px`, 13.5px en negrita `#444` sobre `var(--table-head)`, sin mayúsculas ni salto de línea,
+  con `border-bottom: 1px solid #DDD`.
+- `td`: 14.5px, `padding: 10px 18px` (el prototipo no lo fija; 18px alinea con la cabecera) y
+  `border-bottom: 1px solid var(--line)`. El color del texto no se toca: `td` ya es `ink` (`#333`) y así una fila
+  seleccionada conserva su `text-brand-strong`.
+- Cebra `var(--table-stripe)` en las filas pares. Las filas con `aria-selected="true"` (listas de `HijosPanel` y
+  del buscador de predios) quedan fuera y conservan su `bg-brand-soft`. El prototipo no define hover y el tema no
+  añade uno: sobre un gris que se note (`#F0F0F0`), el texto `warning` bajaría a 4.25:1.
+- `tfoot td`: negrita sobre `var(--surface-muted)` (`#F6F6F6`) con `border-top: 2px solid #DDD`.
+- Las líneas finas de fila usan `var(--line)` (`#E4E4E4`), como pide el issue, en vez del `#F0F0F0` del prototipo;
+  la de la cabecera y la del total conservan el `#DDD`, más marcado.
+
+**Estados por tono.** `tonoDeEstado(texto)` (`src/portal/components/tono.ts`) aplica la regla `tono()` del
+prototipo, sin distinguir mayúsculas ni tildes: `vencida|coactiva|denegado|inactivo|baja` → rojo,
+`por vencer|en trámite|observ` → ámbar, `activo|habido|vigente|cancelada|conforme` → verde. Añade `anulad` (rojo)
+y `no habido` (rojo, porque contiene `habido`). Con la variante `portal` de `useVarianteTema()`, `EstadoBadge` es
+texto de 12.5px en negrita con `text-success`, `text-warning` o `text-danger` y `data-tono`; en light y dark sigue la
+pastilla. El texto es el mismo. Los tonos pasan AA sobre blanco y cebra (`src/themes/tablas.test.tsx`).
+`text-warning` sobre `brand-soft` (fila seleccionada) queda en 4.44:1, pero `EstadoBadge` solo escribe Activo,
+Vigente, Anulada e Inactivo, que son verde o rojo (5.00 y 5.36:1 sobre `brand-soft`).
+
+**Ficha clave-valor.** Bajo el tema, el `<dl>` de `FieldGrid` pasa de la rejilla de 6 columnas a filas clave-valor
+(etiqueta al 40 %, 13.5px `ink-muted`; valor 14.5px `ink`) en una columna, y en dos desde 64rem (el `lg` de
+Tailwind). La cebra va por fila visual: pares en una columna, `4n+3` y `4n+4` en dos. Por eso los campos pierden su
+`col-span` bajo el tema. `FieldGrid` no pone `data-tono` en ninguna fila (hoy ningún campo lo necesita); el estilo
+queda listo para una ficha que lo marque, por ejemplo con `tonoDeEstado`.
+
+**Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
+hover `#F0F0F0`) con CSS propio. Cuando llegue #47 (`controls.css`) se puede delegar en sus ganchos de botón.

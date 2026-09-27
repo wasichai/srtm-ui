@@ -23,7 +23,7 @@ export function Paginador({
   const to = Math.min(total, (page + 1) * size)
   const last = Math.max(0, Math.ceil(total / size) - 1)
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2.5 text-sm text-ink-muted">
+    <div data-ui="paginador" className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2.5 text-sm text-ink-muted">
       <label className="flex items-center gap-2">
         Filas
         <select value={size} onChange={(e) => onSize(Number(e.target.value))} className={`${selectClass} h-8 w-20`}>

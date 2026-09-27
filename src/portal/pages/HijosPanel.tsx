@@ -7,6 +7,7 @@ import type { HijosApi } from '../api'
 import { EstadoBadge } from '../components/EstadoBadge'
 import { Paginador } from '../components/Paginador'
 import { EmptyState, QueryState } from '../components/QueryState'
+import { NUMERICA } from '../components/tabla'
 import { RecordForm } from '../forms/RecordForm'
 import type { FormValues, SectionSpec } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
@@ -16,6 +17,8 @@ export interface Columna<T> {
   label: string
   render: (row: T) => ReactNode
   className?: string
+  // figures (areas, amounts, %): right aligned with digits of one width, and marked for the theme
+  numeric?: boolean
 }
 
 interface HijosPanelProps<T> {
@@ -152,11 +155,11 @@ export function HijosPanel<T extends Hijo>({
           rows.length === 0 ? (
             <EmptyState title="No se encontraron resultados!" icon={Box} />
           ) : (
-            <Table role="grid" aria-label={`Listado de ${plural}`}>
+            <Table data-ui="table" role="grid" aria-label={`Listado de ${plural}`}>
               <thead>
                 <tr>
                   {columns.map((c) => (
-                    <Th key={c.label} className={c.className}>
+                    <Th key={c.label} data-numeric={c.numeric || undefined} className={cn(c.numeric && NUMERICA.className, c.className)}>
                       {c.label}
                     </Th>
                   ))}
@@ -182,7 +185,11 @@ export function HijosPanel<T extends Hijo>({
                       )}
                     >
                       {columns.map((c) => (
-                        <Td key={c.label} className={cn(c.className, isSelected && 'text-brand-strong')}>
+                        <Td
+                          key={c.label}
+                          data-numeric={c.numeric || undefined}
+                          className={cn(c.numeric && NUMERICA.className, c.className, isSelected && 'text-brand-strong')}
+                        >
                           {c.render(row)}
                         </Td>
                       ))}

@@ -33,7 +33,7 @@ export function TransferentesPanel({ declaracion, readOnly }: { declaracion: str
           render: (t) => `${t.tipo_documento ? etiqueta('tipo_documento', t.tipo_documento) : ''} ${t.numero_documento ?? ''}`.trim() || '—'
         },
         { label: 'Apellidos y nombres / Razón social', render: nombreORazonSocial },
-        { label: '% transferido', render: (t) => formatNumber(t.porcentaje_transferido), className: 'text-right tabular-nums' },
+        { label: '% transferido', render: (t) => formatNumber(t.porcentaje_transferido), numeric: true },
         { label: 'Domicilio', render: (t) => formatText(t.descripcion_domicilio) }
       ]}
     />
@@ -66,8 +66,8 @@ export function NivelesPanel({ declaracion, readOnly }: { declaracion: string; r
         { label: 'Piso', render: (n) => formatText(n.numero_piso) },
         { label: 'Año', render: (n) => formatText(n.anio_construccion) },
         { label: 'Mes', render: (n) => mes(n.mes_construccion) },
-        { label: 'Área construida', render: (n) => formatNumber(n.area_construida), className: 'text-right tabular-nums' },
-        { label: 'Área común', render: (n) => formatNumber(n.area_comun), className: 'text-right tabular-nums' },
+        { label: 'Área construida', render: (n) => formatNumber(n.area_construida), numeric: true },
+        { label: 'Área común', render: (n) => formatNumber(n.area_comun), numeric: true },
         { label: 'Material', render: (n) => celda('material', n.material) },
         // the srtm's short headings: M&C, T, P, P&V, R, B, I(E/S)
         ...COLUMNAS.map((c, i) => ({
@@ -122,9 +122,9 @@ export function ObrasPanel({ declaracion, readOnly }: { declaracion: string; rea
         { label: 'Conservación', render: (o) => celda('estado_conservacion', o.estado_conservacion) },
         { label: 'Categoría', render: (o) => <span className="line-clamp-2">{o.categoria ?? (o.valor !== null ? `S/ ${formatNumber(o.valor)}` : '—')}</span> },
         { label: 'Mes', render: (o) => mes(o.mes_construccion) },
-        { label: 'Cantidad', render: (o) => formatNumber(o.cantidad), className: 'text-right tabular-nums' },
-        { label: 'Metrado', render: (o) => formatNumber(o.metrado), className: 'text-right tabular-nums' },
-        { label: 'Total', render: (o) => formatNumber(o.total_metrado), className: 'text-right tabular-nums' },
+        { label: 'Cantidad', render: (o) => formatNumber(o.cantidad), numeric: true },
+        { label: 'Metrado', render: (o) => formatNumber(o.metrado), numeric: true },
+        { label: 'Total', render: (o) => formatNumber(o.total_metrado), numeric: true },
         { label: 'Año', render: (o) => formatText(o.anio_construccion) }
       ]}
     />
@@ -149,7 +149,7 @@ export function FrentesPanel({ declaracion, readOnly }: { declaracion: string; r
         { label: 'Tipo vía', render: (f) => celda('tipo_via', f.tipo_via) },
         { label: 'Vía', render: (f) => formatText(f.via) },
         { label: 'N° principal', render: (f) => formatText(f.numero) },
-        { label: 'Frontis', render: (f) => formatNumber(f.frontis), className: 'text-right tabular-nums' },
+        { label: 'Frontis', render: (f) => formatNumber(f.frontis), numeric: true },
         { label: 'Lote', render: (f) => formatText(f.lote) },
         { label: 'Cuadra', render: (f) => formatText(f.cuadra) },
         { label: 'Lado', render: (f) => celda('lado', f.lado) }
