@@ -476,7 +476,8 @@ describe('portal', () => {
   it('removes a relacionado only after confirming', async () => {
     start('/contribuyentes/c1?tab=relacionados', [{ method: 'DELETE', path: '/srtm/relacionados/r1', status: 204 }])
     expect(await screen.findByText('NEIRA CAMPOS DUBERLI')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Eliminar relacionado 1' }))
+    await userEvent.click(screen.getByRole('row', { name: /NEIRA CAMPOS DUBERLI/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar relacionado' }))
     expect(fetch!.calls.some((c) => c.method === 'DELETE')).toBe(false)
     await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Eliminar' }))
     await waitFor(() => expect(fetch!.calls.some((c) => c.method === 'DELETE' && c.path === '/srtm/relacionados/r1')).toBe(true))

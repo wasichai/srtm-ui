@@ -4,7 +4,8 @@ import { selectClass } from '../forms/styles'
 
 const TAMANOS = [5, 10, 25]
 
-// the srtm's table footer: "Filas [10]" on the left, "1 a 10 de 47 registros  < >" on the right
+// the srtm's table footer: "Filas [10]" on the left, "1 a 10 de 47 registros  < >" on the right ("registros" for
+// one too, as the srtm writes it)
 export function Paginador({
   page,
   size,
@@ -35,7 +36,7 @@ export function Paginador({
       </label>
       <div className="flex items-center gap-2">
         <span>
-          {from} a {to} de {total.toLocaleString('es-PE')} {total === 1 ? 'registro' : 'registros'}
+          {from} a {to} de {total.toLocaleString('es-PE')} registros
         </span>
         <Button variant="ghost" size="icon" aria-label="Página anterior" disabled={page === 0} onClick={() => onPage(page - 1)}>
           <ChevronLeft className="size-4" />

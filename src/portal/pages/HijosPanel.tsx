@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
+import { Box, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { HijosApi } from '../api'
 import { EstadoBadge } from '../components/EstadoBadge'
@@ -14,7 +14,7 @@ import type { CatalogKey } from '../types'
 
 export interface Columna<T> {
   label: string
-  render: (row: T, index: number) => ReactNode
+  render: (row: T) => ReactNode
   className?: string
 }
 
@@ -33,7 +33,7 @@ interface HijosPanelProps<T> {
   // a new one's starting values, knowing the rows already there (the first domicilio is the fiscal one)
   nuevo: (rows: T[]) => T
   aviso?: (rows: T[]) => ReactNode
-  // why a row cannot be removed (the only fiscal domicilio): its delete button is then disabled
+  // why a row cannot be removed (the only fiscal domicilio): the delete button is disabled while it is selected
   fijo?: (row: T, rows: T[]) => string | null
   footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
   wide?: boolean
@@ -44,7 +44,8 @@ interface HijosPanelProps<T> {
 type Hijo = { id?: string; estado?: string | null }
 
 // one of the lists of a contribuyente (domicilios, relacionados...) or a declaración (transferentes, niveles...),
-// as the srtm draws them: a heading with "+", the table with its state, and a dialog to add or change a row
+// as the srtm draws them: a heading with "+", pencil and bin acting on the selected row, the table with its state,
+// and a dialog to add or change a row
 export function HijosPanel<T extends Hijo>({
   parent,
   api,
@@ -68,12 +69,16 @@ export function HijosPanel<T extends Hijo>({
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<T | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
+  // the row the pencil and the bin act on: one of the page shown, so a removed row or another page drops it
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   // the srtm pages its lists: "Filas 10", "1 a 10 de 23 registros"
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const rows = query.data ?? []
   const last = Math.max(0, Math.ceil(rows.length / size) - 1)
   const shown = rows.slice(Math.min(page, last) * size, (Math.min(page, last) + 1) * size)
+  const selected = shown.find((r) => r.id === selectedId) ?? null
+  const motivo = selected ? (fijo?.(selected, rows) ?? undefined) : undefined
 
   const close = () => {
     setEditing(null)
@@ -92,11 +97,26 @@ export function HijosPanel<T extends Hijo>({
       await api.borrar(removing.id)
       await refresh()
       setRemoving(null)
+      setSelectedId(null)
     } catch (e) {
       setRemoveError(e instanceof Error ? e.message : 'No se pudo eliminar')
     }
   }
   const open = adding || editing !== null
+  const edit = (row: T) => {
+    if (!readOnly) setEditing(row)
+  }
+  // the grid's keys: the arrows move the selection (focusing a row selects it), Enter edits it
+  const onKey = (e: KeyboardEvent<HTMLTableRowElement>, row: T) => {
+    const next = e.key === 'ArrowDown' ? e.currentTarget.nextElementSibling : e.key === 'ArrowUp' ? e.currentTarget.previousElementSibling : null
+    if (next instanceof HTMLElement) {
+      e.preventDefault()
+      next.focus()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      edit(row)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -104,18 +124,32 @@ export function HijosPanel<T extends Hijo>({
       <div className="flex items-center justify-between gap-4">
         <h3 className="text-sm font-semibold tracking-wide text-ink uppercase">Listado de {plural}</h3>
         {!readOnly && (
-          <Button variant="secondary" size="sm" onClick={() => setAdding(true)} aria-label={`Agregar ${singular}`}>
-            <Plus className="size-4 text-brand" />
-            Agregar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="icon" className="border-brand text-brand" onClick={() => setAdding(true)} aria-label={`Agregar ${singular}`}>
+              <Plus className="size-4" />
+            </Button>
+            <Button variant="secondary" size="icon" disabled={!selected} onClick={() => setEditing(selected)} aria-label={`Editar ${singular}`}>
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              disabled={!selected || motivo !== undefined}
+              title={motivo}
+              onClick={() => setRemoving(selected)}
+              aria-label={`Eliminar ${singular}`}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
         )}
       </div>
       <QueryState query={query}>
         {() =>
           rows.length === 0 ? (
-            <EmptyState title="No se encontraron resultados" />
+            <EmptyState title="No se encontraron resultados!" icon={Box} />
           ) : (
-            <Table>
+            <Table role="grid" aria-label={`Listado de ${plural}`}>
               <thead>
                 <tr>
                   {columns.map((c) => (
@@ -124,44 +158,33 @@ export function HijosPanel<T extends Hijo>({
                     </Th>
                   ))}
                   <Th>Estado</Th>
-                  {/* relative: the sr-only text is absolute and would otherwise widen the page past the table's scroll */}
-                  <Th className="relative">
-                    <span className="sr-only">Acciones</span>
-                  </Th>
                 </tr>
               </thead>
               <tbody>
-                {shown.map((row, shownIndex) => {
-                  const index = Math.min(page, last) * size + shownIndex
-                  const motivo = fijo?.(row, rows) ?? undefined
+                {shown.map((row, index) => {
+                  const isSelected = row === selected
                   return (
-                    <tr key={row.id} className="hover:bg-surface-muted/60">
+                    <tr
+                      key={row.id}
+                      aria-selected={isSelected}
+                      // one stop for Tab: the selected row, or the first while none is
+                      tabIndex={isSelected || (selected === null && index === 0) ? 0 : -1}
+                      onClick={() => setSelectedId(row.id ?? null)}
+                      onFocus={() => setSelectedId(row.id ?? null)}
+                      onDoubleClick={() => edit(row)}
+                      onKeyDown={(e) => onKey(e, row)}
+                      className={cn(
+                        'cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
+                        isSelected ? 'bg-brand-soft' : 'hover:bg-surface-muted/60'
+                      )}
+                    >
                       {columns.map((c) => (
-                        <Td key={c.label} className={c.className}>
-                          {c.render(row, index)}
+                        <Td key={c.label} className={cn(c.className, isSelected && 'text-brand-strong')}>
+                          {c.render(row)}
                         </Td>
                       ))}
                       <Td>
                         <EstadoBadge estado={row.estado} />
-                      </Td>
-                      <Td className="text-right whitespace-nowrap">
-                        {!readOnly && (
-                          <>
-                            <Button variant="ghost" size="icon" aria-label={`Editar ${singular} ${index + 1}`} onClick={() => setEditing(row)}>
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Eliminar ${singular} ${index + 1}`}
-                              disabled={motivo !== undefined}
-                              title={motivo}
-                              onClick={() => setRemoving(row)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </>
-                        )}
                       </Td>
                     </tr>
                   )

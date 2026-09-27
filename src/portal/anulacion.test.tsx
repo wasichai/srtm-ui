@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
@@ -133,8 +133,12 @@ describe('anular una declaración jurada', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Otros frentes' }))
     expect(await screen.findByText('MARGINAL')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Agregar frente' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Editar frente 1' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Eliminar frente 1' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Editar frente' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Eliminar frente' })).not.toBeInTheDocument()
+    // nor a double click or Enter on the row
+    await userEvent.dblClick(screen.getByRole('row', { name: /MARGINAL/ }))
+    fireEvent.keyDown(screen.getByRole('row', { name: /MARGINAL/ }), { key: 'Enter' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('tab', { name: 'Características' }))
     expect(await screen.findByText(/Listado de niveles de construcción/i)).toBeInTheDocument()

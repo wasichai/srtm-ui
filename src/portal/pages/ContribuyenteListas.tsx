@@ -74,7 +74,7 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
         </div>
       )}
       columns={[
-        { label: 'Código', render: (_, i) => i + 1 },
+        { label: 'Código', render: (d) => formatText(d.codigo) },
         { label: 'Tipo de domicilio', render: (d) => formatText(d.tipo_domicilio) },
         { label: 'Tipo de predio', render: (d) => formatText(d.tipo_predio) },
         {
@@ -127,6 +127,7 @@ export function MediosContactoPanel({ contribuyente }: { contribuyente: string }
       catalog="medio_contacto"
       nuevo={(rows) => emptyOf<MedioContacto>(MEDIO_CONTACTO_SECTIONS, { tipo: 'TELEFONO CELULAR', principal: rows.length === 0, estado: 'ACTIVO' })}
       columns={[
+        { label: 'Código', render: (m) => formatText(m.codigo) },
         { label: 'Tipo', render: (m) => formatText(m.tipo) },
         { label: 'Número o correo', render: (m) => formatText(m.valor) },
         { label: 'Anexo', render: (m) => formatText(m.anexo) },
@@ -148,7 +149,7 @@ export function SustentosPanel({ contribuyente }: { contribuyente: string }) {
       catalog="sustento"
       nuevo={() => emptyOf<Sustento>(SUSTENTO_SECTIONS, { estado: 'ACTIVO' })}
       columns={[
-        { label: 'Número', render: (_, i) => i + 1 },
+        { label: 'Número', render: (s) => formatText(s.codigo) },
         { label: 'Documento', render: (s) => formatText(s.documento) },
         { label: 'N° documento', render: (s) => formatText(s.numero_documento) },
         { label: 'Tipo de presentación', render: (s) => formatText(s.tipo_presentacion) },

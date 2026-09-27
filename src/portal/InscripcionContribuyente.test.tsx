@@ -168,9 +168,10 @@ describe('inscripción de contribuyente', () => {
     start('/contribuyentes/c1?tab=domicilios', [{ path: '/srtm/contribuyentes/c1/domicilios', body: [fiscal] }])
     expect(await screen.findByText(/MARGINAL, II MESETA/)).toBeInTheDocument()
     expect(screen.queryByText('(*) Registrar al menos 1 domicilio fiscal')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Eliminar domicilio 1' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('row', { name: /MARGINAL, II MESETA/ }))
+    expect(screen.getByRole('button', { name: 'Eliminar domicilio' })).toBeDisabled()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar domicilio 1' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Editar domicilio' }))
     expect(within(await screen.findByRole('dialog')).getByLabelText(/Tipo de domicilio/)).toBeDisabled()
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
 

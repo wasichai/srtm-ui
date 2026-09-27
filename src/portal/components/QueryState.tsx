@@ -1,7 +1,7 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { ApiError } from '@wasichai/core'
 import { Button } from '@wasichai/ui'
-import { AlertTriangle, Inbox, Loader2, Lock, SearchX } from 'lucide-react'
+import { AlertTriangle, Inbox, Loader2, Lock, SearchX, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 export function LoadingState({ label = 'Cargando…' }: { label?: string }) {
@@ -13,10 +13,11 @@ export function LoadingState({ label = 'Cargando…' }: { label?: string }) {
   )
 }
 
-export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
+// icon: the srtm's lists draw a cube
+export function EmptyState({ title, icon: Icon = Inbox, children }: { title: string; icon?: LucideIcon; children?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-2 py-12 text-center text-sm text-ink-muted">
-      <Inbox className="size-8 text-border" />
+      <Icon className="size-8 text-border" />
       <p className="font-medium text-ink">{title}</p>
       {children}
     </div>

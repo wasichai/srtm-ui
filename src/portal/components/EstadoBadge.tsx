@@ -3,13 +3,14 @@ import { Badge, cn } from '@wasichai/ui'
 // a list row's ACTIVO / INACTIVO (none is ACTIVO), or a declaración's VIGENTE / ANULADA (none is VIGENTE)
 const ETIQUETAS: Record<string, string> = { ACTIVO: 'Activo', VIGENTE: 'Vigente', ANULADA: 'Anulada' }
 
+// the srtm's dark pill: "● Activo"
 export function EstadoBadge({ estado }: { estado: string | null | undefined }) {
   const valor = estado ?? 'ACTIVO'
   const activo = valor === 'ACTIVO' || valor === 'VIGENTE'
   const anulado = valor === 'ANULADA'
   return (
-    <Badge className={cn('gap-1', anulado ? 'bg-danger/10 text-danger' : !activo && 'bg-surface-muted text-ink-muted')}>
-      <span className={cn('size-1.5 rounded-full', activo ? 'bg-success' : anulado ? 'bg-danger' : 'bg-ink-muted')} />
+    <Badge className={cn('gap-1', activo ? 'bg-ink text-surface' : anulado ? 'bg-danger/10 text-danger' : 'bg-surface-muted text-ink-muted')}>
+      <span className={cn('size-1.5 rounded-full', activo ? 'bg-surface' : anulado ? 'bg-danger' : 'bg-ink-muted')} />
       {ETIQUETAS[valor] ?? 'Inactivo'}
     </Badge>
   )
