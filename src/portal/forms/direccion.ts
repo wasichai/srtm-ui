@@ -4,10 +4,10 @@
 type Texto = string | null | undefined
 type Valores = Partial<Record<string, Texto>>
 
-// the srtm writes the common types of vía and unidad urbana abbreviated (AV. ANDRES AVELINO CACERES): the records keep
-// the model's word, the address its abbreviation; a type not here goes whole. the same two tables are in Reglas.kt
-// (ABREVIATURA_VIA, ABREVIATURA_UNIDAD_URBANA), and model/import_predios.py reads each abbreviation back: change the
-// three together
+// the srtm writes the common types of vía and every type of unidad urbana abbreviated (AV. ANDRES AVELINO CACERES,
+// A.P.V. LOS PINOS): the records keep the model's word, the address its abbreviation; a type not here goes whole. the
+// same two tables are in Reglas.kt (ABREVIATURA_VIA, ABREVIATURA_UNIDAD_URBANA), and model/import_predios.py reads each
+// abbreviation back: change the three together
 export const ABREVIATURA_VIA: Record<string, string> = {
   AVENIDA: 'AV.',
   CALLE: 'CA.',
@@ -17,11 +17,51 @@ export const ABREVIATURA_VIA: Record<string, string> = {
   CARRETERA: 'CARR.'
 }
 
+// the catastro fiscal's ABREV_UU (srtm-backend's model/data/tipos_unidad_urbana.csv), by type. 48 and 53 share ASOC.VIS.
 export const ABREVIATURA_UNIDAD_URBANA: Record<string, string> = {
+  AGRUPACION: 'AGRUP',
   'ASENTAMIENTO HUMANO': 'AA.HH.',
-  'ASOCIACION DE VIVIENDA': 'AA.VV.',
+  ASOCIACION: 'ASOC',
+  'ASOCIACION DE VIVIENDA': 'ASOC. VIV.',
+  'ASOCIACION DE VIVIENDA DE INTERES SOCIAL': 'ASOC.VIS.',
+  'ASOCIACION DE VIVIENDA E INTERES SOCIAL': 'ASOC.VIS.',
+  'ASOCIACION DE VIVIENDA POPULAR DE INTERES SOCIAL': 'ASOC.V.POPIS',
+  'ASOCIACION POPULAR URBANIZADORA': 'ASOC.PU.',
+  'ASOCIACION PRO VIVIENDA': 'A.P.V.',
+  'ASOCIACION PRO VIVIENDA DE INTERES SOCIAL': 'ASOC.PVIS.',
+  'ASOCIACION PRO VIVIENDA UNIDAD VECINAL': 'ASOC.PVUV.',
+  BALNEARIO: 'BAL.',
+  BARRIO: 'BAR',
+  CASERIO: 'CAS',
   'CENTRO POBLADO': 'C.P.',
-  URBANIZACION: 'URB.'
+  CERCADO: 'CER',
+  'COMPLEJO HABITACIONAL': 'C.HAB.',
+  'CONJUNTO HABITACIONAL': 'CONJ. HAB.',
+  'CONJUNTO RESIDENCIAL': 'C.R.',
+  COOPERATIVA: 'COOP',
+  'COOPERATIVA DE VIVIENDA': 'COOP. VIV.',
+  FUNDO: 'FDO',
+  'LOTE UNICO': 'L.U.',
+  LOTIZACION: 'LOT',
+  'POSESION INFORMAL': 'P.I.',
+  PROGRAMA: 'PRO.',
+  'PROGRAMA DE ADJUDICACION DE LOTES': 'P.A.L.',
+  'PROGRAMA DE VIVIENDA': 'P.V.',
+  'PROGRAMA MUNICIPAL DE VIVIENDA': 'PMV.',
+  'PROYECTO INTEGRAL DE LAS JUNTAS VECINALES': 'PROY.I.J.V.',
+  'PUEBLO JOVEN': 'P.J.',
+  'PUEBLO TRADICIONAL': 'P. T.',
+  RESIDENCIAL: 'RES.',
+  SECTOR: 'S.',
+  'SIN HABILITACION': 'SIN. HAB.',
+  'UNIDAD VECINAL': 'U.V.',
+  URBANIZACION: 'URB.',
+  'URBANIZACION POPULAR': 'URB. POP.',
+  'URBANIZACION POPULAR DE INTERES SOCIAL': 'UPIS',
+  'URBANIZACION PRO VIVIENDA DE INTERES SOCIAL': 'UPVIS',
+  ZONA: 'Z.',
+  'ZONA INDUSTRIAL': 'Z.I.',
+  'ZONA URBANA': 'Z.U.'
 }
 
 const clean = (s: Texto) => (s ?? '').trim()
