@@ -18,6 +18,16 @@ function useDeclaraciones(side: Side, id: string, anio?: number) {
   })
 }
 
+// the year's totals are the ficha's (same query as the ficha page): the backend counts a predio held in condominio
+// once, and each condómino its own part, where summing the rows' autoavalúo would count it once per condómino
+function useTotales(side: Side, id: string, anio: number) {
+  return useQuery({
+    queryKey: [side, id, anio],
+    queryFn: async () => (side === 'contribuyente' ? await rentas.contribuyente(id, anio) : await rentas.predio(id, anio)),
+    select: (ficha) => ficha.totales
+  })
+}
+
 function OtherSide({ side, detalle }: { side: Side; detalle: DeclaracionDetalle }) {
   if (side === 'contribuyente') {
     const p = detalle.predio
@@ -48,6 +58,7 @@ function OtherSide({ side, detalle }: { side: Side; detalle: DeclaracionDetalle 
 // one year: the predios of a contribuyente, or the titulares of a predio, with the year's totals
 export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: string; anio: number }) {
   const query = useDeclaraciones(side, id, anio)
+  const totales = useTotales(side, id, anio).data
   const otherTitle = side === 'contribuyente' ? 'Predio' : 'Titular'
   return (
     <QueryState query={query}>
@@ -85,8 +96,8 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
             <tfoot>
               <tr className="font-semibold">
                 <Td colSpan={4}>Total {anio}</Td>
-                <Td className="text-right tabular-nums">{formatMoney(sum(rows, 'valor_autoavaluo'))}</Td>
-                <Td className="text-right tabular-nums">{formatMoney(sum(rows, 'valor_afecto'))}</Td>
+                <Td className="text-right tabular-nums">{formatMoney(totales?.autoavaluo)}</Td>
+                <Td className="text-right tabular-nums">{formatMoney(totales?.valor_afecto)}</Td>
               </tr>
             </tfoot>
           </Table>
@@ -181,8 +192,4 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
 function otherLabel(side: Side, row: DeclaracionDetalle): string | undefined {
   if (side === 'contribuyente') return row.predio ? describePredio(row.predio).label : undefined
   return row.contribuyente ? describeContribuyente(row.contribuyente).label : undefined
-}
-
-function sum(rows: DeclaracionDetalle[], field: 'valor_autoavaluo' | 'valor_afecto'): number {
-  return rows.reduce((total, row) => total + (row.declaracion[field] ?? 0), 0)
 }
