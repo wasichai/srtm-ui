@@ -166,6 +166,8 @@ async function llenarUbicacion() {
   await userEvent.selectOptions(panel().getByLabelText(/Tipo de vía/), 'AVENIDA')
   await userEvent.type(panel().getByLabelText(/Descripción de la vía/), 'MARGINAL')
   await userEvent.type(panel().getByLabelText(/Descripción de la zona/), 'UNION PERENE')
+  // asked of a new predio (grisObligatorio.test.tsx)
+  await userEvent.type(panel().getByLabelText(/^Código CPU/), '54102166-0001-2')
 }
 
 describe('a refusal of the backend on a field with no input of its own', () => {
@@ -414,7 +416,11 @@ describe('the secuencia de uso and the tipo de predio', () => {
   })
 
   it('saves on the predio of the padrón the tipo de predio changed in the wizard', async () => {
-    start('/declaraciones/nueva?predio=p1', [{ method: 'PUT', path: '/srtm/predios/p1', body: { ...predio, condicion: 'RUSTICO' } }])
+    start('/declaraciones/nueva?predio=p1', [
+      // no titular yet this year: one would be joined as a condómino instead (grisObligatorio.test.tsx)
+      { path: '/srtm/predios/p1/declaraciones', body: [] },
+      { method: 'PUT', path: '/srtm/predios/p1', body: { ...predio, condicion: 'RUSTICO' } }
+    ])
     await userEvent.type(await screen.findByPlaceholderText('DNI, RUC o nombre'), 'QUISPE')
     await userEvent.click(await screen.findByRole('button', { name: '20529936 · QUISPE MAMANI JUAN' }))
     await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'RUSTICO')

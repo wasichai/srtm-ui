@@ -5,6 +5,7 @@ import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { today } from './components/format'
 import { DJ_DATOS_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from './forms/declaracionSpecs'
 import { RecordForm } from './forms/RecordForm'
 import { PortalApp } from './PortalApp'
@@ -220,6 +221,45 @@ describe('an obra complementaria (pages 18 and 19)', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de obra/), 'OTROS')
     await waitFor(() => expect(screen.getByLabelText(/Unidad de medida/)).toBeEnabled())
   })
+
+  it('sends the unidad de medida its categoría sets: greyed, not emptied as a field another one greys', async () => {
+    const onSubmit = vi.fn(async () => {})
+    conDatos(
+      <RecordForm
+        sections={OBRA_SECTIONS}
+        options={{
+          ingreso: ['POR CATEGORIAS'],
+          material: ['LADRILLO'],
+          tipo_obra: ['MUROS PERIMETRICOS O CERCOS'],
+          estado_conservacion: ['BUENO'],
+          unidad_medida: ['M2', 'ML']
+        }}
+        initial={{
+          ingreso: 'POR CATEGORIAS',
+          material: 'LADRILLO',
+          tipo_obra: 'MUROS PERIMETRICOS O CERCOS',
+          estado_conservacion: 'BUENO',
+          anio_construccion: 2024,
+          mes_construccion: 2,
+          numero_piso: 1,
+          cantidad: 2,
+          metrado: 50
+        }}
+        submitLabel="Grabar"
+        onSubmit={onSubmit}
+      />,
+      [
+        {
+          path: '/srtm/obras-categorias',
+          body: [{ tipo_obra: 'MUROS PERIMETRICOS O CERCOS', numero: 3, descripcion: 'MURO DE LADRILLO DE ARCILLA', unidad_medida: 'ML' }]
+        }
+      ]
+    )
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: /Categoría/ }), '3. MURO DE LADRILLO DE ARCILLA')
+    await waitFor(() => expect(screen.getByLabelText(/Unidad de medida/)).toBeDisabled())
+    await userEvent.click(screen.getByRole('button', { name: 'Grabar' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoria: '3. MURO DE LADRILLO DE ARCILLA', unidad_medida: 'ML' })))
+  })
 })
 
 // the portal, for the wizard and the lists
@@ -316,7 +356,30 @@ describe('the wizard on a predio of the padrón', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
-    expect(post.body).toMatchObject({ predio_id: 'p1', declaracion: { condicion_propiedad: 'PROPIETARIO UNICO', porcentaje_condominio: null } })
+    // what it greys but sets goes as it shows: FÍSICO, today
+    expect(post.body).toMatchObject({
+      predio_id: 'p1',
+      declaracion: { condicion_propiedad: 'PROPIETARIO UNICO', porcentaje_condominio: null, medio_presentacion: 'FISICO', fecha_presentacion: today() }
+    })
+  })
+
+  it('looks its titulares up by the secuencia de uso as it is now, changed after going back by the tab', async () => {
+    const suya = { ...declaracion, id: 'd2', contribuyente: 'c2' }
+    start('/declaraciones/nueva?predio=p1', [
+      { path: '/srtm/predios/p1/declaraciones', body: [{ declaracion: suya, predio: null, contribuyente: otro }] },
+      { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }
+    ])
+    await hastaLaUbicacion()
+    expect(await screen.findByRole('alert')).toHaveTextContent(`El predio ya tiene titular en ${year}`)
+    // another use of the predio, with no titular yet: what is presented is datos del predio as it is now
+    await userEvent.click(screen.getByRole('tab', { name: 'Datos del predio' }))
+    await userEvent.clear(screen.getByLabelText(/Secuencia de uso/))
+    await userEvent.type(screen.getByLabelText(/Secuencia de uso/), '002')
+    await userEvent.click(screen.getByRole('tab', { name: 'Datos de la ubicación' }))
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    expect(post.body).toMatchObject({ predio_id: 'p1', declaracion: { secuencia_uso: '002' } })
   })
 })
 

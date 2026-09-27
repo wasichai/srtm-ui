@@ -22,6 +22,9 @@ import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
 
 const DATOS_FORM = 'dj-datos'
 const UBICACION_FORM = 'dj-ubicacion'
+// besides the tipo de predio of both steps, the año and secuencia de uso the predio's titulares are looked up by, as
+// the clerk leaves them: what is presented is datos del predio as it is now, gone back to by its tab or not
+const SEGUIDOS = [...COMUNES, 'anio', 'secuencia_uso'] as const
 
 // the padrón's district, in the selva: where a new predio most likely is
 const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
@@ -64,14 +67,15 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const [buscado, setBuscado] = useState<Predio | null>(null)
   const predioFijo = fijo.data?.predio ?? null
   const existente = predioFijo ?? buscado
+  // the tipo de predio of both steps is one value; the año and secuencia de uso are followed (SEGUIDOS)
+  const comun = useComun(SEGUIDOS)
   // one that already has a titular that year is not presented on: a condómino joins from that declaración
-  const titulares = useTitularesDelPredio(existente?.id, datos?.anio, datos?.secuencia_uso)
+  const anio = comun.valores.anio === undefined ? datos?.anio : Number(comun.valores.anio) || null
+  const titulares = useTitularesDelPredio(existente?.id, anio, comun.valores.secuencia_uso ?? datos?.secuencia_uso)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
   const grupo = useGrupoFormularios(['datos', 'ubicacion'] as const)
-  // the tipo de predio of both steps is one value
-  const comun = useComun(COMUNES)
   const salida = useSalidaConCambios(grupo.pendientes.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
   const [sections] = useState(() =>
     ubicacionSections((elegido: Elegido) => {
@@ -243,7 +247,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                           </Button>
                         )}
                       </div>
-                      {titulares.length > 0 && <AvisoTitulares titulares={titulares} contribuyente={titular} anio={datos?.anio} />}
+                      {titulares.length > 0 && <AvisoTitulares titulares={titulares} contribuyente={titular} anio={anio} />}
                       <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, condicion: tipoPredio }} />
                     </div>
                   ) : (
