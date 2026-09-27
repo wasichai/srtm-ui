@@ -38,6 +38,8 @@ export interface FieldSpec {
   suggest?: (q: string, values: FormValues) => Promise<string[]>
   // kind custom: its own inputs, bound to hidden fields of the same form (not sent itself)
   render?: (form: UseFormReturn<FormValues>) => ReactNode
+  // kind hidden: listed in the ficha all the same (the uso's cascade edits three of them)
+  shownInFicha?: boolean
 }
 
 export interface SectionSpec {

@@ -397,6 +397,14 @@ export interface CategoriaValor {
   descripcion: string
 }
 
+// one uso of the srtm's catalog (model/data/usos_predio.csv), with its clase and sub clase
+export interface UsoPredio {
+  codigo: string
+  clase: string
+  sub_clase: string
+  uso: string
+}
+
 // a condómino added from a declaración ("datos de los condóminos"): another titular of its predio, year and secuencia
 export interface NuevoCondomino {
   contribuyente: string

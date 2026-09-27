@@ -10,7 +10,9 @@ export function FieldGrid({ sections, values }: { sections: SectionSpec[]; value
   return (
     <div className="space-y-6">
       {sections.map((section) => {
-        const shown = section.fields.filter((f) => f.kind !== 'hidden' && f.kind !== 'geometry' && f.kind !== 'custom' && (!f.when || f.when(asForm)))
+        const shown = section.fields.filter(
+          (f) => (f.kind !== 'hidden' || f.shownInFicha) && f.kind !== 'geometry' && f.kind !== 'custom' && (!f.when || f.when(asForm))
+        )
         if (shown.length === 0) return null
         return (
           <section key={section.title}>
