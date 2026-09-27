@@ -1,6 +1,21 @@
 import type { ReactNode } from 'react'
+import { useVarianteTema } from '../../themes'
+import { CabeceraBanda } from '../components/BandaTitulo'
 
-export function FichaHeader({ kind, title, badges, aside }: { kind: ReactNode; title: string; badges?: ReactNode; aside?: ReactNode }) {
+interface FichaHeaderProps {
+  kind: ReactNode
+  title: string
+  badges?: ReactNode
+  aside?: ReactNode
+  // the band's "?" (portal-tributario only)
+  ayuda?: () => void
+}
+
+// portal-tributario opens the ficha with its title band, the badges and the actions in a row under it; light and dark
+// keep this header
+export function FichaHeader({ kind, title, badges, aside, ayuda }: FichaHeaderProps) {
+  const variante = useVarianteTema()
+  if (variante === 'portal') return <CabeceraBanda kind={kind} title={title} badges={badges} aside={aside} ayuda={ayuda} />
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">

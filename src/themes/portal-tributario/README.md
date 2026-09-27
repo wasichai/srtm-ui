@@ -28,6 +28,8 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/portal-tributario/nav.css`      | El menú en árbol del lateral: hoja activa, hovers y carets con los valores del prototipo (ver [Menú en árbol](#menú-en-árbol-53)). |
 | `src/portal/shell/ArbolNav.tsx`             | El menú en árbol genérico (grupos, subgrupos y hojas) con sus ganchos `data-ui` (#53).                                             |
 | `src/themes/portal-tributario/pasos.css`    | Pasos en galón y barra de instrucción de los asistentes (#54).                                                                     |
+| `src/themes/portal-tributario/banda.css`    | La banda de título unida a las pestañas carpeta y el pie de acciones de `RecordForm` (#55).                                        |
+| `src/portal/components/BandaTitulo.tsx`     | La banda de título de fichas y asistentes, y la fila de badges y acciones bajo ella (#55).                                         |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -260,6 +262,44 @@ Bajo el tema, `pasos.css` da la forma y las medidas del prototipo:
 - **Sobre una tarjeta.** El prototipo pone galón y barra sobre su columna blanca, y la barra es gris (`#F6F6F6`).
   Aquí el fondo de la página ya es `surface-muted` (ese mismo gris), así que `PasosAsistente` los pone sobre una
   tarjeta blanca: el galón con `padding: 10px 18px` y la barra debajo, cuya línea inferior es el borde de la tarjeta.
+
+### Banda de título y pie de acciones (`banda.css`, #55)
+
+`src/portal/components/BandaTitulo.tsx` es estructura, así que es un componente con tokens y utilidades que solo se
+dibuja con la variante `portal`:
+
+- `BandaTitulo`: `kind?` (pequeño, en mayúsculas, antes del título y en la misma línea), `title` (el `h1`, 18px en
+  negrita), `detalle?` (el nombre del formulario del SRTM, a la derecha) y `ayuda?` (el botón "?" circular blanco de
+  22px, `aria-label` "Ayuda de este formulario"; ninguna pantalla lo pasa todavía). Fondo `brand`, texto
+  `on-brand` (4.7:1), `padding: 11px 16px`. Sin la estrella de favoritos: no hay backend. Pone
+  `data-ui="banda-titulo"`.
+- `CabeceraBanda`: la banda y, justo debajo, una fila (`data-ui="cabecera-fila"`) con los `badges` a la izquierda y
+  el `aside` (acciones) a la derecha. Envuelve todo en `data-ui="cabecera-banda"`.
+- `FichaHeader` la usa con la variante `portal` (Contribuyente, Predio, Declaración, Lote de catastro); en light y
+  dark su marcado no cambia. Los asistentes (Nuevo contribuyente, Nueva declaración) usan `CabeceraAsistente`
+  (`src/portal/pages/`): la banda con el título y sus subtítulos, y Cancelar/Siguiente en la fila, en su orden de
+  foco; en light y dark, su cabecera de siempre.
+- El pie de `RecordForm` tiene el mismo marcado en todos los temas: `data-ui="record-acciones"` con Cancelar, la
+  nota opcional (`nota?`, `data-ui="record-nota"`, `text-ink-muted`) y la acción primaria, en ese orden. En light y
+  dark sigue todo a la derecha.
+
+`banda.css` añade lo que las utilidades no dicen:
+
+| Regla                                                          | Qué hace                                                                   |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `[data-ui='cabecera-banda']:has(+ * > [data-ui='ficha-tabs'])` | sin el margen de la página: las pestañas carpeta cuelgan de ella           |
+| … `> [data-ui='cabecera-fila']`                                | 10px bajo la fila de badges y acciones, antes de las pestañas              |
+| `[data-ui='banda-titulo'] a:hover`                             | un enlace de la banda (el contribuyente de la DJ) sigue en blanco          |
+| `[data-ui='banda-titulo'] :focus-visible`                      | anillo de foco blanco: el azul de foco se pierde sobre `brand`             |
+| `[data-ui='record-acciones']` y `> [type='button']`            | Cancelar a la izquierda (`margin-inline-end: auto`), el resto a la derecha |
+| `[data-ui='record-nota']`                                      | la nota a 13.5px                                                           |
+
+- **Un solo `:has()`.** Un `:has()` no puede llevar otro dentro, así que la cabecera seguida de la tarjeta de las
+  pestañas se reconoce con un selector relativo: `:has(+ * > [data-ui='ficha-tabs'])`.
+- **Lo que va entre la cabecera y las pestañas.** Las pestañas cuelgan de la banda solo donde vienen justo después
+  (la Declaración fuera del asistente). En Contribuyente y Predio las tres tarjetas de resumen (predios o titulares,
+  autoavalúo, valor afecto) y en los asistentes los pasos en galón con su barra de instrucción (#54) siguen entre la
+  cabecera y las pestañas, con el espacio de la página: banda → fila → (tarjetas) → (pasos) → pestañas.
 
 ## Tokens de extensión en light y dark
 

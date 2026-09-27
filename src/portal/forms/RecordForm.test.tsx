@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { renderWithProviders } from '@wasichai/testing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { SRTM_THEMES } from '../../themes'
 import { RecordForm } from './RecordForm'
 import type { SectionSpec } from './specs'
 
@@ -98,5 +100,67 @@ describe('RecordForm: the theme hooks', () => {
     expect(screen.getByRole('textbox', { name: /^Nombres/ })).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByRole('combobox', { name: /^Sexo/ })).toHaveAttribute('aria-invalid', 'true')
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+// the actions' footer (#55): portal-tributario lays it out as the prototype (Cancelar on the left, then a faint note
+// and the primary action on the right: banda.css); the markup is the same in every theme
+describe('RecordForm: the actions footer', () => {
+  const THEMED = { config: { storagePrefix: 'srtm', themes: SRTM_THEMES }, user: null }
+  const renderIn = (theme: string, nota?: string) => {
+    localStorage.setItem('srtm.theme', theme)
+    const onSubmit = vi.fn(async () => {})
+    const onCancel = vi.fn()
+    renderWithProviders(
+      <RecordForm
+        sections={SECTIONS}
+        options={{ sexo: ['HOMBRE', 'MUJER'] }}
+        initial={{ codigo: '000012', nombres: 'JUAN', sexo: 'HOMBRE', observacion: '', documentos: '' }}
+        submitLabel="Guardar"
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        nota={nota}
+      />,
+      THEMED
+    )
+    return { onSubmit, onCancel }
+  }
+  const pie = () => screen.getByRole('button', { name: 'Guardar' }).parentElement!
+
+  beforeEach(() => {
+    localStorage.clear()
+    delete document.documentElement.dataset.theme
+  })
+
+  it('puts Cancelar before the primary action and the note between them, and both work as before', async () => {
+    const { onSubmit, onCancel } = renderIn('portal-tributario', 'Los campos con * son obligatorios')
+    expect(document.documentElement.dataset.theme).toBe('portal-tributario')
+    expect(pie()).toHaveAttribute('data-ui', 'record-acciones')
+    const [cancelar, nota, guardar] = Array.from(pie().children)
+    expect(cancelar).toBe(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(nota).toHaveAttribute('data-ui', 'record-nota')
+    expect(nota).toHaveTextContent('Los campos con * son obligatorios')
+    expect(nota).toHaveClass('text-ink-muted')
+    expect(guardar).toBe(screen.getByRole('button', { name: 'Guardar' }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(onCancel).toHaveBeenCalledOnce()
+    expect(onSubmit).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ nombres: 'JUAN', sexo: 'HOMBRE' }))
+  })
+
+  it.each(['light', 'portal-tributario'])('keeps the two buttons alone, to the right, without a note, with %s', (theme) => {
+    renderIn(theme)
+    expect(pie()).toHaveClass('flex', 'justify-end', 'gap-2')
+    expect(Array.from(pie().children).map((b) => b.textContent)).toEqual(['Cancelar', 'Guardar'])
+    expect(document.querySelector('[data-ui="record-nota"]')).toBeNull()
+  })
+
+  it('hides the footer, note included, when the buttons are elsewhere', () => {
+    localStorage.setItem('srtm.theme', 'portal-tributario')
+    renderWithProviders(<RecordForm sections={SECTIONS} initial={{}} submitLabel="Guardar" onSubmit={async () => {}} hideActions nota="Una nota" />, THEMED)
+    expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Una nota')).not.toBeInTheDocument()
   })
 })

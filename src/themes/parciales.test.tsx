@@ -11,7 +11,7 @@ const dir = join(__dirname, 'portal-tributario')
 const read = (file: string) => readFileSync(join(dir, file), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css', 'pasos.css']
+const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css', 'pasos.css', 'banda.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -221,5 +221,27 @@ describe('pasos.css', () => {
   it('comes after controls.css', () => {
     const index = read('index.css')
     expect(index.indexOf("@import './pasos.css';")).toBeGreaterThan(index.indexOf("@import './controls.css';"))
+  })
+})
+
+describe('banda.css', () => {
+  const css = read('banda.css')
+  const cabecera = `${PORTAL} [data-ui='cabecera-banda']`
+
+  // the header, then the box whose child is FichaTabs' strip (the card tabs.css steps aside): one relative selector,
+  // since a :has() cannot hold another
+  it('hangs the folder tabs from the header, without the page gap', () => {
+    expect(rule(css, `${cabecera}:has(+ * > [data-ui='ficha-tabs'])`).get('margin-block-end')).toBe('0')
+    expect(rule(css, `${cabecera}:has(+ * > [data-ui='ficha-tabs']) > [data-ui='cabecera-fila']`).get('padding-block-end')).toBe('10px')
+  })
+
+  it("keeps a link of the band in the band's white, and its focus ring white", () => {
+    expect(rule(css, `${PORTAL} [data-ui='banda-titulo'] a:hover`).get('color')).toBe('inherit')
+    expect(rule(css, `${PORTAL} [data-ui='banda-titulo'] :focus-visible`).get('outline-color')).toBe('var(--on-brand)')
+  })
+
+  it("lays the form's footer out as the prototype: Cancelar on the left, then the note in 13.5px and the primary", () => {
+    expect(rule(css, `${PORTAL} [data-ui='record-acciones'] > [type='button']`).get('margin-inline-end')).toBe('auto')
+    expect(rule(css, `${PORTAL} [data-ui='record-nota']`).get('font-size')).toBe('13.5px')
   })
 })

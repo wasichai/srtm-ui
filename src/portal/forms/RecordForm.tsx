@@ -23,6 +23,8 @@ interface RecordFormProps<T> {
   onSubmit: (values: T) => Promise<unknown>
   onCancel?: () => void
   cancelLabel?: string
+  // a faint line beside the buttons, before the primary one
+  nota?: string
   // above the sections: what the form does not edit itself (a relation picker)
   children?: ReactNode
   // renders the buttons elsewhere (the wizard's header): the form gets this id
@@ -50,6 +52,7 @@ export function RecordForm<T extends object>({
   onSubmit,
   onCancel,
   cancelLabel = 'Cancelar',
+  nota,
   children,
   formId,
   hideActions,
@@ -202,11 +205,17 @@ export function RecordForm<T extends object>({
         </Alerta>
       )}
       {!hideActions && (
-        <div className="flex justify-end gap-2">
+        // portal-tributario spreads it (banda.css): Cancelar on the left, the note and the primary on the right
+        <div data-ui="record-acciones" className="flex justify-end gap-2">
           {onCancel && (
             <Button type="button" variant="secondary" onClick={onCancel}>
               {cancelLabel}
             </Button>
+          )}
+          {nota && (
+            <p data-ui="record-nota" className="self-center text-sm text-ink-muted">
+              {nota}
+            </p>
           )}
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Guardando…' : submitLabel}

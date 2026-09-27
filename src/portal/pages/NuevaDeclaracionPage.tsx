@@ -21,6 +21,7 @@ import type { Elegido } from '../forms/ubicacion'
 import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Contribuyente, Declaracion, Predio } from '../types'
+import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
 
@@ -140,41 +141,38 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const c = ficha.data?.contribuyente
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
-            {c
-              ? `${c.codigo ? `Contribuyente Nº ${c.codigo}` : 'Contribuyente'} - ${c.nombre_completo ?? ''}`
-              : predioFijo
-                ? `Predio ${predioFijo.codigo ?? ''} - ${predioFijo.direccion ?? ''}`
-                : 'Contribuyente'}
-          </p>
-          <h1 className="text-xl font-semibold text-ink uppercase">Nueva declaración jurada predial</h1>
-          <p className="text-xs font-semibold tracking-wide text-brand uppercase italic">Declaración jurada y registro de predio</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            <X className="size-4" />
-            Cancelar
+      <CabeceraAsistente
+        kind={
+          c
+            ? `${c.codigo ? `Contribuyente Nº ${c.codigo}` : 'Contribuyente'} - ${c.nombre_completo ?? ''}`
+            : predioFijo
+              ? `Predio ${predioFijo.codigo ?? ''} - ${predioFijo.direccion ?? ''}`
+              : 'Contribuyente'
+        }
+        title="Nueva declaración jurada predial"
+        detalle="Declaración jurada y registro de predio"
+      >
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          <X className="size-4" />
+          Cancelar
+        </Button>
+        {tab === 'datos' ? (
+          <Button type="submit" form={DATOS_FORM}>
+            <ArrowRight className="size-4" />
+            Siguiente
           </Button>
-          {tab === 'datos' ? (
-            <Button type="submit" form={DATOS_FORM}>
-              <ArrowRight className="size-4" />
-              Siguiente
-            </Button>
-          ) : !existente ? (
-            <Button type="submit" form={UBICACION_FORM} disabled={busy}>
-              <ArrowRight className="size-4" />
-              {busy ? 'Guardando…' : 'Siguiente'}
-            </Button>
-          ) : (
-            <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy || titulares.length > 0}>
-              <ArrowRight className="size-4" />
-              {busy ? 'Guardando…' : 'Siguiente'}
-            </Button>
-          )}
-        </div>
-      </div>
+        ) : !existente ? (
+          <Button type="submit" form={UBICACION_FORM} disabled={busy}>
+            <ArrowRight className="size-4" />
+            {busy ? 'Guardando…' : 'Siguiente'}
+          </Button>
+        ) : (
+          <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy || titulares.length > 0}>
+            <ArrowRight className="size-4" />
+            {busy ? 'Guardando…' : 'Siguiente'}
+          </Button>
+        )}
+      </CabeceraAsistente>
       <PasosAsistente pasos={DECLARACION_TABS} actual={tab} onIr={ir} puedeIr={abierta} instruccion={INSTRUCCIONES_NUEVA_DECLARACION[tab]} />
       <Card className="pb-5">
         <FichaTabs
