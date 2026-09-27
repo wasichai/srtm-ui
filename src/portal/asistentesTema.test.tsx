@@ -69,6 +69,7 @@ function routes(theme: string): MockRoute[] {
     { path: '/srtm/obras-categorias', body: [] },
     { path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 1, totales } },
     { path: '/srtm/contribuyentes/c1/declaraciones', body: [] },
+    { path: '/srtm/contribuyentes/c1/domicilios', body: [] },
     { path: '/srtm/declaraciones/d1', body: { declaracion, predio, contribuyente, actualizado: null } },
     { path: /^\/srtm\/declaraciones\/d1\//, body: [] },
     { path: '/srtm/predios/p1', body: { predio, anio: year, titulares: 1, totales } },
@@ -177,6 +178,27 @@ describe('the wizards with portal-tributario', () => {
     expect(tab('Otros frentes')).toHaveAttribute('aria-selected', 'true')
   })
 
+  it('keeps the steps of the inscription on the ficha it goes on in, with the tabs that are open', async () => {
+    start('portal-tributario', '/contribuyentes/c1?tab=domicilios&inscripcion=1')
+    expect(await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })).toBeInTheDocument()
+    await waitFor(() => expect(actual()).toBe('Domicilios'))
+    expect(pasos().map((li) => li.textContent)).toEqual(INSCRIPCION)
+    expect(instruccion()).toMatch(/^Paso 2: registre al menos un domicilio fiscal/)
+    // no fiscal domicilio yet: only the datos, behind, can be gone to, as its tab
+    expect(navegables()).toEqual(['Datos del contribuyente'])
+    await userEvent.click(within(galon()).getByRole('button', { name: 'Datos del contribuyente' }))
+    expect(tab('Datos del contribuyente')).toHaveAttribute('aria-selected', 'true')
+    expect(actual()).toBe('Datos del contribuyente')
+    expect(new URLSearchParams(window.location.search).get('inscripcion')).toBe('1')
+  })
+
+  it('has no steps in a ficha opened outside the inscription', async () => {
+    start('portal-tributario', '/contribuyentes/c1?tab=domicilios')
+    expect(await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })).toBeInTheDocument()
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('portal-tributario'))
+    expect(screen.queryByRole('list', { name: 'Pasos del trámite' })).not.toBeInTheDocument()
+  })
+
   it('has no steps in a declaración opened outside the wizard', async () => {
     start('portal-tributario', '/declaraciones/d1')
     expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 39147' })).toBeInTheDocument()
@@ -189,7 +211,8 @@ describe('the wizards with light', () => {
   it.each([
     ['the inscription', '/contribuyentes/nuevo', 'Nuevo contribuyente'],
     ['a new declaración', '/contribuyentes/c1/declaraciones/nueva', 'Nueva declaración jurada predial'],
-    ['the declaración just presented', '/declaraciones/d1?tab=transferentes&asistente=1', 'Declaración jurada predial - 39147']
+    ['the declaración just presented', '/declaraciones/d1?tab=transferentes&asistente=1', 'Declaración jurada predial - 39147'],
+    ['the inscription on its ficha', '/contribuyentes/c1?tab=domicilios&inscripcion=1', 'QUISPE MAMANI JUAN']
   ])('draws %s with its tabs alone: no steps, no instruction', async (_, path, heading) => {
     start('light', path)
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()

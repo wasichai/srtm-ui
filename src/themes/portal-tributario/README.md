@@ -233,7 +233,8 @@ Componentes (en `src/portal/components/`):
   (`{ label, icon, onClick }[]`), que son `Button` primarios de `controles.tsx`. Hoy nadie pasa herramientas: el
   portal no tiene Recuperar, Importar ni Limpiar.
 - `PasosAsistente` junta los dos sobre una tarjeta, solo con la variante `portal`; en la clásica no pinta nada. Lo
-  usan Nuevo contribuyente, Nueva declaración y la declaración con `?asistente=1`, justo debajo de su cabecera. Los
+  usan Nuevo contribuyente, la ficha del contribuyente mientras sigue la inscripción (`?inscripcion=1`, sobre sus
+  pestañas), Nueva declaración y la declaración con `?asistente=1`, justo debajo de su cabecera. Los
   pasos son las pestañas de cada asistente, con su mismo estado: el paso actual es la pestaña abierta y un paso va
   adonde va su pestaña, cuando se puede abrir. Las instrucciones, una por paso, están en
   `src/portal/forms/instrucciones.ts`.

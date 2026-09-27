@@ -7,8 +7,7 @@ import type { DECLARACION_TABS } from '../pages/DeclaracionPage'
 type PasoInscripcion = (typeof CONTRIBUYENTE_TABS)[number]['id']
 type PasoDeclaracion = (typeof DECLARACION_TABS)[number]['id']
 
-// the inscription of a contribuyente: its datos (Nuevo contribuyente), then its ficha tab by tab. the ficha
-// (?inscripcion=1) does not draw the steps yet: only the first is shown
+// the inscription of a contribuyente: its datos (Nuevo contribuyente), then its ficha tab by tab (?inscripcion=1)
 export const INSTRUCCIONES_INSCRIPCION: Record<PasoInscripcion, string> = {
   datos: 'complete los datos del contribuyente y pulse Siguiente para inscribirlo.',
   domicilios: 'registre al menos un domicilio fiscal: con él se abren los pasos siguientes.',
