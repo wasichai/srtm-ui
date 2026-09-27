@@ -1,6 +1,6 @@
 import { cn } from '@wasichai/ui'
 import { formatDate, formatMoney, formatNumber, formatText, MESES } from '../components/format'
-import type { FieldSpec, FormValues, SectionSpec } from './specs'
+import { AUTO, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, SPAN } from './styles'
 
 // the read-only side of a ficha: label over value, section by section, on the same grid as the form
@@ -24,7 +24,7 @@ export function FieldGrid({ sections, values }: { sections: SectionSpec[]; value
               {shown.map((field) => (
                 <div key={field.name} className={cn(SPAN[field.span ?? 2])}>
                   <dt className="text-xs text-ink-muted">{field.label}</dt>
-                  <dd className="mt-0.5 text-sm break-words text-ink">{display(field, record[field.name])}</dd>
+                  <dd className="mt-0.5 text-sm break-words text-ink">{display(field, record[field.name], asForm)}</dd>
                 </div>
               ))}
             </dl>
@@ -35,7 +35,9 @@ export function FieldGrid({ sections, values }: { sections: SectionSpec[]; value
   )
 }
 
-function display(field: FieldSpec, value: unknown): string {
+function display(field: FieldSpec, value: unknown, values: FormValues): string {
+  // a stored record without the backend's code: it is not coming
+  if (field.placeholder === AUTO && (value === null || value === undefined || value === '')) return vacioDe(field, values, true) ?? '—'
   if (field.kind === 'money') return formatMoney(value as number | null)
   if (field.kind === 'decimal') return formatNumber(value as number | null)
   if (field.kind === 'date') return formatDate(value as string | null)

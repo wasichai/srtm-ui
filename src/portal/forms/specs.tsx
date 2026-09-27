@@ -32,7 +32,11 @@ export interface FieldSpec {
   choices?: string[]
   // the backend's (codigo, fecha del registro...): shown, never edited
   readOnly?: boolean
+  // AUTO: the backend's code, number or date, which only a new record is promised (vacioDe)
   placeholder?: string
+  // placeholder AUTO on a field of another record shown beside the form's (the predio's in datos del predio): whether
+  // that record exists. without it, the form's own record decides
+  existe?: (values: FormValues) => boolean
   span?: 1 | 2 | 3 | 4 | 6
   // kind suggest: free text with catalog suggestions
   suggest?: (q: string, values: FormValues) => Promise<string[]>
@@ -51,7 +55,18 @@ export interface SectionSpec {
 
 export type { CatalogKey }
 
-const AUTO = '(AUTOGENERADO)'
+export const AUTO = '(AUTOGENERADO)'
+// what such a field shows once its record exists without it: one imported from the padrón, never numbered
+export const SIN_CODIGO = 'SIN CÓDIGO (padrón)'
+export const SIN_FECHA = 'SIN FECHA (padrón)'
+
+// what an empty field shows: its placeholder, but AUTO only while its record is new. guardado: the form's record
+// exists (it has an id)
+export function vacioDe(field: FieldSpec, values: FormValues, guardado: boolean): string | undefined {
+  if (field.placeholder !== AUTO) return field.placeholder
+  if (!(field.existe ? field.existe(values) : guardado)) return AUTO
+  return field.kind === 'date' ? SIN_FECHA : SIN_CODIGO
+}
 
 // a persona natural (or sociedad conyugal) has surnames and names; everyone else a razón social.
 // imported contribuyentes have no tipo_contribuyente yet: their tipo_persona decides

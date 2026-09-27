@@ -5,7 +5,7 @@ import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-fo
 import { formatDate, MESES } from '../components/format'
 import { parseGeometry } from '../components/geo'
 import { BLOQUEADOS, bloqueados as bloqueadosDe } from './bloqueo'
-import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from './specs'
+import { dataFields, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, selectClass, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
 
@@ -53,6 +53,8 @@ export function RecordForm<T extends object>({
     formState: { isSubmitting }
   } = form
   const values = form.watch()
+  // a stored record: the backend's codes it lacks are not coming (vacioDe)
+  const guardado = Boolean((initial as { id?: unknown }).id)
   const [formError, setFormError] = useState<string | null>(null)
 
   const submit = handleSubmit(async (current) => {
@@ -82,7 +84,7 @@ export function RecordForm<T extends object>({
           </legend>
           <div className={GRID}>
             {section.fields.map((field) => (
-              <Field key={field.name} field={field} form={form} values={values} options={options?.[field.name]} />
+              <Field key={field.name} field={field} form={form} values={values} options={options?.[field.name]} guardado={guardado} />
             ))}
           </div>
         </fieldset>
@@ -109,7 +111,19 @@ export function RecordForm<T extends object>({
   )
 }
 
-function Field({ field, form, values, options }: { field: FieldSpec; form: UseFormReturn<FormValues>; values: FormValues; options?: string[] }) {
+function Field({
+  field,
+  form,
+  values,
+  options,
+  guardado
+}: {
+  field: FieldSpec
+  form: UseFormReturn<FormValues>
+  values: FormValues
+  options?: string[]
+  guardado: boolean
+}) {
   const rules: RegisterOptions<FormValues, string> = { validate: (value, all) => validate(field, value ?? '', all) }
   if (field.kind === 'hidden' || field.kind === 'geometry') {
     // no input: a custom field (the ubigeo cascade) writes it. registered so `required` still holds
@@ -134,8 +148,8 @@ function Field({ field, form, values, options }: { field: FieldSpec; form: UseFo
     // a locked field is still the form's: registered, so it is validated and sent
     if (locked) form.register(field.name, rules)
     const value = values[field.name] ?? ''
-    // empty stays empty, so the placeholder ("(AUTOGENERADO)") shows instead of a dash
-    control = <Input {...aria} disabled value={field.kind === 'date' && value ? formatDate(value) : value} placeholder={field.placeholder} />
+    // empty stays empty, so the placeholder ("(AUTOGENERADO)", "SIN CÓDIGO (padrón)") shows instead of a dash
+    control = <Input {...aria} disabled value={field.kind === 'date' && value ? formatDate(value) : value} placeholder={vacioDe(field, values, guardado)} />
   } else if (field.kind === 'multi') {
     const picked = (values[field.name] ?? '')
       .split(',')
