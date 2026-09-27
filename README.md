@@ -67,14 +67,22 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - `index.html` aplica el tema antes de cargar la app, para que no parpadee.
 
 - **Registro de predio y catastro fiscal** (fase 3, págs. 11-14 de la presentación):
-  - **"Buscar predios"** (pág. 13): un diálogo con pestañas *Buscar en Tributario* (el padrón) y *Buscar en Catastro
-    Fiscal*.
+  - **"Buscar predios"** (pág. 13): un diálogo con pestañas *Buscar en Tributario* (el padrón, la que abre) y *Buscar
+    en Catastro Fiscal*.
     - Tiene los filtros del SRTM, Limpiar / Buscar, y una tabla paginada (Filas 5/10/25).
     - Debajo, el mapa de los lotes: la fila elegida se resalta y un clic en un lote elige su fila. La cámara descarga
       una imagen del mapa.
     - Se abre desde la ubicación de una DJ o de un predio (rellena la ubicación, el código CPU y el polígono), desde
       el asistente de DJ (un predio del padrón pasa a ser el de la declaración) y desde la lista de predios (abre la
       ficha, o "Nuevo predio" ya ubicado).
+    - Un lote elegido (pág. 14) copia su código de predio municipal al predio nuevo y deja en gris lo que trajo del
+      catastro (departamento, provincia y distrito según su ubigeo, vía, zona, manzana, lote, código CPU, polígono),
+      hasta pulsar *Desbloquear*. Un predio que ya está en el padrón conserva su código.
+    - En *Buscar en Catastro Fiscal*, *Nuevo lote* y *Editar lote* abren el editor de lotes; sobre un formulario a
+      medio llenar lo abren en otra pestaña del navegador.
+  - **Lotes del catastro fiscal** (`/catastro/nuevo`, `/catastro/:id`, también desde el inicio): código CPU, código
+    municipal, ubicación y el polígono dibujado en el mapa, sobre los demás lotes del catastro. Cada lote abierto queda
+    como pestaña de trabajo.
   - **Ubicación del predio:** incluye la sección *Predio de catastro fiscal*, con código CPU, código municipal y un
     mapa. En ese mapa se ve el lote del predio sobre los del catastro, se elige uno con un clic, o se dibuja / edita el
     polígono.

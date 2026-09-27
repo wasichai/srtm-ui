@@ -99,6 +99,7 @@ export const rentas = {
   // "buscar predios" (page 13): the padrón (tributario) and the catastro fiscal, same filters
   buscarPredios: (filtros: FiltrosPredio, page: number, size: number) => get<Pagina<Predio>>(`/srtm/predios/buscar${query({ ...filtros, page, size })}`),
   buscarCatastro: (filtros: FiltrosPredio, page: number, size: number) => get<Pagina<CatastroFiscal>>(`/srtm/catastro${query({ ...filtros, page, size })}`),
+  lote: (id: string) => get<CatastroFiscal>(`/srtm/catastro/${id}`),
   crearLote: (body: CatastroFiscal) => send<CatastroFiscal>('POST', '/srtm/catastro', body),
   actualizarLote: (id: string, body: CatastroFiscal) => send<CatastroFiscal>('PUT', `/srtm/catastro/${id}`, body),
 

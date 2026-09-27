@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, Table, Td, Th } from '@wasichai/ui'
-import { Camera, FileText, RotateCcw, Search } from 'lucide-react'
+import { Camera, FileText, Pencil, Plus, RotateCcw, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { rentas } from '../api'
 import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
@@ -23,6 +24,8 @@ interface BuscarPrediosDialogProps {
   // which tab opens first; `solo` hides the other one
   inicial?: Donde
   solo?: Donde
+  // over a form being filled: the lote editor opens in another browser tab, so nothing typed is lost
+  lotesAparte?: boolean
 }
 
 const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
@@ -31,8 +34,8 @@ const identifica = (f: FiltrosPredio) => Boolean(f.codigo || f.codigo_cpu || f.p
 
 // the srtm's "buscar predios" (page 13): the same filters over the padrón (tributario) and over the catastro fiscal,
 // a paged table, and the lotes on a map under it. the row picked is the lote highlighted, and a lote clicked picks
-// its row
-export function BuscarPrediosDialog({ onClose, onPick, inicial = 'catastro', solo }: BuscarPrediosDialogProps) {
+// its row. it opens on the padrón: the catastro fiscal may still be empty
+export function BuscarPrediosDialog({ onClose, onPick, inicial = 'tributario', solo, lotesAparte = false }: BuscarPrediosDialogProps) {
   const [donde, setDonde] = useState<Donde>(solo ?? inicial)
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -65,13 +68,23 @@ export function BuscarPrediosDialog({ onClose, onPick, inicial = 'catastro', sol
           </div>
         )}
         {/* keyed: each tab keeps its own filters and page */}
-        <Busqueda key={donde} donde={donde} onPick={onPick} onClose={onClose} />
+        <Busqueda key={donde} donde={donde} onPick={onPick} onClose={onClose} lotesAparte={lotesAparte} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function Busqueda({ donde, onPick, onClose }: { donde: Donde; onPick: BuscarPrediosDialogProps['onPick']; onClose: () => void }) {
+function Busqueda({
+  donde,
+  onPick,
+  onClose,
+  lotesAparte
+}: {
+  donde: Donde
+  onPick: BuscarPrediosDialogProps['onPick']
+  onClose: () => void
+  lotesAparte: boolean
+}) {
   const catalogos = useCatalogos()
   const [filtros, setFiltros] = useState<FiltrosPredio>({ tipo_predio: 'PREDIO URBANO' })
   const [aplicados, setAplicados] = useState<FiltrosPredio | null>(null)
@@ -144,6 +157,8 @@ function Busqueda({ donde, onPick, onClose }: { donde: Donde; onPick: BuscarPred
       setBusy(false)
     }
   }
+  // in this browser tab the dialog goes with the page it was over
+  const abrirLote = lotesAparte ? { target: '_blank', rel: 'noreferrer' } : { onClick: onClose }
   const descargar = () => {
     const url = capture.current?.()
     if (!url) return
@@ -305,7 +320,26 @@ function Busqueda({ donde, onPick, onClose }: { donde: Donde; onPick: BuscarPred
         }}
       />
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
+        {/* the catastro fiscal is kept here too: a lote missing or wrong is added or fixed in the lote editor */}
+        {donde === 'catastro' && (
+          <div className="mr-auto flex gap-2">
+            <Button asChild variant="secondary">
+              <Link to="/catastro/nuevo" {...abrirLote}>
+                <Plus className="size-4" />
+                Nuevo lote
+              </Link>
+            </Button>
+            {selected && (
+              <Button asChild variant="secondary">
+                <Link to={`/catastro/${selected}`} {...abrirLote}>
+                  <Pencil className="size-4" />
+                  Editar lote
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
         <Button variant="secondary" onClick={onClose}>
           Cancelar
         </Button>

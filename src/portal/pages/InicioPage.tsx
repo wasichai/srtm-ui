@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button, Card, CardBody, CardHeader, CardTitle } from '@wasichai/ui'
-import { FileText, MapPinned, Plus, User, Users } from 'lucide-react'
+import { FileText, LandPlot, MapPinned, Plus, User, Users } from 'lucide-react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { QueryState } from '../components/QueryState'
@@ -58,6 +58,12 @@ export function InicioPage() {
                 Nuevo predio
               </Link>
             </Button>
+            <Button asChild variant="secondary">
+              <Link to="/catastro/nuevo">
+                <LandPlot className="size-4" />
+                Nuevo lote de catastro
+              </Link>
+            </Button>
           </CardBody>
         </Card>
         <Card>
@@ -76,6 +82,8 @@ export function InicioPage() {
                         <MapPinned className="size-4" />
                       ) : tab.kind === 'declaracion' ? (
                         <FileText className="size-4" />
+                      ) : tab.kind === 'lote' ? (
+                        <LandPlot className="size-4" />
                       ) : (
                         <User className="size-4" />
                       )}

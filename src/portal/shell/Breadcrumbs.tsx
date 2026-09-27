@@ -11,7 +11,8 @@ const PANTALLAS: [RegExp, string][] = [
   [/^\/contribuyentes\/.+/, 'Registro de contribuyente'],
   [/^\/contribuyentes$/, 'Contribuyentes'],
   [/^\/predios\/.+/, 'Registro de predio'],
-  [/^\/predios$/, 'Predios']
+  [/^\/predios$/, 'Predios'],
+  [/^\/catastro\//, 'Lote de catastro fiscal']
 ]
 
 export function Breadcrumbs() {

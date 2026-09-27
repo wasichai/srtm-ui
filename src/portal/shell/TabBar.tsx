@@ -1,5 +1,5 @@
 import { cn } from '@wasichai/ui'
-import { FileText, Home, MapPinned, User, X } from 'lucide-react'
+import { FileText, Home, LandPlot, MapPinned, User, X } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import { useWorkspaceTabs } from './WorkspaceTabs'
 
@@ -24,7 +24,7 @@ export function TabBar() {
         </li>
         {tabs.map((tab) => {
           const active = pathname === tab.path
-          const Icon = tab.kind === 'predio' ? MapPinned : tab.kind === 'declaracion' ? FileText : User
+          const Icon = tab.kind === 'predio' ? MapPinned : tab.kind === 'declaracion' ? FileText : tab.kind === 'lote' ? LandPlot : User
           return (
             <li key={tab.path} className={tabClass(active)}>
               <Link to={tab.path} aria-current={active ? 'page' : undefined} className="flex max-w-56 items-center gap-1.5 py-1.5 pr-1 pl-3">
