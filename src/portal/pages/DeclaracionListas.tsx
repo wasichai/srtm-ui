@@ -12,10 +12,11 @@ const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAY
 const anioActual = () => Number(today().slice(0, 4))
 const mes = (m: number | null) => (m ? (MESES[m - 1] ?? String(m)) : '—')
 
-export function TransferentesPanel({ declaracion }: { declaracion: string }) {
+export function TransferentesPanel({ declaracion, readOnly }: { declaracion: string; readOnly?: boolean }) {
   return (
     <HijosPanel<Transferente>
       parent={declaracion}
+      readOnly={readOnly}
       api={rentas.transferentes}
       queryKey="transferentes"
       plural="transferentes"
@@ -35,10 +36,11 @@ export function TransferentesPanel({ declaracion }: { declaracion: string }) {
   )
 }
 
-export function NivelesPanel({ declaracion }: { declaracion: string }) {
+export function NivelesPanel({ declaracion, readOnly }: { declaracion: string; readOnly?: boolean }) {
   return (
     <HijosPanel<NivelConstruccion>
       parent={declaracion}
+      readOnly={readOnly}
       api={rentas.niveles}
       queryKey="niveles"
       plural="niveles de construcción"
@@ -74,10 +76,11 @@ export function NivelesPanel({ declaracion }: { declaracion: string }) {
   )
 }
 
-export function ObrasPanel({ declaracion }: { declaracion: string }) {
+export function ObrasPanel({ declaracion, readOnly }: { declaracion: string; readOnly?: boolean }) {
   return (
     <HijosPanel<ObraComplementaria>
       parent={declaracion}
+      readOnly={readOnly}
       api={rentas.obras}
       queryKey="obras"
       plural="obras complementarias"
@@ -122,10 +125,11 @@ export function ObrasPanel({ declaracion }: { declaracion: string }) {
   )
 }
 
-export function FrentesPanel({ declaracion }: { declaracion: string }) {
+export function FrentesPanel({ declaracion, readOnly }: { declaracion: string; readOnly?: boolean }) {
   return (
     <HijosPanel<OtroFrente>
       parent={declaracion}
+      readOnly={readOnly}
       api={rentas.frentes}
       queryKey="frentes"
       plural="otros frentes"

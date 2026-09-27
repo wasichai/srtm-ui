@@ -229,6 +229,10 @@ export interface Declaracion {
   sub_clase_uso?: string | null
   area_comun_terreno?: number | null
   otros_datos?: string | null
+  // VIGENTE or ANULADA (none, in the imported ones, is VIGENTE): the backend's, set by anular
+  estado?: string | null
+  motivo_anulacion?: string | null
+  fecha_anulacion?: string | null
 }
 
 // the declaración jurada's lists. declaracion is the parent's id, set by the backend

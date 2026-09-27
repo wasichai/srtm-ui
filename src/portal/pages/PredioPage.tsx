@@ -15,6 +15,7 @@ import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import { DatosPanel } from './DatosPanel'
 import { camposDe } from './DeclaracionPage'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
+import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
 
 export function PredioRoute() {
@@ -48,7 +49,12 @@ function PredioPage({ id }: { id: string }) {
                 {predio.habilitacion_urbana && <span>· {predio.habilitacion_urbana}</span>}
               </>
             }
-            aside={<YearSelect value={anio} onChange={setAnio} />}
+            aside={
+              <div className="flex items-center gap-3">
+                <YearSelect value={anio} onChange={setAnio} />
+                <EliminarFicha path={`/predios/${id}`} singular="predio" borrar={() => rentas.borrarPredio(id)} />
+              </div>
+            }
           />
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard icon={Users} label={`Titulares ${anio}`} value={String(titulares)} />

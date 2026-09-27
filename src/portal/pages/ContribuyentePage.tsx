@@ -15,6 +15,7 @@ import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
+import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
 
 // the srtm's registro de contribuyente, in its order, then what rentas adds: the year's predios and every declaration
@@ -76,7 +77,12 @@ function ContribuyentePage({ id }: { id: string }) {
                 {contribuyente.domicilio_fiscal && <span>· {contribuyente.domicilio_fiscal}</span>}
               </>
             }
-            aside={<YearSelect value={anio} onChange={setAnio} />}
+            aside={
+              <div className="flex items-center gap-3">
+                <YearSelect value={anio} onChange={setAnio} />
+                <EliminarFicha path={`/contribuyentes/${id}`} singular="contribuyente" borrar={() => rentas.borrarContribuyente(id)} />
+              </div>
+            }
           />
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard icon={MapPinned} label={`Predios ${anio}`} value={String(predios)} />

@@ -4,6 +4,7 @@ import { FileText, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
+import { anulada } from '../components/EstadoBadge'
 import { currentYear, formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
 import { RecordForm } from '../forms/RecordForm'
@@ -13,7 +14,8 @@ import { useRefresh } from '../queries'
 import type { Contribuyente, Declaracion, DeclaracionDetalle, Predio } from '../types'
 
 // "datos de los condóminos": the titulares of the declaración's predio, year and secuencia de uso. each declares its
-// own %; condición, valor de condominio and valor afecto are the backend's (srtm-backend#4), shown here read-only
+// own %; condición, valor de condominio and valor afecto are the backend's (srtm-backend#4), shown here read-only.
+// an annulled declaración is out of the condominio (srtm-backend#7)
 
 const PORCENTAJE: SectionSpec[] = [
   { title: 'Condómino', fields: [{ name: 'porcentaje_condominio', label: '% de propiedad', kind: 'decimal', required: true, span: 2 }] }
@@ -22,14 +24,14 @@ const PORCENTAJE: SectionSpec[] = [
 const describir = (c: Contribuyente): Picked => ({ id: c.id!, label: `${c.numero_documento ?? 's/d'} · ${c.nombre_completo ?? ''}` })
 const nombre = (row: DeclaracionDetalle) => row.contribuyente?.nombre_completo ?? 'el condómino'
 
-export function CondominosPanel({ declaracion, predio }: { declaracion: Declaracion; predio: Predio }) {
+export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion: Declaracion; predio: Predio; readOnly?: boolean }) {
   const anio = declaracion.anio ?? currentYear()
   const refresh = useRefresh()
   // same queries as the predio's titulares and totals
   const query = useQuery({
     queryKey: ['predio', predio.id, 'declaraciones', anio],
     queryFn: () => rentas.declaracionesDePredio(predio.id!, anio),
-    select: (rows) => rows.filter((row) => row.declaracion.secuencia_uso === declaracion.secuencia_uso)
+    select: (rows) => rows.filter((row) => row.declaracion.secuencia_uso === declaracion.secuencia_uso && !anulada(row.declaracion))
   })
   const totales = useQuery({ queryKey: ['predio', predio.id, anio], queryFn: () => rentas.predio(predio.id!, anio), select: (ficha) => ficha.totales }).data
   const [agregando, setAgregando] = useState(false)
@@ -61,10 +63,12 @@ export function CondominosPanel({ declaracion, predio }: { declaracion: Declarac
             </p>
           )}
         </div>
-        <Button variant="secondary" size="sm" onClick={() => setAgregando(true)} aria-label="Agregar condómino">
-          <Plus className="size-4 text-brand" />
-          Agregar
-        </Button>
+        {!readOnly && (
+          <Button variant="secondary" size="sm" onClick={() => setAgregando(true)} aria-label="Agregar condómino">
+            <Plus className="size-4 text-brand" />
+            Agregar
+          </Button>
+        )}
       </div>
       <QueryState query={query}>
         {() =>
@@ -119,7 +123,7 @@ export function CondominosPanel({ declaracion, predio }: { declaracion: Declarac
                     </Td>
                     <Td className="text-right">
                       {/* a sole titular holds 100 %: there is nothing to change until a condómino joins */}
-                      {rows.length > 1 && (
+                      {rows.length > 1 && !readOnly && (
                         <Button variant="ghost" size="icon" aria-label={`Editar % de propiedad de ${nombre(row)}`} onClick={() => setEditando(row)}>
                           <Pencil className="size-4" />
                         </Button>

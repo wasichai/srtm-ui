@@ -3,6 +3,7 @@ import { Badge, Card } from '@wasichai/ui'
 import { Building2, FileText, MapPin, Signpost, Users } from 'lucide-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
@@ -10,6 +11,7 @@ import { dataFields, type SectionSpec } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion, Predio } from '../types'
+import { AnularDeclaracion, AvisoAnulada } from './AnularDeclaracion'
 import { CondominosPanel } from './Condominos'
 import { DatosPanel } from './DatosPanel'
 import { FichaHeader } from './FichaHeader'
@@ -78,6 +80,8 @@ function DeclaracionPage({ id }: { id: string }) {
           condicion: predio.condicion,
           fecha_actualizacion: actualizado ?? null
         }
+        // an annulled one (a descargo) is only read: no way back
+        const soloLectura = anulada(declaracion)
         return (
           <div className="space-y-5">
             <FichaHeader
@@ -89,6 +93,7 @@ function DeclaracionPage({ id }: { id: string }) {
               title={`Declaración jurada predial${declaracion.numero_declaracion ? ` - ${declaracion.numero_declaracion}` : ''}`}
               badges={
                 <>
+                  <EstadoBadge estado={declaracion.estado ?? 'VIGENTE'} />
                   {declaracion.anio && <Badge>{declaracion.anio}</Badge>}
                   {declaracion.condicion_propiedad && <Badge>{declaracion.condicion_propiedad}</Badge>}
                   <Link to={`/predios/${predio.id}`} className="font-medium text-brand hover:underline">
@@ -97,7 +102,9 @@ function DeclaracionPage({ id }: { id: string }) {
                   <span>· {predio.direccion}</span>
                 </>
               }
+              aside={soloLectura ? undefined : <AnularDeclaracion declaracion={declaracion} />}
             />
+            {soloLectura && <AvisoAnulada declaracion={declaracion} />}
             <Card className="pb-4">
               <FichaTabs
                 label="Secciones de la declaración jurada"
@@ -114,6 +121,7 @@ function DeclaracionPage({ id }: { id: string }) {
                           values={datos}
                           options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
                           save={guardarDeclaracion(DJ_DATOS_SECTIONS)}
+                          readOnly={soloLectura}
                         />
                       </div>
                     )
@@ -123,7 +131,13 @@ function DeclaracionPage({ id }: { id: string }) {
                     icon: MapPin,
                     render: () => (
                       <div className="px-6 pt-5">
-                        <DatosPanel sections={UBICACION_SECTIONS} values={predio} options={catalogos.data?.predio} save={guardarPredio} />
+                        <DatosPanel
+                          sections={UBICACION_SECTIONS}
+                          values={predio}
+                          options={catalogos.data?.predio}
+                          save={guardarPredio}
+                          readOnly={soloLectura}
+                        />
                       </div>
                     )
                   },
@@ -132,7 +146,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     icon: Users,
                     render: () => (
                       <div className="px-6 pt-5">
-                        <TransferentesPanel declaracion={id} />
+                        <TransferentesPanel declaracion={id} readOnly={soloLectura} />
                       </div>
                     )
                   },
@@ -146,9 +160,10 @@ function DeclaracionPage({ id }: { id: string }) {
                           values={declaracion}
                           options={catalogos.data?.declaracion_predial}
                           save={guardarDeclaracion(CARACTERISTICAS_SECTIONS)}
+                          readOnly={soloLectura}
                         />
-                        <NivelesPanel declaracion={id} />
-                        <ObrasPanel declaracion={id} />
+                        <NivelesPanel declaracion={id} readOnly={soloLectura} />
+                        <ObrasPanel declaracion={id} readOnly={soloLectura} />
                       </div>
                     )
                   },
@@ -159,7 +174,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     // where its first condómino is added
                     render: () => (
                       <div className="px-6 pt-5">
-                        <CondominosPanel declaracion={declaracion} predio={predio} />
+                        <CondominosPanel declaracion={declaracion} predio={predio} readOnly={soloLectura} />
                       </div>
                     )
                   },
@@ -168,7 +183,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     icon: Signpost,
                     render: () => (
                       <div className="px-6 pt-5">
-                        <FrentesPanel declaracion={id} />
+                        <FrentesPanel declaracion={id} readOnly={soloLectura} />
                       </div>
                     )
                   }
