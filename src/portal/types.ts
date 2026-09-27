@@ -442,4 +442,5 @@ export type CatalogKey =
   | 'obra_complementaria'
   | 'otro_frente'
   | 'catastro_fiscal'
+  | 'obra_categoria'
 export type Catalogos = Partial<Record<CatalogKey, Record<string, string[]>>>
