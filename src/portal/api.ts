@@ -27,6 +27,7 @@ import type {
   Transferente,
   Ubigeo,
   UnidadUrbana,
+  UsoPredio,
   Via
 } from './types'
 
@@ -99,6 +100,7 @@ export const rentas = {
   frentes: hijos<OtroFrente>('declaraciones', 'frentes'),
   categoriasValor: () => get<CategoriaValor[]>('/srtm/categorias-valor'),
   obrasCategorias: () => get<ObraCategoria[]>('/srtm/obras-categorias'),
+  usosPredio: () => get<UsoPredio[]>('/srtm/usos-predio'),
 
   // "buscar predios" (page 13): the padrón (tributario) and the catastro fiscal, same filters
   buscarPredios: (filtros: FiltrosPredio, page: number, size: number) => get<Pagina<Predio>>(`/srtm/predios/buscar${query({ ...filtros, page, size })}`),
