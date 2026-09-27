@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Badge, Button, Table, Td, Th } from '@wasichai/ui'
-import { Pencil, Plus } from 'lucide-react'
+import { FileText, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { rentas } from '../api'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
@@ -100,12 +100,16 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
 export function HistorialDeclaraciones({ side, id }: { side: Side; id: string }) {
   const query = useDeclaraciones(side, id)
   const [editing, setEditing] = useState<{ declaracion: Declaracion | null; otherLabel?: string } | null>(null)
+  const navigate = useNavigate()
   const otherTitle = side === 'contribuyente' ? 'Predio' : 'Contribuyente'
+  // from a contribuyente, a new declaration is the srtm's declaración jurada (with its predio); from a predio, the
+  // short form, whose contribuyente is picked
+  const nueva = () => (side === 'contribuyente' ? navigate(`/contribuyentes/${id}/declaraciones/nueva`) : setEditing({ declaracion: null }))
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setEditing({ declaracion: null })}>
+        <Button onClick={nueva}>
           <Plus className="size-4" />
           Nueva declaración
         </Button>
@@ -119,13 +123,15 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
               <thead>
                 <tr>
                   <Th>Año</Th>
+                  <Th>DJ</Th>
                   <Th>{otherTitle}</Th>
                   <Th>Sec.</Th>
                   <Th>Uso</Th>
                   <Th>Estado</Th>
                   <Th className="text-right">Autoavalúo</Th>
                   <Th className="text-right">Valor afecto</Th>
-                  <Th>
+                  {/* relative: the sr-only text is absolute and would otherwise widen the page past the table's scroll */}
+                  <Th className="relative">
                     <span className="sr-only">Acciones</span>
                   </Th>
                 </tr>
@@ -134,6 +140,12 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                 {rows.map((row) => (
                   <tr key={row.declaracion.id} className="hover:bg-surface-muted/60">
                     <Td className="font-medium">{row.declaracion.anio}</Td>
+                    <Td>
+                      <Link to={`/declaraciones/${row.declaracion.id}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                        <FileText className="size-3.5" />
+                        {row.declaracion.numero_declaracion ?? 'Abrir'}
+                      </Link>
+                    </Td>
                     <Td>
                       <OtherSide side={side} detalle={row} />
                     </Td>

@@ -2,36 +2,9 @@ import { Card, CardBody, CardHeader, CardTitle } from '@wasichai/ui'
 import { useNavigate } from 'react-router'
 import { rentas } from '../api'
 import { RecordForm } from '../forms/RecordForm'
-import { CONTRIBUYENTE_SECTIONS, emptyOf, PREDIO_SECTIONS } from '../forms/specs'
+import { emptyOf, PREDIO_SECTIONS } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
-import type { Contribuyente, Predio } from '../types'
-
-export function NuevoContribuyentePage() {
-  const navigate = useNavigate()
-  const catalogos = useCatalogos()
-  const refresh = useRefresh()
-  return (
-    <Card className="mx-auto max-w-4xl">
-      <CardHeader>
-        <CardTitle>Nuevo contribuyente</CardTitle>
-      </CardHeader>
-      <CardBody>
-        <RecordForm
-          sections={CONTRIBUYENTE_SECTIONS}
-          options={catalogos.data?.contribuyente}
-          initial={emptyOf<Contribuyente>(CONTRIBUYENTE_SECTIONS, { tipo_persona: 'NATURAL', tipo_documento: 'DNI' })}
-          submitLabel="Registrar contribuyente"
-          onCancel={() => navigate(-1)}
-          onSubmit={async (values) => {
-            const created = await rentas.crearContribuyente(values)
-            await refresh()
-            navigate(`/contribuyentes/${created.id}`, { replace: true })
-          }}
-        />
-      </CardBody>
-    </Card>
-  )
-}
+import type { Predio } from '../types'
 
 export function NuevoPredioPage() {
   const navigate = useNavigate()

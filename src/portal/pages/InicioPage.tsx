@@ -72,7 +72,13 @@ export function InicioPage() {
                 {tabs.map((tab) => (
                   <li key={tab.path}>
                     <Link to={tab.path} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-brand hover:bg-brand-soft">
-                      {tab.kind === 'predio' ? <MapPinned className="size-4" /> : <User className="size-4" />}
+                      {tab.kind === 'predio' ? (
+                        <MapPinned className="size-4" />
+                      ) : tab.kind === 'declaracion' ? (
+                        <FileText className="size-4" />
+                      ) : (
+                        <User className="size-4" />
+                      )}
                       {tab.label}
                     </Link>
                   </li>
