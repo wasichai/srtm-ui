@@ -1,11 +1,11 @@
-import { useTheme } from '@wasichai/core'
 import { cn } from '@wasichai/ui'
-import { Home, Landmark, LogOut, MapPinned, Menu, Monitor, Moon, Search, Settings, Sun, Users } from 'lucide-react'
+import { Home, Landmark, LogOut, MapPinned, Menu, Search, Settings, Users } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
 import { TabBar } from './TabBar'
+import { ThemeMenu } from './ThemeMenu'
 
 const NAV = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
@@ -49,7 +49,7 @@ export function AppShell() {
               Administración
             </a>
           )}
-          <ThemeButton />
+          <ThemeMenu />
           <span title={user?.email} className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand-strong">
             {initials(user?.displayName ?? user?.email ?? '')}
           </span>
@@ -113,40 +113,6 @@ function GlobalSearch() {
         className="h-9 w-full rounded-md border border-border bg-surface-muted pr-3 pl-9 text-sm placeholder:text-ink-muted/70 focus:bg-surface"
       />
     </form>
-  )
-}
-
-const THEMES = [
-  { id: 'system', label: 'Sistema', icon: Monitor },
-  { id: 'light', label: 'Claro', icon: Sun },
-  { id: 'dark', label: 'Oscuro', icon: Moon }
-]
-
-// cycles system, light, dark. core's ThemeProvider applies it and stores it for the user, so the admin follows
-function ThemeButton() {
-  const { preference, setPreference } = useTheme()
-  const [error, setError] = useState<string | null>(null)
-  const index = Math.max(
-    0,
-    THEMES.findIndex((theme) => theme.id === preference)
-  )
-  const current = THEMES[index]
-  const next = THEMES[(index + 1) % THEMES.length]
-  const Icon = current.icon
-  const change = () => {
-    setError(null)
-    setPreference(next.id).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))
-  }
-  return (
-    <button
-      type="button"
-      onClick={change}
-      aria-label={`Tema: ${current.label}. Cambiar a ${next.label.toLowerCase()}`}
-      title={error ?? `Tema: ${current.label}`}
-      className={cn('rounded p-1.5 hover:bg-surface-muted hover:text-ink', error ? 'text-danger' : 'text-ink-muted')}
-    >
-      <Icon className="size-4" />
-    </button>
   )
 }
 

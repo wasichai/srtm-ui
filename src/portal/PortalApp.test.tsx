@@ -314,12 +314,77 @@ describe('portal', () => {
     expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
   })
 
-  it('switches the theme and stores it for the user, as the admin does', async () => {
+  it('switches the theme from a menu and stores it for the user, as the admin does', async () => {
+    start('/', [{ method: 'PUT', path: '/auth/me/preferences', body: { theme: 'portal-tributario', locale: null } }])
+    const button = await screen.findByRole('button', { name: /^Tema: Sistema/ })
+    expect(button).toHaveAttribute('aria-haspopup', 'menu')
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    // system plus every theme core knows, the srtm ones included
+    const menu = screen.getByRole('menu', { name: 'Tema' })
+    const items = within(menu).getAllByRole('menuitemradio')
+    expect(items.map((item) => item.textContent)).toEqual(['Sistema', 'Claro', 'Oscuro', 'Portal tributario'])
+    expect(items.map((item) => item.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false', 'false'])
+
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Portal tributario' }))
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('portal-tributario'))
+    expect(document.documentElement.style.colorScheme).toBe('light')
+    expect(localStorage.getItem('srtm.theme')).toBe('portal-tributario')
+    await waitFor(() => expect(fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/auth/me/preferences')?.body).toEqual({ theme: 'portal-tributario' }))
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Tema: Portal tributario/ })).toHaveFocus()
+  })
+
+  it('works the theme menu from the keyboard, and closes it with escape or a click outside', async () => {
     start('/')
+    const button = await screen.findByRole('button', { name: /^Tema: Sistema/ })
+    button.focus()
+    await userEvent.keyboard('{Enter}')
+    const menu = screen.getByRole('menu', { name: 'Tema' })
+    // focus goes to the theme in use, and the arrows walk the menu round
+    expect(within(menu).getByRole('menuitemradio', { name: 'Sistema' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(within(menu).getByRole('menuitemradio', { name: 'Claro' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowUp}{ArrowUp}')
+    expect(within(menu).getByRole('menuitemradio', { name: 'Portal tributario' })).toHaveFocus()
+    await userEvent.keyboard('{Home}')
+    expect(within(menu).getByRole('menuitemradio', { name: 'Sistema' })).toHaveFocus()
+    await userEvent.keyboard('{End}')
+    expect(within(menu).getByRole('menuitemradio', { name: 'Portal tributario' })).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    expect(button).toHaveFocus()
+
+    await userEvent.click(button)
+    expect(screen.getByRole('menu', { name: 'Tema' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('heading', { name: 'Inicio' }))
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+
+    // opened and closed, never picked: the user's theme stays, nothing sent
+    expect(localStorage.getItem('srtm.theme')).toBe('system')
+    expect(fetch!.calls.some((c) => c.method === 'PUT' && c.path === '/auth/me/preferences')).toBe(false)
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
+
+  // core sends an id it does not know (an old build, another app's theme) to the os setting, and so does the menu
+  it('shows a stored theme it does not know as system', async () => {
+    start('/', [{ path: '/auth/me/preferences', body: { theme: 'otra-app', locale: null } }])
     await userEvent.click(await screen.findByRole('button', { name: /^Tema: Sistema/ }))
-    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'))
-    expect(localStorage.getItem('srtm.theme')).toBe('light')
-    await waitFor(() => expect(fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/auth/me/preferences')?.body).toEqual({ theme: 'light' }))
+    expect(screen.getByRole('menuitemradio', { name: 'Sistema' })).toHaveAttribute('aria-checked', 'true')
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
+
+  it('keeps the theme and says why when the backend refuses it', async () => {
+    start('/', [{ method: 'PUT', path: '/auth/me/preferences', status: 500, body: { title: 'Error', detail: 'sin conexión' } }])
+    await userEvent.click(await screen.findByRole('button', { name: /^Tema: Sistema/ }))
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Oscuro' }))
+    const button = screen.getByRole('button', { name: /^Tema: Sistema/ })
+    await waitFor(() => expect(button).toHaveAttribute('title', expect.stringMatching(/sin conexión/)))
+    expect(button).toHaveClass('text-danger')
+    expect(localStorage.getItem('srtm.theme')).toBe('system')
   })
 
   it('searches contribuyentes and pages through them', async () => {

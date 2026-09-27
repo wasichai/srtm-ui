@@ -59,12 +59,15 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Las opciones de los desplegables salen de `/api/srtm/catalogos`, es decir, del modelo.
   - Un error de validación del backend se muestra debajo de su campo.
 
-- **Tema**: claro, oscuro o el del sistema, con el botón de la cabecera.
+- **Tema**: sistema, claro, oscuro o *Portal tributario*, en el menú de tema de la cabecera.
+  - Los temas propios de srtm-ui están en `src/themes` (`SRTM_THEMES`); el portal y el admin los registran en core.
+  - `useVarianteTema()` dice si el tema aplicado pide la estructura de portal (`'portal'`) o la clásica (`'clasico'`).
   - El portal monta los providers de core (`WasichaiProviders`), así que la sesión y el tema son los mismos que en el
     admin.
   - La elección se guarda en `srtm.theme` y, con un backend que tenga `PUT /auth/me/preferences` (wasichai ≥ 0.2.0),
     también para el usuario.
-  - `index.html` aplica el tema antes de cargar la app, para que no parpadee.
+  - `index.html` aplica el tema antes de cargar la app, para que no parpadee. Un tema que no conoce cae al del sistema,
+    como en core.
 
 - **Registro de predio y catastro fiscal** (fase 3, págs. 11-14 de la presentación):
   - **"Buscar predios"** (pág. 13): un diálogo con pestañas *Buscar en Tributario* (el padrón, la que abre) y *Buscar
