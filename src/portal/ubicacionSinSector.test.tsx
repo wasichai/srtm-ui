@@ -81,6 +81,7 @@ describe('ubicación without sector or manzana catastral', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de vía/), 'AVENIDA')
     await userEvent.type(screen.getByLabelText(/Descripción de la vía/), 'MARGINAL')
     await userEvent.type(screen.getByLabelText(/Descripción de la zona/), 'UNION PERENE')
+    await userEvent.type(screen.getByLabelText(/Código CPU/), '54102166-0001-2')
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
     const post = await waitFor(() => {

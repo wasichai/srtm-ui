@@ -517,7 +517,7 @@ describe('portal', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de vía/), 'AVENIDA')
     await userEvent.type(screen.getByLabelText(/Descripción de la vía/), 'MARGINAL')
     await userEvent.type(screen.getByLabelText(/Descripción de la zona/), 'II MESETA')
-    await userEvent.type(screen.getByLabelText('Código CPU'), '54102166-0001-2')
+    await userEvent.type(screen.getByLabelText(/^Código CPU/), '54102166-0001-2')
     // the lote, drawn on the catastro map
     await userEvent.click(screen.getByRole('button', { name: 'Dibujar lote' }))
     await userEvent.click(screen.getByRole('button', { name: 'dibujar cuadrado' }))
@@ -547,6 +547,8 @@ describe('portal', () => {
   it('presents a declaracion jurada on a predio found with buscar predios', async () => {
     start('/contribuyentes/c1/declaraciones/nueva', [
       { path: '/srtm/predios/buscar', body: page([{ ...predio, lote_geom: SQUARE }]) },
+      // no titular yet this year: one would be joined as a condómino instead (grisObligatorio.test.tsx)
+      { path: '/srtm/predios/p1/declaraciones', body: [] },
       { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }
     ])
     await screen.findByRole('option', { name: 'HERENCIA' })
@@ -686,7 +688,7 @@ describe('portal', () => {
     await userEvent.click(await within(dialog).findByRole('cell', { name: '54102166-0001-2' }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Elegir' }))
     expect(await screen.findByRole('heading', { name: 'Nuevo predio' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Código CPU')).toHaveValue('54102166-0001-2')
+    expect(screen.getByLabelText(/^Código CPU/)).toHaveValue('54102166-0001-2')
     expect(screen.getByLabelText(/Descripción de la vía/)).toHaveValue('ANDRES AVELINO CACERES')
     expect(screen.getByTestId('lote-elegido')).toHaveTextContent('lote-del-predio')
     expect(screen.getByText('Registro de predio', { selector: 'li' })).toHaveAttribute('aria-current', 'page')

@@ -149,6 +149,7 @@ async function llenarUbicacion() {
   await userEvent.selectOptions(screen.getByLabelText(/Tipo de vía/), 'AVENIDA')
   await userEvent.type(screen.getByLabelText(/Descripción de la vía/), 'MARGINAL')
   await userEvent.type(screen.getByLabelText(/Descripción de la zona/), 'UNION PERENE')
+  await userEvent.type(screen.getByLabelText(/Código CPU/), '54102166-0001-2')
 }
 
 describe('the wizard of a new declaración jurada', () => {

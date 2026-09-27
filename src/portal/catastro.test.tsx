@@ -188,7 +188,7 @@ describe('catastro fiscal', () => {
     expect(screen.getByLabelText(/Descripción de la vía/)).toHaveValue('ANDRES AVELINO CACERES')
     expect(screen.getByLabelText(/Descripción de la zona/)).toBeDisabled()
     expect(screen.getByLabelText('Lote')).toBeDisabled()
-    expect(screen.getByLabelText('Código CPU')).toBeDisabled()
+    expect(screen.getByLabelText(/^Código CPU/)).toBeDisabled()
     expect(screen.getByLabelText('Número principal')).toBeEnabled()
     // the lote's ubigeo is a code: its departamento, provincia and distrito come from the INEI list
     expect(screen.getByLabelText(/^Departamento/)).toHaveValue('LAMBAYEQUE')

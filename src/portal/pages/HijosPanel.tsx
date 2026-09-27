@@ -39,6 +39,8 @@ interface HijosPanelProps<T> {
   wide?: boolean
   // an annulled declaración's: listed, never changed
   readOnly?: boolean
+  // the srtm's niveles, obras and otros frentes list no estado (pages 17, 20 and 21)
+  sinEstado?: boolean
 }
 
 type Hijo = { id?: string; estado?: string | null }
@@ -60,7 +62,8 @@ export function HijosPanel<T extends Hijo>({
   fijo,
   footer,
   wide,
-  readOnly
+  readOnly,
+  sinEstado
 }: HijosPanelProps<T>) {
   const query = useQuery({ queryKey: [queryKey, parent], queryFn: () => api.listar(parent) })
   const catalogos = useCatalogos()
@@ -157,7 +160,7 @@ export function HijosPanel<T extends Hijo>({
                       {c.label}
                     </Th>
                   ))}
-                  <Th>Estado</Th>
+                  {!sinEstado && <Th>Estado</Th>}
                 </tr>
               </thead>
               <tbody>
@@ -183,9 +186,11 @@ export function HijosPanel<T extends Hijo>({
                           {c.render(row)}
                         </Td>
                       ))}
-                      <Td>
-                        <EstadoBadge estado={row.estado} />
-                      </Td>
+                      {!sinEstado && (
+                        <Td>
+                          <EstadoBadge estado={row.estado} />
+                        </Td>
+                      )}
                     </tr>
                   )
                 })}

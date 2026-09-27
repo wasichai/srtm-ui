@@ -8,7 +8,7 @@ import { useSalidaConCambios } from '../components/CambiosPendientes'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { QueryState } from '../components/QueryState'
-import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
+import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { useComun, useGrupoFormularios } from '../forms/grupo'
 import { RecordForm } from '../forms/RecordForm'
@@ -18,6 +18,7 @@ import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Contribuyente, Declaracion, Predio } from '../types'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
+import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
 
 const DATOS_FORM = 'dj-datos'
 const UBICACION_FORM = 'dj-ubicacion'
@@ -63,6 +64,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const [buscado, setBuscado] = useState<Predio | null>(null)
   const predioFijo = fijo.data?.predio ?? null
   const existente = predioFijo ?? buscado
+  // one that already has a titular that year is not presented on: a condómino joins from that declaración
+  const titulares = useTitularesDelPredio(existente?.id, datos?.anio, datos?.secuencia_uso)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
@@ -87,6 +90,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const enviando = useRef(false)
   const presentar = async (predio: { predio?: Predio; predio_id?: string }) => {
     if (!titular || enviando.current) return
+    // a predio that already has a titular that year is joined from its declaración, not presented on
+    if (predio.predio_id && titulares.length > 0) return
     enviando.current = true
     setError(null)
     setBusy(true)
@@ -151,7 +156,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
               {busy ? 'Guardando…' : 'Siguiente'}
             </Button>
           ) : (
-            <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy}>
+            <Button onClick={() => void presentar({ predio_id: existente.id })} disabled={busy || titulares.length > 0}>
               <ArrowRight className="size-4" />
               {busy ? 'Guardando…' : 'Siguiente'}
             </Button>
@@ -180,7 +185,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       comun={comun}
                       hideActions
                       sections={DJ_DATOS_SECTIONS}
-                      options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
+                      options={opcionesDatos(catalogos.data)}
                       initial={emptyOf<DatosDelPredio>(DJ_DATOS_SECTIONS, {
                         condicion: predioFijo?.condicion ?? 'URBANO',
                         codigo_predio: predioFijo?.codigo ?? null,
@@ -191,8 +196,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                         fecha_presentacion: today(),
                         anio: currentYear(),
                         secuencia_uso: '001',
-                        condicion_propiedad: 'PROPIETARIO UNICO',
-                        porcentaje_condominio: 100
+                        // what a sole titular gets; its 100 % is the backend's (a titular joining one would be refused it)
+                        condicion_propiedad: 'PROPIETARIO UNICO'
                       })}
                       submitLabel="Siguiente"
                       onSubmit={async (values) => {
@@ -238,6 +243,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                           </Button>
                         )}
                       </div>
+                      {titulares.length > 0 && <AvisoTitulares titulares={titulares} contribuyente={titular} anio={datos?.anio} />}
                       <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, condicion: tipoPredio }} />
                     </div>
                   ) : (
