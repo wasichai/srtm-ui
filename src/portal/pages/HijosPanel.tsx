@@ -26,12 +26,15 @@ interface HijosPanelProps<T> {
   // "domicilios": the list's heading. "domicilio": the dialogs'
   plural: string
   singular: string
-  sections: SectionSpec[]
+  // the dialog's form; a function when it depends on the rows (the only fiscal domicilio keeps its tipo)
+  sections: SectionSpec[] | ((rows: T[], editing: T | null) => SectionSpec[])
   catalog: CatalogKey
   columns: Columna<T>[]
   // a new one's starting values, knowing the rows already there (the first domicilio is the fiscal one)
   nuevo: (rows: T[]) => T
   aviso?: (rows: T[]) => ReactNode
+  // why a row cannot be removed (the only fiscal domicilio): its delete button is then disabled
+  fijo?: (row: T, rows: T[]) => string | null
   footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
   wide?: boolean
 }
@@ -51,6 +54,7 @@ export function HijosPanel<T extends Hijo>({
   columns,
   nuevo,
   aviso,
+  fijo,
   footer,
   wide
 }: HijosPanelProps<T>) {
@@ -124,6 +128,7 @@ export function HijosPanel<T extends Hijo>({
               <tbody>
                 {shown.map((row, shownIndex) => {
                   const index = Math.min(page, last) * size + shownIndex
+                  const motivo = fijo?.(row, rows) ?? undefined
                   return (
                     <tr key={row.id} className="hover:bg-surface-muted/60">
                       {columns.map((c) => (
@@ -138,7 +143,14 @@ export function HijosPanel<T extends Hijo>({
                         <Button variant="ghost" size="icon" aria-label={`Editar ${singular} ${index + 1}`} onClick={() => setEditing(row)}>
                           <Pencil className="size-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label={`Eliminar ${singular} ${index + 1}`} onClick={() => setRemoving(row)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Eliminar ${singular} ${index + 1}`}
+                          disabled={motivo !== undefined}
+                          title={motivo}
+                          onClick={() => setRemoving(row)}
+                        >
                           <Trash2 className="size-4" />
                         </Button>
                       </Td>
@@ -170,7 +182,7 @@ export function HijosPanel<T extends Hijo>({
             <DialogDescription className="sr-only">Datos del {singular}</DialogDescription>
             <div className="mt-4">
               <RecordForm
-                sections={sections}
+                sections={typeof sections === 'function' ? sections(rows, editing) : sections}
                 options={catalogos.data?.[catalog]}
                 initial={editing ?? nuevo(rows)}
                 submitLabel="Grabar"
