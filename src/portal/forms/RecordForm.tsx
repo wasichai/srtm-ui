@@ -2,6 +2,7 @@ import { ApiError, type FieldViolation } from '@wasichai/core'
 import { cn, Label } from '@wasichai/ui'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
+import { Alerta } from '../components/Alerta'
 import { Button, Input, NativeSelect, Textarea } from '../components/controles'
 import { currentYear, formatDate, MESES } from '../components/format'
 import { parseGeometry } from '../components/geo'
@@ -196,9 +197,9 @@ export function RecordForm<T extends object>({
       ))}
       {footer?.(values, form)}
       {formError && (
-        <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
+        <Alerta tono="error" className="rounded-md bg-danger/10 px-3 py-2">
           {formError}
-        </p>
+        </Alerta>
       )}
       {!hideActions && (
         <div className="flex justify-end gap-2">

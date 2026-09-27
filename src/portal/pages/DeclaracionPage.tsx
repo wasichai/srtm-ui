@@ -4,6 +4,7 @@ import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, 
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPendientes'
 import { Button } from '../components/controles'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
@@ -243,9 +244,9 @@ function DeclaracionPage({ id }: { id: string }) {
                         ))}
                     </div>
                     {error && (
-                      <p role="alert" className="max-w-md text-right text-sm text-danger">
+                      <Alerta tono="error" className="max-w-md text-right">
                         {error}
-                      </p>
+                      </Alerta>
                     )}
                     {guardado && !hayCambios && (
                       <p role="status" className="text-sm text-ink-muted">

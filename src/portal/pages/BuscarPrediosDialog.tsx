@@ -4,6 +4,7 @@ import { Camera, FileText, Pencil, Plus, RotateCcw, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { Button, Input, NativeSelect } from '../components/controles'
 import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
@@ -225,9 +226,9 @@ function Busqueda({
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {aviso && (
-          <p role="alert" className="mr-auto text-sm text-danger">
+          <Alerta tono="error" className="mr-auto">
             {aviso}
-          </p>
+          </Alerta>
         )}
         <Button variant="secondary" onClick={limpiar}>
           <RotateCcw className="size-4" />

@@ -23,6 +23,8 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/css.ts`                         | Ayudas de los tests: leer una regla CSS y medir un contraste.                                                                      |
 | `src/portal/components/controles.tsx`       | `Button`, `Input`, `Textarea` y `NativeSelect` con sus ganchos `data-ui` (#47).                                                    |
 | `src/themes/portal-tributario/tabs.css`     | Pestañas carpeta de la ficha y de trabajo, y fieldsets de `RecordForm` con la leyenda sobre el borde (#48).                        |
+| `src/themes/portal-tributario/alerts.css`   | La caja de las alertas en cuatro tonos (#50).                                                                                      |
+| `src/portal/components/Alerta.tsx`          | Alerta con tono, título y cierre; en light y dark se ve como el texto que sustituye (#50).                                         |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -195,6 +197,24 @@ y el comportamiento de las pestañas (montaje perezoso, panel oculto) no cambian
 - **Selectores `:has()`.** La tarjeta que envuelve la ficha se reconoce por `:has(> [data-ui='ficha-tabs'])`, la
   pestaña de trabajo activa por `:has(> [aria-current='page'])` y el espacio entre fieldsets por
   `:has(+ [data-ui='record-fieldset'])`.
+
+### Alertas (`alerts.css`, #50)
+
+`src/portal/components/Alerta.tsx`: `tono` (`'exito' | 'atencion' | 'error' | 'aviso'`), `titulo?` (en negrita al
+inicio: "Atención.", "Sr. contribuyente,"), `children`, `onCerrar?` (un botón con un check y `aria-label`
+"Entendido, cerrar el aviso") y `className`. `role="alert"` para `error` y `role="status"` para el resto. Pone
+`data-ui="alerta"` y `data-tono`, y envuelve el texto en `data-ui="alerta-texto"`.
+
+- **light y dark no cambian.** Fuera del tema, `Alerta` es el texto en el color de su tono (`text-success`,
+  `text-warning`, `text-danger`, `text-notice`, a 14px) más lo que cada sitio le pase en `className`. Así, el error
+  de `RecordForm` conserva su caja (`rounded-md bg-danger/10 px-3 py-2`) y los de `NuevaDeclaracionPage`,
+  `DeclaracionPage`, `HijosPanel` y `BuscarPrediosDialog` siguen siendo texto rojo con sus márgenes. Los textos no
+  cambian.
+- **Bajo el tema**, `alerts.css` pinta la caja del prototipo: `padding: 14px 18px`, 14.5px, `line-height: 1.6`, radio
+  3px, y por tono el fondo y el texto de los tokens (`success-soft`/`success`, `warning-soft`/`warning`,
+  `danger-soft`/`danger`, `notice-soft`/`notice`; su contraste lo comprueba `tokens.test.tsx`) con el borde de
+  Bootstrap 3 en hex (`#D6E9C6`, `#FAEBCC`, `#EBCCD1`, `#E8E0C4`). El botón de cerrar queda arriba a la derecha.
+- El toast queda fuera de alcance: el portal no tiene toasts.
 
 ## Tokens de extensión en light y dark
 

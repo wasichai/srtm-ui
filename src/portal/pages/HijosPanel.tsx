@@ -4,6 +4,7 @@ import { Box, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { HijosApi } from '../api'
+import { Alerta } from '../components/Alerta'
 import { Button } from '../components/controles'
 import { EstadoBadge } from '../components/EstadoBadge'
 import { Paginador } from '../components/Paginador'
@@ -246,9 +247,9 @@ export function HijosPanel<T extends Hijo>({
             <DialogTitle className="text-lg font-semibold">¿Eliminar este {singular}?</DialogTitle>
             <DialogDescription className="mt-2 text-sm text-ink-muted">Se quita de la ficha. El historial del registro lo conserva.</DialogDescription>
             {removeError && (
-              <p role="alert" className="mt-3 text-sm text-danger">
+              <Alerta tono="error" className="mt-3">
                 {removeError}
-              </p>
+              </Alerta>
             )}
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setRemoving(null)}>

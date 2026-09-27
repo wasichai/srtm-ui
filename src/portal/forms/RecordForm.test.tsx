@@ -71,6 +71,26 @@ describe('RecordForm: the theme hooks', () => {
     expect(legend?.querySelector('[data-ui="record-action"]')).toContainElement(screen.getByRole('button', { name: 'Buscar predios' }))
   })
 
+  it('shows what the backend refuses above the buttons as an error alert, in its box', async () => {
+    render(
+      <RecordForm
+        sections={SECTIONS}
+        options={{ sexo: ['HOMBRE', 'MUJER'] }}
+        initial={{ codigo: '', nombres: 'JUAN', sexo: 'HOMBRE', observacion: '', documentos: '' }}
+        submitLabel="Guardar"
+        onSubmit={async () => {
+          throw new Error('El servidor no responde')
+        }}
+      />
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent('El servidor no responde')
+    expect(alerta).toHaveAttribute('data-ui', 'alerta')
+    expect(alerta).toHaveAttribute('data-tono', 'error')
+    expect(alerta).toHaveClass('rounded-md', 'bg-danger/10', 'px-3', 'py-2', 'text-sm', 'text-danger')
+  })
+
   it('keeps aria-invalid on the fields it refuses', async () => {
     const { onSubmit } = renderForm()
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))

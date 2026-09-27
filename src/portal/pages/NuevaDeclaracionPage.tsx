@@ -4,6 +4,7 @@ import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { useSalidaConCambios } from '../components/CambiosPendientes'
 import { Button } from '../components/controles'
 import { FichaTabs } from '../components/FichaTabs'
@@ -264,11 +265,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       onSubmit={(predio) => presentar({ predio })}
                     />
                   )}
-                  {error && (
-                    <p role="alert" className="text-sm text-danger">
-                      {error}
-                    </p>
-                  )}
+                  {error && <Alerta tono="error">{error}</Alerta>}
                 </div>
               )
           }))}
