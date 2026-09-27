@@ -37,6 +37,19 @@ export interface Contribuyente {
   observacion?: string | null
 }
 
+// what RENIEC says of a DNI (GET /srtm/documentos/DNI/{numero}, through the PIDE)
+export interface DatosPersona {
+  tipo_documento: string
+  numero_documento: string
+  apellido_paterno: string | null
+  apellido_materno: string | null
+  nombres: string | null
+  estado_civil: string | null
+  direccion: string | null
+  ubigeo: string | null
+  fuente_informacion: string
+}
+
 // the contribuyente's lists. contribuyente is the parent's id, set by the backend
 export interface Domicilio {
   id?: string

@@ -6,6 +6,7 @@ import type {
   CategoriaValor,
   Contribuyente,
   ContribuyenteFicha,
+  DatosPersona,
   Declaracion,
   DeclaracionDetalle,
   DeclaracionJurada,
@@ -78,6 +79,8 @@ export const rentas = {
   declaracionesDeContribuyente: (id: string, anio?: number) => get<DeclaracionDetalle[]>(`/srtm/contribuyentes/${id}/declaraciones${query({ anio })}`),
   inscribirContribuyente: (body: Contribuyente) => send<Contribuyente>('POST', '/srtm/contribuyentes', body),
   actualizarContribuyente: (id: string, body: Contribuyente) => send<Contribuyente>('PUT', `/srtm/contribuyentes/${id}`, body),
+  // RENIEC's names for a DNI (PIDE RENIEC): a 404 when it has none, or there is no convenio
+  consultarDocumento: (tipo: string, numero: string) => get<DatosPersona>(`/srtm/documentos/${encodeURIComponent(tipo)}/${encodeURIComponent(numero)}`),
   // refused (409, with why) while it has declaraciones
   borrarContribuyente: (id: string) => remove(`/srtm/contribuyentes/${id}`),
 

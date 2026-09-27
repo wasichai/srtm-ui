@@ -4,6 +4,7 @@ import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
 import { DireccionPreview } from './DireccionPreview'
 import { ObraCategoriaField } from './ObraCategoriaField'
+import { RENIEC } from './reniec'
 import { AUTO, conRuc, numeroSegunTipo, sinRuc, type FormValues, type SectionSpec } from './specs'
 import { UbigeoFields } from './UbigeoFields'
 import type { Elegido } from './ubicacion'
@@ -218,13 +219,13 @@ export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   {
     title: 'Datos personales',
     fields: [
-      { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
-      { name: 'numero_documento', label: 'N° documento', required: true, span: 1, validate: numeroSegunTipo },
-      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 },
+      { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1, ...RENIEC.tipo },
+      { name: 'numero_documento', label: 'N° documento', required: true, span: 1, validate: numeroSegunTipo, ...RENIEC.numero },
+      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1, ...RENIEC.fuente },
       { name: 'razon_social', label: 'Razón social', required: true, span: 3, when: conRuc },
-      { name: 'apellido_paterno', label: 'Apellido paterno', required: true, span: 1, when: sinRuc },
-      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: sinRuc },
-      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: sinRuc },
+      { name: 'apellido_paterno', label: 'Apellido paterno', required: true, span: 1, when: sinRuc, ...RENIEC.nombre },
+      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: sinRuc, ...RENIEC.nombre },
+      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: sinRuc, ...RENIEC.nombre },
       { name: 'fecha_nacimiento', label: 'Fecha de nacimiento', kind: 'date', span: 1 },
       { name: 'estado_civil', label: 'Estado civil', kind: 'enum', span: 1 },
       { name: 'sexo', label: 'Sexo', kind: 'enum', span: 1 },
