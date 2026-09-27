@@ -3,6 +3,7 @@ import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
 import type { CatalogKey } from '../types'
 import { errorDocumento, pideNumero, SIN_DOCUMENTO } from './documento'
+import { RENIEC } from './reniec'
 import { UbigeoFields } from './UbigeoFields'
 
 // how each entity shows and edits: sections, labels and value kinds. names are the model's fields.
@@ -41,8 +42,13 @@ export interface FieldSpec {
   enabledWhen?: (values: FormValues) => boolean
   // what it shows while greyed, from the live and the stored values (default: nothing)
   greyedValue?: (values: FormValues, stored: FormValues) => string
+  // greyed but still validated and sent while this holds, as a bloqueado (the names RENIEC gave)
+  lockedWhen?: (values: FormValues) => boolean
   // a filled field's own check (a document number by its tipo): true, or the message
   validate?: (value: string, values: FormValues) => true | string
+  // what the clerk's own change or leaving the field sets off, once the form holds the value (the DNI's consulta)
+  onChange?: (form: UseFormReturn<FormValues>) => void
+  onBlur?: (form: UseFormReturn<FormValues>) => void
   // kind multi: the choices, kept as one comma-separated text
   choices?: string[]
   // the backend's (codigo, fecha del registro...): shown, never edited
@@ -113,9 +119,9 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
     title: 'Datos de identificación',
     number: 2,
     fields: [
-      { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
+      { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1, ...RENIEC.tipo },
       // greyed until a tipo is chosen, and for SIN DOCUMENTO: none for a new one or one switched to it, the padrón's
-      // number for one that already was (the backend keeps it: the importer knows it by it)
+      // number for one that already was (the backend keeps it: the importer knows it by it). a DNI asks RENIEC
       {
         name: 'numero_documento',
         label: 'N° documento',
@@ -123,18 +129,19 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
         span: 2,
         enabledWhen: (v) => pideNumero(v.tipo_documento),
         greyedValue: (v, stored) => (v.tipo_documento === SIN_DOCUMENTO && stored.tipo_documento === SIN_DOCUMENTO ? stored.numero_documento : ''),
-        validate: (value, v) => errorDocumento(v.tipo_documento, value) ?? true
+        validate: (value, v) => errorDocumento(v.tipo_documento, value) ?? true,
+        ...RENIEC.numero
       },
-      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 }
+      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1, ...RENIEC.fuente }
     ]
   },
   {
     title: 'Datos personales',
     number: 3,
     fields: [
-      { name: 'apellido_paterno', label: 'Apellido paterno', span: 1, when: esPersonaNatural },
-      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: esPersonaNatural },
-      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: esPersonaNatural },
+      { name: 'apellido_paterno', label: 'Apellido paterno', span: 1, when: esPersonaNatural, ...RENIEC.nombre },
+      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: esPersonaNatural, ...RENIEC.nombre },
+      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: esPersonaNatural, ...RENIEC.nombre },
       { name: 'fecha_nacimiento', label: 'Fecha nacimiento', kind: 'date', span: 1, when: esPersonaNatural },
       { name: 'fecha_fallecimiento', label: 'Fecha fallecimiento', kind: 'date', span: 1, when: esPersonaNatural },
       { name: 'estado_civil', label: 'Estado civil', kind: 'enum', required: true, span: 1, when: esPersonaNatural },
@@ -234,13 +241,13 @@ export const RELACIONADO_SECTIONS: SectionSpec[] = [
   {
     title: 'Datos personales',
     fields: [
-      { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
-      { name: 'numero_documento', label: 'N° documento', span: 1, validate: numeroSegunTipo },
-      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 },
+      { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1, ...RENIEC.tipo },
+      { name: 'numero_documento', label: 'N° documento', span: 1, validate: numeroSegunTipo, ...RENIEC.numero },
+      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1, ...RENIEC.fuente },
       { name: 'razon_social', label: 'Razón social', required: true, span: 3, when: conRuc },
-      { name: 'apellido_paterno', label: 'Apellido paterno', span: 1, when: sinRuc },
-      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: sinRuc },
-      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: sinRuc },
+      { name: 'apellido_paterno', label: 'Apellido paterno', span: 1, when: sinRuc, ...RENIEC.nombre },
+      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: sinRuc, ...RENIEC.nombre },
+      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: sinRuc, ...RENIEC.nombre },
       { name: 'fecha_inicio', label: 'Fecha de inicio', kind: 'date', span: 1 },
       { name: 'fecha_fin', label: 'Fecha de fin', kind: 'date', span: 1 },
       // greyed in the srtm: nobody types it here

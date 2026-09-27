@@ -125,7 +125,11 @@ function Field({
   options?: string[]
   guardado: boolean
 }) {
-  const rules: RegisterOptions<FormValues, string> = { validate: (value, all) => validate(field, value ?? '', all) }
+  const rules: RegisterOptions<FormValues, string> = {
+    validate: (value, all) => validate(field, value ?? '', all),
+    onChange: field.onChange && (() => field.onChange?.(form)),
+    onBlur: field.onBlur && (() => field.onBlur?.(form))
+  }
   if (field.kind === 'hidden' || field.kind === 'geometry') {
     // no input: a custom field (the ubigeo cascade) writes it. registered so `required` still holds
     form.register(field.name, rules)
@@ -137,7 +141,7 @@ function Field({
   const id = `field-${field.name}`
   const error = form.formState.errors[field.name]?.message
   const enabled = !field.enabledWhen || field.enabledWhen(values)
-  const locked = bloqueadosDe(values).includes(field.name)
+  const locked = bloqueadosDe(values).includes(field.name) || !!field.lockedWhen?.(values)
   const required = enabled && isRequired(field, values)
   const aria = { id, 'aria-invalid': error ? true : undefined, 'aria-describedby': error ? `${id}-error` : undefined }
 
