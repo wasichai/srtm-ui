@@ -4,6 +4,7 @@ import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
 import type { Ubigeo } from '../types'
 import { bloqueadosEn } from './bloqueo'
+import { useCampoId } from './campoId'
 import type { FormValues } from './specs'
 import { selectClass } from './styles'
 
@@ -16,6 +17,7 @@ export function UbigeoFields({ form }: { form: UseFormReturn<FormValues> }) {
   const ubigeos = useQuery({ queryKey: ['ubigeos'], queryFn: rentas.ubigeos, staleTime: Infinity })
   const [departamento = '', provincia = '', distrito = ''] = form.watch(['departamento', 'provincia', 'distrito'])
   const bloqueados = bloqueadosEn(form)
+  const campoId = useCampoId()
   const all: Ubigeo[] = ubigeos.data ?? []
   const departamentos = distinct(all.map((u) => u.departamento))
   const provincias = distinct(all.filter((u) => u.departamento === departamento).map((u) => u.provincia))
@@ -61,7 +63,7 @@ export function UbigeoFields({ form }: { form: UseFormReturn<FormValues> }) {
   return (
     <div className="grid gap-x-4 gap-y-3 sm:grid-cols-3">
       {levels.map((level) => {
-        const id = `field-${level.name}`
+        const id = campoId(level.name)
         const error = form.formState.errors[level.name]?.message
         // an address saved before the list was loaded (or outside it) still shows what it says
         const options =

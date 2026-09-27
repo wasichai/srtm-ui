@@ -515,7 +515,7 @@ describe('portal', () => {
     await userEvent.click(screen.getByRole('button', { name: 'dibujar cuadrado' }))
     await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
     expect(within(screen.getByTestId('lotes-map')).getByTestId('lote-elegido')).toHaveTextContent('lote-del-predio')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
     expect(post.body).toMatchObject({
@@ -565,7 +565,7 @@ describe('portal', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Elegir' }))
 
     expect(await screen.findByText(/La declaración será sobre el predio/)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
     expect(post.body).toMatchObject({ predio_id: 'p1', declaracion: { tipo_adquisicion: 'HERENCIA', documentos_sustento: 'DECLARATORIA DE HEREDEROS' } })
     expect(post.body).not.toHaveProperty('predio')
@@ -623,8 +623,8 @@ describe('portal', () => {
       { path: '/srtm/predios/buscar', body: page([]) },
       { method: 'PUT', path: '/srtm/predios/p1', body: predio }
     ])
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Buscar predios' }))
+    // edited in place: no "Editar"
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar predios' }))
     const dialog = await screen.findByRole('dialog', { name: 'Buscar predios' })
     await userEvent.click(within(dialog).getByRole('tab', { name: 'Buscar en Catastro Fiscal' }))
     await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'CACERES')
@@ -643,7 +643,7 @@ describe('portal', () => {
     expect(screen.getByLabelText('Código CPU')).toHaveValue('54102166-0001-2')
     expect(screen.getByLabelText(/Descripción de la vía/)).toHaveValue('ANDRES AVELINO CACERES')
     expect(screen.getByLabelText(/Descripción de la zona/)).toHaveValue('SOL DE LA ALAMEDA')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     const put = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')!)
     expect(put.body).toMatchObject({ codigo_cpu: '54102166-0001-2', manzana: 'C', lote: '19', lote_geom: SQUARE, partida_registral: '11002233' })
   })
@@ -653,12 +653,11 @@ describe('portal', () => {
       { method: 'PUT', path: '/srtm/declaraciones/d1', body: dj.declaracion },
       { method: 'PUT', path: '/srtm/predios/p1', body: predio }
     ])
-    expect(await screen.findByText('5243')).toBeInTheDocument()
-    expect(screen.getByText('25/09/2026')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(await screen.findByLabelText('Número de registro de predio')).toHaveValue('5243')
+    expect(screen.getByLabelText('Fecha de actualización')).toHaveValue('25/09/2026')
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'RUSTICO')
     await userEvent.type(screen.getByLabelText('Otros datos'), 'CON RIEGO')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     const declaracionPut = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')!)
     expect(declaracionPut.body).toMatchObject({ otros_datos: 'CON RIEGO', numero_declaracion: 39147 })
     expect(declaracionPut.body).not.toHaveProperty('condicion')

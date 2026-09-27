@@ -1,19 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
-import { Badge, Card } from '@wasichai/ui'
-import { Building2, FileText, MapPin, Signpost, Users } from 'lucide-react'
+import { Badge, Button, Card } from '@wasichai/ui'
+import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPendientes'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
-import { dataFields, type SectionSpec } from '../forms/specs'
-import { useCatalogos } from '../queries'
+import { FieldGrid } from '../forms/FieldGrid'
+import { useGrupoFormularios } from '../forms/grupo'
+import { RecordForm } from '../forms/RecordForm'
+import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../forms/specs'
+import { useCatalogos, useRefresh } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
-import type { Declaracion, Predio } from '../types'
+import type { Declaracion } from '../types'
 import { AnularDeclaracion, AvisoAnulada } from './AnularDeclaracion'
 import { CondominosPanel } from './Condominos'
-import { DatosPanel } from './DatosPanel'
 import { FichaHeader } from './FichaHeader'
 import { FrentesPanel, NivelesPanel, ObrasPanel, TransferentesPanel } from './DeclaracionListas'
 
@@ -35,9 +39,33 @@ export function camposDe(sections: SectionSpec[]): string[] {
     .map((f) => f.name)
 }
 
-function sobre<T extends object>(latest: T, values: T, campos: string[]): T {
+function sobre<T extends object>(latest: T, values: object, campos: string[]): T {
   const own = Object.fromEntries(campos.map((name) => [name, (values as Record<string, unknown>)[name] ?? null]))
   return { ...latest, ...own }
+}
+
+// the tabs that are forms: edited in place, saved together from the header
+const FORMULARIOS = ['datos', 'ubicacion', 'caracteristicas'] as const
+type Formulario = (typeof FORMULARIOS)[number]
+const etiqueta = (tab: string) => DECLARACION_TABS.find((t) => t.id === tab)?.label ?? tab
+
+// of a form's changes, the fields that are this record's
+const propios = (cambios: Record<string, unknown> | undefined, sections: SectionSpec[], ajenos: string[] = []) =>
+  cambios ? camposDe(sections).filter((c) => c in cambios && !ajenos.includes(c)) : []
+
+// acquired from someone: the srtm's "datos del transferente" names who. a prescripción adquisitiva (or "otros") may
+// have nobody to name
+const CON_TRANSFERENTE = ['COMPRA', 'DONACION', 'HERENCIA', 'ANTICIPO DE LEGITIMA', 'ADJUDICACION', 'PERMUTA', 'DACION EN PAGO', 'APORTE']
+
+// where the wizard goes once the declaration is presented: its transferente, when it came from someone and none is
+// there yet; else its características, while they lack what they require
+export function siguientePendiente(declaracion: Declaracion, transferentes: number): string {
+  if (transferentes === 0 && CON_TRANSFERENTE.includes(declaracion.tipo_adquisicion ?? '')) return 'transferentes'
+  const valores = declaracion as unknown as FormValues
+  // clase and sub clase de uso are required unless the uso is the padrón's (forms/UsoFields.tsx)
+  const requerido = (f: FieldSpec) => (typeof f.required === 'function' ? f.required(valores) : f.required === true)
+  const faltan = dataFields(CARACTERISTICAS_SECTIONS).some((f) => requerido(f) && (valores[f.name] ?? '') === '')
+  return faltan ? 'caracteristicas' : 'transferentes'
 }
 
 export function DeclaracionRoute() {
@@ -48,25 +76,87 @@ export function DeclaracionRoute() {
 function DeclaracionPage({ id }: { id: string }) {
   const [params, setParams] = useSearchParams()
   const catalogos = useCatalogos()
+  const refresh = useRefresh()
   const ficha = useQuery({ queryKey: ['declaracion', id], queryFn: () => rentas.declaracionJurada(id) })
   const dj = ficha.data
   useWorkspaceTab(
     dj ? { path: `/declaraciones/${id}`, label: `DJ ${dj.declaracion.numero_declaracion ?? ''} ${dj.predio.codigo ?? ''}`.trim(), kind: 'declaracion' } : null
   )
+  // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
+  const asistente = params.has('asistente')
+  const activa = DECLARACION_TABS.find((t) => t.id === params.get('tab'))?.id ?? 'datos'
+  const siguiente = DECLARACION_TABS[DECLARACION_TABS.findIndex((t) => t.id === activa) + 1]?.id
+  const abrir = (tab: string, enAsistente = asistente) => setParams(enAsistente ? { tab, asistente: '1' } : { tab }, { replace: true })
 
-  const guardarDeclaracion = (sections: SectionSpec[]) => async (values: Declaracion) => {
-    const latest = await rentas.declaracionJurada(id)
-    const campos = camposDe(sections).filter((c) => !DATOS_DEL_PREDIO.includes(c))
-    await rentas.actualizarDeclaracion(id, sobre(latest.declaracion, values, campos))
-    // the tipo de predio shown in datos del predio is the predio's
-    const condicion = (values as unknown as Record<string, unknown>).condicion
-    if (condicion !== undefined && condicion !== latest.predio.condicion) {
-      await rentas.actualizarPredio(latest.predio.id!, { ...latest.predio, condicion: (condicion as string | null) ?? null })
+  const grupo = useGrupoFormularios(FORMULARIOS)
+  const pendientes = grupo.pendientes.map(etiqueta)
+  const salida = useSalidaConCambios(pendientes)
+  // a save or a Cancelar starts the forms again, from the declaration as it is then
+  const [version, setVersion] = useState(0)
+  const [guardando, setGuardando] = useState(false)
+  const [guardado, setGuardado] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [descartando, setDescartando] = useState(false)
+
+  // what a refusal is about goes under its field, and its tab opens; anything else, under the buttons
+  const rechazo = (e: unknown, de: Formulario[]) => {
+    const con = grupo.errores(e, de)
+    if (con.length > 0) abrir(con[0])
+    else setError(e instanceof Error ? e.message : 'No se pudo guardar')
+    return false
+  }
+  // the pending changes of every form tab, over the declaration and its predio as they are now (the other tabs, a
+  // condómino's %, may have changed them; core's update replaces every field): one save each
+  const guardar = async (): Promise<boolean> => {
+    if (grupo.pendientes.length === 0) return true
+    setError(null)
+    setGuardado(false)
+    setGuardando(true)
+    try {
+      const { valores, invalidos } = await grupo.cambios()
+      if (invalidos.length > 0) {
+        abrir(invalidos[0])
+        return false
+      }
+      const latest = await rentas.declaracionJurada(id)
+      const deDatos = propios(valores.datos, DJ_DATOS_SECTIONS, DATOS_DEL_PREDIO)
+      const deCaracteristicas = propios(valores.caracteristicas, CARACTERISTICAS_SECTIONS)
+      const deUbicacion = propios(valores.ubicacion, UBICACION_SECTIONS)
+      // the tipo de predio shown in datos del predio is the predio's
+      const condicion = valores.datos?.condicion as string | null | undefined
+      const otraCondicion = condicion !== undefined && condicion !== latest.predio.condicion
+      const predio = deUbicacion.length > 0 || otraCondicion ? sobre(latest.predio, valores.ubicacion ?? {}, deUbicacion) : null
+      if (predio && otraCondicion) predio.condicion = condicion ?? null
+      if (deDatos.length > 0 || deCaracteristicas.length > 0) {
+        const declaracion = sobre(sobre(latest.declaracion, valores.datos ?? {}, deDatos), valores.caracteristicas ?? {}, deCaracteristicas)
+        try {
+          await rentas.actualizarDeclaracion(id, declaracion)
+        } catch (e) {
+          return rechazo(e, ['datos', 'caracteristicas'])
+        }
+      }
+      if (predio) {
+        try {
+          await rentas.actualizarPredio(latest.predio.id!, predio)
+        } catch (e) {
+          return rechazo(e, ['datos', 'ubicacion'])
+        }
+      }
+      await refresh()
+      setVersion((v) => v + 1)
+      setGuardado(true)
+      return true
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo guardar')
+      return false
+    } finally {
+      setGuardando(false)
     }
   }
-  const guardarPredio = async (values: Predio) => {
-    const latest = await rentas.declaracionJurada(id)
-    return rentas.actualizarPredio(latest.predio.id!, sobre(latest.predio, values, camposDe(UBICACION_SECTIONS)))
+  const descartar = () => {
+    setDescartando(false)
+    setError(null)
+    setVersion((v) => v + 1)
   }
 
   return (
@@ -82,6 +172,22 @@ function DeclaracionPage({ id }: { id: string }) {
         }
         // an annulled one (a descargo) is only read: no way back
         const soloLectura = anulada(declaracion)
+        const formulario = (nombre: Formulario, sections: SectionSpec[], values: object, options?: Record<string, string[]>) =>
+          soloLectura ? (
+            <FieldGrid sections={sections} values={values} />
+          ) : (
+            <RecordForm
+              key={version}
+              enlace={grupo.enlaces[nombre]}
+              hideActions
+              sections={sections}
+              options={options}
+              initial={values}
+              submitLabel="Guardar"
+              onSubmit={guardar}
+            />
+          )
+        const hayCambios = grupo.pendientes.length > 0
         return (
           <div className="space-y-5">
             <FichaHeader
@@ -102,44 +208,70 @@ function DeclaracionPage({ id }: { id: string }) {
                   <span>· {predio.direccion}</span>
                 </>
               }
-              aside={soloLectura ? undefined : <AnularDeclaracion declaracion={declaracion} />}
+              aside={
+                // the srtm's Cancelar / Guardar (page 21): what is pending in any form tab; the lists save row by row
+                soloLectura ? undefined : (
+                  <div role="group" aria-label="Acciones de la declaración" className="flex flex-col items-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <AnularDeclaracion declaracion={declaracion} />
+                      <Button variant="secondary" disabled={!hayCambios || guardando} onClick={() => setDescartando(true)}>
+                        <X className="size-4" />
+                        Cancelar
+                      </Button>
+                      <Button variant={asistente ? 'secondary' : 'primary'} disabled={!hayCambios || guardando} onClick={() => void guardar()}>
+                        <Save className="size-4" />
+                        {guardando ? 'Guardando…' : 'Guardar'}
+                      </Button>
+                      {asistente &&
+                        (siguiente ? (
+                          <Button disabled={guardando} onClick={() => void guardar().then((ok) => ok && abrir(siguiente))}>
+                            <ArrowRight className="size-4" />
+                            Siguiente
+                          </Button>
+                        ) : (
+                          <Button disabled={guardando} onClick={() => void guardar().then((ok) => ok && abrir(activa, false))}>
+                            <Check className="size-4" />
+                            Terminar
+                          </Button>
+                        ))}
+                    </div>
+                    {error && (
+                      <p role="alert" className="max-w-md text-right text-sm text-danger">
+                        {error}
+                      </p>
+                    )}
+                    {guardado && !hayCambios && (
+                      <p role="status" className="text-sm text-ink-muted">
+                        Cambios guardados
+                      </p>
+                    )}
+                  </div>
+                )
+              }
             />
             {soloLectura && <AvisoAnulada declaracion={declaracion} />}
             <Card className="pb-4">
               <FichaTabs
                 label="Secciones de la declaración jurada"
-                active={params.get('tab') ?? 'datos'}
-                onChange={(tab) => setParams({ tab }, { replace: true })}
+                active={activa}
+                onChange={(tab) => abrir(tab)}
                 tabs={[
                   {
                     ...DECLARACION_TABS[0],
                     icon: FileText,
                     render: () => (
                       <div className="px-6 pt-5">
-                        <DatosPanel
-                          sections={DJ_DATOS_SECTIONS}
-                          values={datos}
-                          options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
-                          save={guardarDeclaracion(DJ_DATOS_SECTIONS)}
-                          readOnly={soloLectura}
-                        />
+                        {formulario('datos', DJ_DATOS_SECTIONS, datos, {
+                          ...catalogos.data?.declaracion_predial,
+                          condicion: catalogos.data?.predio?.condicion ?? []
+                        })}
                       </div>
                     )
                   },
                   {
                     ...DECLARACION_TABS[1],
                     icon: MapPin,
-                    render: () => (
-                      <div className="px-6 pt-5">
-                        <DatosPanel
-                          sections={UBICACION_SECTIONS}
-                          values={predio}
-                          options={catalogos.data?.predio}
-                          save={guardarPredio}
-                          readOnly={soloLectura}
-                        />
-                      </div>
-                    )
+                    render: () => <div className="px-6 pt-5">{formulario('ubicacion', UBICACION_SECTIONS, predio, catalogos.data?.predio)}</div>
                   },
                   {
                     ...DECLARACION_TABS[2],
@@ -155,13 +287,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     icon: Building2,
                     render: () => (
                       <div className="space-y-8 px-6 pt-5">
-                        <DatosPanel
-                          sections={CARACTERISTICAS_SECTIONS}
-                          values={declaracion}
-                          options={catalogos.data?.declaracion_predial}
-                          save={guardarDeclaracion(CARACTERISTICAS_SECTIONS)}
-                          readOnly={soloLectura}
-                        />
+                        {formulario('caracteristicas', CARACTERISTICAS_SECTIONS, declaracion, catalogos.data?.declaracion_predial)}
                         <NivelesPanel declaracion={id} readOnly={soloLectura} />
                         <ObrasPanel declaracion={id} readOnly={soloLectura} />
                       </div>
@@ -190,6 +316,17 @@ function DeclaracionPage({ id }: { id: string }) {
                 ]}
               />
             </Card>
+            {salida.dialogo}
+            {descartando && (
+              <ConfirmarDescarte
+                titulo="¿Descartar los cambios?"
+                pendientes={pendientes}
+                consecuencia="Si los descartas, se pierden."
+                confirmar="Descartar cambios"
+                onConfirmar={descartar}
+                onSeguir={() => setDescartando(false)}
+              />
+            )}
           </div>
         )
       }}

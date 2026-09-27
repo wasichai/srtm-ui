@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { ApiError, createRegistry, createWasichaiI18n, resolveConfig, WasichaiProviders } from '@wasichai/core'
 import { useState } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router'
 import { client } from './api'
 import { LoginPage } from './auth/LoginPage'
 import { RequireSession } from './auth/RequireSession'
@@ -22,6 +22,37 @@ import { WorkspaceTabsProvider } from './shell/WorkspaceTabs'
 // a 4xx will not change by asking again; a network blip or a 5xx might
 const retry = (count: number, error: unknown) => !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 2
 
+// a data router: a page with changes not saved can hold a navigation (useBlocker)
+const rutas = createRoutesFromElements(
+  <>
+    <Route path="/login" element={<LoginPage />} />
+    <Route
+      element={
+        <RequireSession>
+          <WorkspaceTabsProvider>
+            <AppShell />
+          </WorkspaceTabsProvider>
+        </RequireSession>
+      }
+    >
+      <Route index element={<InicioPage />} />
+      <Route path="buscar" element={<BuscarPage />} />
+      <Route path="contribuyentes" element={<ContribuyentesPage />} />
+      <Route path="contribuyentes/nuevo" element={<NuevoContribuyentePage />} />
+      <Route path="contribuyentes/:id" element={<ContribuyenteRoute />} />
+      <Route path="contribuyentes/:id/declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
+      <Route path="declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
+      <Route path="declaraciones/:id" element={<DeclaracionRoute />} />
+      <Route path="predios" element={<PrediosPage />} />
+      <Route path="predios/nuevo" element={<NuevoPredioPage />} />
+      <Route path="predios/:id" element={<PredioRoute />} />
+      <Route path="catastro/nuevo" element={<NuevoLotePage />} />
+      <Route path="catastro/:id" element={<LoteCatastroRoute />} />
+      <Route path="*" element={<EmptyState title="Esta página no existe" />} />
+    </Route>
+  </>
+)
+
 // the end-user portal: municipal staff looking up and keeping contribuyentes, predios and declarations.
 // under core's providers, like the admin: one session, and the theme the user picked (stored for them) on both sides.
 // no modules: the portal draws its own screens. spanish only, so a locale picked in the admin is left alone
@@ -31,40 +62,12 @@ export function PortalApp() {
     const registry = createRegistry([])
     const i18n = createWasichaiI18n({ languages: config.languages, storageKey: client.keys.lang, modules: registry.modules })
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry, refetchOnWindowFocus: false } } })
-    return { config, registry, i18n, queryClient }
+    return { config, registry, i18n, queryClient, router: createBrowserRouter(rutas) }
   })
 
   return (
     <WasichaiProviders config={app.config} registry={app.registry} apiClient={client} i18n={app.i18n} queryClient={app.queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            element={
-              <RequireSession>
-                <WorkspaceTabsProvider>
-                  <AppShell />
-                </WorkspaceTabsProvider>
-              </RequireSession>
-            }
-          >
-            <Route index element={<InicioPage />} />
-            <Route path="buscar" element={<BuscarPage />} />
-            <Route path="contribuyentes" element={<ContribuyentesPage />} />
-            <Route path="contribuyentes/nuevo" element={<NuevoContribuyentePage />} />
-            <Route path="contribuyentes/:id" element={<ContribuyenteRoute />} />
-            <Route path="contribuyentes/:id/declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
-            <Route path="declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
-            <Route path="declaraciones/:id" element={<DeclaracionRoute />} />
-            <Route path="predios" element={<PrediosPage />} />
-            <Route path="predios/nuevo" element={<NuevoPredioPage />} />
-            <Route path="predios/:id" element={<PredioRoute />} />
-            <Route path="catastro/nuevo" element={<NuevoLotePage />} />
-            <Route path="catastro/:id" element={<LoteCatastroRoute />} />
-            <Route path="*" element={<EmptyState title="Esta página no existe" />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={app.router} />
     </WasichaiProviders>
   )
 }

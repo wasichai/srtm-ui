@@ -64,7 +64,7 @@ beforeEach(() => {
 })
 afterEach(() => fetch?.restore())
 
-// the características of the declaration, in edit mode
+// the características of the declaration: edited in place (issue #11)
 async function editar(stored: object = {}) {
   localStorage.setItem('srtm.token', 't')
   localStorage.setItem('srtm.user', JSON.stringify(admin))
@@ -72,10 +72,12 @@ async function editar(stored: object = {}) {
   fetch = mockFetch(routes(stored))
   render(<PortalApp />)
   const panel = within(await screen.findByRole('tabpanel'))
-  await userEvent.click(await panel.findByRole('button', { name: 'Editar' }))
   await panel.findByRole('option', { name: 'BIENES COMUNES' })
   return panel
 }
+
+// the declaration's header saves what is pending in its tabs
+const guardar = () => userEvent.click(within(screen.getByRole('group', { name: 'Acciones de la declaración' })).getByRole('button', { name: 'Guardar' }))
 
 const opciones = (select: HTMLElement) =>
   within(select)
@@ -129,14 +131,17 @@ describe('clase, sub clase and uso of the predio', () => {
     await userEvent.selectOptions(panel.getByLabelText(/Clase de uso/), 'BIENES COMUNES')
     await userEvent.selectOptions(panel.getByLabelText(/Sub clase de uso/), 'RESIDENCIAL')
     await userEvent.selectOptions(panel.getByLabelText(/Uso del predio/), 'CASA HABITACIÓN')
-    await userEvent.click(panel.getByRole('button', { name: 'Guardar cambios' }))
+    await guardar()
 
     expect((await put()).body).toMatchObject({ clase_uso: 'BIENES COMUNES', sub_clase_uso: 'RESIDENCIAL', uso: 'CASA HABITACIÓN', area_terreno: 120 })
   })
 
   it('asks for the three when the declaration has no uso', async () => {
     const panel = await editar()
-    await userEvent.click(panel.getByRole('button', { name: 'Guardar cambios' }))
+    // Guardar takes what changed: the área, over a declaration with no uso yet
+    await userEvent.clear(panel.getByLabelText(/Área del terreno/))
+    await userEvent.type(panel.getByLabelText(/Área del terreno/), '150')
+    await guardar()
 
     await waitFor(() => expect(panel.getByLabelText(/Clase de uso/)).toHaveAttribute('aria-invalid', 'true'))
     expect(panel.getByLabelText(/Sub clase de uso/)).toHaveAttribute('aria-invalid', 'true')
@@ -148,10 +153,11 @@ describe('clase, sub clase and uso of the predio', () => {
     localStorage.setItem('srtm.token', 't')
     localStorage.setItem('srtm.user', JSON.stringify(admin))
     window.history.pushState({}, '', '/declaraciones/d1?tab=caracteristicas')
-    fetch = mockFetch(routes({ clase_uso: 'RESIDENCIAL', sub_clase_uso: 'UNIFAMILIAR', uso: 'CASA HABITACIÓN' }))
+    // an annulled declaration is only read (issue #11: the others are edited in place)
+    fetch = mockFetch(routes({ estado: 'ANULADA', clase_uso: 'RESIDENCIAL', sub_clase_uso: 'UNIFAMILIAR', uso: 'CASA HABITACIÓN' }))
     render(<PortalApp />)
     const panel = within(await screen.findByRole('tabpanel'))
-    expect(await panel.findByText('Clase de uso')).toBeInTheDocument()
+    expect(await panel.findByText('Clase de uso', { selector: 'dt' })).toBeInTheDocument()
     expect(panel.getByText('RESIDENCIAL')).toBeInTheDocument()
     expect(panel.getByText('UNIFAMILIAR')).toBeInTheDocument()
     expect(panel.getByText('CASA HABITACIÓN')).toBeInTheDocument()
@@ -164,7 +170,7 @@ describe('clase, sub clase and uso of the predio', () => {
     expect(panel.getByText('Clase de uso')).not.toHaveTextContent('*')
     await userEvent.clear(panel.getByLabelText(/Área del terreno/))
     await userEvent.type(panel.getByLabelText(/Área del terreno/), '150')
-    await userEvent.click(panel.getByRole('button', { name: 'Guardar cambios' }))
+    await guardar()
 
     expect((await put()).body).toMatchObject({ uso: 'RESIDENCIAL - CASA HABITACION', clase_uso: null, sub_clase_uso: null, area_terreno: 150 })
   })
@@ -174,7 +180,7 @@ describe('clase, sub clase and uso of the predio', () => {
     await userEvent.selectOptions(panel.getByLabelText(/Clase de uso/), 'RESIDENCIAL')
     expect(panel.getByLabelText(/Uso del predio/)).toHaveValue('')
     expect(opciones(panel.getByLabelText(/Uso del predio/))).toEqual(['SELECCIONAR'])
-    await userEvent.click(panel.getByRole('button', { name: 'Guardar cambios' }))
+    await guardar()
 
     await waitFor(() => expect(panel.getByLabelText(/Sub clase de uso/)).toHaveAttribute('aria-invalid', 'true'))
     expect(panel.getByLabelText(/Uso del predio/)).toHaveAttribute('aria-invalid', 'true')

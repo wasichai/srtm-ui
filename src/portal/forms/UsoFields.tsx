@@ -3,6 +3,7 @@ import { Label } from '@wasichai/ui'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
 import type { UsoPredio } from '../types'
+import { useCampoId } from './campoId'
 import type { FormValues } from './specs'
 import { selectClass } from './styles'
 
@@ -18,6 +19,7 @@ export const usoDelPadron = (values: FormValues) => Boolean(values.uso) && !valu
 export function UsoFields({ form }: { form: UseFormReturn<FormValues> }) {
   const catalogo = useQuery({ queryKey: ['usos-predio'], queryFn: rentas.usosPredio, staleTime: Infinity })
   const [clase = '', subClase = '', uso = ''] = form.watch(['clase_uso', 'sub_clase_uso', 'uso'])
+  const campoId = useCampoId()
   const all: UsoPredio[] = catalogo.data ?? []
   const deClase = all.filter((u) => u.clase === clase)
   const legado = usoDelPadron({ clase_uso: clase, sub_clase_uso: subClase, uso })
@@ -60,7 +62,7 @@ export function UsoFields({ form }: { form: UseFormReturn<FormValues> }) {
   return (
     <div className="grid gap-x-4 gap-y-3 sm:grid-cols-3">
       {levels.map((level) => {
-        const id = `field-${level.name}`
+        const id = campoId(level.name)
         const error = form.formState.errors[level.name]?.message
         const options = level.value && !level.options.includes(level.value) ? [level.value, ...level.options] : level.options
         return (

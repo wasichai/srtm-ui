@@ -1,11 +1,13 @@
 import { ApiError } from '@wasichai/core'
 import { Button, cn, Input, Label, Textarea } from '@wasichai/ui'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
 import { currentYear, formatDate, MESES } from '../components/format'
 import { parseGeometry } from '../components/geo'
 import { BLOQUEADOS, bloqueados as bloqueadosDe } from './bloqueo'
+import { CampoId, useCampoId } from './campoId'
 import { etiqueta } from './etiquetas'
+import type { Enlace } from './grupo'
 import { dataFields, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, selectClass, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
@@ -28,6 +30,9 @@ interface RecordFormProps<T> {
   footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
   // fields that start greyed: what a lote of the catastro filled (forms/bloqueo.ts)
   bloqueados?: string[]
+  // edited in place and saved by a button outside it, with other forms (forms/grupo.ts). while it has no changes it
+  // follows `initial`: what another tab or the backend changed of the record shows up
+  enlace?: Enlace
 }
 
 // one form for every entity. the backend validates again and names the field it rejects:
@@ -44,7 +49,8 @@ export function RecordForm<T extends object>({
   formId,
   hideActions,
   footer,
-  bloqueados
+  bloqueados,
+  enlace
 }: RecordFormProps<T>) {
   const fields = dataFields(sections)
   const form = useForm<FormValues>({ defaultValues: { ...toForm(fields, initial as Record<string, unknown>), [BLOQUEADOS]: (bloqueados ?? []).join(',') } })
@@ -57,21 +63,62 @@ export function RecordForm<T extends object>({
   // a stored record: the backend's codes it lacks are not coming (vacioDe)
   const guardado = Boolean((initial as { id?: unknown }).id)
   const [formError, setFormError] = useState<string | null>(null)
+  // its inputs' ids: scoped when it shares the page with other forms (forms/campoId.ts)
+  const scope = useId()
+  const [campoId] = useState(() => (enlace ? (name: string) => `${scope}field-${name}` : (name: string) => `field-${name}`))
+  // what it was loaded with: a field that differs is a change
+  const cargados = useRef<FormValues>(toForm(fields, initial as Record<string, unknown>))
+
+  // what the clerk edits and can see: read-only, hidden (`when`) and greyed (`enabledWhen`) fields keep their value
+  const enviados = (current: FormValues) => fields.filter((f) => !f.readOnly && (!f.when || f.when(current)) && (!f.enabledWhen || f.enabledWhen(current)))
+  const cambiados = (current: FormValues) => enviados(current).filter((f) => (current[f.name] ?? '') !== (cargados.current[f.name] ?? ''))
+  // the backend names the field it rejects: its message goes under that field
+  const mostrarErrores = (e: unknown) => {
+    const known = e instanceof ApiError ? e.violations.filter((v) => fields.some((f) => f.name === v.field)) : []
+    known.forEach((v) => setError(v.field, { type: 'server', message: v.message }))
+    return known.length > 0
+  }
 
   const submit = handleSubmit(async (current) => {
     setFormError(null)
-    // what the clerk edits and can see: read-only, hidden (`when`) and greyed (`enabledWhen`) fields keep their value
-    const sent = fields.filter((f) => !f.readOnly && (!f.when || f.when(current)) && (!f.enabledWhen || f.enabledWhen(current)))
     try {
-      await onSubmit({ ...initial, ...fromForm(sent, current) } as T)
+      await onSubmit({ ...initial, ...fromForm(enviados(current), current) } as T)
     } catch (e) {
-      const known = e instanceof ApiError ? e.violations.filter((v) => fields.some((f) => f.name === v.field)) : []
-      known.forEach((v) => setError(v.field, { type: 'server', message: v.message }))
-      if (known.length === 0) setFormError(e instanceof Error ? e.message : 'No se pudo guardar')
+      if (!mostrarErrores(e)) setFormError(e instanceof Error ? e.message : 'No se pudo guardar')
     }
   })
 
-  return (
+  const pendiente = enlace !== undefined && cambiados(values).length > 0
+  useEffect(() => {
+    enlace?.handle?.({
+      cambios: () =>
+        new Promise(
+          (resolve) =>
+            void handleSubmit(
+              (current) => resolve(fromForm(cambiados(current), current)),
+              () => resolve(null)
+            )()
+        ),
+      errores: mostrarErrores
+    })
+  })
+  useEffect(() => enlace?.cambios?.(pendiente), [enlace, pendiente])
+  useEffect(
+    () => () => {
+      enlace?.handle?.(null)
+      enlace?.cambios?.(false)
+    },
+    [enlace]
+  )
+  const inicial = JSON.stringify(toForm(fields, initial as Record<string, unknown>))
+  useEffect(() => {
+    if (!enlace || inicial === JSON.stringify(cargados.current) || cambiados(form.getValues()).length > 0) return
+    cargados.current = JSON.parse(inicial) as FormValues
+    form.reset({ ...cargados.current, [BLOQUEADOS]: form.getValues(BLOQUEADOS) ?? '' })
+    // only for a record read again: the helpers above are new every render
+  }, [inicial])
+
+  const contenido = (
     <form id={formId} onSubmit={submit} noValidate className="space-y-6">
       {children}
       {sections.map((section) => (
@@ -110,6 +157,7 @@ export function RecordForm<T extends object>({
       )}
     </form>
   )
+  return <CampoId value={campoId}>{contenido}</CampoId>
 }
 
 function Field({
@@ -130,6 +178,7 @@ function Field({
     onChange: field.onChange && (() => field.onChange?.(form)),
     onBlur: field.onBlur && (() => field.onBlur?.(form))
   }
+  const campoId = useCampoId()
   if (field.kind === 'hidden' || field.kind === 'geometry') {
     // no input: a custom field (the ubigeo cascade) writes it. registered so `required` still holds
     form.register(field.name, rules)
@@ -138,7 +187,7 @@ function Field({
   if (field.when && !field.when(values)) return null
   if (field.kind === 'custom') return <div className={cn(SPAN[field.span ?? 6])}>{field.render?.(form)}</div>
 
-  const id = `field-${field.name}`
+  const id = campoId(field.name)
   const error = form.formState.errors[field.name]?.message
   const enabled = !field.enabledWhen || field.enabledWhen(values)
   const locked = bloqueadosDe(values).includes(field.name) || !!field.lockedWhen?.(values)

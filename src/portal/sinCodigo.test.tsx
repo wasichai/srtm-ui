@@ -62,11 +62,11 @@ beforeEach(() => {
 })
 afterEach(() => fetch?.restore())
 
-function start(path: string) {
+function start(path: string, extra: MockRoute[] = []) {
   localStorage.setItem('srtm.token', 't')
   localStorage.setItem('srtm.user', JSON.stringify(admin))
   window.history.pushState({}, '', path)
-  fetch = mockFetch(routes)
+  fetch = mockFetch([...extra, ...routes])
   render(<PortalApp />)
 }
 
@@ -101,24 +101,27 @@ describe('placeholders of the backend codes', () => {
     expect(screen.getByLabelText('Fecha del registro')).toHaveAttribute('placeholder', SIN_FECHA)
   })
 
-  it('shows an imported declaracion and its predio without numbers, read and edited', async () => {
+  it('shows an imported declaracion and its predio without numbers, edited in place', async () => {
     start('/declaraciones/d1')
+    // its form tabs are edited in place, all mounted at once: each one's inputs have ids of their own (issue #11)
+    expect(await within(await screen.findByRole('tabpanel')).findByLabelText('Número de declaración jurada')).toHaveAttribute('placeholder', SIN_CODIGO)
+    expect(panel().getByLabelText('Número de registro de predio')).toHaveAttribute('placeholder', SIN_CODIGO)
+    expect(panel().getByLabelText('Código de predio')).toHaveValue('01-01-0001')
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Datos de la ubicación' }))
+    expect(await panel().findByLabelText('Número de registro de predio')).toHaveAttribute('placeholder', SIN_CODIGO)
+  })
+
+  it('reads an annulled imported declaracion and its predio without numbers', async () => {
+    // only an annulled one is read, never edited
+    start('/declaraciones/d1', [{ path: '/srtm/declaraciones/d1', body: { ...dj, declaracion: { ...declaracion, estado: 'ANULADA' } } }])
     expect(await screen.findByText('Número de declaración jurada', { selector: 'dt' })).toBeInTheDocument()
     expect(leido('Número de declaración jurada')).toHaveTextContent(SIN_CODIGO)
     expect(leido('Número de registro de predio')).toHaveTextContent(SIN_CODIGO)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
-    expect(screen.getByLabelText('Número de declaración jurada')).toHaveAttribute('placeholder', SIN_CODIGO)
-    expect(screen.getByLabelText('Número de registro de predio')).toHaveAttribute('placeholder', SIN_CODIGO)
-    expect(screen.getByLabelText('Código de predio')).toHaveValue('01-01-0001')
-
-    // one form at a time: both tabs' inputs carry the same ids
-    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await userEvent.click(screen.getByRole('tab', { name: 'Datos de la ubicación' }))
     expect(await panel().findByText('Número de registro de predio', { selector: 'dt' })).toBeInTheDocument()
     expect(leido('Número de registro de predio')).toHaveTextContent(SIN_CODIGO)
-    await userEvent.click(panel().getByRole('button', { name: 'Editar' }))
-    expect(panel().getByLabelText('Número de registro de predio')).toHaveAttribute('placeholder', SIN_CODIGO)
   })
 
   it("promises a new declaracion's number, not a number to a predio of the padron", async () => {
