@@ -114,32 +114,8 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
   }
 ]
 
-// the address one-liner: the backend builds the stored one (Reglas.kt describir). same order, same words
-export function describirDomicilio(d: Partial<Record<string, string | null | undefined>>): string {
-  const clean = (s: string | null | undefined) => (s ?? '').trim()
-  const join = (...parts: (string | null | undefined)[]) => parts.map(clean).filter(Boolean).join(' ')
-  const tipo = (value: string | null | undefined) => (value === 'OTROS' ? null : value)
-  const labeled = (label: string, value: string | null | undefined) => (clean(value) ? `${label} ${clean(value)}` : '')
-  const numero = join(d.numero, d.letra1, d.letra2)
-  return [
-    join(tipo(d.tipo_via), d.via),
-    numero ? `N° ${numero}` : '',
-    labeled('N° ALT.', d.numero_alterno),
-    join(tipo(d.edificacion), d.nombre_edificacion),
-    join(tipo(d.interior), d.descripcion_interior),
-    labeled('PISO', d.piso),
-    labeled('PUERTA', d.ingreso),
-    labeled('MZ.', d.manzana),
-    labeled('LT.', d.lote),
-    labeled('SUB LT.', d.sub_lote),
-    labeled('KM.', d.kilometro),
-    join(tipo(d.tipo_unidad_urbana), d.unidad_urbana),
-    join(tipo(d.sub_zona), d.descripcion_sub_zona),
-    [d.departamento, d.provincia, d.distrito].map(clean).filter(Boolean).join('-')
-  ]
-    .filter(Boolean)
-    .join(', ')
-}
+// the address one-liner lives with the ubicación's (forms/direccion.ts)
+export { describirDomicilio } from './direccion'
 
 const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
 

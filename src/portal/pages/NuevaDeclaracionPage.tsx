@@ -133,7 +133,7 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
                       medio_presentacion: 'FISICO',
                       fecha_presentacion: today(),
                       anio: currentYear(),
-                      secuencia_uso: '1',
+                      secuencia_uso: '001',
                       condicion_propiedad: 'PROPIETARIO UNICO',
                       porcentaje_condominio: 100
                     })}

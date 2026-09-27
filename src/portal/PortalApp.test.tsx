@@ -457,7 +457,7 @@ describe('portal', () => {
     await userEvent.type(within(dialog).getByLabelText('Número principal'), '234')
     await userEvent.selectOptions(within(dialog).getByLabelText('Tipo unidad urbana'), 'CERCADO')
     await userEvent.type(within(dialog).getByLabelText(/Descripción unidad urbana/), 'II MESETA')
-    expect(within(dialog).getByText('AVENIDA MARGINAL, N° 234, CERCADO II MESETA, JUNIN-SATIPO-SATIPO')).toBeInTheDocument()
+    expect(within(dialog).getByText('AV. MARGINAL, N° 234, CERCADO II MESETA, JUNIN-SATIPO-SATIPO')).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
 
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')!)
