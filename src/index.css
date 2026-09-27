@@ -1,4 +1,7 @@
 @import 'tailwindcss';
 @import '@wasichai/ui/theme.css';
+/* after the base theme: the extension tokens every theme gets, then the app's own themes */
+@import './themes/extensions.css';
+@import './themes/portal-tributario/index.css';
 /* the @wasichai packages ship class names, not css, so tailwind scans them */
 @source '../node_modules/@wasichai';

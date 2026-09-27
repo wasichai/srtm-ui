@@ -1,0 +1,54 @@
+/* portal-tributario: the online tax portal prototype (blue brand bar, arial 14px, 3px corners), light only.
+   it sets every base token (ADR-034) and every extension token; values and their origin in README.md */
+[data-theme='portal-tributario'] {
+    --surface: #ffffff;
+    --surface-muted: #f6f6f6;
+    --border: #d8d8d8;
+    --ink: #333333;
+    --ink-muted: #6b6b6b;
+    --brand: #3a78af;
+    --brand-strong: #2f6596;
+    --brand-soft: #eff6fb;
+    --on-brand: #ffffff;
+    --shell: #0d5fa8;
+    --shell-muted: #cfe3f4;
+    --shell-ink: #ffffff;
+    --danger: #a94442;
+    --on-danger: #ffffff;
+    --success: #3c763d;
+    --warning: #8a6d3b;
+    --warning-soft: #fcf8e3;
+    --overlay: rgb(0 0 0 / 45%);
+
+    --success-soft: #dff0d8;
+    --danger-soft: #f2dede;
+    --notice: #7a6a33;
+    --notice-soft: #fbf7e6;
+    --link: #1569b0;
+    --focus: #1ba0d7;
+    --table-head: #f2f2f2;
+    --table-stripe: #fafafa;
+    --line: #e4e4e4;
+    --map-selected: #c9302c;
+
+    --font-sans: Arial, Helvetica, sans-serif;
+    --radius: 3px;
+    --radius-sm: 3px;
+    --radius-md: 3px;
+    --radius-lg: 3px;
+    --radius-xl: 3px;
+    --radius-card: 3px;
+}
+
+/* in the base layer, like the defaults of @wasichai/ui they replace: a component's own utilities still win */
+@layer base {
+    [data-theme='portal-tributario'] body {
+        font-size: 14px;
+        line-height: 1.45;
+    }
+
+    [data-theme='portal-tributario'] *:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 1px;
+    }
+}
