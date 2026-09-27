@@ -10,8 +10,8 @@ import { dataFields, type SectionSpec } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion, Predio } from '../types'
+import { CondominosPanel } from './Condominos'
 import { DatosPanel } from './DatosPanel'
-import { DeclaracionesDelAnio } from './Declaraciones'
 import { FichaHeader } from './FichaHeader'
 import { FrentesPanel, NivelesPanel, ObrasPanel, TransferentesPanel } from './DeclaracionListas'
 
@@ -78,7 +78,6 @@ function DeclaracionPage({ id }: { id: string }) {
           condicion: predio.condicion,
           fecha_actualizacion: actualizado ?? null
         }
-        const condominio = declaracion.condicion_propiedad === 'CONDOMINO'
         return (
           <div className="space-y-5">
             <FichaHeader
@@ -156,11 +155,11 @@ function DeclaracionPage({ id }: { id: string }) {
                   {
                     ...DECLARACION_TABS[4],
                     icon: Users,
-                    // as in the srtm: only a condómino's declaration has co-owners to show
-                    disabled: !condominio,
+                    // always open, unlike the srtm's: condición is derived here, so a propietario único's declaration is
+                    // where its first condómino is added
                     render: () => (
-                      <div className="pt-2">
-                        <DeclaracionesDelAnio side="predio" id={predio.id!} anio={declaracion.anio ?? new Date().getFullYear()} />
+                      <div className="px-6 pt-5">
+                        <CondominosPanel declaracion={declaracion} predio={predio} />
                       </div>
                     )
                   },

@@ -573,8 +573,8 @@ describe('portal', () => {
   it('declares a nivel de construccion with the official descriptions of its letters', async () => {
     start('/declaraciones/d1?tab=caracteristicas', [{ method: 'POST', path: '/srtm/declaraciones/d1/niveles', status: 201, body: { id: 'n1' } }])
     expect(await screen.findByText('Listado de niveles de construcción')).toBeInTheDocument()
-    // a propietario único has no condóminos to show
-    expect(screen.getByRole('tab', { name: 'Datos de los condóminos' })).toBeDisabled()
+    // a propietario único adds its first condómino there (srtm-backend#4)
+    expect(screen.getByRole('tab', { name: 'Datos de los condóminos' })).toBeEnabled()
     await userEvent.click(screen.getByRole('button', { name: 'Agregar nivel de construcción' }))
     const dialog = await screen.findByRole('dialog')
     await userEvent.selectOptions(within(dialog).getByLabelText(/Mes construcción/), '1')
