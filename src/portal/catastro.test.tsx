@@ -206,7 +206,7 @@ describe('catastro fiscal', () => {
     await userEvent.type(screen.getByLabelText('Número principal'), '350')
     await userEvent.type(screen.getByLabelText(/^Sector/), '01')
     await userEvent.type(screen.getByLabelText(/Manzana catastral/), '02')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
     const post = await lastCall('POST', '/srtm/contribuyentes/c1/declaraciones-juradas')
     // no code: the backend finds the lote by its CPU and takes the lote's municipal code
@@ -245,7 +245,7 @@ describe('catastro fiscal', () => {
     await eligeLote()
     await userEvent.type(screen.getByLabelText(/^Sector/), '01')
     await userEvent.type(screen.getByLabelText(/Manzana catastral/), '02')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
     const post = await lastCall('POST', '/srtm/contribuyentes/c1/declaraciones-juradas')
     expect(post.body).toMatchObject({

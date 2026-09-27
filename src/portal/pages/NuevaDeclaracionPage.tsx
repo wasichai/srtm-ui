@@ -1,21 +1,23 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, Card } from '@wasichai/ui'
-import { ArrowRight, FileText, MapPin, Save, Undo2, X } from 'lucide-react'
+import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { useSalidaConCambios } from '../components/CambiosPendientes'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { QueryState } from '../components/QueryState'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
+import { useGrupoFormularios } from '../forms/grupo'
 import { RecordForm } from '../forms/RecordForm'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
 import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Contribuyente, Declaracion, Predio } from '../types'
-import { DECLARACION_TABS } from './DeclaracionPage'
+import { DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 
 const DATOS_FORM = 'dj-datos'
 const UBICACION_FORM = 'dj-ubicacion'
@@ -37,8 +39,9 @@ export function NuevaDeclaracionRoute() {
 }
 
 // the srtm's "declaración jurada y registro de predio": step one the datos del predio, step two the ubicación, of a
-// predio already in the padrón or of one registered here. saving presents it and opens it. it comes with its
-// contribuyente, or with its predio (then the contribuyente is looked up in step one)
+// predio already in the padrón or of one registered here. "Siguiente" there presents it (it gets its number) and the
+// wizard goes on in it, from its next pending tab. it comes with its contribuyente, or with its predio (then the
+// contribuyente is looked up in step one)
 function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: string; predio?: string }) {
   const navigate = useNavigate()
   const catalogos = useCatalogos()
@@ -62,6 +65,9 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const existente = predioFijo ?? buscado
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // what was typed in either step is lost by leaving: asked first
+  const grupo = useGrupoFormularios(['datos', 'ubicacion'] as const)
+  const salida = useSalidaConCambios(grupo.pendientes.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
   const [sections] = useState(() =>
     ubicacionSections((elegido: Elegido) => {
       const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
@@ -78,7 +84,9 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
     const declaracion = Object.fromEntries(Object.entries(datos).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
     const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
     await refresh()
-    navigate(`/declaraciones/${dj.declaracion.id}?tab=transferentes`, { replace: true })
+    salida.permitir()
+    // just presented: no transferentes yet
+    navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0)}&asistente=1`, { replace: true })
   }
   const presentarExistente = async () => {
     if (!existente) return
@@ -121,13 +129,13 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
             </Button>
           ) : !existente ? (
             <Button type="submit" form={UBICACION_FORM}>
-              <Save className="size-4" />
-              Guardar
+              <ArrowRight className="size-4" />
+              Siguiente
             </Button>
           ) : (
             <Button onClick={() => void presentarExistente()} disabled={busy}>
-              <Save className="size-4" />
-              {busy ? 'Guardando…' : 'Guardar'}
+              <ArrowRight className="size-4" />
+              {busy ? 'Guardando…' : 'Siguiente'}
             </Button>
           )}
         </div>
@@ -150,6 +158,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                   ) : (
                     <RecordForm
                       formId={DATOS_FORM}
+                      enlace={grupo.enlaces.datos}
                       hideActions
                       sections={DJ_DATOS_SECTIONS}
                       options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
@@ -220,6 +229,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                   ) : (
                     <RecordForm
                       formId={UBICACION_FORM}
+                      enlace={grupo.enlaces.ubicacion}
                       hideActions
                       sections={sections}
                       options={catalogos.data?.predio}
@@ -233,6 +243,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
           }))}
         />
       </Card>
+      {salida.dialogo}
     </div>
   )
 }

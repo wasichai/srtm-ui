@@ -166,7 +166,7 @@ describe('the full declaración jurada', () => {
     expect(screen.getByText(/La declaración será sobre el predio/)).toHaveTextContent('01-01-0001')
     // the predio came with the wizard: no other one to register instead
     expect(screen.queryByRole('button', { name: 'Registrar un predio nuevo' })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
     expect(post.body).toMatchObject({
@@ -183,8 +183,7 @@ describe('the full declaración jurada', () => {
   it('edits the valores of a declaration in its características, over the declaration as it is now', async () => {
     start('/declaraciones/d1?tab=caracteristicas', [{ method: 'PUT', path: '/srtm/declaraciones/d1', body: declaracion }])
     const panel = within(await screen.findByRole('tabpanel'))
-    expect(await panel.findByRole('heading', { name: 'Valores' })).toBeInTheDocument()
-    await userEvent.click(panel.getByRole('button', { name: 'Editar' }))
+    expect(await panel.findByRole('group', { name: 'Valores' })).toBeInTheDocument()
     await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
     await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')
     await userEvent.type(panel.getByLabelText('Deducción (S/)'), '1500')
@@ -192,7 +191,7 @@ describe('the full declaración jurada', () => {
     await userEvent.type(panel.getByLabelText('Valor afecto (S/)'), '23500.5')
     await userEvent.clear(panel.getByLabelText('Área construida (m2)'))
     await userEvent.type(panel.getByLabelText('Área construida (m2)'), '150')
-    await userEvent.click(panel.getByRole('button', { name: 'Guardar cambios' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     const put = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')!)
     expect(put.body).toMatchObject({

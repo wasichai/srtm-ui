@@ -1,4 +1,4 @@
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { TABS_KEY } from '../auth/session'
 
@@ -50,17 +50,26 @@ export function WorkspaceTabsProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  // closing the tab on screen moves to its right neighbour, else the left one, else home
+  // closing the tab on screen moves to its right neighbour, else the left one, else home. the tab goes once the move
+  // happens: a page with changes not saved may keep the clerk there (useSalidaConCambios), with its tab
   const close = useCallback(
     (path: string) => {
       const index = tabs.findIndex((t) => t.path === path)
       if (index === -1) return
       const rest = tabs.filter((t) => t.path !== path)
-      setTabs(rest)
-      if (location.pathname === path) navigate(rest[index]?.path ?? rest[index - 1]?.path ?? '/')
+      if (location.pathname === path) navigate(rest[index]?.path ?? rest[index - 1]?.path ?? '/', { state: { cerrar: path } })
+      else setTabs(rest)
     },
     [tabs, location.pathname, navigate]
   )
+  // once per arrival: back on that history entry later, a ficha opened again since stays
+  const cerrar = (location.state as { cerrar?: string } | null)?.cerrar
+  const cerradas = useRef(new Set<string>())
+  useEffect(() => {
+    if (!cerrar || cerradas.current.has(location.key)) return
+    cerradas.current.add(location.key)
+    setTabs((current) => current.filter((t) => t.path !== cerrar))
+  }, [cerrar, location.key])
 
   const value = useMemo(() => ({ tabs, open, close }), [tabs, open, close])
   return <Context value={value}>{children}</Context>
