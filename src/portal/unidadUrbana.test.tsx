@@ -37,9 +37,10 @@ describe('tipos de unidad urbana de la pág. 5', () => {
     expect(opciones).toEqual([['', 'SELECCIONAR'], ...PAGINA_5.map((tipo) => [tipo, tipo])])
   })
 
-  it('writes them whole in the address: the srtm abbreviates only AA.HH., AA.VV., C.P. and URB.', () => {
-    expect(NUEVAS.map((tipo) => describirDomicilio({ tipo_unidad_urbana: tipo, unidad_urbana: 'LOS PINOS' }))).toEqual(
-      NUEVAS.map((tipo) => `${tipo} LOS PINOS`)
-    )
+  it('writes both with the ABREV_UU they share, ASOC.VIS.', () => {
+    expect(NUEVAS.map((tipo) => describirDomicilio({ tipo_unidad_urbana: tipo, unidad_urbana: 'LOS PINOS' }))).toEqual([
+      'ASOC.VIS. LOS PINOS',
+      'ASOC.VIS. LOS PINOS'
+    ])
   })
 })

@@ -42,17 +42,60 @@ describe('describirDomicilio', () => {
         describirDomicilio({ tipo_via: tipo, via: 'A' })
       )
     ).toEqual(['AV. A', 'CA. A', 'JR. A', 'PSJE. A', 'PROL. A', 'CARR. A', 'CARROZABLE A', 'MALECON A', 'A'])
-    expect(
-      ['ASENTAMIENTO HUMANO', 'ASOCIACION DE VIVIENDA', 'CENTRO POBLADO', 'URBANIZACION', 'CERCADO', 'OTROS'].map((tipo) =>
-        describirDomicilio({ tipo_unidad_urbana: tipo, unidad_urbana: 'B' })
-      )
-    ).toEqual(['AA.HH. B', 'AA.VV. B', 'C.P. B', 'URB. B', 'CERCADO B', 'B'])
+    // every tipo de unidad urbana, with the catastro fiscal's ABREV_UU
+    const unidades = [
+      ['AGRUPACION', 'AGRUP B'],
+      ['ASENTAMIENTO HUMANO', 'AA.HH. B'],
+      ['ASOCIACION', 'ASOC B'],
+      ['ASOCIACION DE VIVIENDA', 'ASOC. VIV. B'],
+      ['ASOCIACION DE VIVIENDA DE INTERES SOCIAL', 'ASOC.VIS. B'],
+      ['ASOCIACION DE VIVIENDA E INTERES SOCIAL', 'ASOC.VIS. B'],
+      ['ASOCIACION DE VIVIENDA POPULAR DE INTERES SOCIAL', 'ASOC.V.POPIS B'],
+      ['ASOCIACION POPULAR URBANIZADORA', 'ASOC.PU. B'],
+      ['ASOCIACION PRO VIVIENDA', 'A.P.V. B'],
+      ['ASOCIACION PRO VIVIENDA DE INTERES SOCIAL', 'ASOC.PVIS. B'],
+      ['ASOCIACION PRO VIVIENDA UNIDAD VECINAL', 'ASOC.PVUV. B'],
+      ['BALNEARIO', 'BAL. B'],
+      ['BARRIO', 'BAR B'],
+      ['CASERIO', 'CAS B'],
+      ['CENTRO POBLADO', 'C.P. B'],
+      ['CERCADO', 'CER B'],
+      ['COMPLEJO HABITACIONAL', 'C.HAB. B'],
+      ['CONJUNTO HABITACIONAL', 'CONJ. HAB. B'],
+      ['CONJUNTO RESIDENCIAL', 'C.R. B'],
+      ['COOPERATIVA', 'COOP B'],
+      ['COOPERATIVA DE VIVIENDA', 'COOP. VIV. B'],
+      ['FUNDO', 'FDO B'],
+      ['LOTE UNICO', 'L.U. B'],
+      ['LOTIZACION', 'LOT B'],
+      ['POSESION INFORMAL', 'P.I. B'],
+      ['PROGRAMA', 'PRO. B'],
+      ['PROGRAMA DE ADJUDICACION DE LOTES', 'P.A.L. B'],
+      ['PROGRAMA DE VIVIENDA', 'P.V. B'],
+      ['PROGRAMA MUNICIPAL DE VIVIENDA', 'PMV. B'],
+      ['PROYECTO INTEGRAL DE LAS JUNTAS VECINALES', 'PROY.I.J.V. B'],
+      ['PUEBLO JOVEN', 'P.J. B'],
+      ['PUEBLO TRADICIONAL', 'P. T. B'],
+      ['RESIDENCIAL', 'RES. B'],
+      ['SECTOR', 'S. B'],
+      ['SIN HABILITACION', 'SIN. HAB. B'],
+      ['UNIDAD VECINAL', 'U.V. B'],
+      ['URBANIZACION', 'URB. B'],
+      ['URBANIZACION POPULAR', 'URB. POP. B'],
+      ['URBANIZACION POPULAR DE INTERES SOCIAL', 'UPIS B'],
+      ['URBANIZACION PRO VIVIENDA DE INTERES SOCIAL', 'UPVIS B'],
+      ['ZONA', 'Z. B'],
+      ['ZONA INDUSTRIAL', 'Z.I. B'],
+      ['ZONA URBANA', 'Z.U. B']
+    ]
+    expect(unidades.map(([tipo]) => describirDomicilio({ tipo_unidad_urbana: tipo, unidad_urbana: 'B' }))).toEqual(unidades.map(([, escrita]) => escrita))
   })
 
   it('does not repeat a type the via or zona already starts with', () => {
     expect(describirDomicilio({ tipo_via: 'JIRON', via: 'JR. LIMA' })).toBe('JR. LIMA')
     expect(describirDomicilio({ tipo_via: 'JIRON', via: 'JIRON LIMA' })).toBe('JIRON LIMA')
     expect(describirDomicilio({ tipo_unidad_urbana: 'URBANIZACION', unidad_urbana: 'URB. LOS PINOS' })).toBe('URB. LOS PINOS')
+    expect(describirDomicilio({ tipo_unidad_urbana: 'ASOCIACION DE VIVIENDA', unidad_urbana: 'ASOC. VIV. LAS VEGAS' })).toBe('ASOC. VIV. LAS VEGAS')
     // a word that only starts like the type is the name's
     expect(describirDomicilio({ tipo_via: 'CALLE', via: 'CALLEJON OSCURO' })).toBe('CA. CALLEJON OSCURO')
     // a type alone, with no name, is still written
@@ -90,7 +133,7 @@ describe('describirUbicacion', () => {
         habilitacion_urbana: 'II MESETA',
         ...PERENE
       })
-    ).toBe('JR. LIMA, N° 12, MZ. A, LT. 5, KM. 1, CERCADO II MESETA, JUNIN-CHANCHAMAYO-PERENE')
+    ).toBe('JR. LIMA, N° 12, MZ. A, LT. 5, KM. 1, CER II MESETA, JUNIN-CHANCHAMAYO-PERENE')
   })
 })
 
@@ -160,10 +203,10 @@ describe('the ubicacion of a predio', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
     expect(screen.getByLabelText('Dirección actual')).toHaveValue(DEL_PADRON)
-    expect(preview()).toHaveTextContent('JR. LIMA, N° 12, MZ. A, LT. 5, CERCADO II MESETA, JUNIN-CHANCHAMAYO-PERENE')
+    expect(preview()).toHaveTextContent('JR. LIMA, N° 12, MZ. A, LT. 5, CER II MESETA, JUNIN-CHANCHAMAYO-PERENE')
     await userEvent.clear(screen.getByLabelText('Número principal'))
     await userEvent.type(screen.getByLabelText('Número principal'), '14')
-    expect(preview()).toHaveTextContent('JR. LIMA, N° 14, MZ. A, LT. 5, CERCADO II MESETA, JUNIN-CHANCHAMAYO-PERENE')
+    expect(preview()).toHaveTextContent('JR. LIMA, N° 14, MZ. A, LT. 5, CER II MESETA, JUNIN-CHANCHAMAYO-PERENE')
   })
 
   it("keeps the padron's text until the predio gets a tipo de via, as the backend does", async () => {
