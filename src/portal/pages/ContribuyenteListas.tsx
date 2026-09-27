@@ -16,7 +16,16 @@ import { HijosPanel } from './HijosPanel'
 
 // the contribuyente's four lists of the srtm's registro de contribuyente
 
-const esFiscalActivo = (d: Domicilio) => d.tipo_domicilio === 'FISCAL' && d.estado !== 'INACTIVO'
+export const esFiscalActivo = (d: Domicilio) => d.tipo_domicilio === 'FISCAL' && d.estado !== 'INACTIVO'
+
+// the only active fiscal domicilio: the first one added (null: a new one), or the one edited when no other is.
+// the backend keeps it fiscal, active and there; the dialog greys its tipo, as the srtm does
+const unicoFiscal = (d: Domicilio | null, rows: Domicilio[]) => (d === null || esFiscalActivo(d)) && !rows.some((r) => r.id !== d?.id && esFiscalActivo(r))
+
+const TIPO_FIJO = DOMICILIO_SECTIONS.map((s) => ({
+  ...s,
+  fields: s.fields.map((f) => (f.name === 'tipo_domicilio' ? { ...f, readOnly: true } : f))
+}))
 
 // the padrón's district: where a new domicilio most likely is
 const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' }
@@ -29,9 +38,10 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
       queryKey="domicilios"
       plural="domicilios"
       singular="domicilio"
-      sections={DOMICILIO_SECTIONS}
+      sections={(rows, editing) => (unicoFiscal(editing, rows) ? TIPO_FIJO : DOMICILIO_SECTIONS)}
       catalog="domicilio"
       wide
+      fijo={(d, rows) => (unicoFiscal(d, rows) ? 'Es el único domicilio fiscal activo: no se puede eliminar' : null)}
       nuevo={(rows) =>
         emptyOf<Domicilio>(DOMICILIO_SECTIONS, {
           ...PERENE,

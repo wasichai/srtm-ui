@@ -12,7 +12,7 @@ import { YearSelect } from '../components/YearSelect'
 import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
-import { DomiciliosPanel, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
+import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { FichaHeader } from './FichaHeader'
@@ -25,6 +25,10 @@ export const CONTRIBUYENTE_TABS = [
   { id: 'contacto', label: 'Medios de contacto' },
   { id: 'sustento', label: 'Sustento' }
 ] as const
+
+// the inscription wizard's steps (pp. 4, 7, 9): Domicilios right away; once a fiscal domicilio is active, Relacionados,
+// and then each tab opens the next when it is visited. rentas' own tabs come after the srtm's last
+const PASOS: Record<string, number> = { datos: 0, domicilios: 1, relacionados: 2, contacto: 3, sustento: 4, predios: 5, declaraciones: 5 }
 
 // keyed by id: another contribuyente is a fresh ficha (first tab, this year), not this one reused
 export function ContribuyenteRoute() {
@@ -41,6 +45,16 @@ function ContribuyentePage({ id }: { id: string }) {
     queryFn: () => rentas.contribuyente(id, anio),
     placeholderData: keepPreviousData
   })
+  // opened by the wizard: its tabs by steps. from the search, every tab
+  const inscripcion = params.has('inscripcion')
+  const domicilios = useQuery({ queryKey: ['domicilios', id], queryFn: () => rentas.domicilios.listar(id), enabled: inscripcion })
+  const fiscal = domicilios.data?.some(esFiscalActivo) ?? false
+  const [alcanzado, setAlcanzado] = useState(() => Math.max(PASOS.domicilios, PASOS[params.get('tab') ?? ''] ?? 0))
+  const habilitada = (tab: string) => !inscripcion || PASOS[tab] <= PASOS.domicilios || (fiscal && PASOS[tab] <= alcanzado + 1)
+  const abrir = (tab: string) => {
+    setAlcanzado((a) => Math.max(a, PASOS[tab] ?? 0))
+    setParams(inscripcion ? { tab, inscripcion: '1' } : { tab }, { replace: true })
+  }
   const c = ficha.data?.contribuyente
   useWorkspaceTab(c ? { path: `/contribuyentes/${id}`, label: `${c.numero_documento ?? ''} ${c.nombre_completo ?? ''}`.trim(), kind: 'contribuyente' } : null)
 
@@ -73,7 +87,7 @@ function ContribuyentePage({ id }: { id: string }) {
             <FichaTabs
               label="Secciones del contribuyente"
               active={params.get('tab') ?? 'datos'}
-              onChange={(tab) => setParams({ tab }, { replace: true })}
+              onChange={abrir}
               tabs={[
                 {
                   ...CONTRIBUYENTE_TABS[0],
@@ -145,7 +159,7 @@ function ContribuyentePage({ id }: { id: string }) {
                     </div>
                   )
                 }
-              ]}
+              ].map((tab) => ({ ...tab, disabled: !habilitada(tab.id) }))}
             />
           </Card>
         </div>
