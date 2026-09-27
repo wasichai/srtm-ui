@@ -4,6 +4,7 @@ import { Home, Landmark, LogOut, MapPinned, Menu, Monitor, Moon, Search, Setting
 import { useState, type FormEvent } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useSession } from '../auth/session'
+import { Breadcrumbs } from './Breadcrumbs'
 import { TabBar } from './TabBar'
 
 const NAV = [
@@ -82,6 +83,7 @@ export function AppShell() {
         </nav>
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
+          <Breadcrumbs />
           <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
             <Outlet />
           </div>

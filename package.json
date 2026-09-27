@@ -28,11 +28,14 @@
         "@tanstack/react-query": "5.103.2",
         "i18next": "26.4.2",
         "lucide-react": "1.48.0",
+        "maplibre-gl": "6.10.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
         "react-hook-form": "7.89.0",
         "react-i18next": "17.0.15",
-        "react-router": "8.4.0"
+        "react-router": "8.4.0",
+        "terra-draw": "1.33.0",
+        "terra-draw-maplibre-gl-adapter": "1.4.1"
     },
     "devDependencies": {
         "@wasichai/testing": "0.2.1",

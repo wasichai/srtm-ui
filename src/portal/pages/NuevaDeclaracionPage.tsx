@@ -1,15 +1,15 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Button, Card, cn } from '@wasichai/ui'
-import { ArrowRight, FileText, MapPin, Save, X } from 'lucide-react'
+import { Button, Card } from '@wasichai/ui'
+import { ArrowRight, FileText, MapPin, Save, Undo2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
-import { DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
-import { describePredio } from '../forms/DeclaracionDialog'
+import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
+import { FieldGrid } from '../forms/FieldGrid'
 import { RecordForm } from '../forms/RecordForm'
-import { RecordPicker, type Picked } from '../forms/RecordPicker'
+import type { Elegido } from '../forms/ubicacion'
 import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import type { Declaracion, Predio } from '../types'
@@ -39,22 +39,30 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
   })
   const [tab, setTab] = useState<'datos' | 'ubicacion'>('datos')
   const [datos, setDatos] = useState<Declaracion | null>(null)
-  const [modo, setModo] = useState<'nuevo' | 'existente'>('nuevo')
-  const [existente, setExistente] = useState<Picked | null>(null)
+  // a predio of the padrón picked with "buscar predios": the declaration is on it, no new predio is registered
+  const [existente, setExistente] = useState<Predio | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [sections] = useState(() =>
+    ubicacionSections((elegido: Elegido) => {
+      const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
+      if (!predio) return false
+      setExistente(predio)
+      setError(null)
+      return true
+    })
+  )
 
   const presentar = async (predio: { predio?: Predio; predio_id?: string }) => {
     if (!datos) return
-    const dj = await rentas.presentarDeclaracion(contribuyente, { declaracion: datos, ...predio })
+    // datos del predio carries the predio's tipo; the declaration does not keep it
+    const declaracion = Object.fromEntries(Object.entries(datos).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
+    const dj = await rentas.presentarDeclaracion(contribuyente, { declaracion, ...predio })
     await refresh()
     navigate(`/declaraciones/${dj.declaracion.id}?tab=transferentes`, { replace: true })
   }
   const presentarExistente = async () => {
-    if (!existente) {
-      setError('Busca y elige el predio de la declaración')
-      return
-    }
+    if (!existente) return
     setError(null)
     setBusy(true)
     try {
@@ -65,6 +73,7 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
       setBusy(false)
     }
   }
+  const tipoPredio = (datos as (Declaracion & { condicion?: string | null }) | null)?.condicion ?? 'URBANO'
 
   const c = ficha.data?.contribuyente
   return (
@@ -87,7 +96,7 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
               <ArrowRight className="size-4" />
               Siguiente
             </Button>
-          ) : modo === 'nuevo' ? (
+          ) : !existente ? (
             <Button type="submit" form={UBICACION_FORM}>
               <Save className="size-4" />
               Guardar
@@ -116,8 +125,9 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
                     formId={DATOS_FORM}
                     hideActions
                     sections={DJ_DATOS_SECTIONS}
-                    options={catalogos.data?.declaracion_predial}
-                    initial={emptyOf<Declaracion>(DJ_DATOS_SECTIONS, {
+                    options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
+                    initial={emptyOf<Declaracion & { condicion?: string | null }>(DJ_DATOS_SECTIONS, {
+                      condicion: 'URBANO',
                       motivo: 'INSCRIPCION',
                       medio_determinacion: 'DECLARACION JURADA',
                       medio_presentacion: 'FISICO',
@@ -136,46 +146,19 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
                 </div>
               ) : (
                 <div className="space-y-5 px-6 pt-5">
-                  <div role="radiogroup" aria-label="Predio de la declaración" className="flex flex-wrap gap-2">
-                    {(
-                      [
-                        ['nuevo', 'Registrar un predio nuevo'],
-                        ['existente', 'Buscar un predio del padrón']
-                      ] as const
-                    ).map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="radio"
-                        aria-checked={modo === value}
-                        onClick={() => {
-                          setModo(value)
-                          setError(null)
-                        }}
-                        className={cn(
-                          'rounded-md border px-3 py-1.5 text-sm',
-                          modo === value ? 'border-brand bg-brand-soft font-medium text-brand-strong' : 'border-border text-ink-muted hover:text-ink'
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  {modo === 'existente' ? (
-                    <div className="max-w-2xl space-y-3">
-                      <RecordPicker
-                        label="Predio"
-                        placeholder="Código, dirección o habilitación urbana"
-                        value={existente}
-                        onChange={(p) => {
-                          setExistente(p)
-                          setError(null)
-                        }}
-                        search={(q) => rentas.predios(q, 0, 8)}
-                        describe={describePredio}
-                        error={error ?? undefined}
-                      />
-                      {error && existente && (
+                  {existente ? (
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-brand/40 bg-brand-soft px-4 py-3 text-sm">
+                        <p className="text-brand-strong">
+                          La declaración será sobre el predio <strong>{existente.codigo}</strong> del padrón · {existente.direccion}
+                        </p>
+                        <Button type="button" variant="secondary" size="sm" onClick={() => setExistente(null)}>
+                          <Undo2 className="size-4" />
+                          Registrar un predio nuevo
+                        </Button>
+                      </div>
+                      <FieldGrid sections={UBICACION_SECTIONS} values={existente} />
+                      {error && (
                         <p role="alert" className="text-sm text-danger">
                           {error}
                         </p>
@@ -185,9 +168,9 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
                     <RecordForm
                       formId={UBICACION_FORM}
                       hideActions
-                      sections={UBICACION_SECTIONS}
+                      sections={sections}
                       options={catalogos.data?.predio}
-                      initial={emptyOf<Predio>(UBICACION_SECTIONS, { ...PERENE, condicion: 'URBANO' })}
+                      initial={emptyOf<Predio>(sections, { ...PERENE, condicion: tipoPredio })}
                       submitLabel="Guardar"
                       onSubmit={(predio) => presentar({ predio })}
                     />

@@ -1,3 +1,5 @@
+import type { Geometry } from './components/geo'
+
 // what /api/srtm answers (srtm-backend, package srtm.rentas). keys are the model's field names
 
 export interface Contribuyente {
@@ -68,6 +70,8 @@ export interface Domicilio {
   referencia: string | null
   descripcion?: string | null
   estado?: string | null
+  // "buscar dirección": a point, geojson
+  ubicacion?: Geometry | null
 }
 
 export interface Relacionado {
@@ -170,6 +174,10 @@ export interface Predio {
   partida_registral?: string | null
   referencia?: string | null
   codigo_cpu?: string | null
+  // the backend's, when the portal registers the predio
+  numero_registro?: number | null
+  // the lote's polygon, geojson (EPSG:4326)
+  lote_geom?: Geometry | null
 }
 
 export interface Declaracion {
@@ -216,6 +224,7 @@ export interface Declaracion {
   clase_uso?: string | null
   sub_clase_uso?: string | null
   area_comun_terreno?: number | null
+  otros_datos?: string | null
 }
 
 // the declaración jurada's lists. declaracion is the parent's id, set by the backend
@@ -306,6 +315,54 @@ export interface DeclaracionJurada {
   declaracion: Declaracion
   predio: Predio
   contribuyente: Contribuyente
+  // when the declaration was last saved (the srtm's "fecha de actualización")
+  actualizado?: string | null
+}
+
+// a lote of the catastro fiscal
+export interface CatastroFiscal {
+  id?: string
+  codigo_cpu: string | null
+  codigo_predio_municipal: string | null
+  partida_registral: string | null
+  tipo_predio: string | null
+  ubigeo: string | null
+  tipo_via: string | null
+  via: string | null
+  numero: string | null
+  tipo_zona: string | null
+  zona: string | null
+  manzana: string | null
+  lote: string | null
+  kilometro: string | null
+  direccion: string | null
+  lote_geom?: Geometry | null
+}
+
+// the filters of "buscar predios" (page 13), over the padrón and over the catastro
+export interface FiltrosPredio {
+  tipo_predio?: string
+  codigo?: string
+  codigo_cpu?: string
+  partida_registral?: string
+  tipo_via?: string
+  via?: string
+  tipo_zona?: string
+  zona?: string
+  numero?: string
+  manzana?: string
+  lote?: string
+  kilometro?: string
+}
+
+// a partida of the instructivo of obras complementarias
+export interface ObraCategoria {
+  id?: string
+  tipo_obra: string
+  numero: number
+  descripcion: string
+  unidad_medida: string
+  material?: string | null
 }
 
 // presenting one: an existing predio (predio_id) or a new one (predio)
@@ -378,4 +435,5 @@ export type CatalogKey =
   | 'nivel_construccion'
   | 'obra_complementaria'
   | 'otro_frente'
+  | 'catastro_fiscal'
 export type Catalogos = Partial<Record<CatalogKey, Record<string, string[]>>>

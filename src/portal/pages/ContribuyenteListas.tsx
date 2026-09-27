@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, MapPinCheck } from 'lucide-react'
 import { rentas } from '../api'
 import { formatText } from '../components/format'
 import {
@@ -10,6 +10,7 @@ import {
   SUSTENTO_SECTIONS,
   type FormValues
 } from '../forms/specs'
+import { UbicarDireccion } from '../forms/UbicarDireccion'
 import type { Contribuyente, Domicilio, MedioContacto, Relacionado, Sustento } from '../types'
 import { HijosPanel } from './HijosPanel'
 
@@ -50,19 +51,30 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
           </div>
         )
       }
-      footer={(values: FormValues) => (
+      footer={(values: FormValues, form) => (
         <div className="space-y-1.5">
           <p className="text-xs text-ink-muted">Descripción del domicilio</p>
-          <p className="min-h-9 rounded-md border border-border bg-surface-muted px-3 py-2 text-sm text-ink" aria-live="polite">
-            {describirDomicilio(values) || '—'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="min-h-9 flex-1 rounded-md border border-border bg-surface-muted px-3 py-2 text-sm text-ink" aria-live="polite">
+              {describirDomicilio(values) || '—'}
+            </p>
+            <UbicarDireccion form={form} descripcion={describirDomicilio(values)} />
+          </div>
         </div>
       )}
       columns={[
         { label: 'Código', render: (_, i) => i + 1 },
         { label: 'Tipo de domicilio', render: (d) => formatText(d.tipo_domicilio) },
         { label: 'Tipo de predio', render: (d) => formatText(d.tipo_predio) },
-        { label: 'Descripción del domicilio', render: (d) => formatText(d.descripcion) }
+        {
+          label: 'Descripción del domicilio',
+          render: (d) => (
+            <span className="inline-flex items-start gap-1.5">
+              {d.ubicacion && <MapPinCheck aria-label="Ubicado en el mapa" className="mt-0.5 size-4 shrink-0 text-success" />}
+              {formatText(d.descripcion)}
+            </span>
+          )
+        }
       ]}
     />
   )

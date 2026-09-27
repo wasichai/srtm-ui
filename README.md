@@ -66,6 +66,35 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     también para el usuario.
   - `index.html` aplica el tema antes de cargar la app, para que no parpadee.
 
+- **Registro de predio y catastro fiscal** (fase 3, págs. 11-14 de la presentación):
+  - **"Buscar predios"** (pág. 13): un diálogo con pestañas *Buscar en Tributario* (el padrón) y *Buscar en Catastro
+    Fiscal*.
+    - Tiene los filtros del SRTM, Limpiar / Buscar, y una tabla paginada (Filas 5/10/25).
+    - Debajo, el mapa de los lotes: la fila elegida se resalta y un clic en un lote elige su fila. La cámara descarga
+      una imagen del mapa.
+    - Se abre desde la ubicación de una DJ o de un predio (rellena la ubicación, el código CPU y el polígono), desde
+      el asistente de DJ (un predio del padrón pasa a ser el de la declaración) y desde la lista de predios (abre la
+      ficha, o "Nuevo predio" ya ubicado).
+  - **Ubicación del predio:** incluye la sección *Predio de catastro fiscal*, con código CPU, código municipal y un
+    mapa. En ese mapa se ve el lote del predio sobre los del catastro, se elige uno con un clic, o se dibuja / edita el
+    polígono.
+  - **Datos del predio de la DJ:** muestran código y número de registro del predio, el tipo de predio (que se guarda
+    en el predio), la fecha de actualización y *Otros datos*.
+  - **Ficha y alta de predio** (`/predios/:id`, `/predios/nuevo`) con la ubicación del SRTM, en lugar del formulario
+    simple del padrón.
+  - **Obra complementaria:** la categoría se elige del instructivo oficial y fija la unidad de medida. Sin catálogo
+    cargado, se escribe a mano.
+- **Otros:**
+  - todas las listas de la ficha van paginadas, como en el SRTM;
+  - el domicilio se ubica en el mapa ("Buscar dirección");
+  - cada pantalla muestra la ruta del SRTM ("Registro tributario y determinación › Registro tributario › …").
+- **Mapas:** `components/LotesMap.tsx` usa maplibre-gl 6.10.0 y terra-draw 1.33.0, las mismas versiones que
+  `@wasichai/gis`.
+  - Se carga diferido: maplibre solo baja con el primer mapa. `main.tsx` le pasa la URL del worker.
+  - El fondo es OpenStreetMap, así que necesita internet. Los lotes vienen de wasichai-gis
+    (`/api/gis/objects/{objeto}/features?bbox=…`).
+  - En los tests, el mapa es un doble que expone sus gestos como botones: elegir, dibujar, marcar un punto.
+
 El admin (`src/admin`) no cambia: las pantallas de metadata salen de lo que `srtm-backend/model/apply.py` carga en
 Core. El enlace "Administración" de la cabecera del portal solo aparece para el rol `ADMIN`.
 
@@ -109,6 +138,6 @@ yarn build           # dist/, luego yarn preview
 
 ## Siguientes pasos
 
-- **Integraciones:** consulta PIDE RENIEC y catastro fiscal (mapa). Hoy esos datos se cargan a mano.
+- **Integraciones:** consulta PIDE RENIEC. Hoy esos datos se cargan a mano.
 - **Estado de cuenta, cálculo del predial y emisión de recibos**, como nuevas pestañas de la ficha, cuando srtm-backend
   tenga esos casos de uso en `srtm.rentas`.

@@ -1,8 +1,51 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
+import type { LotesMapProps } from './components/LotesMap'
+
+// jsdom has no webgl: the map is a double that lists its lotes and offers the clerk's gestures as buttons
+const SQUARE = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [-75.225, -10.948],
+      [-75.2245, -10.948],
+      [-75.2245, -10.9475],
+      [-75.225, -10.948]
+    ]
+  ]
+}
+vi.mock('./components/LotesMap', () => ({
+  LotesMap: (props: LotesMapProps) => {
+    const ids = (props.features?.features ?? []).map((f) => String(f.properties.__id ?? String(f.id ?? '').split(':')[0]))
+    return (
+      <div data-testid="lotes-map" aria-label={props.label}>
+        <span data-testid="lotes">{ids.join(',')}</span>
+        <span data-testid="lote-elegido">{props.selectedId ?? ''}</span>
+        {ids.map((id) => (
+          <button key={id} type="button" onClick={() => props.onSelect?.(id)}>
+            lote {id}
+          </button>
+        ))}
+        <button type="button" onClick={() => props.onBounds?.([-75.23, -10.95, -75.22, -10.94])}>
+          mover mapa
+        </button>
+        {props.draw && (
+          <button type="button" onClick={() => props.draw?.onChange(SQUARE)}>
+            dibujar cuadrado
+          </button>
+        )}
+        {props.point && (
+          <button type="button" onClick={() => props.point?.onChange({ type: 'Point', coordinates: [-75.2247, -10.9475] })}>
+            marcar punto
+          </button>
+        )}
+      </div>
+    )
+  }
+}))
 
 const admin = { id: 'u1', email: 'admin@wasichai.local', displayName: 'Admin', organizationId: 'o1', roles: ['ADMIN'] }
 const year = new Date().getFullYear()
@@ -119,10 +162,31 @@ const dj = {
     tipo_adquisicion: 'COMPRA',
     fecha_adquisicion: '2024-09-04',
     folios: 2,
-    documentos_sustento: 'MINUTA'
+    documentos_sustento: 'MINUTA',
+    medio_presentacion: 'FISICO',
+    fecha_presentacion: '2026-09-24'
   },
-  predio,
-  contribuyente
+  predio: { ...predio, numero_registro: 5243, region: 'SELVA' },
+  contribuyente,
+  actualizado: '2026-09-25T14:03:00Z'
+}
+const loteCatastro = {
+  id: 'k1',
+  codigo_cpu: '54102166-0001-2',
+  codigo_predio_municipal: '5243',
+  partida_registral: '11002233',
+  tipo_predio: 'PREDIO URBANO',
+  ubigeo: '120302',
+  tipo_via: 'AVENIDA',
+  via: 'ANDRES AVELINO CACERES',
+  numero: null,
+  tipo_zona: 'URBANIZACION',
+  zona: 'SOL DE LA ALAMEDA',
+  manzana: 'C',
+  lote: '19',
+  kilometro: null,
+  direccion: 'AV. ANDRES AVELINO CACERES URB. SOL DE LA ALAMEDA MZ. C LOT. 19',
+  lote_geom: SQUARE
 }
 
 const routes: MockRoute[] = [
@@ -176,7 +240,11 @@ const routes: MockRoute[] = [
         estado_conservacion: ['BUENO', 'REGULAR'],
         estado: ['ACTIVO', 'INACTIVO']
       },
-      obra_complementaria: { ingreso: ['POR CATEGORIAS', 'CON VALORIZACION'], unidad_medida: ['M2', 'ML'] }
+      obra_complementaria: {
+        ingreso: ['POR CATEGORIAS', 'CON VALORIZACION'],
+        tipo_obra: ['MUROS PERIMETRICOS O CERCOS', 'TANQUES ELEVADOS'],
+        unidad_medida: ['M2', 'ML']
+      }
     }
   },
   { path: '/srtm/ubigeos', body: ubigeos },
@@ -413,58 +481,88 @@ describe('portal', () => {
     await waitFor(() => expect(fetch!.calls.some((c) => c.method === 'DELETE' && c.path === '/srtm/relacionados/r1')).toBe(true))
   })
 
-  it('presents a declaracion jurada on a new predio: datos del predio, then its ubicacion', async () => {
+  it('presents a declaracion jurada on a new predio: datos del predio, then its ubicacion with its lote', async () => {
     start('/contribuyentes/c1?tab=declaraciones', [{ method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }])
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva declaración' }))
     expect(await screen.findByRole('heading', { name: 'Nueva declaración jurada predial' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Datos de la ubicación' })).toBeDisabled()
+    // the predio's own fields, shown in datos del predio as in the srtm
+    expect(screen.getByLabelText('Código de predio')).toHaveAttribute('placeholder', '(AUTOGENERADO)')
+    expect(screen.getByLabelText('Número de registro de predio')).toHaveAttribute('placeholder', '(AUTOGENERADO)')
 
-    await userEvent.selectOptions(await screen.findByLabelText(/Tipo de adquisición/), 'COMPRA')
+    await screen.findByRole('option', { name: 'COMPRA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'COMPRA')
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'RUSTICO')
     await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2024-09-04')
     await userEvent.type(screen.getByLabelText(/Folios/), '2')
     await userEvent.click(screen.getByRole('checkbox', { name: 'MINUTA' }))
+    await userEvent.type(screen.getByLabelText('Otros datos'), 'LINDA CON EL RIO')
     // the condición's fields wait for a condición
     expect(screen.getByLabelText('Fecha de inicio de condición')).toBeDisabled()
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
     expect(await screen.findByRole('tab', { name: 'Datos de la ubicación' })).toHaveAttribute('aria-selected', 'true')
-    await userEvent.type(screen.getByLabelText(/Sector/), '01')
+    await userEvent.type(screen.getByLabelText(/^Sector/), '01')
     await userEvent.type(screen.getByLabelText(/Manzana catastral/), '02')
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de vía/), 'AVENIDA')
     await userEvent.type(screen.getByLabelText(/Descripción de la vía/), 'MARGINAL')
     await userEvent.type(screen.getByLabelText(/Descripción de la zona/), 'II MESETA')
+    await userEvent.type(screen.getByLabelText('Código CPU'), '54102166-0001-2')
+    // the lote, drawn on the catastro map
+    await userEvent.click(screen.getByRole('button', { name: 'Dibujar lote' }))
+    await userEvent.click(screen.getByRole('button', { name: 'dibujar cuadrado' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
+    expect(within(screen.getByTestId('lotes-map')).getByTestId('lote-elegido')).toHaveTextContent('lote-del-predio')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
     expect(post.body).toMatchObject({
-      declaracion: {
-        tipo_adquisicion: 'COMPRA',
-        fecha_adquisicion: '2024-09-04',
-        folios: 2,
-        documentos_sustento: 'MINUTA',
-        condicion_propiedad: 'PROPIETARIO UNICO'
-      },
-      predio: { sector_catastral: '01', manzana_catastral: '02', tipo_via: 'AVENIDA', via: 'MARGINAL', distrito: 'PERENE', region: 'SELVA', codigo: null }
+      declaracion: { tipo_adquisicion: 'COMPRA', folios: 2, documentos_sustento: 'MINUTA', otros_datos: 'LINDA CON EL RIO' },
+      predio: {
+        sector_catastral: '01',
+        manzana_catastral: '02',
+        condicion: 'RUSTICO',
+        via: 'MARGINAL',
+        codigo_cpu: '54102166-0001-2',
+        lote_geom: SQUARE,
+        distrito: 'PERENE',
+        codigo: null
+      }
     })
+    // tipo de predio is the predio's, not the declaration's
+    expect((post.body as { declaracion: object }).declaracion).not.toHaveProperty('condicion')
     expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 39147' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Datos del transferente' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('presents a declaracion jurada on a predio already in the padron', async () => {
+  it('presents a declaracion jurada on a predio found with buscar predios', async () => {
     start('/contribuyentes/c1/declaraciones/nueva', [
-      { path: '/srtm/predios', body: page([predio]) },
+      { path: '/srtm/predios/buscar', body: page([{ ...predio, lote_geom: SQUARE }]) },
       { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }
     ])
-    // the options come with the catalog
     await screen.findByRole('option', { name: 'HERENCIA' })
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'HERENCIA')
     await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2020-01-15')
     await userEvent.type(screen.getByLabelText(/Folios/), '4')
     await userEvent.click(screen.getByRole('checkbox', { name: 'DECLARATORIA DE HEREDEROS' }))
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    await userEvent.click(await screen.findByRole('radio', { name: 'Buscar un predio del padrón' }))
-    await userEvent.type(screen.getByRole('searchbox', { name: /^Predio/ }), '01-01')
-    await userEvent.click(await screen.findByRole('button', { name: /01-01-0001/ }))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar predios' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Buscar predios' })
+    await userEvent.click(within(dialog).getByRole('tab', { name: 'Buscar en Tributario' }))
+    // the srtm wants the vía, unless a code says which predio
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(/descripción de la vía/)
+    await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'LIMA')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+    const call = await waitFor(() => fetch!.calls.find((c) => c.path.startsWith('/srtm/predios/buscar'))!)
+    expect(call.path).toContain('via=LIMA')
+    expect(call.path).toContain('tipo_predio=PREDIO+URBANO')
+    // the row and the lote on the map are the same pick
+    await userEvent.click(await within(dialog).findByRole('button', { name: 'lote p1' }))
+    expect(within(dialog).getByRole('row', { selected: true })).toHaveTextContent('01-01-0001')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Elegir' }))
+
+    expect(await screen.findByText(/La declaración será sobre el predio/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
     expect(post.body).toMatchObject({ predio_id: 'p1', declaracion: { tipo_adquisicion: 'HERENCIA', documentos_sustento: 'DECLARATORIA DE HEREDEROS' } })
@@ -515,5 +613,128 @@ describe('portal', () => {
     await userEvent.selectOptions(within(dialog).getByLabelText(/Ingreso/), 'CON VALORIZACION')
     expect(within(dialog).queryByLabelText(/Categoría/)).not.toBeInTheDocument()
     expect(within(dialog).getByLabelText(/Valor/)).toBeInTheDocument()
+  })
+
+  it('fills the ubicacion from a lote of the catastro fiscal, with its CPU and its polygon', async () => {
+    start('/declaraciones/d1?tab=ubicacion', [
+      { path: '/srtm/catastro', body: page([loteCatastro]) },
+      { path: '/srtm/predios/buscar', body: page([]) },
+      { method: 'PUT', path: '/srtm/predios/p1', body: predio }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar predios' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Buscar predios' })
+    expect(within(dialog).getByRole('tab', { name: 'Buscar en Catastro Fiscal' })).toHaveAttribute('aria-selected', 'true')
+    await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'CACERES')
+    await userEvent.type(within(dialog).getByLabelText('Manzana'), 'C')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+    const call = await waitFor(() => fetch!.calls.find((c) => c.path.startsWith('/srtm/catastro?'))!)
+    expect(call.path).toContain('via=CACERES')
+    expect(call.path).toContain('manzana=C')
+    expect(call.path).toContain('size=5')
+    await userEvent.click(await within(dialog).findByRole('cell', { name: '54102166-0001-2' }))
+    // the row picked is the lote highlighted on the map
+    expect(within(dialog).getByTestId('lote-elegido')).toHaveTextContent('k1')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Elegir' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByLabelText('Código CPU')).toHaveValue('54102166-0001-2')
+    expect(screen.getByLabelText(/Descripción de la vía/)).toHaveValue('ANDRES AVELINO CACERES')
+    expect(screen.getByLabelText(/Descripción de la zona/)).toHaveValue('SOL DE LA ALAMEDA')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    const put = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')!)
+    expect(put.body).toMatchObject({ codigo_cpu: '54102166-0001-2', manzana: 'C', lote: '19', lote_geom: SQUARE, partida_registral: '11002233' })
+  })
+
+  it('shows the predio in datos del predio and saves its tipo on the predio', async () => {
+    start('/declaraciones/d1', [
+      { method: 'PUT', path: '/srtm/declaraciones/d1', body: dj.declaracion },
+      { method: 'PUT', path: '/srtm/predios/p1', body: predio }
+    ])
+    expect(await screen.findByText('5243')).toBeInTheDocument()
+    expect(screen.getByText('25/09/2026')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.type(screen.getByLabelText('Otros datos'), 'CON RIEGO')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    const declaracionPut = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')!)
+    expect(declaracionPut.body).toMatchObject({ otros_datos: 'CON RIEGO', numero_declaracion: 39147 })
+    expect(declaracionPut.body).not.toHaveProperty('condicion')
+    const predioPut = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')!)
+    expect(predioPut.body).toMatchObject({ condicion: 'RUSTICO', codigo: '01-01-0001' })
+  })
+
+  it('opens a new predio already located from a lote of the catastro that is no predio yet', async () => {
+    start('/predios', [
+      { path: '/srtm/predios', body: page([predio]) },
+      { path: '/srtm/catastro', body: page([{ ...loteCatastro, codigo_predio_municipal: null }]) }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar predios' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Buscar predios' })
+    await userEvent.type(within(dialog).getByLabelText('Código CPU'), '54102166')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+    await userEvent.click(await within(dialog).findByRole('cell', { name: '54102166-0001-2' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Elegir' }))
+    expect(await screen.findByRole('heading', { name: 'Nuevo predio' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Código CPU')).toHaveValue('54102166-0001-2')
+    expect(screen.getByLabelText(/Descripción de la vía/)).toHaveValue('ANDRES AVELINO CACERES')
+    expect(screen.getByTestId('lote-elegido')).toHaveTextContent('lote-del-predio')
+    expect(screen.getByText('Registro de predio', { selector: 'li' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('shows a predio with the srtm ubicacion, its registration number and its lote', async () => {
+    start('/predios/p1', [
+      { path: '/srtm/predios/p1', body: { predio: { ...predio, numero_registro: 5243, lote_geom: SQUARE }, anio: year, titulares: 1, totales } }
+    ])
+    expect(await screen.findByText('Predio · Registro Nº 5243')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Datos de la ubicación' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('Predio de catastro fiscal')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(screen.getByTestId('lote-elegido')).toHaveTextContent('lote-del-predio')
+  })
+
+  it("takes an obra's categoria from the instructivo, which sets its unidad", async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [
+      {
+        path: '/srtm/obras-categorias',
+        body: [{ tipo_obra: 'MUROS PERIMETRICOS O CERCOS', numero: 3, descripcion: 'MURO DE LADRILLO DE ARCILLA', unidad_medida: 'ML' }]
+      }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar obra complementaria' }))
+    const dialog = await screen.findByRole('dialog')
+    // no tipo de obra yet: nothing in the catalog to pick, the categoría is typed
+    expect(within(dialog).getByLabelText(/Categoría/).tagName).toBe('TEXTAREA')
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Tipo de obra/), 'MUROS PERIMETRICOS O CERCOS')
+    await userEvent.selectOptions(await within(dialog).findByRole('combobox', { name: /Categoría/ }), '3. MURO DE LADRILLO DE ARCILLA')
+    expect(within(dialog).getByLabelText(/Unidad de medida/)).toHaveValue('ML')
+  })
+
+  it('pages a long list, as the srtm does', async () => {
+    const muchos = Array.from({ length: 12 }, (_, i) => ({ ...relacionado, id: `r${i}`, nombres: `PERSONA ${i + 1}` }))
+    start('/contribuyentes/c1?tab=relacionados', [{ path: '/srtm/contribuyentes/c1/relacionados', body: muchos }])
+    expect(await screen.findByText('1 a 10 de 12 registros')).toBeInTheDocument()
+    expect(screen.queryByText(/PERSONA 11/)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Página siguiente' }))
+    expect(screen.getByText('11 a 12 de 12 registros')).toBeInTheDocument()
+    expect(screen.getByText(/PERSONA 11/)).toBeInTheDocument()
+  })
+
+  it('locates a domicilio on the map', async () => {
+    start('/contribuyentes/c1?tab=domicilios', [
+      { method: 'POST', path: '/srtm/contribuyentes/c1/domicilios', status: 201, body: { id: 'd1', estado: 'ACTIVO' } }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar domicilio' }))
+    const dialog = await screen.findByRole('dialog')
+    await within(dialog).findByRole('option', { name: 'PERENE' })
+    await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'MARGINAL')
+    await userEvent.type(within(dialog).getByLabelText(/Descripción unidad urbana/), 'II MESETA')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar dirección' }))
+    const mapa = await screen.findByRole('dialog', { name: 'Ubicar el domicilio' })
+    await userEvent.click(within(mapa).getByRole('button', { name: 'marcar punto' }))
+    await userEvent.click(within(mapa).getByRole('button', { name: 'Aceptar' }))
+    expect(await within(dialog).findByRole('button', { name: 'Ubicado en el mapa' })).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')!)
+    expect(post.body).toMatchObject({ ubicacion: { type: 'Point', coordinates: [-75.2247, -10.9475] } })
   })
 })
