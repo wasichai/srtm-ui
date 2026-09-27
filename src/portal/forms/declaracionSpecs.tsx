@@ -4,7 +4,7 @@ import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
 import { DireccionPreview } from './DireccionPreview'
 import { ObraCategoriaField } from './ObraCategoriaField'
-import type { SectionSpec } from './specs'
+import { conRuc, numeroSegunTipo, sinRuc, type SectionSpec } from './specs'
 import { UbigeoFields } from './UbigeoFields'
 import type { Elegido } from './ubicacion'
 
@@ -202,21 +202,26 @@ export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
 export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   {
     title: 'Datos de la declaración',
-    fields: [{ name: 'porcentaje_transferido', label: '% de propiedad transferido', kind: 'decimal', required: true, span: 2 }]
+    fields: [
+      { name: 'codigo', label: 'Código del transferente', readOnly: true, placeholder: AUTO, span: 1 },
+      { name: 'porcentaje_transferido', label: '% de propiedad transferido', kind: 'decimal', required: true, span: 2 }
+    ]
   },
   {
     title: 'Datos personales',
     fields: [
       { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
-      { name: 'numero_documento', label: 'N° documento', required: true, span: 1 },
-      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', span: 1 },
-      { name: 'apellido_paterno', label: 'Apellido paterno', required: true, span: 1 },
-      { name: 'apellido_materno', label: 'Apellido materno', span: 1 },
-      { name: 'nombres', label: 'Nombres', required: true, span: 1 },
+      { name: 'numero_documento', label: 'N° documento', required: true, span: 1, validate: numeroSegunTipo },
+      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 },
+      { name: 'razon_social', label: 'Razón social', required: true, span: 3, when: conRuc },
+      { name: 'apellido_paterno', label: 'Apellido paterno', required: true, span: 1, when: sinRuc },
+      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: sinRuc },
+      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: sinRuc },
       { name: 'fecha_nacimiento', label: 'Fecha de nacimiento', kind: 'date', span: 1 },
       { name: 'estado_civil', label: 'Estado civil', kind: 'enum', span: 1 },
       { name: 'sexo', label: 'Sexo', kind: 'enum', span: 1 },
-      { name: 'fecha_fallecimiento', label: 'Fecha de fallecimiento', kind: 'date', span: 1 },
+      // greyed in the srtm: nobody types it here
+      { name: 'fecha_fallecimiento', label: 'Fecha de fallecimiento', kind: 'date', readOnly: true, placeholder: 'DD/MM/AAAA', span: 1 },
       { name: 'telefono_fijo', label: 'Teléfono fijo', span: 1 },
       { name: 'telefono_celular', label: 'Teléfono celular', span: 1 },
       { name: 'correo', label: 'Correo electrónico', span: 2, placeholder: 'CORREO@DOMINIO.COM' },

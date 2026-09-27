@@ -2,7 +2,7 @@ import { rentas } from '../api'
 import { formatNumber, formatText, MESES, today } from '../components/format'
 import { COLUMNAS } from '../forms/CategoriasFields'
 import { FRENTE_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
-import { emptyOf, type FormValues } from '../forms/specs'
+import { emptyOf, nombreORazonSocial, type FormValues } from '../forms/specs'
 import type { NivelConstruccion, ObraComplementaria, OtroFrente, Transferente } from '../types'
 import { HijosPanel } from './HijosPanel'
 
@@ -25,8 +25,9 @@ export function TransferentesPanel({ declaracion }: { declaracion: string }) {
       wide
       nuevo={() => emptyOf<Transferente>(TRANSFERENTE_SECTIONS, { ...PERENE, tipo_documento: 'DNI', fuente_informacion: 'MANUAL', estado: 'ACTIVO' })}
       columns={[
+        { label: 'Código', render: (t) => formatText(t.codigo) },
         { label: 'Documento', render: (t) => `${t.tipo_documento ?? ''} ${t.numero_documento ?? ''}`.trim() || '—' },
-        { label: 'Apellidos y nombres', render: (t) => [t.apellido_paterno, t.apellido_materno, t.nombres].filter(Boolean).join(' ') || '—' },
+        { label: 'Apellidos y nombres / Razón social', render: nombreORazonSocial },
         { label: '% transferido', render: (t) => formatNumber(t.porcentaje_transferido), className: 'text-right tabular-nums' },
         { label: 'Domicilio', render: (t) => formatText(t.descripcion_domicilio) }
       ]}

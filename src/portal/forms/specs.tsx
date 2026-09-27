@@ -173,10 +173,28 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
   }
 ]
 
+// a relacionado or a transferente with RUC is a company: a razón social instead of surnames and names (the backend
+// asks the same, Personas.kt)
+const esRuc = (tipoDocumento: string | null | undefined) => tipoDocumento === 'RUC'
+export const conRuc = (v: FormValues) => esRuc(v.tipo_documento)
+export const sinRuc = (v: FormValues) => !conRuc(v)
+// a typed number, checked by its tipo as the contribuyente's
+export const numeroSegunTipo = (value: string, v: FormValues) => errorDocumento(v.tipo_documento, value) ?? true
+
+type Persona = Partial<Record<'tipo_documento' | 'apellido_paterno' | 'apellido_materno' | 'nombres' | 'razon_social', string | null>>
+
+// how the lists name a relacionado or a transferente. one saved with RUC before the razón social still has its names
+export function nombreORazonSocial(p: Persona): string {
+  const nombre = [p.apellido_paterno, p.apellido_materno, p.nombres].filter(Boolean).join(' ')
+  const razon = p.razon_social ?? ''
+  return (esRuc(p.tipo_documento) ? razon || nombre : nombre || razon) || '—'
+}
+
 export const RELACIONADO_SECTIONS: SectionSpec[] = [
   {
     title: 'Datos de la declaración',
     fields: [
+      { name: 'codigo', label: 'Código del relacionado', readOnly: true, placeholder: AUTO, span: 1 },
       { name: 'tipo_relacionado', label: 'Tipo de relacionado', kind: 'enum', required: true, span: 2 },
       { name: 'estado', label: 'Estado', kind: 'enum', span: 1 }
     ]
@@ -185,14 +203,16 @@ export const RELACIONADO_SECTIONS: SectionSpec[] = [
     title: 'Datos personales',
     fields: [
       { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
-      { name: 'numero_documento', label: 'N° documento', span: 1 },
-      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', span: 1 },
-      { name: 'apellido_paterno', label: 'Apellido paterno', span: 1 },
-      { name: 'apellido_materno', label: 'Apellido materno', span: 1 },
-      { name: 'nombres', label: 'Nombres', required: true, span: 1 },
+      { name: 'numero_documento', label: 'N° documento', span: 1, validate: numeroSegunTipo },
+      { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 },
+      { name: 'razon_social', label: 'Razón social', required: true, span: 3, when: conRuc },
+      { name: 'apellido_paterno', label: 'Apellido paterno', span: 1, when: sinRuc },
+      { name: 'apellido_materno', label: 'Apellido materno', span: 1, when: sinRuc },
+      { name: 'nombres', label: 'Nombres', required: true, span: 1, when: sinRuc },
       { name: 'fecha_inicio', label: 'Fecha de inicio', kind: 'date', span: 1 },
       { name: 'fecha_fin', label: 'Fecha de fin', kind: 'date', span: 1 },
-      { name: 'fecha_fallecimiento', label: 'Fecha de fallecimiento', kind: 'date', span: 1 },
+      // greyed in the srtm: nobody types it here
+      { name: 'fecha_fallecimiento', label: 'Fecha de fallecimiento', kind: 'date', readOnly: true, placeholder: 'DD/MM/AAAA', span: 1 },
       { name: 'telefono_celular', label: 'Teléfono celular', span: 1 },
       { name: 'telefono_fijo', label: 'Teléfono fijo', span: 1 },
       { name: 'anexo', label: 'Anexo', span: 1 },
