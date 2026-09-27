@@ -24,10 +24,35 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Cada ficha que se abre queda como pestaña hasta que se cierra, para poder atender a varias personas a la vez.
   - "Inicio" es fija.
   - Las pestañas se guardan por pestaña del navegador (`sessionStorage['srtm.tabs']`).
-- **Ficha de contribuyente**:
-  - Cabecera y totales del año seleccionado (predios, autoavalúo, valor afecto).
-  - Pestañas **Datos** (ver y editar), **Predios** (declaraciones del año, con enlace a cada predio) y
-    **Declaraciones** (todos los años, alta y edición en un diálogo).
+- **Registro de contribuyente** (fase 1 de la presentación del SRTM, `Presentacion2_.pdf`):
+  - **Nuevo contribuyente** (`/contribuyentes/nuevo`): el asistente del SRTM.
+    - Pestaña "Datos del contribuyente", con sus tres secciones numeradas: datos de la declaración, identificación y
+      datos personales. Persona natural o jurídica cambia los campos.
+    - Las demás pestañas quedan en gris. "Siguiente" inscribe al contribuyente y abre su ficha en Domicilios.
+  - **Ficha**: Datos del contribuyente, Domicilios, Relacionados, Medios de contacto y Sustento, como en el SRTM. Luego
+    Predios (los del año, con totales) y Declaraciones (todos los años, alta y edición).
+    - Cada lista tiene su diálogo de alta y edición, y baja con confirmación.
+    - El domicilio usa la cascada departamento → provincia → distrito (ubigeo INEI) y sugerencias de vías y unidades
+      urbanas del catálogo. Muestra en vivo la descripción que guardará el backend.
+    - Sin domicilio fiscal activo aparece el aviso del SRTM. En los contribuyentes importados, además, el domicilio
+      del padrón.
+  - La pestaña abierta va en la URL (`?tab=domicilios`).
+- **Declaración jurada predial** (fase 2):
+  - **Asistente "Nueva declaración"**, desde la pestaña Declaraciones del contribuyente.
+    - Primero "Datos del predio": adquisición, documentos de sustento, y condición del predio y predio inhabitable,
+      cuyos campos se habilitan al elegir una.
+    - Luego "Datos de la ubicación": un predio del padrón (búsqueda) o uno nuevo, con código autogenerado y la cascada
+      de ubigeo.
+    - Guardar presenta la DJ y la abre en Transferentes.
+  - **Página de la DJ** (`/declaraciones/:id`): Datos del predio, Datos de la ubicación, Datos del transferente,
+    Características, Datos de los condóminos y Otros frentes.
+    - Características: niveles de construcción con las letras A–I de sus siete categorías y, al lado, la descripción
+      oficial del cuadro de valores unitarios. También obras complementarias, con el total metrado en vivo.
+    - "Datos de los condóminos" solo se habilita en una DJ de condómino, como en el SRTM.
+    - Cada pestaña de formulario guarda solo sus propios campos, sobre la DJ tal como está en ese momento.
+
+  - Los contribuyentes importados del padrón deben completar lo que exige el SRTM (tipo de contribuyente, sexo,
+    estado civil…) la primera vez que se editan.
 - **Ficha de predio**: igual, con **Titulares** en lugar de Predios.
 - **Datos**: vienen de la API del portal `/api/srtm/**` de srtm-backend, que usa en proceso los servicios de wasichai
   (`RecordService`) en lugar de un BFF.
@@ -84,5 +109,6 @@ yarn build           # dist/, luego yarn preview
 
 ## Siguientes pasos
 
-Estado de cuenta, cálculo del predial y emisión de recibos como nuevas pestañas de la ficha, cuando srtm-backend
-tenga esos casos de uso en `srtm.rentas`.
+- **Integraciones:** consulta PIDE RENIEC y catastro fiscal (mapa). Hoy esos datos se cargan a mano.
+- **Estado de cuenta, cálculo del predial y emisión de recibos**, como nuevas pestañas de la ficha, cuando srtm-backend
+  tenga esos casos de uso en `srtm.rentas`.

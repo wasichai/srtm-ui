@@ -20,8 +20,55 @@ const contribuyente = {
   domicilio_fiscal: 'JR. LIMA 123',
   domicilio_distrito: 'PERENE',
   domicilio_provincia: 'CHANCHAMAYO',
-  domicilio_departamento: 'JUNIN'
+  domicilio_departamento: 'JUNIN',
+  codigo: '000012',
+  numero_declaracion: 12,
+  fecha_registro: '2026-09-24',
+  motivo: 'INSCRIPCION',
+  medio_determinacion: 'DECLARACION JURADA',
+  medio_presentacion: 'FISICO',
+  modificacion_oficio: null,
+  fecha_presentacion: '2026-09-24',
+  tipo_contribuyente: 'PERSONA NATURAL',
+  codigo_anterior: null,
+  fuente_informacion: 'MANUAL',
+  fecha_nacimiento: '2005-09-07',
+  fecha_fallecimiento: null,
+  estado_civil: 'SOLTERO',
+  sexo: 'HOMBRE',
+  observacion: 'PRIMERA VISITA'
 }
+const relacionado = {
+  id: 'r1',
+  contribuyente: 'c1',
+  tipo_relacionado: 'CONYUGE',
+  tipo_documento: 'DNI',
+  numero_documento: '43434352',
+  fuente_informacion: 'MANUAL',
+  apellido_paterno: 'NEIRA',
+  apellido_materno: 'CAMPOS',
+  nombres: 'DUBERLI',
+  telefono_celular: '987654321',
+  telefono_fijo: null,
+  anexo: null,
+  correo: null,
+  fecha_inicio: null,
+  fecha_fin: null,
+  fecha_fallecimiento: null,
+  estado: 'ACTIVO'
+}
+const ubigeos = [
+  { codigo: '120301', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'CHANCHAMAYO' },
+  { codigo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' },
+  { codigo: '120601', departamento: 'JUNIN', provincia: 'SATIPO', distrito: 'SATIPO' },
+  { codigo: '140101', departamento: 'LAMBAYEQUE', provincia: 'CHICLAYO', distrito: 'CHICLAYO' }
+]
+const categorias = [
+  { columna: 1, categoria: 'MUROS Y COLUMNAS', letra: 'C', descripcion: 'PLACAS DE CONCRETO (E= 10 A 15 CM), ALBAÑILERÍA ARMADA' },
+  { columna: 1, categoria: 'MUROS Y COLUMNAS', letra: 'D', descripcion: 'LADRILLO O SIMILAR SIN ELEMENTOS DE CONCRETO ARMADO' },
+  { columna: 2, categoria: 'TECHOS', letra: 'C', descripcion: 'ALIGERADO O LOSAS DE CONCRETO ARMADO HORIZONTALES' },
+  { columna: 4, categoria: 'PUERTAS Y VENTANAS', letra: 'D', descripcion: 'VENTANAS DE ALUMINIO, PUERTAS DE MADERA SELECTA' }
+]
 const predio = {
   id: 'p1',
   codigo: '01-01-0001',
@@ -65,6 +112,19 @@ const page = (content: unknown[], pageNumber = 0, totalElements = content.length
   totalPages
 })
 
+const dj = {
+  declaracion: {
+    ...declaracion,
+    numero_declaracion: 39147,
+    tipo_adquisicion: 'COMPRA',
+    fecha_adquisicion: '2024-09-04',
+    folios: 2,
+    documentos_sustento: 'MINUTA'
+  },
+  predio,
+  contribuyente
+}
+
 const routes: MockRoute[] = [
   { method: 'POST', path: '/auth/login', body: { token: 't', expiresAt: '2026-12-31T00:00:00Z', user: admin } },
   { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
@@ -73,8 +133,65 @@ const routes: MockRoute[] = [
   { path: '/srtm/resumen', body: { anio: year, contribuyentes: 11840, predios: 14947, declaraciones: 15644 } },
   {
     path: '/srtm/catalogos',
-    body: { contribuyente: { tipo_persona: ['NATURAL', 'JURIDICA'], tipo_documento: ['DNI', 'RUC'] }, predio: {}, declaracion_predial: {} }
+    body: {
+      contribuyente: {
+        tipo_persona: ['NATURAL', 'JURIDICA', 'SUCESION'],
+        tipo_documento: ['DNI', 'RUC'],
+        tipo_contribuyente: ['PERSONA NATURAL', 'PERSONA JURIDICA', 'SOCIEDAD CONYUGAL'],
+        motivo: ['INSCRIPCION', 'ACTUALIZACION'],
+        medio_determinacion: ['DECLARACION JURADA'],
+        medio_presentacion: ['FISICO', 'VIRTUAL'],
+        modificacion_oficio: ['FISCALIZACION'],
+        fuente_informacion: ['MANUAL', 'PIDE RENIEC'],
+        estado_civil: ['SOLTERO', 'CASADO'],
+        sexo: ['HOMBRE', 'MUJER']
+      },
+      domicilio: {
+        tipo_domicilio: ['FISCAL', 'REAL'],
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
+        tipo_via: ['AVENIDA', 'CALLE'],
+        tipo_unidad_urbana: ['CENTRO POBLADO', 'CERCADO'],
+        estado: ['ACTIVO', 'INACTIVO']
+      },
+      relacionado: { tipo_relacionado: ['CONYUGE', 'APODERADO'], tipo_documento: ['DNI', 'RUC'], estado: ['ACTIVO', 'INACTIVO'] },
+      predio: {
+        condicion: ['URBANO', 'RUSTICO'],
+        region: ['COSTA', 'SIERRA', 'SELVA'],
+        tipo_via: ['AVENIDA', 'CALLE'],
+        tipo_zona: ['URBANIZACION', 'CERCADO']
+      },
+      declaracion_predial: {
+        medio_presentacion: ['FISICO', 'VIRTUAL'],
+        medio_determinacion: ['DECLARACION JURADA'],
+        motivo: ['INSCRIPCION'],
+        tipo_adquisicion: ['COMPRA', 'HERENCIA'],
+        condicion_propiedad: ['PROPIETARIO UNICO', 'CONDOMINO'],
+        condicion_especial: ['PENSIONISTA', 'INAFECTO'],
+        condicion_tipo_documento: ['RESOLUCION'],
+        inhabitable_tipo_documento: ['RESOLUCION']
+      },
+      nivel_construccion: {
+        tipo_nivel: ['PISO', 'SOTANO'],
+        material: ['LADRILLO', 'ADOBE'],
+        estado_conservacion: ['BUENO', 'REGULAR'],
+        estado: ['ACTIVO', 'INACTIVO']
+      },
+      obra_complementaria: { ingreso: ['POR CATEGORIAS', 'CON VALORIZACION'], unidad_medida: ['M2', 'ML'] }
+    }
   },
+  { path: '/srtm/ubigeos', body: ubigeos },
+  { path: '/srtm/vias', body: page([{ id: 'v1', tipo_via: 'AVENIDA', nombre: 'MARGINAL', ubigeo: '120302' }]) },
+  { path: '/srtm/unidades-urbanas', body: page([{ id: 'u1', tipo_unidad_urbana: 'CENTRO POBLADO', nombre: 'UNION PERENE', ubigeo: '120302' }]) },
+  { path: '/srtm/contribuyentes/c1/domicilios', body: [] },
+  { path: '/srtm/contribuyentes/c1/relacionados', body: [relacionado] },
+  { path: '/srtm/contribuyentes/c1/medios-contacto', body: [] },
+  { path: '/srtm/contribuyentes/c1/sustentos', body: [] },
+  { path: '/srtm/categorias-valor', body: categorias },
+  { path: '/srtm/declaraciones/d1', body: dj },
+  { path: '/srtm/declaraciones/d1/transferentes', body: [] },
+  { path: '/srtm/declaraciones/d1/niveles', body: [] },
+  { path: '/srtm/declaraciones/d1/obras', body: [] },
+  { path: '/srtm/declaraciones/d1/frentes', body: [] },
   { path: /^\/srtm\/contribuyentes\?.*page=1/, body: page([{ ...contribuyente, id: 'c2', nombre_completo: 'SEGUNDA PAGINA' }], 1, 21, 2) },
   { path: '/srtm/contribuyentes', body: page([contribuyente], 0, 21, 2) },
   { path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 1, totales } },
@@ -182,14 +299,221 @@ describe('portal', () => {
       }
     ])
     await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
-    const domicilio = screen.getByLabelText('Dirección')
-    await userEvent.clear(domicilio)
+    // the backend's own fields show, but cannot be typed into
+    expect(screen.getByLabelText('Código de contribuyente')).toBeDisabled()
+    expect(screen.getByLabelText('Código de contribuyente')).toHaveValue('000012')
+    await userEvent.clear(screen.getByLabelText('Observación'))
     await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     expect(await screen.findByText('ya existe')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Número de documento/)).toHaveAttribute('aria-invalid', 'true')
-    const put = fetch!.calls.find((c) => c.method === 'PUT')!
-    // a cleared field goes as null, so the backend clears it too
-    expect(put.body).toMatchObject({ numero_documento: '20529936', domicilio_fiscal: null, tipo_persona: 'NATURAL' })
+    expect(screen.getByLabelText(/N° documento/)).toHaveAttribute('aria-invalid', 'true')
+    const put = fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/contribuyentes/c1')!
+    // a cleared field goes as null, so the backend clears it too; read-only ones keep the stored value
+    expect(put.body).toMatchObject({ numero_documento: '20529936', observacion: null, codigo: '000012', sexo: 'HOMBRE' })
+  })
+
+  it('asks an imported contribuyente for what the srtm requires before saving it', async () => {
+    const importado = { ...contribuyente, tipo_contribuyente: null, sexo: null, estado_civil: null, medio_presentacion: null, fecha_presentacion: null }
+    start('/contribuyentes/c1', [{ path: '/srtm/contribuyentes/c1', body: { contribuyente: importado, anio: year, predios: 1, totales } }])
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    for (const label of ['Tipo de contribuyente', 'Sexo', 'Estado civil', 'Medio de presentación']) {
+      expect(screen.getByLabelText(new RegExp(label))).toHaveAttribute('aria-invalid', 'true')
+    }
+    expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+  })
+
+  it('inscribes a contribuyente in the wizard and moves on to its domicilios', async () => {
+    const inscrito = { ...contribuyente, id: 'c9', codigo: '000013' }
+    start('/contribuyentes/nuevo', [
+      { method: 'POST', path: '/srtm/contribuyentes', status: 201, body: inscrito },
+      { path: '/srtm/contribuyentes/c9', body: { contribuyente: inscrito, anio: year, predios: 0, totales: { ...totales, declaraciones: 0 } } },
+      { path: '/srtm/contribuyentes/c9/domicilios', body: [] }
+    ])
+    expect(await screen.findByRole('heading', { name: 'Nuevo contribuyente' })).toBeInTheDocument()
+    // the other tabs wait for the contribuyente to exist
+    expect(screen.getByRole('tab', { name: 'Domicilios' })).toBeDisabled()
+    expect(screen.getByLabelText('Código de contribuyente')).toHaveAttribute('placeholder', '(AUTOGENERADO)')
+
+    await userEvent.selectOptions(await screen.findByLabelText(/Tipo de contribuyente/), 'PERSONA NATURAL')
+    await userEvent.type(screen.getByLabelText(/N° documento/), '43554564')
+    await userEvent.type(screen.getByLabelText('Apellido paterno'), 'FLORES')
+    await userEvent.type(screen.getByLabelText(/Nombres/), 'JUNIOR PAOLO')
+    await userEvent.selectOptions(screen.getByLabelText(/Estado civil/), 'SOLTERO')
+    await userEvent.selectOptions(screen.getByLabelText(/Sexo/), 'HOMBRE')
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes')!)
+    expect(post.body).toMatchObject({
+      tipo_contribuyente: 'PERSONA NATURAL',
+      numero_documento: '43554564',
+      motivo: 'INSCRIPCION',
+      medio_presentacion: 'FISICO',
+      fuente_informacion: 'MANUAL',
+      codigo: null
+    })
+    expect(await screen.findByText('(*) Registrar al menos 1 domicilio fiscal')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Domicilios' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('asks a persona juridica for its razon social instead of names', async () => {
+    start('/contribuyentes/nuevo')
+    expect(await screen.findByLabelText(/Nombres/)).toBeInTheDocument()
+    await userEvent.selectOptions(await screen.findByLabelText(/Tipo de contribuyente/), 'PERSONA JURIDICA')
+    expect(screen.getByLabelText(/Razón social/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Nombres/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Sexo/)).not.toBeInTheDocument()
+  })
+
+  it('adds a fiscal domicilio with the ubigeo cascade and a live description', async () => {
+    start('/contribuyentes/c1?tab=domicilios', [
+      { method: 'POST', path: '/srtm/contribuyentes/c1/domicilios', status: 201, body: { id: 'd1', estado: 'ACTIVO' } }
+    ])
+    expect(await screen.findByText('(*) Registrar al menos 1 domicilio fiscal')).toBeInTheDocument()
+    expect(screen.getByText('Domicilio fiscal del padrón: JR. LIMA 123')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar domicilio' }))
+
+    const dialog = await screen.findByRole('dialog')
+    // no fiscal one yet: this one is; Perené comes preselected
+    expect(within(dialog).getByLabelText(/Tipo de domicilio/)).toHaveValue('FISCAL')
+    expect(await within(dialog).findByRole('option', { name: 'PERENE' })).toBeInTheDocument()
+    expect(within(dialog).getByLabelText(/Distrito/)).toHaveValue('PERENE')
+    // another province: the district list follows it, and the old district is gone
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Provincia/), 'SATIPO')
+    expect(within(dialog).getByLabelText(/Distrito/)).toHaveValue('')
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Distrito/), 'SATIPO')
+
+    await userEvent.selectOptions(within(dialog).getByLabelText('Tipo de vía'), 'AVENIDA')
+    await userEvent.type(within(dialog).getByLabelText(/Descripción de la vía/), 'MARGINAL')
+    await userEvent.type(within(dialog).getByLabelText('Número principal'), '234')
+    await userEvent.selectOptions(within(dialog).getByLabelText('Tipo unidad urbana'), 'CERCADO')
+    await userEvent.type(within(dialog).getByLabelText(/Descripción unidad urbana/), 'II MESETA')
+    expect(within(dialog).getByText('AVENIDA MARGINAL, N° 234, CERCADO II MESETA, JUNIN-SATIPO-SATIPO')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/domicilios')!)
+    expect(post.body).toMatchObject({
+      tipo_domicilio: 'FISCAL',
+      departamento: 'JUNIN',
+      provincia: 'SATIPO',
+      distrito: 'SATIPO',
+      ubigeo: '120601',
+      via: 'MARGINAL',
+      numero: '234'
+    })
+    expect(post.body).not.toHaveProperty('ubigeo_cascada')
+  })
+
+  it('removes a relacionado only after confirming', async () => {
+    start('/contribuyentes/c1?tab=relacionados', [{ method: 'DELETE', path: '/srtm/relacionados/r1', status: 204 }])
+    expect(await screen.findByText('NEIRA CAMPOS DUBERLI')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar relacionado 1' }))
+    expect(fetch!.calls.some((c) => c.method === 'DELETE')).toBe(false)
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Eliminar' }))
+    await waitFor(() => expect(fetch!.calls.some((c) => c.method === 'DELETE' && c.path === '/srtm/relacionados/r1')).toBe(true))
+  })
+
+  it('presents a declaracion jurada on a new predio: datos del predio, then its ubicacion', async () => {
+    start('/contribuyentes/c1?tab=declaraciones', [{ method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }])
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva declaración' }))
+    expect(await screen.findByRole('heading', { name: 'Nueva declaración jurada predial' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Datos de la ubicación' })).toBeDisabled()
+
+    await userEvent.selectOptions(await screen.findByLabelText(/Tipo de adquisición/), 'COMPRA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2024-09-04')
+    await userEvent.type(screen.getByLabelText(/Folios/), '2')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'MINUTA' }))
+    // the condición's fields wait for a condición
+    expect(screen.getByLabelText('Fecha de inicio de condición')).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    expect(await screen.findByRole('tab', { name: 'Datos de la ubicación' })).toHaveAttribute('aria-selected', 'true')
+    await userEvent.type(screen.getByLabelText(/Sector/), '01')
+    await userEvent.type(screen.getByLabelText(/Manzana catastral/), '02')
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de vía/), 'AVENIDA')
+    await userEvent.type(screen.getByLabelText(/Descripción de la vía/), 'MARGINAL')
+    await userEvent.type(screen.getByLabelText(/Descripción de la zona/), 'II MESETA')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    expect(post.body).toMatchObject({
+      declaracion: {
+        tipo_adquisicion: 'COMPRA',
+        fecha_adquisicion: '2024-09-04',
+        folios: 2,
+        documentos_sustento: 'MINUTA',
+        condicion_propiedad: 'PROPIETARIO UNICO'
+      },
+      predio: { sector_catastral: '01', manzana_catastral: '02', tipo_via: 'AVENIDA', via: 'MARGINAL', distrito: 'PERENE', region: 'SELVA', codigo: null }
+    })
+    expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 39147' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Datos del transferente' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('presents a declaracion jurada on a predio already in the padron', async () => {
+    start('/contribuyentes/c1/declaraciones/nueva', [
+      { path: '/srtm/predios', body: page([predio]) },
+      { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: dj }
+    ])
+    // the options come with the catalog
+    await screen.findByRole('option', { name: 'HERENCIA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'HERENCIA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2020-01-15')
+    await userEvent.type(screen.getByLabelText(/Folios/), '4')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'DECLARATORIA DE HEREDEROS' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await userEvent.click(await screen.findByRole('radio', { name: 'Buscar un predio del padrón' }))
+    await userEvent.type(screen.getByRole('searchbox', { name: /^Predio/ }), '01-01')
+    await userEvent.click(await screen.findByRole('button', { name: /01-01-0001/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    expect(post.body).toMatchObject({ predio_id: 'p1', declaracion: { tipo_adquisicion: 'HERENCIA', documentos_sustento: 'DECLARATORIA DE HEREDEROS' } })
+    expect(post.body).not.toHaveProperty('predio')
+  })
+
+  it('declares a nivel de construccion with the official descriptions of its letters', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [{ method: 'POST', path: '/srtm/declaraciones/d1/niveles', status: 201, body: { id: 'n1' } }])
+    expect(await screen.findByText('Listado de niveles de construcción')).toBeInTheDocument()
+    // a propietario único has no condóminos to show
+    expect(screen.getByRole('tab', { name: 'Datos de los condóminos' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar nivel de construcción' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Mes construcción/), '1')
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Material predominante/), 'LADRILLO')
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Estado de conservación/), 'BUENO')
+    await userEvent.type(within(dialog).getByLabelText(/Área construida/), '200')
+    await userEvent.selectOptions(await within(dialog).findByLabelText(/Muros y columnas/), 'C')
+    expect(within(dialog).getByText('PLACAS DE CONCRETO (E= 10 A 15 CM), ALBAÑILERÍA ARMADA')).toBeInTheDocument()
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Techos/), 'C')
+    // puertas y ventanas is required too: the srtm will not take the nivel without it
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    expect(fetch!.calls.some((c) => c.method === 'POST' && c.path === '/srtm/declaraciones/d1/niveles')).toBe(false)
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Puertas y ventanas/), 'D')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/declaraciones/d1/niveles')!)
+    expect(post.body).toMatchObject({
+      tipo_nivel: 'PISO',
+      numero_piso: 1,
+      mes_construccion: 1,
+      area_construida: 200,
+      muros_columnas: 'C',
+      techos: 'C',
+      puertas_ventanas: 'D',
+      pisos: null
+    })
+  })
+
+  it("shows an obra complementaria's total metrado while it is typed", async () => {
+    start('/declaraciones/d1?tab=caracteristicas')
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar obra complementaria' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText(/Cantidad/), '2')
+    await userEvent.type(within(dialog).getByLabelText(/^Metrado/), '50')
+    expect(within(dialog).getByText('100 M2')).toBeInTheDocument()
+    // con valorización asks for the value instead of the category
+    expect(within(dialog).getByLabelText(/Categoría/)).toBeInTheDocument()
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Ingreso/), 'CON VALORIZACION')
+    expect(within(dialog).queryByLabelText(/Categoría/)).not.toBeInTheDocument()
+    expect(within(dialog).getByLabelText(/Valor/)).toBeInTheDocument()
   })
 })

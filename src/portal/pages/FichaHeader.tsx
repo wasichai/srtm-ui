@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export function FichaHeader({ kind, title, badges, aside }: { kind: string; title: string; badges?: ReactNode; aside?: ReactNode }) {
+export function FichaHeader({ kind, title, badges, aside }: { kind: ReactNode; title: string; badges?: ReactNode; aside?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">

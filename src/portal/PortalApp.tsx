@@ -8,9 +8,12 @@ import { RequireSession } from './auth/RequireSession'
 import { EmptyState } from './components/QueryState'
 import { BuscarPage } from './pages/BuscarPage'
 import { ContribuyenteRoute } from './pages/ContribuyentePage'
+import { DeclaracionRoute } from './pages/DeclaracionPage'
+import { NuevaDeclaracionRoute } from './pages/NuevaDeclaracionPage'
 import { InicioPage } from './pages/InicioPage'
 import { ContribuyentesPage, PrediosPage } from './pages/Listas'
-import { NuevoContribuyentePage, NuevoPredioPage } from './pages/Nuevos'
+import { NuevoContribuyentePage } from './pages/NuevoContribuyentePage'
+import { NuevoPredioPage } from './pages/Nuevos'
 import { PredioRoute } from './pages/PredioPage'
 import { AppShell } from './shell/AppShell'
 import { WorkspaceTabsProvider } from './shell/WorkspaceTabs'
@@ -49,6 +52,8 @@ export function PortalApp() {
             <Route path="contribuyentes" element={<ContribuyentesPage />} />
             <Route path="contribuyentes/nuevo" element={<NuevoContribuyentePage />} />
             <Route path="contribuyentes/:id" element={<ContribuyenteRoute />} />
+            <Route path="contribuyentes/:id/declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
+            <Route path="declaraciones/:id" element={<DeclaracionRoute />} />
             <Route path="predios" element={<PrediosPage />} />
             <Route path="predios/nuevo" element={<NuevoPredioPage />} />
             <Route path="predios/:id" element={<PredioRoute />} />

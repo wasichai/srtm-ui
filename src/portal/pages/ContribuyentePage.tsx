@@ -1,9 +1,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Badge, Card, Tabs } from '@wasichai/ui'
-import { Coins, MapPinned, Receipt } from 'lucide-react'
+import { Badge, Card } from '@wasichai/ui'
+import { Coins, FileText, MapPinned, Receipt } from 'lucide-react'
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
+import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, formatMoney } from '../components/format'
 import { QueryState } from '../components/QueryState'
 import { StatCard } from '../components/StatCard'
@@ -11,9 +12,19 @@ import { YearSelect } from '../components/YearSelect'
 import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
+import { DomiciliosPanel, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { FichaHeader } from './FichaHeader'
+
+// the srtm's registro de contribuyente, in its order, then what rentas adds: the year's predios and every declaration
+export const CONTRIBUYENTE_TABS = [
+  { id: 'datos', label: 'Datos del contribuyente' },
+  { id: 'domicilios', label: 'Domicilios' },
+  { id: 'relacionados', label: 'Relacionados' },
+  { id: 'contacto', label: 'Medios de contacto' },
+  { id: 'sustento', label: 'Sustento' }
+] as const
 
 // keyed by id: another contribuyente is a fresh ficha (first tab, this year), not this one reused
 export function ContribuyenteRoute() {
@@ -23,6 +34,7 @@ export function ContribuyenteRoute() {
 
 function ContribuyentePage({ id }: { id: string }) {
   const [anio, setAnio] = useState(currentYear)
+  const [params, setParams] = useSearchParams()
   const catalogos = useCatalogos()
   const ficha = useQuery({
     queryKey: ['contribuyente', id, anio],
@@ -37,11 +49,13 @@ function ContribuyentePage({ id }: { id: string }) {
       {({ contribuyente, predios, totales }) => (
         <div className="space-y-5">
           <FichaHeader
-            kind="Contribuyente"
+            kind={contribuyente.codigo ? `Contribuyente Nº ${contribuyente.codigo}` : 'Contribuyente'}
             title={contribuyente.nombre_completo ?? '—'}
             badges={
               <>
-                {contribuyente.tipo_persona && <Badge>{contribuyente.tipo_persona}</Badge>}
+                {(contribuyente.tipo_contribuyente ?? contribuyente.tipo_persona) && (
+                  <Badge>{contribuyente.tipo_contribuyente ?? contribuyente.tipo_persona}</Badge>
+                )}
                 <span>
                   {contribuyente.tipo_documento} {contribuyente.numero_documento}
                 </span>
@@ -56,12 +70,14 @@ function ContribuyentePage({ id }: { id: string }) {
             <StatCard icon={Coins} label={`Valor afecto ${anio}`} value={formatMoney(totales.valor_afecto)} />
           </div>
           <Card className="pb-4">
-            <Tabs
+            <FichaTabs
               label="Secciones del contribuyente"
+              active={params.get('tab') ?? 'datos'}
+              onChange={(tab) => setParams({ tab }, { replace: true })}
               tabs={[
                 {
-                  id: 'datos',
-                  label: 'Datos',
+                  ...CONTRIBUYENTE_TABS[0],
+                  icon: FileText,
                   render: () => (
                     <div className="px-6 pt-5">
                       <DatosPanel
@@ -74,8 +90,45 @@ function ContribuyentePage({ id }: { id: string }) {
                   )
                 },
                 {
+                  ...CONTRIBUYENTE_TABS[1],
+                  icon: FileText,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <DomiciliosPanel contribuyente={contribuyente} />
+                    </div>
+                  )
+                },
+                {
+                  ...CONTRIBUYENTE_TABS[2],
+                  icon: FileText,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <RelacionadosPanel contribuyente={id} />
+                    </div>
+                  )
+                },
+                {
+                  ...CONTRIBUYENTE_TABS[3],
+                  icon: FileText,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <MediosContactoPanel contribuyente={id} />
+                    </div>
+                  )
+                },
+                {
+                  ...CONTRIBUYENTE_TABS[4],
+                  icon: FileText,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <SustentosPanel contribuyente={id} />
+                    </div>
+                  )
+                },
+                {
                   id: 'predios',
                   label: 'Predios',
+                  icon: MapPinned,
                   render: () => (
                     <div className="pt-2">
                       <DeclaracionesDelAnio side="contribuyente" id={id} anio={anio} />
@@ -85,6 +138,7 @@ function ContribuyentePage({ id }: { id: string }) {
                 {
                   id: 'declaraciones',
                   label: 'Declaraciones',
+                  icon: Receipt,
                   render: () => (
                     <div className="px-6 pt-5">
                       <HistorialDeclaraciones side="contribuyente" id={id} />
