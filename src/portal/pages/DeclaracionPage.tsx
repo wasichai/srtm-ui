@@ -64,7 +64,6 @@ const CON_TRANSFERENTE = ['COMPRA', 'DONACION', 'HERENCIA', 'ANTICIPO DE LEGITIM
 export function siguientePendiente(declaracion: Declaracion, transferentes: number): string {
   if (transferentes === 0 && CON_TRANSFERENTE.includes(declaracion.tipo_adquisicion ?? '')) return 'transferentes'
   const valores = declaracion as unknown as FormValues
-  // clase and sub clase de uso are required unless the uso is the padrón's (forms/UsoFields.tsx)
   const requerido = (f: FieldSpec) => (typeof f.required === 'function' ? f.required(valores) : f.required === true)
   const faltan = dataFields(CARACTERISTICAS_SECTIONS).some((f) => requerido(f) && (valores[f.name] ?? '') === '')
   return faltan ? 'caracteristicas' : 'transferentes'
