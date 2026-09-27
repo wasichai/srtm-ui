@@ -131,7 +131,10 @@ describe('placeholders of the backend codes', () => {
 
   it('shows a relacionado saved without code as such, and promises one to a new one', async () => {
     start('/contribuyentes/c1?tab=relacionados')
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar relacionado 1' }))
+    // the srtm's toolbar edits the selected row
+    const [, primera] = within(await screen.findByRole('grid', { name: 'Listado de relacionados' })).getAllByRole('row')
+    await userEvent.click(primera)
+    await userEvent.click(screen.getByRole('button', { name: 'Editar relacionado' }))
     const editado = await screen.findByRole('dialog')
     expect(within(editado).getByLabelText('Código del relacionado')).toHaveAttribute('placeholder', SIN_CODIGO)
     await userEvent.click(within(editado).getByRole('button', { name: 'Cancelar' }))
