@@ -11,7 +11,7 @@ const dir = join(__dirname, 'portal-tributario')
 const read = (file: string) => readFileSync(join(dir, file), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css']
+const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -102,5 +102,39 @@ describe('alerts.css', () => {
     expect(box.get('padding')).toBe('14px 18px')
     expect(box.get('font-size')).toBe('14.5px')
     expect(box.get('line-height')).toBe('1.6')
+  })
+})
+
+describe('nav.css', () => {
+  const css = read('nav.css')
+  const tokens = rule(read('tokens.css'), PORTAL)
+  const ARBOL = `${PORTAL} [data-ui='arbol-nav']`
+  const arbol = (part: string) => rule(css, `${ARBOL} ${part}`)
+  const actual = arbol("[data-ui='arbol-hoja'][aria-current='page']")
+  const hover = arbol("[data-ui='arbol-hoja']:hover")
+  const grupo = arbol("[data-ui='arbol-grupo']:hover")
+  const caret = arbol("[data-ui='arbol-caret']")
+
+  it('only styles the tree', () => {
+    const selectors = rules(css).flatMap((r) => r.selectors)
+    expect(selectors.filter((selector) => !selector.startsWith(`${ARBOL} `))).toEqual([])
+  })
+
+  it("pins the prototype's current leaf, hovers and carets", () => {
+    expect(actual.get('color')).toBe('#0d4d80')
+    expect(actual.get('background-color')).toBe('#e6e6e6')
+    expect(hover.get('background-color')).toBe('#e9e9e9')
+    expect(grupo.get('color')).toBe('#0d4d80')
+    expect(caret.get('color')).toBe('#555555')
+  })
+
+  // over the lateral (table-head): a hovered leaf, the current one and a hovered group at 4.5:1; the caret, a graphic
+  // next to its group's name, at 3:1
+  it('keeps AA over the backgrounds it paints', () => {
+    const head = tokens.get('--table-head')!
+    expect(contrast(tokens.get('--link')!, hover.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(actual.get('color')!, actual.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(grupo.get('color')!, head)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(caret.get('color')!, head)).toBeGreaterThanOrEqual(3)
   })
 })

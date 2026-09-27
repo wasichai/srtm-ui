@@ -25,6 +25,8 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/portal-tributario/tabs.css`     | Pestañas carpeta de la ficha y de trabajo, y fieldsets de `RecordForm` con la leyenda sobre el borde (#48).                        |
 | `src/themes/portal-tributario/alerts.css`   | La caja de las alertas en cuatro tonos (#50).                                                                                      |
 | `src/portal/components/Alerta.tsx`          | Alerta con tono, título y cierre; en light y dark se ve como el texto que sustituye (#50).                                         |
+| `src/themes/portal-tributario/nav.css`      | El menú en árbol del lateral: hoja activa, hovers y carets con los valores del prototipo (ver [Menú en árbol](#menú-en-árbol-53)). |
+| `src/portal/shell/ArbolNav.tsx`             | El menú en árbol genérico (grupos, subgrupos y hojas) con sus ganchos `data-ui` (#53).                                             |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -317,7 +319,7 @@ hover `#F0F0F0`) con CSS propio. Cuando llegue #47 (`controls.css`) se puede del
 
 Con este tema, `useVarianteTema()` vale `'portal'` y `AppShell` (`src/portal/shell/`) dibuja en su marco las piezas
 de `PortalShell`: la barra de marca (escudo, título, búsqueda, Administración, tema y `MenuSesion`), un lateral claro
-provisional (`LateralPortal`, que sustituirá el árbol de #53) y el pie institucional. Son componentes con tokens y
+con el árbol de trámites (`LateralPortal`, ver [Menú en árbol](#menú-en-árbol-53)) y el pie institucional. Son componentes con tokens y
 utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`, `text-link`, `bg-table-stripe`, `border-line`…). El
 marco es el mismo para todos los temas: al cambiar de tema, la página abierta y el menú de tema no se desmontan.
 
@@ -334,5 +336,46 @@ Desvíos del prototipo, por contraste:
   22 %, 4.08:1).
 - El foco de los controles de la barra es blanco (`shell-ink`, 6.52:1). El azul de foco (`#1BA0D7`) sobre `shell` da
   2.19:1.
-- La hoja activa del lateral lleva `ink` al 6 % sobre `table-head` (≈ `#E7E7E7`, el prototipo usa `#E6E6E6`) y el
-  texto en `link` negrita: 4.62:1.
+- La hoja activa del lateral: ver [Menú en árbol](#menú-en-árbol-53).
+
+## Menú en árbol (#53)
+
+Con la variante `portal`, el lateral (`LateralPortal`) es el árbol de trámites del prototipo: `ArbolNav`
+(`src/portal/shell/ArbolNav.tsx`), un componente genérico que recibe el árbol, con el contenido declarado en
+`NAV_TREE` (`src/portal/shell/navTree.ts`). El shell clásico de light y dark conserva `NAV` y su menú de móvil.
+
+- **Panel** de 292px (`w-73`) sobre `table-head` con borde `border`. Arriba, "Ir al inicio" (16px, `link`, con
+  `aria-current` en `/`) y el botón "Ocultar el menú"; debajo, el título "Mis trámites" (18px, negrita, `link`).
+- **Grupos**: `<button aria-expanded aria-controls>` de 17px en negrita `ink`, con un caret que gira 90° en 0.13s
+  (`transition-transform duration-130`, quieto con `prefers-reduced-motion`). Plegado, su lista lleva `hidden`.
+  **Subgrupos** (opcionales, ninguno hoy): 16px con sangría de 26px.
+- **Hojas**: 15px en `link`, sangría de 34px (48px bajo un subgrupo). La activa lleva `aria-current="page"`, borde
+  izquierdo de 4px `link`, negrita y un chevron. Una ruta hija marca su hoja: gana la más específica
+  (`/contribuyentes/123` → Buscar contribuyentes, `/contribuyentes/nuevo` → Nuevo contribuyente) y una hoja puede
+  declarar otras rutas de su pantalla (`tambienEn`: el asistente abierto desde la ficha marca Nueva declaración).
+  Las fichas sin hoja propia (una declaración, un lote) no marcan ninguna. Las hojas son `Link` con el
+  `aria-current` calculado, no `NavLink`: su coincidencia por prefijo marcaría a la vez Buscar y Nuevo contribuyente.
+- **Administración** va al final, solo para administradores, como un enlace normal (`<a href="/admin">`, otra app)
+  con la letra de los grupos y un ícono en el sitio del caret.
+- **Plegado**: el botón del panel lo oculta en cualquier ancho y aparece la hamburguesa de la barra de marca (30px,
+  borde `shell-ink` al 50 %), que lo reabre; es el mismo botón `aria-controls="sidebar"` del menú de móvil clásico
+  y el foco pasa de uno a otro. Con 1080px o menos, el panel empieza plegado y se pliega al elegir una hoja; en un
+  teléfono ocupa todo el ancho. En el prototipo el panel solo se oculta en pantallas estrechas (en las anchas la
+  hamburguesa aparecía sin ocultarlo); aquí se oculta siempre. Estos botones no son el `Button` de #47: los del
+  árbol son controles sin caja del prototipo y la hamburguesa es el botón del marco común (el clásico no cambia).
+- **Memoria**: el estado del panel y de los grupos se guarda en `sessionStorage['srtm.nav']` (con try/catch), como
+  las pestañas de trabajo. En una pantalla estrecha el panel empieza plegado aunque se guardara abierto, y el
+  plegado automático al navegar no se guarda.
+
+`nav.css` fija lo que el componente aproxima con tokens (`bg-ink/6` y `bg-ink/4` sobre `table-head`,
+`text-ink-muted` en los carets):
+
+| Regla                                         | Valor                            | Contraste                 |
+| --------------------------------------------- | -------------------------------- | ------------------------- |
+| `[data-ui='arbol-hoja'][aria-current='page']` | texto `#0D4D80`, fondo `#E6E6E6` | 7.04:1                    |
+| `[data-ui='arbol-hoja']:hover`                | fondo `#E9E9E9`                  | `link` encima: 4.70:1     |
+| `[data-ui='arbol-grupo']:hover`               | texto `#0D4D80`                  | 7.85:1 sobre `table-head` |
+| `[data-ui='arbol-caret']`                     | `#555555`                        | 6.66:1 sobre `table-head` |
+
+Tests: `src/portal/arbolNav.test.tsx` (árbol, hoja activa, plegado, memoria, pantalla estrecha, clásico intacto) y el
+bloque `nav.css` de `src/themes/parciales.test.tsx` (valores y contrastes).

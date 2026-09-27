@@ -1,35 +1,38 @@
 import { cn } from '@wasichai/ui'
 import { Landmark, LogOut, Menu, Settings } from 'lucide-react'
-import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
 import { ENTIDAD, GlobalSearch, initials, NAV, type LateralProps, type PiezasShell } from './comun'
+import { usePanelLateral } from './panelLateral'
 import { PortalShell } from './PortalShell'
 import { TabBar } from './TabBar'
 import { ThemeMenu } from './ThemeMenu'
 
 // gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs over the content.
-// under the portal-tributario theme it delegates to PortalShell (brand bar, light lateral, footer). one frame for
+// under the portal-tributario theme it delegates to PortalShell (brand bar, the tree of trámites, footer). one frame for
 // both, each variant bringing its pieces: a theme switch redraws the bar, the lateral and the footer but keeps the
 // page (and whatever is not saved in it) and the theme menu, with its focus and its error, mounted
 export function AppShell() {
   const { isAdmin } = useSession()
-  const [menuOpen, setMenuOpen] = useState(false)
   const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
   const { Marca, Sesion, Lateral, Pie } = piezas
+  const lateral = usePanelLateral(piezas.plegable === true)
 
   return (
     <div className="flex h-full flex-col">
       <header className={piezas.cabecera}>
         <button
+          ref={lateral.boton}
           type="button"
           className={piezas.botonMenu}
-          aria-label="Menú"
-          aria-expanded={menuOpen}
+          // a foldable lateral folds itself: this one only brings it back
+          hidden={piezas.plegable && lateral.abierto}
+          aria-label={piezas.plegable ? 'Mostrar el menú' : 'Menú'}
+          aria-expanded={lateral.abierto}
           aria-controls="sidebar"
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={lateral.alternar}
         >
           <Menu className="size-5" />
         </button>
@@ -49,7 +52,7 @@ export function AppShell() {
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
-        <Lateral abierto={menuOpen} onNavegar={() => setMenuOpen(false)} />
+        <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} onPlegar={lateral.plegar} />
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
           <Breadcrumbs />

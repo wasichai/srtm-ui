@@ -39,10 +39,11 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   render(<PortalApp />)
 }
 
-// the home page drawn, and the permissions in: an admin gets the way to the administration
+// the home page drawn, and the permissions in: an admin gets the way to the administration in the bar (the portal's
+// tree has one too)
 async function listo() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
-  expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  expect(await within(screen.getByRole('banner')).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
 }
 
 const sesion = () => screen.getByRole('button', { name: /menú de sesión/ })
@@ -65,11 +66,12 @@ describe('portal-tributario shell', () => {
     expect(within(bar).getByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' })).toHaveTextContent('ARAdmin RentasAdministrador')
     expect(within(bar).queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
 
-    // not the dark sidebar: the lateral is light, its links in the link colour, the current one marked
+    // not the dark sidebar: the lateral is light, its links in the link colour, the current one marked (the tree
+    // itself: arbolNav.test.tsx)
     expect(lateral()).not.toHaveClass('bg-shell')
     expect(lateral()).toHaveClass('bg-table-head')
-    expect(within(lateral()).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
-    expect(within(lateral()).getByRole('link', { name: 'Contribuyentes' })).toHaveClass('text-link')
+    expect(within(lateral()).getByRole('link', { name: 'Ir al inicio' })).toHaveAttribute('aria-current', 'page')
+    expect(within(lateral()).getByRole('link', { name: 'Buscar contribuyentes' })).toHaveClass('text-link')
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Municipalidad Distrital de Perené — Sistema de Gestión Tributaria Municipal')
     // the workspace tabs over the content, as in the classic shell

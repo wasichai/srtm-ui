@@ -1,36 +1,34 @@
-import { cn } from '@wasichai/ui'
-import { NavLink } from 'react-router'
-import { NAV, type LateralProps } from './comun'
+import { useMemo, useState } from 'react'
+import { useSession } from '../auth/session'
+import { ArbolNav } from './ArbolNav'
+import type { LateralProps } from './comun'
+import { arbolPara, NAV_TREE } from './navTree'
+import { guardarNav, leerNav } from './panelLateral'
 
-// the portal's lateral, for now: the shell's sections (NAV) in the prototype's light column, links in the link
-// colour and the current one marked on its left. the tree menu (issue #53) takes its place
-export function LateralPortal({ abierto, onNavegar }: LateralProps) {
+// the portal's lateral: the tree of trámites (NAV_TREE, the administration for admins only), its groups remembered
+// for the browser tab like the panel (usePanelLateral)
+export function LateralPortal({ abierto, onNavegar, onPlegar }: LateralProps) {
+  const { isAdmin } = useSession()
+  const nodos = useMemo(() => arbolPara(NAV_TREE, { isAdmin }), [isAdmin])
+  const [grupos, setGrupos] = useState(() => leerNav().grupos ?? {})
+
+  const alternar = (clave: string) => {
+    const siguientes = { ...grupos, [clave]: grupos[clave] === false }
+    setGrupos(siguientes)
+    guardarNav({ grupos: siguientes })
+  }
+
   return (
-    <nav
+    <ArbolNav
       id="sidebar"
-      aria-label="Secciones"
-      className={cn('w-60 shrink-0 overflow-y-auto border-r border-border bg-table-head py-3 md:block lg:w-73 print:hidden', abierto ? 'block' : 'hidden')}
-    >
-      <ul>
-        {NAV.map(({ to, label, icon: Icon, end }) => (
-          <li key={to}>
-            <NavLink
-              to={to}
-              end={end}
-              onClick={onNavegar}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-2.5 border-l-4 px-4 py-2 text-[15px] text-link hover:bg-ink/4 hover:underline focus-visible:-outline-offset-2',
-                  isActive ? 'border-link bg-ink/6 font-bold' : 'border-transparent'
-                )
-              }
-            >
-              <Icon aria-hidden className="size-4 shrink-0" />
-              {label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
+      etiqueta="Secciones"
+      titulo="Mis trámites"
+      nodos={nodos}
+      abierto={abierto}
+      grupos={grupos}
+      onGrupo={alternar}
+      onNavegar={onNavegar}
+      onPlegar={onPlegar}
+    />
   )
 }
