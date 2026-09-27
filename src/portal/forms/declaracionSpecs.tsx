@@ -46,7 +46,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
       { name: 'motivo', label: 'Motivo de modificación', kind: 'enum', readOnly: true, placeholder: 'INSCRIPCION', span: 2 },
       { name: 'fecha_presentacion', label: 'Fecha de presentación', kind: 'date', required: true, span: 2 },
       { name: 'anio', label: 'Año', kind: 'integer', required: true, span: 1 },
-      { name: 'secuencia_uso', label: 'Secuencia de uso', span: 1 }
+      { name: 'secuencia_uso', label: 'Secuencia de uso', required: true, span: 1 }
     ]
   },
   {

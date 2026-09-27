@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
+import { mockFetch, type FetchMock, type MockRoute, type RecordedCall } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
 
 // every declaration is created and edited in the full declaración jurada: no short form left (issue #10)
@@ -100,6 +100,14 @@ function start(path: string, extra: MockRoute[] = []) {
   render(<PortalApp />)
 }
 
+// the first call that matches, once it is made: waitFor retries only while its callback throws
+const called = (match: (c: RecordedCall) => boolean) =>
+  waitFor(() => {
+    const call = fetch!.calls.find(match)
+    expect(call).toBeDefined()
+    return call!
+  })
+
 const djHeading = () => screen.findByRole('heading', { name: 'Declaración jurada predial - 39147' })
 
 describe('the full declaración jurada', () => {
@@ -168,7 +176,7 @@ describe('the full declaración jurada', () => {
     expect(screen.queryByRole('button', { name: 'Registrar un predio nuevo' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    const post = await called((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')
     expect(post.body).toMatchObject({
       predio_id: 'p1',
       declaracion: { tipo_adquisicion: 'HERENCIA', folios: 4, documentos_sustento: 'DECLARATORIA DE HEREDEROS' }
@@ -193,7 +201,7 @@ describe('the full declaración jurada', () => {
     await userEvent.type(panel.getByLabelText('Área construida (m2)'), '150')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    const put = await waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')!)
+    const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
     expect(put.body).toMatchObject({
       valor_autoavaluo: 25000.5,
       valor_condominio: null,

@@ -125,7 +125,11 @@ describe('datos de los condóminos', () => {
     await userEvent.type(within(dialog).getByPlaceholderText('DNI, RUC o nombre'), 'PEREZ')
     await userEvent.click(await within(dialog).findByRole('button', { name: /PEREZ LUNA PEDRO/ }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
-    const post = await waitFor(() => called('POST', '/srtm/declaraciones/d3/condominos')!)
+    const post = await waitFor(() => {
+      const call = called('POST', '/srtm/declaraciones/d3/condominos')
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(post.body).toEqual({ contribuyente: 'c3', porcentaje_condominio: 25 })
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
@@ -139,7 +143,11 @@ describe('datos de los condóminos', () => {
     await userEvent.clear(input)
     await userEvent.type(input, '30')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
-    const put = await waitFor(() => called('PUT', '/srtm/declaraciones/d2')!)
+    const put = await waitFor(() => {
+      const call = called('PUT', '/srtm/declaraciones/d2')
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(put.body).toMatchObject({ contribuyente: 'c2', predio: 'p1', uso: 'RESIDENCIAL - CASA HABITACION', porcentaje_condominio: 30 })
   })
 

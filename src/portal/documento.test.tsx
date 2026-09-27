@@ -166,7 +166,11 @@ describe('the document of a new contribuyente', () => {
     expect(screen.getByLabelText(/N° documento/)).toBeDisabled()
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
-    const post = await waitFor(() => inscripcion()!)
+    const post = await waitFor(() => {
+      const call = inscripcion()
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(post.body).toMatchObject({ tipo_documento: 'SIN DOCUMENTO', numero_documento: null })
   })
 })
@@ -211,7 +215,11 @@ describe('the vía and unidad urbana of a domicilio', () => {
     await userEvent.type(within(dialog).getByLabelText('Lote'), '19')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
 
-    const post = await waitFor(() => grabado()!)
+    const post = await waitFor(() => {
+      const call = grabado()
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(post.body).toMatchObject({ tipo_via: null, via: null, tipo_unidad_urbana: null, unidad_urbana: null, manzana: 'C', lote: '19' })
   })
 

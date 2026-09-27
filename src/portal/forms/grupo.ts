@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import type { FormValues } from './specs'
 
 // forms edited in place and saved by one button outside them (the declaración's header saves all its tabs at once)
 
@@ -7,7 +8,10 @@ export interface FormHandle {
   // once the form is valid, what the clerk changed in it (the fields it sends, as it sends them); null while it is
   // not: the errors show under the fields
   cambios: () => Promise<Record<string, unknown> | null>
-  // the backend's violations of this form's fields, under them: whether it had any
+  // the same, but everything it sends (as its onSubmit gets it): what a wizard presents
+  valores: () => Promise<Record<string, unknown> | null>
+  // the backend's violations of this form's fields, under them (above its buttons the ones with no input): whether it
+  // had any
   errores: (error: unknown) => boolean
 }
 
@@ -52,8 +56,27 @@ export function useGrupoFormularios<N extends string>(nombres: readonly N[]) {
     }
     return { valores, invalidos }
   }
-  // the backend's refusal, to the forms it may be about: the ones that took a violation under a field
+  // one form's values, once valid; null while it is not (or it is not there)
+  const valores = async (nombre: N) => (await handles.current.get(nombre)?.valores()) ?? null
+  // the backend's refusal, to the forms it may be about: the ones that took a violation of one of their fields
   const errores = (error: unknown, de: N[]) => nombres.filter((nombre) => de.includes(nombre) && handles.current.get(nombre)?.errores(error))
 
-  return { enlaces, pendientes, cambios, errores }
+  return { enlaces, pendientes, cambios, valores, errores }
+}
+
+// RecordForm's `comun`: fields that are one value in several forms of a page (the predio's tipo, in datos del predio
+// and in the ubicación). what the clerk sets in one, the others take
+export interface Comun {
+  campos: readonly string[]
+  // the last value the clerk set, by field: none until then
+  valores: FormValues
+  cambiar: (name: string, value: string) => void
+}
+
+// those fields, for the forms of a page. empty again (reiniciar) when the forms start over from the record
+export function useComun(campos: readonly string[]) {
+  const [valores, setValores] = useState<FormValues>({})
+  const cambiar = useCallback((name: string, value: string) => setValores((actual) => (actual[name] === value ? actual : { ...actual, [name]: value })), [])
+  const reiniciar = useCallback(() => setValores({}), [])
+  return { campos, valores, cambiar, reiniciar }
 }

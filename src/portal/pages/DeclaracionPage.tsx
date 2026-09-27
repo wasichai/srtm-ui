@@ -10,7 +10,7 @@ import { FichaTabs } from '../components/FichaTabs'
 import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
-import { useGrupoFormularios } from '../forms/grupo'
+import { useComun, useGrupoFormularios } from '../forms/grupo'
 import { RecordForm } from '../forms/RecordForm'
 import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
@@ -47,6 +47,8 @@ function sobre<T extends object>(latest: T, values: object, campos: string[]): T
 // the tabs that are forms: edited in place, saved together from the header
 const FORMULARIOS = ['datos', 'ubicacion', 'caracteristicas'] as const
 type Formulario = (typeof FORMULARIOS)[number]
+// the predio's tipo, in datos del predio and in the ubicación: one value
+export const COMUNES = ['condicion'] as const
 const etiqueta = (tab: string) => DECLARACION_TABS.find((t) => t.id === tab)?.label ?? tab
 
 // of a form's changes, the fields that are this record's
@@ -89,6 +91,7 @@ function DeclaracionPage({ id }: { id: string }) {
   const abrir = (tab: string, enAsistente = asistente) => setParams(enAsistente ? { tab, asistente: '1' } : { tab }, { replace: true })
 
   const grupo = useGrupoFormularios(FORMULARIOS)
+  const comun = useComun(COMUNES)
   const pendientes = grupo.pendientes.map(etiqueta)
   const salida = useSalidaConCambios(pendientes)
   // a save or a Cancelar starts the forms again, from the declaration as it is then
@@ -144,6 +147,7 @@ function DeclaracionPage({ id }: { id: string }) {
       }
       await refresh()
       setVersion((v) => v + 1)
+      comun.reiniciar()
       setGuardado(true)
       return true
     } catch (e) {
@@ -157,6 +161,7 @@ function DeclaracionPage({ id }: { id: string }) {
     setDescartando(false)
     setError(null)
     setVersion((v) => v + 1)
+    comun.reiniciar()
   }
 
   return (
@@ -179,6 +184,7 @@ function DeclaracionPage({ id }: { id: string }) {
             <RecordForm
               key={version}
               enlace={grupo.enlaces[nombre]}
+              comun={comun}
               hideActions
               sections={sections}
               options={options}

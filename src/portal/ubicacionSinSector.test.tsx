@@ -83,7 +83,11 @@ describe('ubicación without sector or manzana catastral', () => {
     await userEvent.type(screen.getByLabelText(/Descripción de la zona/), 'UNION PERENE')
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
 
-    const post = await waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')!)
+    const post = await waitFor(() => {
+      const call = fetch!.calls.find((c) => c.method === 'POST' && c.path === '/srtm/contribuyentes/c1/declaraciones-juradas')
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(post.body).toMatchObject({
       declaracion: { tipo_adquisicion: 'COMPRA' },
       predio: { sector_catastral: null, manzana_catastral: null, via: 'MARGINAL', habilitacion_urbana: 'UNION PERENE', codigo: null }

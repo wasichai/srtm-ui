@@ -109,7 +109,12 @@ function start(path: string, extra: MockRoute[] = []) {
   render(<PortalApp />)
 }
 
-const posted = (path: string) => waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === path)!)
+const posted = (path: string) =>
+  waitFor(() => {
+    const call = fetch!.calls.find((c) => c.method === 'POST' && c.path === path)
+    expect(call).toBeDefined()
+    return call!
+  })
 const posts = (path: string) => fetch!.calls.filter((c) => c.method === 'POST' && c.path === path)
 
 describe('relacionados y transferentes', () => {

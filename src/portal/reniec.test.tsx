@@ -100,7 +100,12 @@ function start(path: string, extra: MockRoute[] = []) {
 }
 
 const consultas = () => fetch!.calls.filter((c) => c.path.startsWith('/srtm/documentos/'))
-const posted = (path: string) => waitFor(() => fetch!.calls.find((c) => c.method === 'POST' && c.path === path)!)
+const posted = (path: string) =>
+  waitFor(() => {
+    const call = fetch!.calls.find((c) => c.method === 'POST' && c.path === path)
+    expect(call).toBeDefined()
+    return call!
+  })
 
 // the names and the fuente, as the clerk sees them: greyed or not, and their values
 function nombres(root: HTMLElement = document.body) {

@@ -117,7 +117,11 @@ describe('anular una declaración jurada', () => {
 
     await userEvent.type(within(dialog).getByLabelText(/Motivo de la anulación/), 'Declarada dos veces')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Anular' }))
-    const post = await waitFor(() => called('POST', '/srtm/declaraciones/d1/anular')!)
+    const post = await waitFor(() => {
+      const call = called('POST', '/srtm/declaraciones/d1/anular')
+      expect(call).toBeDefined()
+      return call!
+    })
     expect(post.body).toEqual({ motivo_anulacion: 'Declarada dos veces' })
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })

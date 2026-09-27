@@ -84,7 +84,12 @@ const opciones = (select: HTMLElement) =>
     .getAllByRole('option')
     .map((o) => o.textContent)
 
-const put = () => waitFor(() => fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')!)
+const put = () =>
+  waitFor(() => {
+    const call = fetch!.calls.find((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
+    expect(call).toBeDefined()
+    return call!
+  })
 
 describe('clase, sub clase and uso of the predio', () => {
   it('offers the sub clases of the chosen clase and the usos of the chosen sub clase', async () => {

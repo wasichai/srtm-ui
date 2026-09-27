@@ -1,4 +1,4 @@
-import { ApiError } from '@wasichai/core'
+import { ApiError, type FieldViolation } from '@wasichai/core'
 import { Button, cn, Input, Label, Textarea } from '@wasichai/ui'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
@@ -7,7 +7,7 @@ import { parseGeometry } from '../components/geo'
 import { BLOQUEADOS, bloqueados as bloqueadosDe } from './bloqueo'
 import { CampoId, useCampoId } from './campoId'
 import { etiqueta } from './etiquetas'
-import type { Enlace } from './grupo'
+import type { Comun, Enlace } from './grupo'
 import { dataFields, vacioDe, type FieldSpec, type FormValues, type SectionSpec } from './specs'
 import { GRID, selectClass, SPAN } from './styles'
 import { SuggestInput } from './SuggestInput'
@@ -33,6 +33,9 @@ interface RecordFormProps<T> {
   // edited in place and saved by a button outside it, with other forms (forms/grupo.ts). while it has no changes it
   // follows `initial`: what another tab or the backend changed of the record shows up
   enlace?: Enlace
+  // fields that are one value with other forms of the page (forms/grupo.ts): what the clerk sets here goes to them,
+  // and theirs comes here
+  comun?: Comun
 }
 
 // one form for every entity. the backend validates again and names the field it rejects:
@@ -50,7 +53,8 @@ export function RecordForm<T extends object>({
   hideActions,
   footer,
   bloqueados,
-  enlace
+  enlace,
+  comun
 }: RecordFormProps<T>) {
   const fields = dataFields(sections)
   const form = useForm<FormValues>({ defaultValues: { ...toForm(fields, initial as Record<string, unknown>), [BLOQUEADOS]: (bloqueados ?? []).join(',') } })
@@ -69,36 +73,63 @@ export function RecordForm<T extends object>({
   // what it was loaded with: a field that differs is a change
   const cargados = useRef<FormValues>(toForm(fields, initial as Record<string, unknown>))
 
-  // what the clerk edits and can see: read-only, hidden (`when`) and greyed (`enabledWhen`) fields keep their value
-  const enviados = (current: FormValues) => fields.filter((f) => !f.readOnly && (!f.when || f.when(current)) && (!f.enabledWhen || f.enabledWhen(current)))
-  const cambiados = (current: FormValues) => enviados(current).filter((f) => (current[f.name] ?? '') !== (cargados.current[f.name] ?? ''))
-  // the backend names the field it rejects: its message goes under that field
+  // what the clerk edits and can see: read-only and hidden (`when`) fields keep their value
+  const enviados = (current: FormValues) => fields.filter((f) => !f.readOnly && (!f.when || f.when(current)))
+  // as they are sent: a field greyed by the one it depends on (`enabledWhen`) goes empty, and so clears what it had
+  const aEnviar = (current: FormValues): FormValues =>
+    Object.fromEntries(fields.map((f) => [f.name, !f.enabledWhen || f.enabledWhen(current) ? (current[f.name] ?? '') : '']))
+  const cambiados = (current: FormValues) => {
+    const [ahora, antes] = [aEnviar(current), aEnviar(cargados.current)]
+    return enviados(current).filter((f) => ahora[f.name] !== antes[f.name])
+  }
+  const salida = (current: FormValues) => ({ ...initial, ...fromForm(enviados(current), aEnviar(current)) }) as T
+  // the backend names the field it rejects: its message goes under that field, or above the buttons when no control
+  // shows it (a hidden field, a geometry, one its `when` hides): see the effect below
+  const [delServidor, setDelServidor] = useState<FieldViolation[]>([])
   const mostrarErrores = (e: unknown) => {
     const known = e instanceof ApiError ? e.violations.filter((v) => fields.some((f) => f.name === v.field)) : []
     known.forEach((v) => setError(v.field, { type: 'server', message: v.message }))
+    setDelServidor(known)
     return known.length > 0
   }
+  const empezar = () => {
+    setFormError(null)
+    setDelServidor([])
+  }
+  // once rendered, the ones whose message no control of the form shows (a custom one, as the ubigeo's cascade, shows
+  // its hidden fields'): above the buttons, and off their field, where nothing would clear them
+  const formRef = useRef<HTMLFormElement>(null)
+  useEffect(() => {
+    const sinControl = delServidor.filter((v) => !formRef.current?.querySelector(`[id="${campoId(v.field)}-error"]`))
+    if (sinControl.length === 0) return
+    form.clearErrors(sinControl.map((v) => v.field))
+    setFormError(sinControl.map((v) => `${fields.find((f) => f.name === v.field)?.label ?? v.field}: ${v.message}`).join(' · '))
+    // only for a new refusal: the helpers above are new every render
+  }, [delServidor])
 
   const submit = handleSubmit(async (current) => {
-    setFormError(null)
+    empezar()
     try {
-      await onSubmit({ ...initial, ...fromForm(enviados(current), current) } as T)
+      await onSubmit(salida(current))
     } catch (e) {
       if (!mostrarErrores(e)) setFormError(e instanceof Error ? e.message : 'No se pudo guardar')
     }
   })
 
   const pendiente = enlace !== undefined && cambiados(values).length > 0
+  // once valid, what `enviar` makes of the values; null while not
+  const validos = <R,>(enviar: (current: FormValues) => R) =>
+    new Promise<R | null>((resolve) => {
+      empezar()
+      void handleSubmit(
+        (current) => resolve(enviar(current)),
+        () => resolve(null)
+      )()
+    })
   useEffect(() => {
     enlace?.handle?.({
-      cambios: () =>
-        new Promise(
-          (resolve) =>
-            void handleSubmit(
-              (current) => resolve(fromForm(cambiados(current), current)),
-              () => resolve(null)
-            )()
-        ),
+      cambios: () => validos((current) => fromForm(cambiados(current), aEnviar(current))),
+      valores: () => validos((current) => salida(current) as Record<string, unknown>),
       errores: mostrarErrores
     })
   })
@@ -118,8 +149,27 @@ export function RecordForm<T extends object>({
     // only for a record read again: the helpers above are new every render
   }, [inicial])
 
+  // a field one with other forms (`comun`): the clerk's change here goes to them, theirs comes here
+  const cambiarComun = comun?.cambiar
+  const campoComun = comun?.campos
+  useEffect(() => {
+    if (!cambiarComun || !campoComun) return
+    const { unsubscribe } = form.watch((current, { name, type }) => {
+      if (type === 'change' && name && campoComun.includes(name)) cambiarComun(name, current[name] ?? '')
+    })
+    return unsubscribe
+  }, [form, cambiarComun, campoComun])
+  const deOtros = JSON.stringify(comun?.valores ?? {})
+  useEffect(() => {
+    for (const [name, value] of Object.entries(JSON.parse(deOtros) as FormValues)) {
+      if (fields.some((f) => f.name === name) && (form.getValues(name) ?? '') !== value)
+        form.setValue(name, value, { shouldValidate: form.formState.isSubmitted })
+    }
+    // only when another form changed them: the fields are new every render
+  }, [deOtros])
+
   const contenido = (
-    <form id={formId} onSubmit={submit} noValidate className="space-y-6">
+    <form ref={formRef} id={formId} onSubmit={submit} noValidate className="space-y-6">
       {children}
       {sections.map((section) => (
         <fieldset key={section.title}>
