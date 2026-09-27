@@ -19,7 +19,7 @@ interface RecordPickerProps<T> {
   error?: string
 }
 
-// search-as-you-type for the other side of a declaration: the predio from a contribuyente, or the reverse
+// search-as-you-type for a contribuyente: the titular of a declaration opened from a predio, or a condómino
 export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error }: RecordPickerProps<T>) {
   const [editing, setEditing] = useState(value === null)
   const [q, setQ] = useState('')

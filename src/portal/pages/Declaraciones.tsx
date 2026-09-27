@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { Badge, Button, Table, Td, Th } from '@wasichai/ui'
 import { FileText, Pencil, Plus } from 'lucide-react'
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { rentas } from '../api'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
-import { DeclaracionDialog, describeContribuyente, describePredio, type Side } from '../forms/DeclaracionDialog'
-import type { Declaracion, DeclaracionDetalle } from '../types'
+import type { DeclaracionDetalle } from '../types'
 
-// the declarations of a ficha. side is the ficha's own kind; each row shows the other side
+// the declarations of a ficha. side is the ficha's own kind; each row shows the other side.
+// a declaration is created and edited only in the full declaración jurada (/declaraciones/:id)
+export type Side = 'contribuyente' | 'predio'
 
 function useDeclaraciones(side: Side, id: string, anio?: number) {
   return useQuery({
@@ -77,6 +77,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                 <Th>Uso</Th>
                 <Th className="text-right">Autoavalúo</Th>
                 <Th className="text-right">Valor afecto</Th>
+                <Th>DJ</Th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +91,13 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                   <Td>{formatText(row.declaracion.uso)}</Td>
                   <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
                   <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_afecto)}</Td>
+                  <Td>
+                    {/* straight to what is declared of the predio: características, niveles and obras */}
+                    <Link to={`/declaraciones/${row.declaracion.id}?tab=caracteristicas`} className="inline-flex items-center gap-1 text-brand hover:underline">
+                      <FileText className="size-3.5" />
+                      {row.declaracion.numero_declaracion ?? 'Abrir'}
+                    </Link>
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -98,6 +106,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                 <Td colSpan={4}>Total {anio}</Td>
                 <Td className="text-right tabular-nums">{formatMoney(totales?.autoavaluo)}</Td>
                 <Td className="text-right tabular-nums">{formatMoney(totales?.valor_afecto)}</Td>
+                <Td />
               </tr>
             </tfoot>
           </Table>
@@ -110,12 +119,11 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
 // every year, newest first, with new and edit
 export function HistorialDeclaraciones({ side, id }: { side: Side; id: string }) {
   const query = useDeclaraciones(side, id)
-  const [editing, setEditing] = useState<{ declaracion: Declaracion | null; otherLabel?: string } | null>(null)
   const navigate = useNavigate()
   const otherTitle = side === 'contribuyente' ? 'Predio' : 'Contribuyente'
-  // from a contribuyente, a new declaration is the srtm's declaración jurada (with its predio); from a predio, the
-  // short form, whose contribuyente is picked
-  const nueva = () => (side === 'contribuyente' ? navigate(`/contribuyentes/${id}/declaraciones/nueva`) : setEditing({ declaracion: null }))
+  // the srtm's declaración jurada: from a contribuyente, with its predio picked or registered in it; from a predio, on
+  // that predio, with the contribuyente looked up in it
+  const nueva = () => navigate(side === 'contribuyente' ? `/contribuyentes/${id}/declaraciones/nueva` : `/declaraciones/nueva?predio=${id}`)
 
   return (
     <div className="space-y-4">
@@ -166,13 +174,10 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                     <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
                     <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_afecto)}</Td>
                     <Td className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Editar declaración ${row.declaracion.anio}`}
-                        onClick={() => setEditing({ declaracion: row.declaracion, otherLabel: otherLabel(side, row) })}
-                      >
-                        <Pencil className="size-4" />
+                      <Button asChild variant="ghost" size="icon">
+                        <Link to={`/declaraciones/${row.declaracion.id}`} aria-label={`Editar declaración ${row.declaracion.anio}`}>
+                          <Pencil className="size-4" />
+                        </Link>
                       </Button>
                     </Td>
                   </tr>
@@ -182,14 +187,6 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
           )
         }
       </QueryState>
-      {editing && (
-        <DeclaracionDialog side={side} sideId={id} declaracion={editing.declaracion} otherLabel={editing.otherLabel} onClose={() => setEditing(null)} />
-      )}
     </div>
   )
-}
-
-function otherLabel(side: Side, row: DeclaracionDetalle): string | undefined {
-  if (side === 'contribuyente') return row.predio ? describePredio(row.predio).label : undefined
-  return row.contribuyente ? describeContribuyente(row.contribuyente).label : undefined
 }

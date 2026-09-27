@@ -185,6 +185,17 @@ export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
       { name: 'longitud_frente', label: 'Frontis (m)', kind: 'decimal', span: 1 },
       { name: 'numero_habitantes', label: 'Cant. de habitantes / Aforo', kind: 'integer', span: 1 }
     ]
+  },
+  {
+    // not on the srtm's screens (pages 17 and 20): what the fichas' totals add up
+    title: 'Valores',
+    fields: [
+      { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 },
+      { name: 'valor_condominio', label: 'Valor de condominio (S/)', kind: 'money', span: 2 },
+      { name: 'deduccion', label: 'Deducción (S/)', kind: 'money', span: 2 },
+      { name: 'valor_afecto', label: 'Valor afecto (S/)', kind: 'money', span: 2 },
+      { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', span: 2 }
+    ]
   }
 ]
 
