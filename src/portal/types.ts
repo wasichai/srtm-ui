@@ -379,6 +379,12 @@ export interface CategoriaValor {
   descripcion: string
 }
 
+// a condómino added from a declaración ("datos de los condóminos"): another titular of its predio, year and secuencia
+export interface NuevoCondomino {
+  contribuyente: string
+  porcentaje_condominio: number | null
+}
+
 export interface DeclaracionDetalle {
   declaracion: Declaracion
   predio: Predio | null

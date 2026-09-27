@@ -14,6 +14,7 @@ import type {
   MedioContacto,
   NivelConstruccion,
   NuevaDeclaracion,
+  NuevoCondomino,
   ObraCategoria,
   ObraComplementaria,
   OtroFrente,
@@ -86,6 +87,8 @@ export const rentas = {
   presentarDeclaracion: (contribuyente: string, body: NuevaDeclaracion) =>
     send<DeclaracionJurada>('POST', `/srtm/contribuyentes/${contribuyente}/declaraciones-juradas`, body),
   declaracionJurada: (id: string) => get<DeclaracionJurada>(`/srtm/declaraciones/${id}`),
+  // another titular of the declaración's predio, year and secuencia: the backend recomputes everyone's %
+  agregarCondomino: (id: string, body: NuevoCondomino) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/condominos`, body),
   transferentes: hijos<Transferente>('declaraciones', 'transferentes'),
   niveles: hijos<NivelConstruccion>('declaraciones', 'niveles'),
   obras: hijos<ObraComplementaria>('declaraciones', 'obras'),
