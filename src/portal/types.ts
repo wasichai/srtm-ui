@@ -41,6 +41,8 @@ export interface Contribuyente {
 export interface Domicilio {
   id?: string
   contribuyente?: string | null
+  // the backend's: 001, 002... under its contribuyente (none on a row from before)
+  codigo?: string | null
   tipo_domicilio: string | null
   tipo_predio: string | null
   ubigeo: string | null
@@ -101,6 +103,8 @@ export interface Relacionado {
 export interface MedioContacto {
   id?: string
   contribuyente?: string | null
+  // the backend's: 001, 002... under its contribuyente
+  codigo?: string | null
   tipo: string | null
   valor: string | null
   anexo: string | null
@@ -112,6 +116,8 @@ export interface MedioContacto {
 export interface Sustento {
   id?: string
   contribuyente?: string | null
+  // the backend's: 001, 002... under its contribuyente
+  codigo?: string | null
   documento: string | null
   numero_documento: string | null
   tipo_presentacion: string | null
