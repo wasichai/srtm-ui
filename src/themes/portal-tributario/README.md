@@ -15,6 +15,7 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/portal-tributario/index.css`  | Punto de entrada del tema. Cada issue añade aquí el `@import` de su parcial.                                                       |
 | `src/themes/portal-tributario/tokens.css` | El bloque `[data-theme='portal-tributario']` (tokens, fuente y radios), el cuerpo a 14px y el foco.                                |
 | `src/themes/portal-tributario/tables.css` | Tablas cebra con fila de total, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-49)).                   |
+| `src/themes/portal-tributario/shell.css`  | El panel del menú de sesión de la barra de marca: borde, sombra y cabecera del prototipo (ver [Shell](#shell-52)).                 |
 | `src/themes/tokens.test.tsx`              | Tests de completitud, extensión y contraste WCAG.                                                                                  |
 | `src/themes/tablas.test.tsx`              | Tests de `tables.css`: importado tras los tokens, fuera de capas, solo bajo el tema y con los valores del prototipo.               |
 
@@ -199,3 +200,27 @@ queda listo para una ficha que lo marque, por ejemplo con `tonoDeEstado`.
 
 **Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
 hover `#F0F0F0`) con CSS propio. Cuando llegue #47 (`controls.css`) se puede delegar en sus ganchos de botón.
+
+## Shell (#52)
+
+Con este tema, `useVarianteTema()` vale `'portal'` y `AppShell` (`src/portal/shell/`) dibuja en su marco las piezas
+de `PortalShell`: la barra de marca (escudo, título, búsqueda, Administración, tema y `MenuSesion`), un lateral claro
+provisional (`LateralPortal`, que sustituirá el árbol de #53) y el pie institucional. Son componentes con tokens y
+utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`, `text-link`, `bg-table-stripe`, `border-line`…). El
+marco es el mismo para todos los temas: al cambiar de tema, la página abierta y el menú de tema no se desmontan.
+
+`shell.css` solo añade lo que no tiene token:
+
+| Regla                              | Valor                                                     | Origen en el prototipo   |
+| ---------------------------------- | --------------------------------------------------------- | ------------------------ |
+| `[data-ui='menu-sesion-panel']`    | borde `#C8D4DE`, sombra `0 6px 22px rgb(13 95 168 / 22%)` | panel del menú de sesión |
+| `[data-ui='menu-sesion-cabecera']` | fondo `#F6F9FC`, borde `#C8D4DE`                          | cabecera del panel       |
+
+Desvíos del prototipo, por contraste:
+
+- El círculo de las iniciales lleva un 15 % de blanco sobre `shell`, no un 22 %: el texto blanco da 4.73:1 (con el
+  22 %, 4.08:1).
+- El foco de los controles de la barra es blanco (`shell-ink`, 6.52:1). El azul de foco (`#1BA0D7`) sobre `shell` da
+  2.19:1.
+- La hoja activa del lateral lleva `ink` al 6 % sobre `table-head` (≈ `#E7E7E7`, el prototipo usa `#E6E6E6`) y el
+  texto en `link` negrita: 4.62:1.
