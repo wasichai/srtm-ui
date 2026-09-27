@@ -4,13 +4,12 @@ import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
 import { DireccionPreview } from './DireccionPreview'
 import { ObraCategoriaField } from './ObraCategoriaField'
-import { conRuc, numeroSegunTipo, sinRuc, type SectionSpec } from './specs'
+import { AUTO, conRuc, numeroSegunTipo, sinRuc, type FormValues, type SectionSpec } from './specs'
 import { UbigeoFields } from './UbigeoFields'
 import type { Elegido } from './ubicacion'
 
 // the srtm's declaración jurada predial, tab by tab (Presentacion2_.pdf, pages 11 to 21)
 
-const AUTO = '(AUTOGENERADO)'
 const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
 
 // what an acquisition is proven with; several may apply, kept as one text
@@ -25,14 +24,18 @@ export const DOCUMENTOS_ADQUISICION = [
   'OTROS'
 ]
 
+// the predio's fields in datos del predio: a new declaración may be on a predio of the padrón, which has its code but
+// will get no number
+const DEL_PREDIO = { readOnly: true, placeholder: AUTO, existe: (v: FormValues) => Boolean(v.codigo_predio) }
+
 // datos del predio: the declaration itself
 export const DJ_DATOS_SECTIONS: SectionSpec[] = [
   {
     title: 'Datos de predio',
     fields: [
       // the predio's, shown here as in the srtm; tipo de predio is saved on the predio
-      { name: 'codigo_predio', label: 'Código de predio', readOnly: true, placeholder: AUTO, span: 2 },
-      { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
+      { name: 'codigo_predio', label: 'Código de predio', ...DEL_PREDIO, span: 2 },
+      { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', ...DEL_PREDIO, span: 2 },
       { name: 'condicion', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
       { name: 'numero_declaracion', label: 'Número de declaración jurada', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
       { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACION JURADA', span: 2 },
