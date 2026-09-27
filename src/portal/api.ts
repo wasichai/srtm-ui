@@ -77,6 +77,8 @@ export const rentas = {
   declaracionesDeContribuyente: (id: string, anio?: number) => get<DeclaracionDetalle[]>(`/srtm/contribuyentes/${id}/declaraciones${query({ anio })}`),
   inscribirContribuyente: (body: Contribuyente) => send<Contribuyente>('POST', '/srtm/contribuyentes', body),
   actualizarContribuyente: (id: string, body: Contribuyente) => send<Contribuyente>('PUT', `/srtm/contribuyentes/${id}`, body),
+  // refused (409, with why) while it has declaraciones
+  borrarContribuyente: (id: string) => remove(`/srtm/contribuyentes/${id}`),
 
   domicilios: hijos<Domicilio>('contribuyentes', 'domicilios'),
   relacionados: hijos<Relacionado>('contribuyentes', 'relacionados'),
@@ -87,6 +89,8 @@ export const rentas = {
   presentarDeclaracion: (contribuyente: string, body: NuevaDeclaracion) =>
     send<DeclaracionJurada>('POST', `/srtm/contribuyentes/${contribuyente}/declaraciones-juradas`, body),
   declaracionJurada: (id: string) => get<DeclaracionJurada>(`/srtm/declaraciones/${id}`),
+  // the descargo: the declaración stays, read-only, out of totales and condominio
+  anularDeclaracion: (id: string, motivo_anulacion: string | null) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/anular`, { motivo_anulacion }),
   // another titular of the declaración's predio, year and secuencia: the backend recomputes everyone's %
   agregarCondomino: (id: string, body: NuevoCondomino) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/condominos`, body),
   transferentes: hijos<Transferente>('declaraciones', 'transferentes'),
@@ -112,6 +116,8 @@ export const rentas = {
   declaracionesDePredio: (id: string, anio?: number) => get<DeclaracionDetalle[]>(`/srtm/predios/${id}/declaraciones${query({ anio })}`),
   crearPredio: (body: Predio) => send<Predio>('POST', '/srtm/predios', body),
   actualizarPredio: (id: string, body: Predio) => send<Predio>('PUT', `/srtm/predios/${id}`, body),
+  // refused (409, with why) while it has declaraciones
+  borrarPredio: (id: string) => remove(`/srtm/predios/${id}`),
 
   actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body)
 }

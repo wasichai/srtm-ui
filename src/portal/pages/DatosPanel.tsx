@@ -11,17 +11,20 @@ export function DatosPanel<T extends object>({
   sections,
   values,
   options,
-  save
+  save,
+  readOnly
 }: {
   sections: SectionSpec[]
   values: T
   options?: Record<string, string[]>
   save: (values: T) => Promise<unknown>
+  // an annulled declaración's: read, never edited
+  readOnly?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const refresh = useRefresh()
 
-  if (editing) {
+  if (editing && !readOnly) {
     return (
       <RecordForm
         sections={sections}
@@ -39,12 +42,14 @@ export function DatosPanel<T extends object>({
   }
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button variant="secondary" onClick={() => setEditing(true)}>
-          <Pencil className="size-4" />
-          Editar
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            <Pencil className="size-4" />
+            Editar
+          </Button>
+        </div>
+      )}
       <FieldGrid sections={sections} values={values} />
     </div>
   )

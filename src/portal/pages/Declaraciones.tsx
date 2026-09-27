@@ -3,6 +3,7 @@ import { Badge, Button, Table, Td, Th } from '@wasichai/ui'
 import { FileText, Pencil, Plus } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { rentas } from '../api'
+import { MarcaAnulada } from '../components/EstadoBadge'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
 import type { DeclaracionDetalle } from '../types'
@@ -86,7 +87,10 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                   <Td>
                     <OtherSide side={side} detalle={row} />
                   </Td>
-                  <Td>{row.declaracion.condicion_propiedad ? <Badge>{row.declaracion.condicion_propiedad}</Badge> : '—'}</Td>
+                  <Td>
+                    {row.declaracion.condicion_propiedad ? <Badge>{row.declaracion.condicion_propiedad}</Badge> : '—'}
+                    <MarcaAnulada declaracion={row.declaracion} />
+                  </Td>
                   <Td className="text-right tabular-nums">{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
                   <Td>{formatText(row.declaracion.uso)}</Td>
                   <Td className="text-right tabular-nums">{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
@@ -164,6 +168,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                         <FileText className="size-3.5" />
                         {row.declaracion.numero_declaracion ?? 'Abrir'}
                       </Link>
+                      <MarcaAnulada declaracion={row.declaracion} />
                     </Td>
                     <Td>
                       <OtherSide side={side} detalle={row} />

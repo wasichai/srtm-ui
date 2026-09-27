@@ -37,6 +37,8 @@ interface HijosPanelProps<T> {
   fijo?: (row: T, rows: T[]) => string | null
   footer?: (values: FormValues, form: UseFormReturn<FormValues>) => ReactNode
   wide?: boolean
+  // an annulled declaración's: listed, never changed
+  readOnly?: boolean
 }
 
 type Hijo = { id?: string; estado?: string | null }
@@ -56,7 +58,8 @@ export function HijosPanel<T extends Hijo>({
   aviso,
   fijo,
   footer,
-  wide
+  wide,
+  readOnly
 }: HijosPanelProps<T>) {
   const query = useQuery({ queryKey: [queryKey, parent], queryFn: () => api.listar(parent) })
   const catalogos = useCatalogos()
@@ -100,10 +103,12 @@ export function HijosPanel<T extends Hijo>({
       {query.data && aviso?.(query.data)}
       <div className="flex items-center justify-between gap-4">
         <h3 className="text-sm font-semibold tracking-wide text-ink uppercase">Listado de {plural}</h3>
-        <Button variant="secondary" size="sm" onClick={() => setAdding(true)} aria-label={`Agregar ${singular}`}>
-          <Plus className="size-4 text-brand" />
-          Agregar
-        </Button>
+        {!readOnly && (
+          <Button variant="secondary" size="sm" onClick={() => setAdding(true)} aria-label={`Agregar ${singular}`}>
+            <Plus className="size-4 text-brand" />
+            Agregar
+          </Button>
+        )}
       </div>
       <QueryState query={query}>
         {() =>
@@ -140,19 +145,23 @@ export function HijosPanel<T extends Hijo>({
                         <EstadoBadge estado={row.estado} />
                       </Td>
                       <Td className="text-right whitespace-nowrap">
-                        <Button variant="ghost" size="icon" aria-label={`Editar ${singular} ${index + 1}`} onClick={() => setEditing(row)}>
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Eliminar ${singular} ${index + 1}`}
-                          disabled={motivo !== undefined}
-                          title={motivo}
-                          onClick={() => setRemoving(row)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        {!readOnly && (
+                          <>
+                            <Button variant="ghost" size="icon" aria-label={`Editar ${singular} ${index + 1}`} onClick={() => setEditing(row)}>
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Eliminar ${singular} ${index + 1}`}
+                              disabled={motivo !== undefined}
+                              title={motivo}
+                              onClick={() => setRemoving(row)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </>
+                        )}
                       </Td>
                     </tr>
                   )
