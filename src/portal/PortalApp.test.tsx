@@ -353,7 +353,7 @@ describe('portal', () => {
     expect(declaraciones().map((c) => c.path)).toEqual([`/srtm/contribuyentes/c1/declaraciones?anio=${year}`])
 
     await userEvent.click(screen.getByRole('tab', { name: 'Declaraciones' }))
-    expect(await screen.findByRole('button', { name: `Editar declaración ${year}` })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: `Editar declaración ${year}` })).toBeInTheDocument()
     expect(declaraciones().map((c) => c.path)).toContain('/srtm/contribuyentes/c1/declaraciones')
   })
 

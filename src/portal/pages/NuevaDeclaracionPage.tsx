@@ -2,17 +2,19 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Save, Undo2, X } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
+import { QueryState } from '../components/QueryState'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { FieldGrid } from '../forms/FieldGrid'
 import { RecordForm } from '../forms/RecordForm'
+import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
 import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
-import type { Declaracion, Predio } from '../types'
+import type { Contribuyente, Declaracion, Predio } from '../types'
 import { DECLARACION_TABS } from './DeclaracionPage'
 
 const DATOS_FORM = 'dj-datos'
@@ -21,43 +23,60 @@ const UBICACION_FORM = 'dj-ubicacion'
 // the padrón's district, in the selva: where a new predio most likely is
 const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
 
+// datos del predio shows a few of the predio's fields beside the declaration's
+type DatosDelPredio = Declaracion & { condicion?: string | null; codigo_predio?: string | null; numero_registro?: number | null }
+
+const describeContribuyente = (c: Contribuyente): Picked => ({ id: c.id!, label: `${c.numero_documento ?? 's/d'} · ${c.nombre_completo ?? ''}` })
+
+// /contribuyentes/:id/declaraciones/nueva from a contribuyente; /declaraciones/nueva?predio=<id> from a predio
 export function NuevaDeclaracionRoute() {
-  const { id = '' } = useParams()
-  return <NuevaDeclaracionPage key={id} contribuyente={id} />
+  const { id } = useParams()
+  const [params] = useSearchParams()
+  const predio = id ? undefined : (params.get('predio') ?? undefined)
+  return <NuevaDeclaracionPage key={`${id ?? ''}:${predio ?? ''}`} contribuyente={id} predio={predio} />
 }
 
-// the srtm's "declaración jurada y registro de predio" for a contribuyente: step one the datos del predio, step two
-// the ubicación, of a predio already in the padrón or of one registered here. saving presents it and opens it
-function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
+// the srtm's "declaración jurada y registro de predio": step one the datos del predio, step two the ubicación, of a
+// predio already in the padrón or of one registered here. saving presents it and opens it. it comes with its
+// contribuyente, or with its predio (then the contribuyente is looked up in step one)
+function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: string; predio?: string }) {
   const navigate = useNavigate()
   const catalogos = useCatalogos()
   const refresh = useRefresh()
   const ficha = useQuery({
     queryKey: ['contribuyente', contribuyente, currentYear()],
-    queryFn: () => rentas.contribuyente(contribuyente, currentYear()),
+    queryFn: () => rentas.contribuyente(contribuyente!, currentYear()),
+    enabled: Boolean(contribuyente),
     placeholderData: keepPreviousData
   })
+  const fijo = useQuery({ queryKey: ['predio', predio, currentYear()], queryFn: () => rentas.predio(predio!, currentYear()), enabled: Boolean(predio) })
+  const [elegido, setElegido] = useState<Picked | null>(null)
+  const [pickError, setPickError] = useState<string | undefined>()
+  const titular = contribuyente ?? elegido?.id
   const [tab, setTab] = useState<'datos' | 'ubicacion'>('datos')
   const [datos, setDatos] = useState<Declaracion | null>(null)
-  // a predio of the padrón picked with "buscar predios": the declaration is on it, no new predio is registered
-  const [existente, setExistente] = useState<Predio | null>(null)
+  // a predio of the padrón picked with "buscar predios", or the one the wizard came with: the declaration is on it,
+  // no new predio is registered
+  const [buscado, setBuscado] = useState<Predio | null>(null)
+  const predioFijo = fijo.data?.predio ?? null
+  const existente = predioFijo ?? buscado
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [sections] = useState(() =>
     ubicacionSections((elegido: Elegido) => {
       const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
       if (!predio) return false
-      setExistente(predio)
+      setBuscado(predio)
       setError(null)
       return true
     })
   )
 
   const presentar = async (predio: { predio?: Predio; predio_id?: string }) => {
-    if (!datos) return
+    if (!datos || !titular) return
     // datos del predio carries the predio's tipo; the declaration does not keep it
     const declaracion = Object.fromEntries(Object.entries(datos).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
-    const dj = await rentas.presentarDeclaracion(contribuyente, { declaracion, ...predio })
+    const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
     await refresh()
     navigate(`/declaraciones/${dj.declaracion.id}?tab=transferentes`, { replace: true })
   }
@@ -73,7 +92,7 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
       setBusy(false)
     }
   }
-  const tipoPredio = (datos as (Declaracion & { condicion?: string | null }) | null)?.condicion ?? 'URBANO'
+  const tipoPredio = (datos as DatosDelPredio | null)?.condicion ?? 'URBANO'
 
   const c = ficha.data?.contribuyente
   return (
@@ -81,7 +100,11 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-wide text-ink-muted uppercase">
-            {c ? `${c.codigo ? `Contribuyente Nº ${c.codigo}` : 'Contribuyente'} - ${c.nombre_completo ?? ''}` : 'Contribuyente'}
+            {c
+              ? `${c.codigo ? `Contribuyente Nº ${c.codigo}` : 'Contribuyente'} - ${c.nombre_completo ?? ''}`
+              : predioFijo
+                ? `Predio ${predioFijo.codigo ?? ''} - ${predioFijo.direccion ?? ''}`
+                : 'Contribuyente'}
           </p>
           <h1 className="text-xl font-semibold text-ink uppercase">Nueva declaración jurada predial</h1>
           <p className="text-xs font-semibold tracking-wide text-brand uppercase italic">Declaración jurada y registro de predio</p>
@@ -121,28 +144,56 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
             render: () =>
               t.id === 'datos' ? (
                 <div className="px-6 pt-5">
-                  <RecordForm
-                    formId={DATOS_FORM}
-                    hideActions
-                    sections={DJ_DATOS_SECTIONS}
-                    options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
-                    initial={emptyOf<Declaracion & { condicion?: string | null }>(DJ_DATOS_SECTIONS, {
-                      condicion: 'URBANO',
-                      motivo: 'INSCRIPCION',
-                      medio_determinacion: 'DECLARACION JURADA',
-                      medio_presentacion: 'FISICO',
-                      fecha_presentacion: today(),
-                      anio: currentYear(),
-                      secuencia_uso: '001',
-                      condicion_propiedad: 'PROPIETARIO UNICO',
-                      porcentaje_condominio: 100
-                    })}
-                    submitLabel="Siguiente"
-                    onSubmit={async (values) => {
-                      setDatos(values)
-                      setTab('ubicacion')
-                    }}
-                  />
+                  {predio && !predioFijo ? (
+                    // the predio's code and tipo go in the form's first values
+                    <QueryState query={fijo}>{() => null}</QueryState>
+                  ) : (
+                    <RecordForm
+                      formId={DATOS_FORM}
+                      hideActions
+                      sections={DJ_DATOS_SECTIONS}
+                      options={{ ...catalogos.data?.declaracion_predial, condicion: catalogos.data?.predio?.condicion ?? [] }}
+                      initial={emptyOf<DatosDelPredio>(DJ_DATOS_SECTIONS, {
+                        condicion: predioFijo?.condicion ?? 'URBANO',
+                        codigo_predio: predioFijo?.codigo ?? null,
+                        numero_registro: predioFijo?.numero_registro ?? null,
+                        motivo: 'INSCRIPCION',
+                        medio_determinacion: 'DECLARACION JURADA',
+                        medio_presentacion: 'FISICO',
+                        fecha_presentacion: today(),
+                        anio: currentYear(),
+                        secuencia_uso: '001',
+                        condicion_propiedad: 'PROPIETARIO UNICO',
+                        porcentaje_condominio: 100
+                      })}
+                      submitLabel="Siguiente"
+                      onSubmit={async (values) => {
+                        if (!titular) {
+                          setPickError('Elige el contribuyente')
+                          return
+                        }
+                        setDatos(values)
+                        setTab('ubicacion')
+                      }}
+                    >
+                      {!contribuyente && (
+                        <div className="lg:w-1/2">
+                          <RecordPicker
+                            label="Contribuyente"
+                            placeholder="DNI, RUC o nombre"
+                            value={elegido}
+                            onChange={(picked) => {
+                              setElegido(picked)
+                              setPickError(undefined)
+                            }}
+                            search={(q) => rentas.contribuyentes(q, 0, 8)}
+                            describe={describeContribuyente}
+                            error={pickError}
+                          />
+                        </div>
+                      )}
+                    </RecordForm>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-5 px-6 pt-5">
@@ -152,10 +203,12 @@ function NuevaDeclaracionPage({ contribuyente }: { contribuyente: string }) {
                         <p className="text-brand-strong">
                           La declaración será sobre el predio <strong>{existente.codigo}</strong> del padrón · {existente.direccion}
                         </p>
-                        <Button type="button" variant="secondary" size="sm" onClick={() => setExistente(null)}>
-                          <Undo2 className="size-4" />
-                          Registrar un predio nuevo
-                        </Button>
+                        {!predioFijo && (
+                          <Button type="button" variant="secondary" size="sm" onClick={() => setBuscado(null)}>
+                            <Undo2 className="size-4" />
+                            Registrar un predio nuevo
+                          </Button>
+                        )}
                       </div>
                       <FieldGrid sections={UBICACION_SECTIONS} values={existente} />
                       {error && (

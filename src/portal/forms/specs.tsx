@@ -228,44 +228,6 @@ export const SUSTENTO_SECTIONS: SectionSpec[] = [
   }
 ]
 
-export const DECLARACION_SECTIONS: SectionSpec[] = [
-  {
-    title: 'Declaración',
-    fields: [
-      { name: 'anio', label: 'Año', kind: 'integer', required: true, span: 2 },
-      { name: 'secuencia_uso', label: 'Secuencia de uso', required: true, span: 2 },
-      { name: 'condicion_propiedad', label: 'Condición de propiedad', kind: 'enum', span: 2 },
-      { name: 'porcentaje_condominio', label: '% de condominio', kind: 'decimal', span: 2 }
-    ]
-  },
-  {
-    title: 'Uso y construcción',
-    fields: [
-      { name: 'uso', label: 'Uso', kind: 'enum', span: 2 },
-      { name: 'clasificacion', label: 'Clasificación', kind: 'enum', span: 6 },
-      { name: 'estado_construccion', label: 'Estado de construcción', kind: 'enum', span: 2 },
-      { name: 'numero_habitantes', label: 'Nº de habitantes', kind: 'integer', span: 2 }
-    ]
-  },
-  {
-    title: 'Áreas (m²)',
-    fields: [
-      { name: 'area_terreno', label: 'Área de terreno', kind: 'decimal', span: 2 },
-      { name: 'area_construida', label: 'Área construida', kind: 'decimal', span: 2 },
-      { name: 'longitud_frente', label: 'Longitud de frente (m)', kind: 'decimal', span: 2 }
-    ]
-  },
-  {
-    title: 'Valores',
-    fields: [
-      { name: 'valor_autoavaluo', label: 'Autoavalúo', kind: 'money', span: 2 },
-      { name: 'valor_condominio', label: 'Valor de condominio', kind: 'money', span: 2 },
-      { name: 'deduccion', label: 'Deducción', kind: 'money', span: 2 },
-      { name: 'valor_afecto', label: 'Valor afecto', kind: 'money', span: 2 }
-    ]
-  }
-]
-
 // the fields a form sends: everything but the custom ones, which only drive hidden fields
 export const dataFields = (sections: SectionSpec[]) => sections.flatMap((s) => s.fields).filter((f) => f.kind !== 'custom')
 

@@ -54,6 +54,7 @@ export function PortalApp() {
             <Route path="contribuyentes/nuevo" element={<NuevoContribuyentePage />} />
             <Route path="contribuyentes/:id" element={<ContribuyenteRoute />} />
             <Route path="contribuyentes/:id/declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
+            <Route path="declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
             <Route path="declaraciones/:id" element={<DeclaracionRoute />} />
             <Route path="predios" element={<PrediosPage />} />
             <Route path="predios/nuevo" element={<NuevoPredioPage />} />

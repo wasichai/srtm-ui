@@ -113,6 +113,5 @@ export const rentas = {
   crearPredio: (body: Predio) => send<Predio>('POST', '/srtm/predios', body),
   actualizarPredio: (id: string, body: Predio) => send<Predio>('PUT', `/srtm/predios/${id}`, body),
 
-  crearDeclaracion: (body: Declaracion) => send<Declaracion>('POST', '/srtm/declaraciones', body),
   actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body)
 }
