@@ -98,8 +98,10 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
       fields: [
         { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
         { name: 'condicion', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
-        { name: 'sector_catastral', label: 'Sector', required: true, span: 1 },
-        { name: 'manzana_catastral', label: 'Manzana catastral', required: true, span: 1 }
+        // not in the srtm (page 14): with both, the predio's code is sector-manzana-number; without, the backend
+        // takes its lote's municipal code or its own series
+        { name: 'sector_catastral', label: 'Sector', span: 1 },
+        { name: 'manzana_catastral', label: 'Manzana catastral', span: 1 }
       ]
     },
     {
