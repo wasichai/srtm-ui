@@ -64,8 +64,7 @@ export function NuevoContribuyentePage() {
                     medio_determinacion: 'DECLARACION JURADA',
                     medio_presentacion: 'FISICO',
                     fecha_presentacion: today(),
-                    fuente_informacion: 'MANUAL',
-                    tipo_documento: 'DNI'
+                    fuente_informacion: 'MANUAL'
                   })}
                   submitLabel="Siguiente"
                   onSubmit={inscribir}

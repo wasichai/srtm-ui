@@ -222,7 +222,7 @@ function validate(field: FieldSpec, value: string, values: FormValues): true | s
   if (!text) return isRequired(field, values) ? 'Este dato es obligatorio' : true
   if (field.kind === 'integer') return /^-?\d+$/.test(text) || 'Debe ser un número entero'
   if (field.kind === 'decimal' || field.kind === 'money') return /^-?\d+([.,]\d+)?$/.test(text) || 'Debe ser un número'
-  return true
+  return field.validate ? field.validate(text, values) : true
 }
 
 function toForm(fields: FieldSpec[], values: Record<string, unknown>): FormValues {

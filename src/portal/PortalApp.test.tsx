@@ -404,6 +404,7 @@ describe('portal', () => {
     expect(screen.getByLabelText('Código de contribuyente')).toHaveAttribute('placeholder', '(AUTOGENERADO)')
 
     await userEvent.selectOptions(await screen.findByLabelText(/Tipo de contribuyente/), 'PERSONA NATURAL')
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de documento/), 'DNI')
     await userEvent.type(screen.getByLabelText(/N° documento/), '43554564')
     await userEvent.type(screen.getByLabelText('Apellido paterno'), 'FLORES')
     await userEvent.type(screen.getByLabelText(/Nombres/), 'JUNIOR PAOLO')

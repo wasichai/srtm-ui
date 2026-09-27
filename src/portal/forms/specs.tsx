@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
 import type { CatalogKey } from '../types'
+import { errorDocumento, pideNumero } from './documento'
 import { UbigeoFields } from './UbigeoFields'
 
 // how each entity shows and edits: sections, labels and value kinds. names are the model's fields.
@@ -23,6 +24,8 @@ export interface FieldSpec {
   when?: (values: FormValues) => boolean
   // shown always, but greyed (and neither required nor sent) until this holds: the srtm's dependent fields
   enabledWhen?: (values: FormValues) => boolean
+  // a filled field's own check (a document number by its tipo): true, or the message
+  validate?: (value: string, values: FormValues) => true | string
   // kind multi: the choices, kept as one comma-separated text
   choices?: string[]
   // the backend's (codigo, fecha del registro...): shown, never edited
@@ -77,7 +80,15 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
     number: 2,
     fields: [
       { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1 },
-      { name: 'numero_documento', label: 'N° documento', required: true, span: 2 },
+      // greyed until a tipo is chosen, and for SIN DOCUMENTO (the backend stores none)
+      {
+        name: 'numero_documento',
+        label: 'N° documento',
+        required: true,
+        span: 2,
+        enabledWhen: (v) => pideNumero(v.tipo_documento),
+        validate: (value, v) => errorDocumento(v.tipo_documento, value) ?? true
+      },
       { name: 'fuente_informacion', label: 'Fuente información', kind: 'enum', required: true, span: 1 }
     ]
   },
@@ -145,7 +156,8 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
         name: 'unidad_urbana',
         label: 'Descripción unidad urbana',
         kind: 'suggest',
-        required: true,
+        // an address may have no unidad urbana, or no street ("Mz/Lt, AA.HH."): each is asked only with its tipo
+        required: (v) => !!v.tipo_unidad_urbana,
         span: 2,
         suggest: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_unidad_urbana, v.ubigeo)).content)
       },
@@ -154,7 +166,7 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
         name: 'via',
         label: 'Descripción de la vía',
         kind: 'suggest',
-        required: true,
+        required: (v) => !!v.tipo_via,
         span: 2,
         suggest: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content)
       },
