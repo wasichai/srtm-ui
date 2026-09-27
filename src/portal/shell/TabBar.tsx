@@ -14,9 +14,9 @@ export function TabBar() {
     )
 
   return (
-    <nav aria-label="Fichas abiertas" className="border-b border-border bg-surface px-4">
+    <nav aria-label="Fichas abiertas" data-ui="workspace-tabs" className="border-b border-border bg-surface px-4">
       <ul className="flex gap-1 overflow-x-auto pt-2">
-        <li className={tabClass(pathname === '/')}>
+        <li data-ui="workspace-tab" className={tabClass(pathname === '/')}>
           <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className="flex items-center gap-1.5 px-3 py-1.5">
             <Home className="size-3.5" />
             Inicio
@@ -26,7 +26,7 @@ export function TabBar() {
           const active = pathname === tab.path
           const Icon = tab.kind === 'predio' ? MapPinned : tab.kind === 'declaracion' ? FileText : tab.kind === 'lote' ? LandPlot : User
           return (
-            <li key={tab.path} className={tabClass(active)}>
+            <li key={tab.path} data-ui="workspace-tab" className={tabClass(active)}>
               <Link to={tab.path} aria-current={active ? 'page' : undefined} className="flex max-w-56 items-center gap-1.5 py-1.5 pr-1 pl-3">
                 <Icon className="size-3.5 shrink-0" />
                 <span className="truncate">{tab.label}</span>

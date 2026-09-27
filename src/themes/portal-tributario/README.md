@@ -22,6 +22,7 @@ Para probarlo sin el selector de temas (#45), abre `yarn dev` y escribe en la co
 | `src/themes/parciales.test.tsx`             | Cada parcial va bajo el tema, fuera de capas e importado; y los contrastes de sus colores propios.                                 |
 | `src/themes/css.ts`                         | Ayudas de los tests: leer una regla CSS y medir un contraste.                                                                      |
 | `src/portal/components/controles.tsx`       | `Button`, `Input`, `Textarea` y `NativeSelect` con sus ganchos `data-ui` (#47).                                                    |
+| `src/themes/portal-tributario/tabs.css`     | Pestañas carpeta de la ficha y de trabajo, y fieldsets de `RecordForm` con la leyenda sobre el borde (#48).                        |
 
 Las reglas `:root` de `extensions.css` y las de `[data-theme='…']` tienen la misma especificidad, así que gana la
 que va después. Por eso `extensions.css` se importa **antes** que los temas, y el test lo comprueba.
@@ -156,10 +157,44 @@ En light y dark solo aparecen los atributos.
 - **Dónde se usan.** Los envoltorios están en `RecordForm` y sus campos propios (`forms/`), en las cabeceras con
   acciones de Nuevo contribuyente, Nueva declaración y la ficha de la declaración, en `DatosPanel`, en la barra de
   `HijosPanel` y en los diálogos (`BuscarPrediosDialog`, `CambiosPendientes`, `EliminarFicha`, `AnularDeclaracion`).
-  Las listas (`Listas`, `Declaraciones`, `Condominos`), el inicio, el login y los paginadores siguen con los
-  controles de la librería: bajo el tema toman los tokens (colores y radios de 3px), pero no las medidas del
-  prototipo. Cuando wasichai/wasichai-ui#12 ponga ganchos `data-slot` en la librería, `controles.tsx` sobrará y los
+  Las listas (`Listas`, `Declaraciones`, `Condominos`), el inicio y el login siguen con los controles de la
+  librería: bajo el tema toman los tokens (colores y radios de 3px), pero no las medidas del prototipo. Los
+  paginadores los pinta `tables.css` (#49). Cuando wasichai/wasichai-ui#12 ponga ganchos `data-slot` en la librería, `controles.tsx` sobrará y los
   selectores pasarán a esos ganchos.
+
+### Pestañas y fieldsets (`tabs.css`, #48)
+
+Ganchos: `data-ui="ficha-tabs"` (el contenedor de `FichaTabs`), `"ficha-tab"` (cada pestaña, con su
+`aria-selected`) y `"ficha-panel"`; `"workspace-tabs"` y `"workspace-tab"` en `TabBar`; `"record-fieldset"`,
+`"record-legend"`, `"record-number"`, `"record-title"` y `"record-action"` en las secciones de `RecordForm`. El ARIA
+y el comportamiento de las pestañas (montaje perezoso, panel oculto) no cambian: solo se pintan.
+
+| Pieza                          | Bajo el tema                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Pestaña de la ficha            | carpeta de 16px, `padding: 13px 22px`, radio `3px 3px 0 0`; inactiva `#F0F0F0` con texto `#666`                     |
+| Pestaña activa                 | blanca, en negrita `ink`, borde `brand` y borde inferior blanco: se funde con el panel                              |
+| Tira de pestañas               | la línea `brand` de debajo es su fondo (un degradado de 1px), no un borde                                           |
+| Panel                          | borde `brand` sin borde superior, blanco, radio abajo y 24px abajo                                                  |
+| Tarjeta que envuelve la ficha  | se aparta (sin borde, sombra, fondo ni relleno inferior): las pestañas quedan sobre la página y el panel es la caja |
+| Pestañas de trabajo (`TabBar`) | el mismo lenguaje a 14px; la activa, blanca y en negrita, se funde con la ruta de debajo                            |
+| Fieldset de `RecordForm`       | borde de 1px `brand`, radio 3px, `padding: 6px 18px 20px`, 18px entre fieldsets                                     |
+| Leyenda                        | sobre el borde, 15px en negrita, color `shell`, sin mayúsculas ni tracking; el número sigue en su círculo `brand`   |
+| Acción de la sección           | sigue a la derecha, también sobre el borde, con fondo blanco que tapa la línea                                      |
+
+- **Por qué la línea es un fondo.** Para que la pestaña activa tape la línea de la tira, con un borde tendría que
+  bajar 1px por encima de él. La tira se desplaza en horizontal (`overflow-x-auto`), así que ese píxel también la
+  haría desplazable en vertical. Con la línea como fondo, cada pestaña inactiva lleva su borde inferior `brand` y la
+  activa lo lleva blanco.
+- **Muchas pestañas.** La ficha del contribuyente tiene siete y la declaración seis, con nombres largos. Con las
+  medidas del prototipo necesitan unos 1240px de tira. La tira es un contenedor (`container-type: inline-size`):
+  por debajo de 1240px las pestañas pasan a 15px con 12px a los lados, y por debajo de 1000px a 14px con 10px. Por
+  debajo de eso se desplazan, como en light.
+- **La leyenda y su acción.** La leyenda mide lo que su texto, así el borde del fieldset corre a ambos lados sin
+  trucos. La acción (el "Buscar predios" de la ubicación) sale del flujo con `position: absolute` a la derecha. Como
+  hija de la leyenda, que es flex, conserva su centro vertical: queda sobre el borde, como la leyenda.
+- **Selectores `:has()`.** La tarjeta que envuelve la ficha se reconoce por `:has(> [data-ui='ficha-tabs'])`, la
+  pestaña de trabajo activa por `:has(> [aria-current='page'])` y el espacio entre fieldsets por
+  `:has(+ [data-ui='record-fieldset'])`.
 
 ## Tokens de extensión en light y dark
 

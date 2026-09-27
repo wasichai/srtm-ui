@@ -52,6 +52,25 @@ describe('RecordForm: the theme hooks', () => {
     expect(codigo).toHaveAttribute('data-ui', 'input')
   })
 
+  it('marks each section as a fieldset whose legend has the number, the title and the action', () => {
+    render(
+      <RecordForm
+        sections={[{ ...SECTIONS[0], action: () => <button type="button">Buscar predios</button> }]}
+        options={{ sexo: ['HOMBRE', 'MUJER'] }}
+        initial={{ codigo: '', nombres: '', sexo: '', observacion: '', documentos: '' }}
+        submitLabel="Guardar"
+        onSubmit={async () => {}}
+      />
+    )
+    const fieldset = screen.getByRole('group', { name: /Datos personales/ })
+    expect(fieldset).toHaveAttribute('data-ui', 'record-fieldset')
+    const legend = fieldset.querySelector('legend')
+    expect(legend).toHaveAttribute('data-ui', 'record-legend')
+    expect(legend?.querySelector('[data-ui="record-number"]')).toHaveTextContent('3')
+    expect(legend?.querySelector('[data-ui="record-title"]')).toHaveTextContent('Datos personales')
+    expect(legend?.querySelector('[data-ui="record-action"]')).toContainElement(screen.getByRole('button', { name: 'Buscar predios' }))
+  })
+
   it('keeps aria-invalid on the fields it refuses', async () => {
     const { onSubmit } = renderForm()
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))

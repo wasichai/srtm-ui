@@ -11,7 +11,7 @@ const dir = join(__dirname, 'portal-tributario')
 const read = (file: string) => readFileSync(join(dir, file), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css']
+const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -58,5 +58,25 @@ describe('controls.css', () => {
     const disabled = rule(css, `${PORTAL} [data-ui='button']:disabled`)
     expect(disabled.get('cursor')).toBe('not-allowed')
     expect(disabled.get('pointer-events')).toBe('auto')
+  })
+})
+
+describe('tabs.css', () => {
+  const css = read('tabs.css')
+
+  it('joins the active tab to its panel', () => {
+    const active = rule(css, `${PORTAL} [data-ui='ficha-tab'][aria-selected='true']`)
+    expect(active.get('background')).toBe('var(--surface)')
+    expect(active.get('border-bottom-color')).toBe('var(--surface)')
+    expect(rule(css, `${PORTAL} [data-ui='ficha-panel']`).get('border-top')).toBe('0')
+  })
+
+  it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {
+    const legend = rule(css, `${PORTAL} [data-ui='record-legend']`)
+    expect(legend.get('font-size')).toBe('15px')
+    expect(legend.get('font-weight')).toBe('bold')
+    expect(legend.get('color')).toBe('var(--shell)')
+    expect(legend.get('text-transform')).toBe('none')
+    expect(legend.get('letter-spacing')).toBe('normal')
   })
 })

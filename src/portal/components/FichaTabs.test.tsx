@@ -1,0 +1,46 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { FileText } from 'lucide-react'
+import { useState } from 'react'
+import { describe, expect, it } from 'vitest'
+import { FichaTabs, type FichaTab } from './FichaTabs'
+
+// the hooks a theme styles the tabs by (portal-tributario's tabs.css), with the aria and the lazy panels as before
+
+const TABS: FichaTab[] = [
+  { id: 'datos', label: 'Datos', icon: FileText, render: () => <p>los datos</p> },
+  { id: 'domicilios', label: 'Domicilios', render: () => <p>los domicilios</p> },
+  { id: 'sustento', label: 'Sustento', disabled: true, render: () => <p>el sustento</p> }
+]
+
+function Ficha() {
+  const [active, setActive] = useState('datos')
+  return <FichaTabs tabs={TABS} label="Ficha" active={active} onChange={setActive} />
+}
+
+describe('FichaTabs: the theme hooks', () => {
+  it('marks the strip, each tab and each panel, keeping the tabs aria', () => {
+    render(<Ficha />)
+    expect(screen.getByRole('tablist', { name: 'Ficha' }).parentElement).toHaveAttribute('data-ui', 'ficha-tabs')
+    const datos = screen.getByRole('tab', { name: 'Datos' })
+    expect(datos).toHaveAttribute('data-ui', 'ficha-tab')
+    expect(datos).toHaveAttribute('aria-selected', 'true')
+    expect(datos).toHaveAttribute('aria-controls', 'panel-datos')
+    expect(screen.getByRole('tab', { name: 'Domicilios' })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-ui', 'ficha-panel')
+  })
+
+  it('keeps a disabled tab disabled and its icons', () => {
+    render(<Ficha />)
+    expect(screen.getByRole('tab', { name: 'Sustento' })).toBeDisabled()
+    expect(screen.getByRole('tab', { name: 'Datos' }).querySelector('svg')).not.toBeNull()
+  })
+
+  it('mounts a panel once opened and keeps it, hidden', async () => {
+    render(<Ficha />)
+    expect(screen.queryByText('los domicilios')).toBeNull()
+    await userEvent.click(screen.getByRole('tab', { name: 'Domicilios' }))
+    expect(screen.getByText('los domicilios')).toBeVisible()
+    expect(screen.getByText('los datos')).not.toBeVisible()
+  })
+})

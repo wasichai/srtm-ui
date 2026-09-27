@@ -173,13 +173,19 @@ export function RecordForm<T extends object>({
     <form ref={formRef} id={formId} onSubmit={submit} noValidate className="space-y-6">
       {children}
       {sections.map((section) => (
-        <fieldset key={section.title}>
-          <legend className="mb-3 flex w-full items-center gap-2 text-xs font-semibold tracking-wide text-ink uppercase">
+        <fieldset key={section.title} data-ui="record-fieldset">
+          <legend data-ui="record-legend" className="mb-3 flex w-full items-center gap-2 text-xs font-semibold tracking-wide text-ink uppercase">
             {section.number !== undefined && (
-              <span className="flex size-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-on-brand">{section.number}</span>
+              <span data-ui="record-number" className="flex size-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-on-brand">
+                {section.number}
+              </span>
             )}
-            {section.title}
-            {section.action && <span className="ml-auto font-normal tracking-normal normal-case">{section.action(form)}</span>}
+            <span data-ui="record-title">{section.title}</span>
+            {section.action && (
+              <span data-ui="record-action" className="ml-auto font-normal tracking-normal normal-case">
+                {section.action(form)}
+              </span>
+            )}
           </legend>
           <div className={GRID}>
             {section.fields.map((field) => (
