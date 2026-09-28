@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { Label } from '@wasichai/ui'
+import { Button, Label } from '@wasichai/ui'
 import { Check, Search } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '../components/controles'
 import type { Pagina } from '../types'
 
 export interface Picked {

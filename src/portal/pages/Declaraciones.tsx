@@ -74,7 +74,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
             <p>Registra una en la pestaña Declaraciones.</p>
           </EmptyState>
         ) : (
-          <Table data-ui="table">
+          <Table>
             <thead>
               <tr>
                 <Th>{otherTitle}</Th>
@@ -157,7 +157,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
           rows.length === 0 ? (
             <EmptyState title="Aún no hay declaraciones" />
           ) : (
-            <Table data-ui="table">
+            <Table>
               <thead>
                 <tr>
                   <Th>Año</Th>

@@ -1,6 +1,6 @@
-import { useTheme } from '@wasichai/core'
+import { PORTAL_TRIBUTARIO_THEME, useTheme } from '@wasichai/core'
 
-export const TEMA_PORTAL = 'portal-tributario'
+export const TEMA_PORTAL = PORTAL_TRIBUTARIO_THEME.id
 
 // which structure the screens draw: 'portal' (brand bar, tree menu, chevron steps...) only under the
 // portal-tributario theme; light, dark and the os setting keep the classic shell

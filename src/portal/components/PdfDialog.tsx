@@ -1,8 +1,7 @@
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
 import { Download, Loader2, Printer } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { rentas, RentasError } from '../api'
-import { Button } from './controles'
 
 export interface PdfDialogProps {
   // under /api: '/srtm/predios/p1/pu?anio=2026'

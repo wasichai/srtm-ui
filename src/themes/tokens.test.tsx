@@ -6,9 +6,10 @@ import { contrast, rule } from './css'
 
 const read = (...path: string[]) => readFileSync(join(__dirname, ...path), 'utf8')
 
-const base = read('..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'theme.css')
-const extensions = read('extensions.css')
-const portal = read('portal-tributario', 'tokens.css')
+// the theme is @wasichai/ui's since 0.3 (#66): these tests pin what srtm relies on from it
+const library = (...path: string[]) => read('..', '..', 'node_modules', '@wasichai', 'ui', 'dist', ...path)
+const base = library('theme.css')
+const portal = library('themes', 'portal-tributario', 'tokens.css')
 
 const PORTAL = "[data-theme='portal-tributario']"
 
@@ -27,18 +28,16 @@ describe('contrast', () => {
 })
 
 describe('extension tokens', () => {
-  it('every theme gets them, derived from its base tokens', () => {
-    const root = rule(extensions, ':root')
-    expect(customProperties(root)).toEqual(EXTENSION.map((name) => `--${name}`).sort())
-    for (const name of EXTENSION.filter((name) => name !== 'map-selected')) expect(root.get(`--${name}`), name).toMatch(/var\(--[a-z-]+\)/)
+  it('the library gives every theme the ones srtm uses', () => {
+    expect(customProperties(rule(base, "[data-theme='light']"))).toEqual(expect.arrayContaining(EXTENSION.map((name) => `--${name}`)))
   })
 
-  it('keeps the lotes map selection orange it has today', () => {
-    expect(rule(extensions, ':root').get('--map-selected')).toBe('#e8590c')
+  it('keeps the lotes map selection orange in light and dark', () => {
+    expect(rule(base, "[data-theme='light']").get('--map-selected')).toBe('#e8590c')
   })
 
   it('are tailwind colors', () => {
-    const inline = rule(extensions, '@theme inline')
+    const inline = rule(base, '@theme inline')
     for (const name of EXTENSION) expect(inline.get(`--color-${name}`), name).toBe(`var(--${name})`)
   })
 })
@@ -98,12 +97,14 @@ describe('portal-tributario', () => {
 })
 
 describe('src/index.css', () => {
-  it('imports the extension tokens and the themes after the base theme', () => {
+  it("imports the library's theme sheet after its base theme, then srtm's own partials", () => {
     const index = read('..', 'index.css')
     const at = (path: string) => index.indexOf(`@import '${path}';`)
     expect(at('@wasichai/ui/theme.css')).toBeGreaterThan(at('tailwindcss'))
-    expect(at('./themes/extensions.css')).toBeGreaterThan(at('@wasichai/ui/theme.css'))
-    expect(at('./themes/portal-tributario/index.css')).toBeGreaterThan(at('./themes/extensions.css'))
-    expect(read('portal-tributario', 'index.css')).toContain("@import './tokens.css';")
+    expect(at('@wasichai/ui/themes/portal-tributario.css')).toBeGreaterThan(at('@wasichai/ui/theme.css'))
+    expect(at('./themes/portal-tributario/index.css')).toBeGreaterThan(at('@wasichai/ui/themes/portal-tributario.css'))
+    // no local copy of what the library ships
+    expect(index).not.toContain('extensions.css')
+    expect(read('portal-tributario', 'index.css')).not.toContain('tokens.css')
   })
 })

@@ -131,7 +131,7 @@ describe('BarraInstruccion', () => {
       </BarraInstruccion>
     )
     const boton = screen.getByRole('button', { name: 'Importar' })
-    expect(boton).toHaveAttribute('data-ui', 'button')
+    expect(boton).toHaveAttribute('data-slot', 'button')
     expect(boton).toHaveAttribute('data-variant', 'primary')
     expect(boton).toHaveClass('bg-brand', 'text-on-brand')
     expect(boton.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')

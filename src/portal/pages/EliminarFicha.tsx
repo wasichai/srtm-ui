@@ -1,8 +1,7 @@
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
 import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Button } from '../components/controles'
 import { useWorkspaceTabs } from '../shell/WorkspaceTabs'
 
 // deleting a contribuyente or predio from its ficha (srtm-backend#7): confirmed first. the backend refuses, and says

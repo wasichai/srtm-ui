@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { Label } from '@wasichai/ui'
+import { Label, Textarea } from '@wasichai/ui'
 import { useEffect } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { rentas } from '../api'
-import { NativeSelect, Textarea } from '../components/controles'
+import { NativeSelect } from '../components/controles'
 import { bloquear, desbloquear } from './bloqueo'
 import type { FormValues } from './specs'
 

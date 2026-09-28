@@ -1,11 +1,11 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { cn, Dialog, DialogContent, DialogDescription, DialogTitle, Label, Table, Td, Th } from '@wasichai/ui'
+import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, Table, Td, Th } from '@wasichai/ui'
 import { Camera, FileText, Pencil, Plus, RotateCcw, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
-import { Button, Input, NativeSelect } from '../components/controles'
+import { NativeSelect } from '../components/controles'
 import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
 import { recordIdOf } from '../components/geo'
@@ -248,7 +248,7 @@ function Busqueda({
           <EmptyState title="No se encontraron resultados" />
         ) : (
           <div className="rounded-md border border-border">
-            <Table data-ui="table" aria-label="Resultados">
+            <Table aria-label="Resultados">
               <thead>
                 {donde === 'catastro' ? (
                   <tr>

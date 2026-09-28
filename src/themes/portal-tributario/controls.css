@@ -1,119 +1,15 @@
-/* controls (wasichai/srtm-ui#47): buttons, inputs, selects and checks as in the prototype. unlayered, so they win over
-   tailwind's utilities; hooked on the data-ui, data-variant and data-size that src/portal/components/controles.tsx
-   puts on @wasichai/ui's controls. what the prototype does not say (sizes sm and icon, ghost, danger) follows it */
+/* controls (#47, #66): @wasichai/ui's theme sheet gives the library's buttons and fields the prototype's shape. here only
+   what it leaves to the app on purpose. unlayered, so these win over tailwind's utilities */
 
-/* buttons: 15px text, 3px corners, a 1px border on every variant so they all share one height */
-[data-theme='portal-tributario'] [data-ui='button'] {
-    border: 1px solid transparent;
-    border-radius: 3px;
-    font-size: 15px;
-    line-height: 1.45;
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-size='md'] {
-    height: auto;
-    padding: 10px 20px;
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-size='md']:is([data-variant='primary'], [data-variant='danger']) {
-    padding-inline: 26px;
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-size='sm'] {
-    height: auto;
-    padding: 5px 12px;
-    font-size: 14px;
-}
-
-/* primary: steel, darker on hover */
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='primary'] {
-    background: var(--brand);
-    color: var(--on-brand);
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='primary']:hover:not(:disabled) {
-    background: var(--brand-strong);
-}
-
-/* secondary: white with a #ccc border, grey on hover. the text colour stays the component's (an icon may be brand) */
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='secondary'] {
-    background: var(--surface);
-    border-color: #cccccc;
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='secondary']:hover:not(:disabled) {
-    background: #f0f0f0;
-}
-
-/* ghost: a link-coloured button without a box until hovered */
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='ghost'] {
+/* ghost buttons in the portal's content read as links, grey on hover. only in the content (#content): the sheet leaves
+   ghost alone because the shell's and the admin's ghost buttons keep their own colours */
+[data-theme='portal-tributario'] #content [data-slot='button'][data-variant='ghost'] {
     background: transparent;
     color: var(--link);
 }
 
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='ghost']:hover:not(:disabled) {
+[data-theme='portal-tributario'] #content [data-slot='button'][data-variant='ghost']:hover:not(:disabled) {
     background: #f0f0f0;
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='danger'] {
-    background: var(--danger);
-    color: var(--on-danger);
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='danger']:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--danger) 85%, #000000);
-}
-
-/* the round icon button: a white icon on a grey disc. the prototype's #8B99A6 gives 2.9:1 with white, short of the
-   3:1 of WCAG 1.4.11; #8794A0 is the nearest that reaches it (3.1:1). hover as in the prototype (4.4:1) */
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='round'] {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: #8794a0;
-    color: #ffffff;
-}
-
-[data-theme='portal-tributario'] [data-ui='button'][data-variant='round']:hover:not(:disabled) {
-    background: #6d7a86;
-}
-
-/* disabled: faded, and the not-allowed cursor shows (the library turns pointer events off, which hides it) */
-[data-theme='portal-tributario'] [data-ui='button']:disabled {
-    cursor: not-allowed;
-    pointer-events: auto;
-    opacity: 0.55;
-}
-
-/* inputs, text areas and selects: #ccc border, 3px corners, 8px 10px padding, 14.5px text */
-[data-theme='portal-tributario'] :is([data-ui='input'], [data-ui='textarea'], [data-ui='select']) {
-    border-color: #cccccc;
-    border-radius: 3px;
-    padding: 8px 10px;
-    font-size: 14.5px;
-    line-height: 1.45;
-}
-
-/* one height for inputs and selects (a select ignores line-height): 8px + 20px + 8px and the border */
-[data-theme='portal-tributario'] :is([data-ui='input'], [data-ui='select']) {
-    height: 38px;
-    line-height: 20px;
-}
-
-/* focused: the cyan border and glow of the prototype in place of the outline */
-[data-theme='portal-tributario'] :is([data-ui='input'], [data-ui='textarea'], [data-ui='select']):focus {
-    outline: none;
-    border-color: var(--focus);
-    box-shadow:
-        inset 0 1px 1px rgb(0 0 0 / 6%),
-        0 0 6px color-mix(in srgb, var(--focus) 45%, transparent);
-}
-
-/* after the focus: an invalid field keeps its danger border, focused or not */
-[data-theme='portal-tributario'] :is([data-ui='input'], [data-ui='textarea'], [data-ui='select'])[aria-invalid='true'] {
-    border-color: var(--danger);
 }
 
 /* radios and checkboxes: 16px, in the link blue */

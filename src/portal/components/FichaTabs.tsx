@@ -21,8 +21,8 @@ export function FichaTabs({ tabs, label, active, onChange }: { tabs: FichaTab[];
   const mounted = opened.includes(current.id) ? opened : [...opened, current.id]
 
   return (
-    <div data-ui="ficha-tabs">
-      <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-border px-4">
+    <div data-slot="tabs">
+      <div role="tablist" data-slot="tabs-list" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-border px-4">
         {tabs.map((tab) => {
           const selected = tab.id === current.id
           const Icon = tab.icon
@@ -31,7 +31,7 @@ export function FichaTabs({ tabs, label, active, onChange }: { tabs: FichaTab[];
               key={tab.id}
               type="button"
               role="tab"
-              data-ui="ficha-tab"
+              data-slot="tabs-trigger"
               id={`tab-${tab.id}`}
               aria-selected={selected}
               aria-controls={`panel-${tab.id}`}
@@ -54,7 +54,7 @@ export function FichaTabs({ tabs, label, active, onChange }: { tabs: FichaTab[];
       {tabs
         .filter((tab) => mounted.includes(tab.id))
         .map((tab) => (
-          <div key={tab.id} role="tabpanel" data-ui="ficha-panel" id={`panel-${tab.id}`} aria-labelledby={`tab-${tab.id}`} hidden={tab.id !== current.id}>
+          <div key={tab.id} role="tabpanel" data-slot="tabs-content" id={`panel-${tab.id}`} aria-labelledby={`tab-${tab.id}`} hidden={tab.id !== current.id}>
             {tab.render()}
           </div>
         ))}

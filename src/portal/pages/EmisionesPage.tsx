@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '@wasichai/core'
-import { Badge, Card, CardBody, cn, Table, Td, Th } from '@wasichai/ui'
+import { Badge, Button, Card, CardBody, cn, Table, Td, Th } from '@wasichai/ui'
 import { Download, Loader2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
-import { Button } from '../components/controles'
 import { guardarArchivo } from '../components/descarga'
 import { currentYear, formatDate, formatText } from '../components/format'
 import { EmptyState, QueryState } from '../components/QueryState'
@@ -92,7 +91,7 @@ export function EmisionesPage() {
             emisiones.length === 0 ? (
               <EmptyState title="Aún no hay emisiones" />
             ) : (
-              <Table data-ui="table" aria-label="Emisiones">
+              <Table aria-label="Emisiones">
                 <thead>
                   <tr>
                     <Th>Año</Th>
