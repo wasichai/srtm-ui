@@ -63,7 +63,7 @@ const predio = {
   codigo: '01-01-0001',
   sector_catastral: '01',
   manzana_catastral: '01',
-  condicion: 'URBANO',
+  tipo_predio: 'PREDIO URBANO',
   direccion: 'JR. LIMA 123',
   via: 'LIMA',
   numero: '123',
@@ -110,7 +110,7 @@ const routes: MockRoute[] = [
     path: '/srtm/catalogos',
     body: {
       predio: {
-        condicion: ['URBANO', 'RUSTICO'],
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
         region: ['COSTA', 'SIERRA', 'SELVA'],
         tipo_via: ['AVENIDA', 'CALLE'],
         tipo_zona: ['URBANIZACION', 'CERCADO']
@@ -214,7 +214,7 @@ describe('catastro fiscal', () => {
       predio: {
         codigo: null,
         codigo_cpu: '54102166-0001-2',
-        condicion: 'URBANO',
+        tipo_predio: 'PREDIO URBANO',
         ubigeo: '140101',
         departamento: 'LAMBAYEQUE',
         provincia: 'CHICLAYO',

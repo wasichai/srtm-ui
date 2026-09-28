@@ -52,7 +52,7 @@ function sobre<T extends object>(latest: T, values: object, campos: string[]): T
 const FORMULARIOS = ['datos', 'ubicacion', 'caracteristicas'] as const
 type Formulario = (typeof FORMULARIOS)[number]
 // the predio's tipo, in datos del predio and in the ubicación: one value
-export const COMUNES = ['condicion'] as const
+export const COMUNES = ['tipo_predio'] as const
 const etiqueta = (tab: string) => DECLARACION_TABS.find((t) => t.id === tab)?.label ?? tab
 
 // of a form's changes, the fields that are this record's
@@ -129,10 +129,10 @@ function DeclaracionPage({ id }: { id: string }) {
       const deCaracteristicas = propios(valores.caracteristicas, CARACTERISTICAS_SECTIONS)
       const deUbicacion = propios(valores.ubicacion, UBICACION_SECTIONS)
       // the tipo de predio shown in datos del predio is the predio's
-      const condicion = valores.datos?.condicion as string | null | undefined
-      const otraCondicion = condicion !== undefined && condicion !== latest.predio.condicion
-      const predio = deUbicacion.length > 0 || otraCondicion ? sobre(latest.predio, valores.ubicacion ?? {}, deUbicacion) : null
-      if (predio && otraCondicion) predio.condicion = condicion ?? null
+      const tipoPredio = valores.datos?.tipo_predio as string | null | undefined
+      const otroTipo = tipoPredio !== undefined && tipoPredio !== latest.predio.tipo_predio
+      const predio = deUbicacion.length > 0 || otroTipo ? sobre(latest.predio, valores.ubicacion ?? {}, deUbicacion) : null
+      if (predio && otroTipo) predio.tipo_predio = tipoPredio ?? null
       if (deDatos.length > 0 || deCaracteristicas.length > 0) {
         const declaracion = sobre(sobre(latest.declaracion, valores.datos ?? {}, deDatos), valores.caracteristicas ?? {}, deCaracteristicas)
         try {
@@ -175,7 +175,7 @@ function DeclaracionPage({ id }: { id: string }) {
           ...declaracion,
           codigo_predio: predio.codigo,
           numero_registro: predio.numero_registro,
-          condicion: predio.condicion,
+          tipo_predio: predio.tipo_predio,
           fecha_actualizacion: actualizado ?? null
         }
         // an annulled one (a descargo) is only read: no way back

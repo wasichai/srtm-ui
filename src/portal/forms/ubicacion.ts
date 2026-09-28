@@ -8,9 +8,6 @@ import type { FormValues } from './specs'
 
 export type Elegido = { kind: 'predio'; predio: Predio } | { kind: 'catastro'; lote: CatastroFiscal; predio: Predio | null }
 
-// the catastro writes PREDIO URBANO, the padrón URBANO
-export const condicionDe = (tipoPredio: string | null | undefined) => (tipoPredio ? tipoPredio.replace(/^PREDIO /, '') : null)
-
 // a lote's data as a predio's ubicación. its municipal code (the predio's code in the padrón) is shown, not sent: the
 // backend gives a new predio the code of the lote with its CPU. the lote carries the ubigeo code only: with the INEI
 // list, its departamento, provincia and distrito too
@@ -20,7 +17,7 @@ export function ubicacionDeLote(lote: CatastroFiscal, ubigeos?: Ubigeo[]): Parti
     codigo: lote.codigo_predio_municipal,
     codigo_cpu: lote.codigo_cpu,
     partida_registral: lote.partida_registral,
-    condicion: condicionDe(lote.tipo_predio),
+    tipo_predio: lote.tipo_predio,
     ubigeo: lote.ubigeo,
     tipo_via: lote.tipo_via,
     via: lote.via,
@@ -45,7 +42,7 @@ const UBICACION_CAMPOS = [
   'codigo',
   'codigo_cpu',
   'partida_registral',
-  'condicion',
+  'tipo_predio',
   'region',
   'ubigeo',
   'departamento',

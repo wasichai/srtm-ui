@@ -16,8 +16,8 @@ const year = new Date().getFullYear()
 const juan = { id: 'c1', tipo_documento: 'DNI', numero_documento: '20529936', nombre_completo: 'QUISPE MAMANI JUAN' }
 const rosa = { id: 'c2', tipo_documento: 'DNI', numero_documento: '43434352', nombre_completo: 'NEIRA CAMPOS ROSA' }
 const pedro = { id: 'c3', tipo_documento: 'DNI', numero_documento: '41112223', nombre_completo: 'PEREZ LUNA PEDRO' }
-const compartido = { id: 'p1', codigo: '01-01-0001', direccion: 'JR. LIMA 123', condicion: 'URBANO' }
-const propio = { id: 'p2', codigo: '01-01-0002', direccion: 'JR. LIMA 125', condicion: 'URBANO' }
+const compartido = { id: 'p1', codigo: '01-01-0001', direccion: 'JR. LIMA 123', tipo_predio: 'PREDIO URBANO' }
+const propio = { id: 'p2', codigo: '01-01-0002', direccion: 'JR. LIMA 125', tipo_predio: 'PREDIO URBANO' }
 
 const declaracion = (id: string, contribuyente: string, predio: string, valores: Record<string, unknown>) => ({
   id,

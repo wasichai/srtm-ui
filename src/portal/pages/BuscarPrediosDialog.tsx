@@ -287,7 +287,7 @@ function Busqueda({
                       <Td className="whitespace-nowrap">
                         {formatText(predio.sector_catastral)} / {formatText(predio.manzana_catastral)}
                       </Td>
-                      <Td>{formatText(predio.condicion)}</Td>
+                      <Td>{formatText(predio.tipo_predio)}</Td>
                     </tr>
                   )
                 })}

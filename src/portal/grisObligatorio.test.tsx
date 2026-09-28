@@ -46,7 +46,7 @@ const opciones = (select: HTMLElement) =>
 const etiquetaDe = (name: string) => document.querySelector(`label[for="field-${name}"]`)
 
 const catalogos = {
-  predio: { condicion: ['URBANO', 'RUSTICO'] },
+  predio: { tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'] },
   declaracion_predial: {
     medio_presentacion: ['FISICO', 'VIRTUAL'],
     tipo_adquisicion: ['COMPRA'],
@@ -56,7 +56,7 @@ const catalogos = {
 }
 
 const datos = {
-  condicion: 'URBANO',
+  tipo_predio: 'PREDIO URBANO',
   medio_determinacion: 'DECLARACION JURADA',
   medio_presentacion: 'FISICO',
   fecha_presentacion: '2026-09-24',
@@ -134,7 +134,7 @@ describe('datos de la ubicación (page 14)', () => {
     provincia: 'CHANCHAMAYO',
     distrito: 'PERENE',
     region: 'SELVA',
-    condicion: 'URBANO',
+    tipo_predio: 'PREDIO URBANO',
     tipo_via: null,
     via: 'MARGINAL',
     habilitacion_urbana: 'UNION PERENE',
@@ -268,7 +268,7 @@ describe('an obra complementaria (pages 18 and 19)', () => {
 const admin = { id: 'u1', email: 'admin@wasichai.local', displayName: 'Admin', organizationId: 'o1', roles: ['ADMIN'] }
 const contribuyente = { id: 'c1', codigo: '000012', tipo_persona: 'NATURAL', numero_documento: '20529936', nombre_completo: 'QUISPE MAMANI JUAN' }
 const otro = { id: 'c2', codigo: '000013', tipo_persona: 'NATURAL', numero_documento: '43434352', nombre_completo: 'NEIRA CAMPOS DUBERLI' }
-const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, condicion: 'URBANO', direccion: 'JR. LIMA 123', region: 'SELVA' }
+const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123', region: 'SELVA' }
 const declaracion = {
   id: 'd1',
   contribuyente: 'c1',

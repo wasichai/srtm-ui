@@ -191,7 +191,7 @@ describe('the selects show the srtm wording', () => {
   it('labels the documentos de sustento with their accents and sends them plain', async () => {
     const onSubmit = vi.fn(async () => {})
     const datos = {
-      condicion: 'URBANO',
+      tipo_predio: 'PREDIO URBANO',
       medio_presentacion: 'FISICO',
       fecha_presentacion: '2026-09-24',
       anio: 2026,
@@ -207,7 +207,7 @@ describe('the selects show the srtm wording', () => {
       <RecordForm
         sections={DJ_DATOS_SECTIONS}
         options={{
-          condicion: ['URBANO', 'RUSTICO'],
+          tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
           medio_presentacion: ['FISICO'],
           tipo_adquisicion: ['COMPRA'],
           condicion_propiedad: ['PROPIETARIO UNICO', 'CONDOMINO']
@@ -220,13 +220,13 @@ describe('the selects show the srtm wording', () => {
     // page 11: PREDIO URBANO, PREDIO RÚSTICO; page 12: PROPIETARIO ÚNICO
     expect(opciones(screen.getByLabelText(/Tipo de predio/))).toEqual([
       ['', 'SELECCIONAR'],
-      ['URBANO', 'PREDIO URBANO'],
-      ['RUSTICO', 'PREDIO RÚSTICO']
+      ['PREDIO URBANO', 'PREDIO URBANO'],
+      ['PREDIO RUSTICO', 'PREDIO RÚSTICO']
     ])
     expect(opciones(screen.getByLabelText(/Tipo de propiedad/))).toContainEqual(['PROPIETARIO UNICO', 'PROPIETARIO ÚNICO'])
     await userEvent.click(screen.getByLabelText('ESCRITURA PÚBLICA'))
     await userEvent.click(screen.getByRole('button', { name: 'Grabar' }))
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ documentos_sustento: 'MINUTA, ESCRITURA PUBLICA', condicion: 'URBANO' }))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ documentos_sustento: 'MINUTA, ESCRITURA PUBLICA', tipo_predio: 'PREDIO URBANO' }))
   })
 })
 
@@ -244,7 +244,7 @@ describe('the ficha shows the srtm wording', () => {
     render(
       <FieldGrid
         sections={UBICACION_SECTIONS}
-        values={{ condicion: 'URBANO', tipo_via: 'JIRON', via: 'LIMA', tipo_zona: 'URBANIZACION', habilitacion_urbana: 'SOL' }}
+        values={{ tipo_predio: 'PREDIO URBANO', tipo_via: 'JIRON', via: 'LIMA', tipo_zona: 'URBANIZACION', habilitacion_urbana: 'SOL' }}
       />
     )
     expect(valor('Tipo de predio')).toBe('PREDIO URBANO')

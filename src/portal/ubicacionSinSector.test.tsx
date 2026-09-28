@@ -19,7 +19,7 @@ const predio = {
   codigo: 'P-000001',
   sector_catastral: null,
   manzana_catastral: null,
-  condicion: 'URBANO',
+  tipo_predio: 'PREDIO URBANO',
   direccion: 'AVENIDA MARGINAL, UNION PERENE, JUNIN-CHANCHAMAYO-PERENE',
   numero_registro: 1
 }
@@ -36,7 +36,12 @@ const routes: MockRoute[] = [
   {
     path: '/srtm/catalogos',
     body: {
-      predio: { condicion: ['URBANO', 'RUSTICO'], region: ['COSTA', 'SIERRA', 'SELVA'], tipo_via: ['AVENIDA', 'CALLE'], tipo_zona: ['CENTRO POBLADO'] },
+      predio: {
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
+        region: ['COSTA', 'SIERRA', 'SELVA'],
+        tipo_via: ['AVENIDA', 'CALLE'],
+        tipo_zona: ['CENTRO POBLADO']
+      },
       declaracion_predial: {
         medio_presentacion: ['FISICO'],
         medio_determinacion: ['DECLARACION JURADA'],

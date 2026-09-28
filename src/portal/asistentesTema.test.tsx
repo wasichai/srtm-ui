@@ -21,7 +21,7 @@ const contribuyente = {
   nombre_completo: 'QUISPE MAMANI JUAN',
   codigo: '000012'
 }
-const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, condicion: 'URBANO', direccion: 'JR. LIMA 123', region: 'SELVA' }
+const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123', region: 'SELVA' }
 const declaracion = {
   id: 'd1',
   contribuyente: 'c1',
@@ -59,7 +59,7 @@ function routes(theme: string): MockRoute[] {
           medio_presentacion: ['FISICO'],
           fuente_informacion: ['MANUAL']
         },
-        predio: { condicion: ['URBANO', 'RUSTICO'], region: ['SELVA'], tipo_via: ['AVENIDA'], tipo_zona: ['CENTRO POBLADO'] },
+        predio: { tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'], region: ['SELVA'], tipo_via: ['AVENIDA'], tipo_zona: ['CENTRO POBLADO'] },
         declaracion_predial: { medio_presentacion: ['FISICO'], tipo_adquisicion: ['COMPRA'], condicion_propiedad: ['PROPIETARIO UNICO', 'CONDOMINO'] }
       }
     },

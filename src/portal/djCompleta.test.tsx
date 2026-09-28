@@ -24,7 +24,7 @@ const predio = {
   id: 'p1',
   codigo: '01-01-0001',
   numero_registro: 5243,
-  condicion: 'RUSTICO',
+  tipo_predio: 'PREDIO RUSTICO',
   direccion: 'JR. LIMA 123',
   region: 'SELVA'
 }
@@ -63,7 +63,7 @@ const routes: MockRoute[] = [
   {
     path: '/srtm/catalogos',
     body: {
-      predio: { condicion: ['URBANO', 'RUSTICO'] },
+      predio: { tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'] },
       declaracion_predial: {
         medio_presentacion: ['FISICO', 'VIRTUAL'],
         tipo_adquisicion: ['COMPRA', 'HERENCIA'],
@@ -158,7 +158,7 @@ describe('the full declaración jurada', () => {
     // the predio is known: its code, registration and tipo show in datos del predio
     expect(await screen.findByLabelText('Código de predio')).toHaveValue('01-01-0001')
     expect(screen.getByLabelText('Número de registro de predio')).toHaveValue('5243')
-    expect(screen.getByLabelText(/Tipo de predio/)).toHaveValue('RUSTICO')
+    expect(screen.getByLabelText(/Tipo de predio/)).toHaveValue('PREDIO RUSTICO')
 
     await screen.findByRole('option', { name: 'HERENCIA' })
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'HERENCIA')

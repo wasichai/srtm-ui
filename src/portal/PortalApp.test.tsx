@@ -117,7 +117,7 @@ const predio = {
   codigo: '01-01-0001',
   sector_catastral: '01',
   manzana_catastral: '01',
-  condicion: 'URBANO',
+  tipo_predio: 'PREDIO URBANO',
   direccion: 'JR. LIMA 123',
   via: null,
   numero: '123',
@@ -221,7 +221,7 @@ const routes: MockRoute[] = [
       },
       relacionado: { tipo_relacionado: ['CONYUGE', 'APODERADO'], tipo_documento: ['DNI', 'RUC'], estado: ['ACTIVO', 'INACTIVO'] },
       predio: {
-        condicion: ['URBANO', 'RUSTICO'],
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
         region: ['COSTA', 'SIERRA', 'SELVA'],
         tipo_via: ['AVENIDA', 'CALLE'],
         tipo_zona: ['URBANIZACION', 'CERCADO']
@@ -569,7 +569,7 @@ describe('portal', () => {
 
     await screen.findByRole('option', { name: 'COMPRA' })
     await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'COMPRA')
-    await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2024-09-04')
     await userEvent.type(screen.getByLabelText(/Folios/), '2')
     await userEvent.click(screen.getByRole('checkbox', { name: 'MINUTA' }))
@@ -598,7 +598,7 @@ describe('portal', () => {
       predio: {
         sector_catastral: '01',
         manzana_catastral: '02',
-        condicion: 'RUSTICO',
+        tipo_predio: 'PREDIO RUSTICO',
         via: 'MARGINAL',
         codigo_cpu: '54102166-0001-2',
         lote_geom: SQUARE,
@@ -607,7 +607,7 @@ describe('portal', () => {
       }
     })
     // tipo de predio is the predio's, not the declaration's
-    expect((post.body as { declaracion: object }).declaracion).not.toHaveProperty('condicion')
+    expect((post.body as { declaracion: object }).declaracion).not.toHaveProperty('tipo_predio')
     expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 39147' })).toBeInTheDocument()
   })
 
@@ -732,14 +732,14 @@ describe('portal', () => {
     ])
     expect(await screen.findByLabelText('Número de registro de predio')).toHaveValue('5243')
     expect(screen.getByLabelText('Fecha de actualización')).toHaveValue('25/09/2026')
-    await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await userEvent.type(screen.getByLabelText('Otros datos'), 'CON RIEGO')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     const declaracionPut = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
     expect(declaracionPut.body).toMatchObject({ otros_datos: 'CON RIEGO', numero_declaracion: 39147 })
-    expect(declaracionPut.body).not.toHaveProperty('condicion')
+    expect(declaracionPut.body).not.toHaveProperty('tipo_predio')
     const predioPut = await called((c) => c.method === 'PUT' && c.path === '/srtm/predios/p1')
-    expect(predioPut.body).toMatchObject({ condicion: 'RUSTICO', codigo: '01-01-0001' })
+    expect(predioPut.body).toMatchObject({ tipo_predio: 'PREDIO RUSTICO', codigo: '01-01-0001' })
   })
 
   it('opens a new predio already located from a lote of the catastro that is no predio yet', async () => {

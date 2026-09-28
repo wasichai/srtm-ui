@@ -15,7 +15,7 @@ const admin = { id: 'u1', email: 'admin@wasichai.local', displayName: 'Admin', o
 const year = new Date().getFullYear()
 
 const contribuyente = { id: 'c1', tipo_persona: 'NATURAL', tipo_documento: 'DNI', numero_documento: '20529936', nombre_completo: 'QUISPE MAMANI JUAN' }
-const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, condicion: 'URBANO', direccion: 'JR. LIMA 123' }
+const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123' }
 const declaracion = {
   id: 'd1',
   contribuyente: 'c1',
@@ -206,6 +206,19 @@ describe('clase, sub clase and uso of the predio', () => {
     await waitFor(() => expect(panel.getByLabelText(/Clase de uso/)).toHaveAttribute('aria-invalid', 'true'))
     expect(panel.getByLabelText(/Sub clase de uso/)).toHaveAttribute('aria-invalid', 'true')
     expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+  })
+
+  // the srtm's DJ has neither (M01-1-014): the padrón's clasificacion and estado_construccion stay in the model, unseen
+  it('asks for no clasificación nor estado de construcción', async () => {
+    const panel = await editar({ clasificacion: 'EDIFICIO-OFICINAS', estado_construccion: 'TERMINADO' })
+    expect(panel.queryByLabelText(/Clasificación/)).not.toBeInTheDocument()
+    expect(panel.queryByLabelText(/Estado de construcción/)).not.toBeInTheDocument()
+    await userEvent.selectOptions(panel.getByLabelText(/Clase de uso/), 'RESIDENCIAL')
+    await userEvent.selectOptions(panel.getByLabelText(/Sub clase de uso/), 'UNIFAMILIAR')
+    await userEvent.selectOptions(panel.getByLabelText(/Uso del predio/), 'CASA HABITACIÓN')
+    await guardar()
+    // what it has goes back as it is
+    expect((await put()).body).toMatchObject({ clasificacion: 'EDIFICIO-OFICINAS', estado_construccion: 'TERMINADO' })
   })
 
   it('lists, in the ficha, a declaration with only its clase as it is', async () => {

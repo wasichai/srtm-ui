@@ -41,7 +41,7 @@ function PredioPage({ id }: { id: string }) {
             title={`${predio.codigo ?? ''} · ${predio.direccion ?? ''}`}
             badges={
               <>
-                {predio.condicion && <Badge>{predio.condicion}</Badge>}
+                {predio.tipo_predio && <Badge>{predio.tipo_predio}</Badge>}
                 {(predio.sector_catastral || predio.manzana_catastral) && (
                   <span>
                     Sector {predio.sector_catastral ?? '—'} · Manzana {predio.manzana_catastral ?? '—'}
