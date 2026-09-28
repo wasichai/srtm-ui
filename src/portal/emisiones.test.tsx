@@ -5,7 +5,8 @@ import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
 
 // la emisión masiva de HR y PU de un año (wasichai/srtm-ui#62, épica wasichai/srtm-backend#37): se lanza, se sigue su
-// avance mientras corre en segundo plano y, al terminar, se descarga el archivo
+// avance mientras corre en segundo plano y, al terminar, se descarga el archivo. wasichai/srtm-ui#67: el 403 sin
+// permiso, el archivo depurado por la retención (archivo null, 410) y la eliminación de una emisión
 
 // jsdom has no webgl
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => <div data-testid="lotes-map" /> }))
@@ -201,5 +202,99 @@ describe('emisión masiva', () => {
     const items = within(within(terminada).getByRole('list')).getAllByRole('listitem')
     expect(items.map((li) => li.textContent)).toEqual(['000123: Faltan parámetros del año', '000124: Sin DJ vigente'])
     expect(within(terminada).getByRole('button', { name: /Descargar/ })).toBeInTheDocument()
+  })
+  it("says the user may not launch emissions (403), with the backend's detail", async () => {
+    start('/emisiones', { path: '/srtm/emisiones', body: [] }, [
+      { method: 'POST', path: '/srtm/emisiones', status: 403, body: { title: 'Forbidden', detail: 'Falta UPDATE sobre emision_masiva' } }
+    ])
+    await screen.findByText('Aún no hay emisiones')
+    await userEvent.click(screen.getByRole('button', { name: 'Emitir' }))
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent('No tiene permiso para lanzar emisiones masivas')
+    expect(alerta).toHaveTextContent('Falta UPDATE sobre emision_masiva')
+  })
+
+  it('says the user may not launch emissions (403), without a detail', async () => {
+    start('/emisiones', { path: '/srtm/emisiones', body: [] }, [{ method: 'POST', path: '/srtm/emisiones', status: 403, body: { title: 'Forbidden' } }])
+    await screen.findByText('Aún no hay emisiones')
+    await userEvent.click(screen.getByRole('button', { name: 'Emitir' }))
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent(/^No tiene permiso para lanzar emisiones masivas$/)
+  })
+
+  it('shows a purged file instead of the download', async () => {
+    start('/emisiones', {
+      path: '/srtm/emisiones',
+      body: [job({ estado: 'TERMINADA', total: 3, procesados: 3, archivo: null, mensaje: 'archivo depurado', terminado: `${year}-09-27T15:05:00Z` })]
+    })
+    await waitFor(() => expect(filas()).toHaveLength(1))
+    const [fila] = filas()
+    expect(within(fila).queryByRole('button', { name: /Descargar/ })).not.toBeInTheDocument()
+    expect(fila).toHaveTextContent('Archivo depurado')
+  })
+
+  it('shows the file as purged when its download answers 410', async () => {
+    start('/emisiones', { path: '/srtm/emisiones', body: [job({ id: 'e7', estado: 'TERMINADA', total: 3, procesados: 3, archivo: 'x', tamano: 2048 })] }, [
+      { path: '/srtm/emisiones/e7/archivo', status: 410, body: { title: 'Gone', detail: 'archivo depurado' } }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: /Descargar/ }))
+    await waitFor(() => expect(filas()[0]).toHaveTextContent('Archivo depurado'))
+    expect(within(filas()[0]).queryByRole('button', { name: /Descargar/ })).not.toBeInTheDocument()
+  })
+
+  it('offers to delete only the jobs that are not running', async () => {
+    start('/emisiones', {
+      path: '/srtm/emisiones',
+      body: [
+        job({ id: 'e4', estado: 'PENDIENTE' }),
+        job({ id: 'e3', estado: 'EN_PROCESO', total: 5, procesados: 1 }),
+        job({ id: 'e2', estado: 'TERMINADA', total: 5, procesados: 5, archivo: 'x' }),
+        job({ id: 'e1', estado: 'FALLIDA', total: 5, procesados: 1, mensaje: 'No se pudo escribir el archivo' })
+      ]
+    })
+    await waitFor(() => expect(filas()).toHaveLength(4))
+    const [pendiente, enProceso, terminada, fallida] = filas()
+    expect(within(pendiente).queryByRole('button', { name: 'Eliminar' })).not.toBeInTheDocument()
+    expect(within(enProceso).queryByRole('button', { name: 'Eliminar' })).not.toBeInTheDocument()
+    expect(within(terminada).getByRole('button', { name: 'Eliminar' })).toBeInTheDocument()
+    expect(within(fallida).getByRole('button', { name: 'Eliminar' })).toBeInTheDocument()
+  })
+
+  it('deletes a job once confirmed, and the row goes away when the list is read again', async () => {
+    const lista: MockRoute = {
+      path: '/srtm/emisiones',
+      body: [job({ id: 'e2', estado: 'TERMINADA', total: 5, procesados: 5, archivo: 'x' }), job({ id: 'e1', anio: year - 1, estado: 'FALLIDA' })]
+    }
+    start('/emisiones', lista, [{ method: 'DELETE', path: '/srtm/emisiones/e1', status: 204 }])
+    await waitFor(() => expect(filas()).toHaveLength(2))
+
+    // cancelling deletes nothing
+    await userEvent.click(within(filas()[1]).getByRole('button', { name: 'Eliminar' }))
+    let dialogo = await screen.findByRole('dialog')
+    expect(dialogo).toHaveTextContent('¿Eliminar esta emisión?')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(fetch!.calls.some((c) => c.method === 'DELETE')).toBe(false)
+
+    await userEvent.click(within(filas()[1]).getByRole('button', { name: 'Eliminar' }))
+    dialogo = await screen.findByRole('dialog')
+    lista.body = [job({ id: 'e2', estado: 'TERMINADA', total: 5, procesados: 5, archivo: 'x' })]
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Eliminar' }))
+
+    await waitFor(() => expect(filas()).toHaveLength(1))
+    expect(fetch!.calls.filter((c) => c.method === 'DELETE').map((c) => c.path)).toEqual(['/srtm/emisiones/e1'])
+    expect(pedidosDeLista()).toBe(2)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('warns when the job to delete is running (409)', async () => {
+    start('/emisiones', { path: '/srtm/emisiones', body: [job({ id: 'e2', estado: 'TERMINADA', total: 5, procesados: 5, archivo: 'x' })] }, [
+      { method: 'DELETE', path: '/srtm/emisiones/e2', status: 409, body: { title: 'Conflict', detail: 'La emisión está EN_PROCESO' } }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Eliminar' }))
+    const dialogo = await screen.findByRole('dialog')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Eliminar' }))
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent('La emisión está en curso: no se puede eliminar mientras corre')
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })
