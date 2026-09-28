@@ -41,7 +41,7 @@ export function opcionesDatos(catalogos: Catalogos | undefined): Record<string, 
   const declaracion = catalogos?.declaracion_predial ?? {}
   return {
     ...declaracion,
-    condicion: catalogos?.predio?.condicion ?? [],
+    tipo_predio: catalogos?.predio?.tipo_predio ?? [],
     condicion_propiedad: (declaracion.condicion_propiedad ?? []).filter((o) => o !== CONDOMINO)
   }
 }
@@ -54,7 +54,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
       // the predio's, shown here as in the srtm; tipo de predio is saved on the predio
       { name: 'codigo_predio', label: 'Código de predio', ...DEL_PREDIO, span: 2 },
       { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', ...DEL_PREDIO, span: 2 },
-      { name: 'condicion', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
+      { name: 'tipo_predio', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
       { name: 'numero_declaracion', label: 'Número de declaración jurada', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
       { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACIÓN JURADA', span: 2 },
       // greyed in the srtm (pages 11 and 12): FÍSICO and the day it is presented
@@ -119,7 +119,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
 ]
 
 // fields of the datos-del-predio form that belong to the predio, not to the declaration
-export const DATOS_DEL_PREDIO = ['codigo_predio', 'numero_registro', 'condicion', 'fecha_actualizacion']
+export const DATOS_DEL_PREDIO = ['codigo_predio', 'numero_registro', 'tipo_predio', 'fecha_actualizacion']
 
 // a predio being registered: a stored one always has its dirección. one of the padrón keeps its text while it has no
 // tipo de vía
@@ -133,7 +133,7 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
       title: 'Identificación del predio',
       fields: [
         { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
-        { name: 'condicion', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
+        { name: 'tipo_predio', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
         // not in the srtm (page 14): with both, the predio's code is sector-manzana-number; without, the backend
         // takes its lote's municipal code or its own series
         { name: 'sector_catastral', label: 'Sector', span: 1 },
@@ -220,8 +220,7 @@ export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
       { name: 'clase_uso', label: 'Clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
       { name: 'sub_clase_uso', label: 'Sub clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
       { name: 'uso', label: 'Uso del predio', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
-      { name: 'clasificacion', label: 'Clasificación', kind: 'enum', span: 3 },
-      { name: 'estado_construccion', label: 'Estado de construcción', kind: 'enum', span: 3 },
+      // clasificacion and estado_construccion are the padrón's, not the srtm DJ's (srtm-backend README): kept, not shown
       { name: 'area_terreno', label: 'Área del terreno (m2)', kind: 'decimal', required: true, span: 2 },
       { name: 'area_comun_terreno', label: 'Área común del terreno (m2)', kind: 'decimal', span: 2 },
       { name: 'longitud_frente', label: 'Frontis (m)', kind: 'decimal', span: 1 },

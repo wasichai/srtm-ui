@@ -27,7 +27,7 @@ const contribuyente = {
   numero_declaracion: null,
   fecha_registro: null
 }
-const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: null, condicion: 'URBANO', direccion: 'JR. LIMA 123' }
+const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: null, tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123' }
 const declaracion = { id: 'd1', contribuyente: 'c1', predio: 'p1', anio: year, numero_declaracion: null, secuencia_uso: '001' }
 const dj = { declaracion, predio, contribuyente, actualizado: '2026-09-25T14:03:00Z' }
 const totales = { declaraciones: 1, autoavaluo: 0, valor_afecto: 0 }

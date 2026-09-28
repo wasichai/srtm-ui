@@ -144,7 +144,7 @@ const DEL_PADRON = 'JIRON LIMA Nro.: 12 Mz.: A Lt.: 5 CERCADO II MESETA'
 const predio = {
   id: 'p1',
   codigo: '01-01-0001',
-  condicion: 'URBANO',
+  tipo_predio: 'PREDIO URBANO',
   direccion: DEL_PADRON,
   ubigeo: '120302',
   ...PERENE,
@@ -167,7 +167,7 @@ const routes: MockRoute[] = [
     path: '/srtm/catalogos',
     body: {
       predio: {
-        condicion: ['URBANO', 'RUSTICO'],
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
         region: ['COSTA', 'SIERRA', 'SELVA'],
         tipo_via: ['AVENIDA', 'CALLE', 'JIRON'],
         tipo_zona: ['URBANIZACION', 'CERCADO']

@@ -39,7 +39,7 @@ export function NuevoPredioPage() {
           <RecordForm
             sections={UBICACION_SECTIONS}
             options={catalogos.data?.predio}
-            initial={emptyOf<Predio>(UBICACION_SECTIONS, { ...base, condicion: 'URBANO', ...delLote })}
+            initial={emptyOf<Predio>(UBICACION_SECTIONS, { ...base, tipo_predio: 'PREDIO URBANO', ...delLote })}
             // what the lote brought stays greyed until "desbloquear"
             bloqueados={camposDelLote(delLote)}
             submitLabel="Registrar predio"

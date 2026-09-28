@@ -34,7 +34,7 @@ const SEGUIDOS = [...COMUNES, 'anio', 'secuencia_uso'] as const
 const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
 
 // datos del predio shows a few of the predio's fields beside the declaration's
-type DatosDelPredio = Declaracion & { condicion?: string | null; codigo_predio?: string | null; numero_registro?: number | null }
+type DatosDelPredio = Declaracion & { tipo_predio?: string | null; codigo_predio?: string | null; numero_registro?: number | null }
 
 const describeContribuyente = (c: Contribuyente): Picked => ({ id: c.id!, label: `${c.numero_documento ?? 's/d'} · ${c.nombre_completo ?? ''}` })
 
@@ -87,12 +87,12 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       if (!predio) return false
       setBuscado(predio)
       // the declaration is on that predio: its tipo is the predio's
-      if (predio.condicion) comun.cambiar('condicion', predio.condicion)
+      if (predio.tipo_predio) comun.cambiar('tipo_predio', predio.tipo_predio)
       setError(null)
       return true
     })
   )
-  const tipoPredio = comun.valores.condicion ?? (datos as DatosDelPredio | null)?.condicion ?? 'URBANO'
+  const tipoPredio = comun.valores.tipo_predio ?? (datos as DatosDelPredio | null)?.tipo_predio ?? 'PREDIO URBANO'
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice
   const enviando = useRef(false)
@@ -113,9 +113,9 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       // datos del predio carries the predio's tipo; the declaration does not keep it. a predio of the padrón gets a
       // changed one saved first, over the predio as it is now (core's update replaces every field)
       const declaracion = Object.fromEntries(Object.entries(actual).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
-      if (predio.predio_id && actual.condicion && actual.condicion !== existente?.condicion) {
+      if (predio.predio_id && actual.tipo_predio && actual.tipo_predio !== existente?.tipo_predio) {
         const { predio: latest } = await rentas.predio(predio.predio_id, currentYear())
-        await rentas.actualizarPredio(predio.predio_id, { ...latest, condicion: actual.condicion })
+        await rentas.actualizarPredio(predio.predio_id, { ...latest, tipo_predio: actual.tipo_predio })
       }
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
       await refresh()
@@ -197,7 +197,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       sections={DJ_DATOS_SECTIONS}
                       options={opcionesDatos(catalogos.data)}
                       initial={emptyOf<DatosDelPredio>(DJ_DATOS_SECTIONS, {
-                        condicion: predioFijo?.condicion ?? 'URBANO',
+                        tipo_predio: predioFijo?.tipo_predio ?? 'PREDIO URBANO',
                         codigo_predio: predioFijo?.codigo ?? null,
                         numero_registro: predioFijo?.numero_registro ?? null,
                         motivo: 'INSCRIPCION',
@@ -254,7 +254,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                         )}
                       </div>
                       {titulares.length > 0 && <AvisoTitulares titulares={titulares} contribuyente={titular} anio={anio} />}
-                      <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, condicion: tipoPredio }} />
+                      <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, tipo_predio: tipoPredio }} />
                     </div>
                   ) : (
                     <RecordForm
@@ -264,7 +264,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       hideActions
                       sections={sections}
                       options={catalogos.data?.predio}
-                      initial={emptyOf<Predio>(sections, { ...PERENE, condicion: tipoPredio })}
+                      initial={emptyOf<Predio>(sections, { ...PERENE, tipo_predio: tipoPredio })}
                       submitLabel="Guardar"
                       onSubmit={(predio) => presentar({ predio })}
                     />

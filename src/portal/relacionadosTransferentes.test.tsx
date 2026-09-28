@@ -68,7 +68,7 @@ const transferentes = [
   { ...persona, ...domicilioTransferente, id: 't1', declaracion: 'd1', codigo: '001', porcentaje_transferido: 50 },
   { ...empresa, ...domicilioTransferente, id: 't2', declaracion: 'd1', codigo: '002', porcentaje_transferido: 50 }
 ]
-const predio = { id: 'p1', codigo: '01-01-0001', condicion: 'URBANO', direccion: 'JR. LIMA 123', numero_registro: 5243 }
+const predio = { id: 'p1', codigo: '01-01-0001', tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123', numero_registro: 5243 }
 const dj = {
   declaracion: { id: 'd1', contribuyente: 'c1', predio: 'p1', anio: year, numero_declaracion: 39147, condicion_propiedad: 'PROPIETARIO UNICO' },
   predio,

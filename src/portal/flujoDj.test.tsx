@@ -21,7 +21,7 @@ const contribuyente = {
   nombre_completo: 'QUISPE MAMANI JUAN',
   codigo: '000012'
 }
-const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, condicion: 'URBANO', direccion: 'JR. LIMA 123', region: 'SELVA' }
+const predio = { id: 'p1', codigo: '01-01-0001', numero_registro: 5243, tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123', region: 'SELVA' }
 const declaracion = {
   id: 'd1',
   contribuyente: 'c1',
@@ -73,7 +73,12 @@ const routes: MockRoute[] = [
   {
     path: '/srtm/catalogos',
     body: {
-      predio: { condicion: ['URBANO', 'RUSTICO'], region: ['COSTA', 'SIERRA', 'SELVA'], tipo_via: ['AVENIDA', 'CALLE'], tipo_zona: ['CENTRO POBLADO'] },
+      predio: {
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
+        region: ['COSTA', 'SIERRA', 'SELVA'],
+        tipo_via: ['AVENIDA', 'CALLE'],
+        tipo_zona: ['CENTRO POBLADO']
+      },
       declaracion_predial: {
         medio_presentacion: ['FISICO', 'VIRTUAL'],
         tipo_adquisicion: ['COMPRA', 'HERENCIA', 'PRESCRIPCION ADQUISITIVA'],
@@ -287,7 +292,7 @@ describe('the declaración jurada, edited in place', () => {
       numero_declaracion: 39147,
       tipo_adquisicion: 'COMPRA'
     })
-    expect(puts[0].body).not.toHaveProperty('condicion')
+    expect(puts[0].body).not.toHaveProperty('tipo_predio')
     // the tipo de predio did not change: the predio is left alone
     expect(calls('PUT', '/srtm/predios/p1')).toHaveLength(0)
     expect(within(header()).getByRole('button', { name: 'Guardar' })).toBeDisabled()

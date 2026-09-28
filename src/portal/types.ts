@@ -164,7 +164,7 @@ export interface Predio {
   codigo: string | null
   sector_catastral: string | null
   manzana_catastral: string | null
-  condicion: string | null
+  tipo_predio: string | null
   direccion: string | null
   via: string | null
   numero: string | null

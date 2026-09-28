@@ -74,7 +74,7 @@ const nivel = {
 }
 const dj = {
   declaracion: { id: 'd1', contribuyente: 'c1', predio: 'p1', anio: year, numero_declaracion: 39147, condicion_propiedad: 'PROPIETARIO UNICO' },
-  predio: { id: 'p1', codigo: '01-01-0001', condicion: 'URBANO', direccion: 'JR. LIMA 123', numero_registro: 5243 },
+  predio: { id: 'p1', codigo: '01-01-0001', tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123', numero_registro: 5243 },
   contribuyente,
   actualizado: '2026-09-25T14:03:00Z'
 }

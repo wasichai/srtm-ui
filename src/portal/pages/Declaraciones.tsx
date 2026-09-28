@@ -165,7 +165,6 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                   <Th>{otherTitle}</Th>
                   <Th>Sec.</Th>
                   <Th>Uso</Th>
-                  <Th>Estado</Th>
                   <Th {...NUMERICA}>Autoavalúo</Th>
                   <Th {...NUMERICA}>Valor afecto</Th>
                   {/* relative: the sr-only text is absolute and would otherwise widen the page past the table's scroll */}
@@ -190,7 +189,6 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                     </Td>
                     <Td>{formatText(row.declaracion.secuencia_uso)}</Td>
                     <Td>{formatText(usoDe(row.declaracion))}</Td>
-                    <Td>{formatText(row.declaracion.estado_construccion)}</Td>
                     <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_autoavaluo)}</Td>
                     <Td {...NUMERICA}>{formatMoney(row.declaracion.valor_afecto)}</Td>
                     <Td className="text-right">

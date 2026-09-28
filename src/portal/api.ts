@@ -211,5 +211,8 @@ export const rentas = {
 
   // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
   emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),
-  emitir: (anio: number, formato: FormatoEmision) => send<Emision>('POST', '/srtm/emisiones', { anio, formato })
+  // 403 without UPDATE on emision_masiva
+  emitir: (anio: number, formato: FormatoEmision) => send<Emision>('POST', '/srtm/emisiones', { anio, formato }),
+  // the record and its file; refused (409) while it runs
+  borrarEmision: (id: string) => remove(`/srtm/emisiones/${id}`)
 }

@@ -148,7 +148,7 @@ export function PrediosPage() {
                         <Td className="whitespace-nowrap text-ink-muted">
                           {formatText(p.sector_catastral)} / {formatText(p.manzana_catastral)}
                         </Td>
-                        <Td>{p.condicion && <Badge>{p.condicion}</Badge>}</Td>
+                        <Td>{p.tipo_predio && <Badge>{p.tipo_predio}</Badge>}</Td>
                       </tr>
                     ))}
                   </tbody>

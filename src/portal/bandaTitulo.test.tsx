@@ -23,7 +23,7 @@ const contribuyente = {
   nombre_completo: 'QUISPE MAMANI JUAN',
   domicilio_fiscal: 'JR. LIMA 123'
 }
-const predio = { id: 'p1', codigo: '01-01-0001', condicion: 'URBANO', direccion: 'JR. LIMA 123', numero_registro: 5243 }
+const predio = { id: 'p1', codigo: '01-01-0001', tipo_predio: 'PREDIO URBANO', direccion: 'JR. LIMA 123', numero_registro: 5243 }
 const declaracion = { id: 'd1', contribuyente: 'c1', predio: 'p1', anio: year, secuencia_uso: '1', numero_declaracion: 39147 }
 const totales = { declaraciones: 1, autoavaluo: 10080.45, valor_afecto: 8000 }
 

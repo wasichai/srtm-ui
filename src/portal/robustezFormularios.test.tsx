@@ -37,7 +37,7 @@ const predio = {
   id: 'p1',
   codigo: '01-01-0001',
   numero_registro: 5243,
-  condicion: 'URBANO',
+  tipo_predio: 'PREDIO URBANO',
   direccion: 'AV. MARGINAL, C.P. UNION PERENE',
   ubigeo: '120302',
   departamento: 'JUNIN',
@@ -93,7 +93,12 @@ const routes: MockRoute[] = [
         estado_civil: ['SOLTERO', 'CASADO'],
         sexo: ['HOMBRE', 'MUJER']
       },
-      predio: { condicion: ['URBANO', 'RUSTICO'], region: ['COSTA', 'SIERRA', 'SELVA'], tipo_via: ['AVENIDA', 'CALLE'], tipo_zona: ['CENTRO POBLADO'] },
+      predio: {
+        tipo_predio: ['PREDIO URBANO', 'PREDIO RUSTICO'],
+        region: ['COSTA', 'SIERRA', 'SELVA'],
+        tipo_via: ['AVENIDA', 'CALLE'],
+        tipo_zona: ['CENTRO POBLADO']
+      },
       declaracion_predial: {
         medio_presentacion: ['FISICO', 'VIRTUAL'],
         tipo_adquisicion: ['COMPRA', 'HERENCIA'],
@@ -404,26 +409,26 @@ describe('the secuencia de uso and the tipo de predio', () => {
     start('/contribuyentes/c1/declaraciones/nueva')
     await llenarDatosDelPredio()
     await llenarUbicacion()
-    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('URBANO')
+    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('PREDIO URBANO')
     await userEvent.click(tab('Datos del predio'))
-    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await userEvent.click(tab('Datos de la ubicación'))
-    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('RUSTICO')
+    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('PREDIO RUSTICO')
     await siguiente()
 
     const post = await called('POST', '/srtm/contribuyentes/c1/declaraciones-juradas')
-    expect(post.body).toMatchObject({ predio: { condicion: 'RUSTICO' } })
+    expect(post.body).toMatchObject({ predio: { tipo_predio: 'PREDIO RUSTICO' } })
   })
 
   it('saves on the predio of the padrón the tipo de predio changed in the wizard', async () => {
     start('/declaraciones/nueva?predio=p1', [
       // no titular yet this year: one would be joined as a condómino instead (grisObligatorio.test.tsx)
       { path: '/srtm/predios/p1/declaraciones', body: [] },
-      { method: 'PUT', path: '/srtm/predios/p1', body: { ...predio, condicion: 'RUSTICO' } }
+      { method: 'PUT', path: '/srtm/predios/p1', body: { ...predio, tipo_predio: 'PREDIO RUSTICO' } }
     ])
     await userEvent.type(await screen.findByPlaceholderText('DNI, RUC o nombre'), 'QUISPE')
     await userEvent.click(await screen.findByRole('button', { name: '20529936 · QUISPE MAMANI JUAN' }))
-    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await llenarDatosDelPredio()
     expect(await screen.findByText(/La declaración será sobre el predio/)).toBeInTheDocument()
     const dt = panel().getByText('Tipo de predio', { selector: 'dt' })
@@ -431,43 +436,43 @@ describe('the secuencia de uso and the tipo de predio', () => {
     await siguiente()
 
     const put = await called('PUT', '/srtm/predios/p1')
-    expect(put.body).toMatchObject({ ...predio, condicion: 'RUSTICO' })
+    expect(put.body).toMatchObject({ ...predio, tipo_predio: 'PREDIO RUSTICO' })
     const post = await called('POST', '/srtm/contribuyentes/c1/declaraciones-juradas')
     expect(post.body).toMatchObject({ predio_id: 'p1' })
     expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 39150' })).toBeInTheDocument()
   })
 
   it("shows the declaración's tipo de predio as one value in both tabs, and saves it on the predio", async () => {
-    start('/declaraciones/d1', [{ method: 'PUT', path: '/srtm/predios/p1', body: { ...predio, condicion: 'RUSTICO' } }])
+    start('/declaraciones/d1', [{ method: 'PUT', path: '/srtm/predios/p1', body: { ...predio, tipo_predio: 'PREDIO RUSTICO' } }])
     await (await abierto()).findByRole('option', { name: 'PREDIO RÚSTICO' })
-    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await userEvent.click(tab('Datos de la ubicación'))
-    expect(await panel().findByLabelText(/Tipo de predio/)).toHaveValue('RUSTICO')
-    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'URBANO')
+    expect(await panel().findByLabelText(/Tipo de predio/)).toHaveValue('PREDIO RUSTICO')
+    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'PREDIO URBANO')
     await userEvent.click(tab('Datos del predio'))
-    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('URBANO')
-    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'RUSTICO')
+    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('PREDIO URBANO')
+    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await guardar()
 
     expect(await within(header()).findByText('Cambios guardados')).toBeInTheDocument()
     const puts = calls('PUT', '/srtm/predios/p1')
     expect(puts).toHaveLength(1)
-    expect(puts[0].body).toMatchObject({ ...predio, condicion: 'RUSTICO' })
+    expect(puts[0].body).toMatchObject({ ...predio, tipo_predio: 'PREDIO RUSTICO' })
     expect(calls('PUT', '/srtm/declaraciones/d1')).toHaveLength(0)
   })
 
   it("takes the declaración's tipo de predio back to the predio's in both tabs on Cancelar", async () => {
     start('/declaraciones/d1')
     await (await abierto()).findByRole('option', { name: 'PREDIO RÚSTICO' })
-    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'RUSTICO')
+    await userEvent.selectOptions(panel().getByLabelText(/Tipo de predio/), 'PREDIO RUSTICO')
     await userEvent.click(tab('Datos de la ubicación'))
-    expect(await panel().findByLabelText(/Tipo de predio/)).toHaveValue('RUSTICO')
+    expect(await panel().findByLabelText(/Tipo de predio/)).toHaveValue('PREDIO RUSTICO')
     await userEvent.click(within(header()).getByRole('button', { name: 'Cancelar' }))
     await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Descartar cambios' }))
 
-    await waitFor(() => expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('URBANO'))
+    await waitFor(() => expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('PREDIO URBANO'))
     await userEvent.click(tab('Datos del predio'))
-    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('URBANO')
+    expect(panel().getByLabelText(/Tipo de predio/)).toHaveValue('PREDIO URBANO')
     expect(within(header()).getByRole('button', { name: 'Guardar' })).toBeDisabled()
   })
 })
