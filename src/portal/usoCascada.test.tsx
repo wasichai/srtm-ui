@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
 
-// clase de uso -> sub clase de uso -> uso del predio, over the srtm's catalog of usos (issue #13, pages 17 and 20)
+// clase de uso -> sub clase de uso -> uso del predio, over the srtm's catalog of usos (issue #13, pages 17 and 20):
+// srtm-backend's model/data/usos_predio.csv, the SNCP's codificador de usos plus the srtm's own. `usos` takes real rows
+// of it
 
 // jsdom has no webgl
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => <div data-testid="lotes-map" /> }))
@@ -32,13 +34,14 @@ const declaracion = {
   valor_afecto: null
 }
 
-// 0901 and 0902 are both RESIDENCIAL in the srtm: one sub clase to choose, with the usos of both
+// the same names repeat across clases (EDIFICIO in RESIDENCIAL and in GARAGE): the cascade keeps them apart
 const usos = [
   { codigo: '010101', clase: 'RESIDENCIAL', sub_clase: 'UNIFAMILIAR', uso: 'CASA HABITACIÓN' },
   { codigo: '010201', clase: 'RESIDENCIAL', sub_clase: 'MULTIFAMILIAR', uso: 'EDIFICIO' },
   { codigo: '010202', clase: 'RESIDENCIAL', sub_clase: 'MULTIFAMILIAR', uso: 'QUINTA' },
-  { codigo: '090101', clase: 'ESTACIONAMIENTO', sub_clase: 'RESIDENCIAL', uso: 'CASA HABITACIÓN' },
-  { codigo: '090201', clase: 'ESTACIONAMIENTO', sub_clase: 'RESIDENCIAL', uso: 'EDIFICIO' },
+  { codigo: '090101', clase: 'GARAGE', sub_clase: 'RESIDENCIAL UNIFAMILIAR', uso: 'CASA HABITACIÓN' },
+  { codigo: '090201', clase: 'GARAGE', sub_clase: 'RESIDENCIAL MULTIFAMILIAR', uso: 'EDIFICIO' },
+  { codigo: '090202', clase: 'GARAGE', sub_clase: 'RESIDENCIAL MULTIFAMILIAR', uso: 'QUINTA' },
   { codigo: '100106', clase: 'BIENES COMUNES', sub_clase: 'RESIDENCIAL', uso: 'CASA HABITACIÓN' }
 ]
 
@@ -97,7 +100,7 @@ describe('clase, sub clase and uso of the predio', () => {
     const clase = panel.getByLabelText(/Clase de uso/)
     const subClase = panel.getByLabelText(/Sub clase de uso/)
     const uso = panel.getByLabelText(/Uso del predio/)
-    expect(opciones(clase)).toEqual(['SELECCIONAR', 'RESIDENCIAL', 'ESTACIONAMIENTO', 'BIENES COMUNES'])
+    expect(opciones(clase)).toEqual(['SELECCIONAR', 'RESIDENCIAL', 'GARAGE', 'BIENES COMUNES'])
     expect(opciones(subClase)).toEqual(['SELECCIONAR'])
     expect(opciones(uso)).toEqual(['SELECCIONAR'])
 
@@ -106,10 +109,10 @@ describe('clase, sub clase and uso of the predio', () => {
     await userEvent.selectOptions(subClase, 'MULTIFAMILIAR')
     expect(opciones(uso)).toEqual(['SELECCIONAR', 'EDIFICIO', 'QUINTA'])
 
-    await userEvent.selectOptions(clase, 'ESTACIONAMIENTO')
-    expect(opciones(subClase)).toEqual(['SELECCIONAR', 'RESIDENCIAL'])
-    await userEvent.selectOptions(subClase, 'RESIDENCIAL')
-    expect(opciones(uso)).toEqual(['SELECCIONAR', 'CASA HABITACIÓN', 'EDIFICIO'])
+    await userEvent.selectOptions(clase, 'GARAGE')
+    expect(opciones(subClase)).toEqual(['SELECCIONAR', 'RESIDENCIAL UNIFAMILIAR', 'RESIDENCIAL MULTIFAMILIAR'])
+    await userEvent.selectOptions(subClase, 'RESIDENCIAL MULTIFAMILIAR')
+    expect(opciones(uso)).toEqual(['SELECCIONAR', 'EDIFICIO', 'QUINTA'])
   })
 
   it('clears sub clase and uso when the clase changes, and the uso when the sub clase does', async () => {
