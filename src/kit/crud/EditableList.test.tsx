@@ -383,6 +383,39 @@ describe('EditableList', () => {
     expect(within(second).getAllByRole('cell').at(-1)).toHaveTextContent('OFF')
   })
 
+  it('heads the status column with texts.status unless it has a label of its own', async () => {
+    const heads = async () =>
+      within(within(await screen.findByRole('grid')).getAllByRole('row')[0])
+        .getAllByRole('columnheader')
+        .map((th) => th.textContent)
+    const status = { render: (t: Thing) => t.state }
+    const list = (props: Partial<EditableListProps<Thing>>) => (
+      <EditableList<Thing>
+        queryKey={['heads']}
+        load={async () => ROWS}
+        save={async () => {}}
+        remove={async () => {}}
+        plural="things"
+        singular="thing"
+        sections={SECTIONS}
+        columns={COLUMNS}
+        newRow={() => ({ name: 'X' })}
+        {...props}
+      />
+    )
+
+    const view = renderWithProviders(list({ status }))
+    expect(await heads()).toEqual(['Name', 'Size', 'Estado'])
+    view.unmount()
+
+    const words = renderWithProviders(<KitProvider texts={{ status: 'State' }}>{list({ status })}</KitProvider>)
+    expect(await heads()).toEqual(['Name', 'Size', 'State'])
+    words.unmount()
+
+    renderWithProviders(<KitProvider texts={{ status: 'State' }}>{list({ status: { ...status, label: 'Phase' } })}</KitProvider>)
+    expect(await heads()).toEqual(['Name', 'Size', 'Phase'])
+  })
+
   it('shows the notice above the list, knowing the rows', async () => {
     setup({ notice: (rows) => <p>{rows.length} things here</p> })
     expect(await screen.findByText('2 things here')).toBeInTheDocument()

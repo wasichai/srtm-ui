@@ -33,8 +33,8 @@ export interface EditableListProps<T extends { id?: string }> {
   // enum options of the form, by field
   options?: Record<string, string[]>
   columns: Column<T>[]
-  // a last column (the estado's badge); none = no column
-  status?: { label: string; render: (row: T) => ReactNode }
+  // a last column (the estado's badge); none = no column. its heading: label, or texts.status
+  status?: { label?: string; render: (row: T) => ReactNode }
   // a new one's starting values, knowing the rows already there
   newRow: (rows: T[]) => T
   notice?: (rows: T[]) => ReactNode
@@ -177,7 +177,7 @@ export function EditableList<T extends { id?: string }>({
                       {c.label}
                     </Th>
                   ))}
-                  {status && <Th>{status.label}</Th>}
+                  {status && <Th>{status.label ?? texts.status}</Th>}
                 </tr>
               </thead>
               <tbody>

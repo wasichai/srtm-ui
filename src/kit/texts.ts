@@ -29,7 +29,7 @@ export interface KitTexts {
   removeBody: string // 'Se quita de la ficha. El historial del registro lo conserva.'
   removeFailed: string // 'No se pudo eliminar'
   save: string // 'Grabar'
-  status: string // 'Estado'
+  status: string // 'Estado': the status column's heading when status.label is absent
 }
 
 export const DEFAULT_TEXTS: KitTexts = {

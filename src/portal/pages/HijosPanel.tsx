@@ -34,8 +34,9 @@ interface HijosPanelProps<T> {
 
 type Hijo = { id?: string; estado?: string | null }
 
-// what a list closes with: the estado, as the srtm draws it. module level: one reference for every render
-const ESTADO = { label: 'Estado', render: (row: Hijo) => <EstadoBadge estado={row.estado} /> }
+// what a list closes with: the estado, as the srtm draws it, under the kit's "Estado". module level: one reference
+// for every render
+const ESTADO = { render: (row: Hijo) => <EstadoBadge estado={row.estado} /> }
 
 // one of the lists of a contribuyente (domicilios, relacionados...) or a declaración (transferentes, niveles...),
 // as the srtm draws them. the list itself is the kit's (EditableList): here it gets the srtm's api, catalogs, refresh
