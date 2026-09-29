@@ -62,7 +62,8 @@ export interface FieldSpec {
   choices?: string[]
   // the backend's (a code, a date of record...): shown, never edited
   readOnly?: boolean
-  // a string is the input's hint. a function is what an empty value means (shown in the form and in the ficha)
+  // a string: the input's hint. a function: what an empty value means, shown on a read-only or locked field and in
+  // FieldGrid only. an editable input takes string hints only: a function gives it none
   placeholder?: string | ((ctx: PlaceholderContext) => string | undefined)
   span?: 1 | 2 | 3 | 4 | 6
   suggest?: SuggestSource

@@ -10,7 +10,10 @@ export interface KitConfig {
   enumLabel: (field: string, value: string) => string
   // form-level error box
   renderAlert: (message: string) => ReactNode
-  // the app's own field kinds, by name, over the core ones (forms/kinds.tsx)
+  // the app's own field kinds, by name, over the core ones (forms/kinds.tsx). each renderer is drawn as a component, so
+  // it must be stable: a module-level component, in a module-level object. an inline renderer
+  // (`kinds={{ color: (p) => ... }}`) is a new component on every provider render: its control remounts and loses
+  // focus. an inline object of stable renderers only makes every kit consumer render again
   kinds: Record<string, KindRenderer>
 }
 
@@ -33,6 +36,7 @@ interface KitProviderProps {
   texts?: Partial<KitTexts>
   enumLabel?: KitConfig['enumLabel']
   renderAlert?: KitConfig['renderAlert']
+  // stable renderers only (see KitConfig.kinds)
   kinds?: KitConfig['kinds']
   children: ReactNode
 }

@@ -18,8 +18,8 @@ Es la fase 1 de "páginas, formularios y componentes como metadata"; la fase 2 m
    - `react`, `react-dom`, `react-hook-form`, `react-router`, `@tanstack/react-query`, `@wasichai/core`, `@wasichai/ui` y `lucide-react`, que es de lo que ya
      dependen los paquetes de wasichai-ui.
 
-   El test mira `from '…'`, `import '…'` e `import('…')`, así que el `import()` dinámico tampoco es una puerta lateral. Los tests del kit quedan fuera de la
-   regla: pueden saber lo que quieran (pero ver [Pendientes](#pendientes-conocidos)).
+   El test mira `from '…'`, `import '…'` e `import('…')`, con comillas simples o dobles, así que el `import()` dinámico tampoco es una puerta lateral. Los
+   tests del kit quedan fuera de la regla: pueden saber lo que quieran (pero ver [Pendientes](#pendientes-conocidos)).
 
 2. **Sin dominio.** Ningún archivo del kit que no sea un test dice `contribuyente`, `predio`, `declaraci…`, `srtm`, `rentas`, `ubigeo`, `reniec`, `padrón`,
    `catastro`, `perené` ni `dj`. Lo comprueba el mismo test con una expresión regular sobre todo el archivo, comentarios incluidos. La expresión no agota el
@@ -28,10 +28,15 @@ Es la fase 1 de "páginas, formularios y componentes como metadata"; la fase 2 m
 3. **Inglés en el código y los comentarios**: identificadores, comentarios y nombres de tipos, en el estilo escueto del kit. El portal conserva su estilo, en
    español. El español del kit son solo los textos que ve la persona, y esos no van sueltos en los componentes sino en `KitTexts`.
 
-4. **Los textos y la configuración, por `KitProvider`.** `useKit()` devuelve un `KitConfig` con `texts` (un `Partial<KitTexts>` mezclado sobre `DEFAULT_TEXTS`),
-   `enumLabel(campo, valor)` (cómo se escribe una opción; por defecto, tal como está guardada), `renderAlert(mensaje)` (la caja de error del formulario) y
-   `kinds` (los tipos de campo propios de la app, por nombre, encima de `CORE_KINDS`). Sin proveedor rige el `DEFAULT_CONFIG`, así que un componente del kit
-   funciona suelto.
+4. **Los textos y la configuración, por `KitProvider`.** El proveedor recibe, todo opcional, `texts` (un `Partial<KitTexts>`, que se mezcla sobre
+   `DEFAULT_TEXTS`), `enumLabel`, `renderAlert` y `kinds`. `useKit()` devuelve la configuración ya resuelta, un `KitConfig`: `texts` es un `KitTexts`
+   completo; `enumLabel(field, value)` dice cómo se escribe una opción (por defecto, tal como está guardada); `renderAlert(message)` dibuja la caja de error del
+   formulario (por defecto, un `<p role="alert">` en rojo), y `kinds` son los tipos de campo propios de la app, por nombre, encima de `CORE_KINDS`. Sin
+   proveedor rigen esos valores por defecto, así que un componente del kit funciona suelto.
+
+   Los `kinds` tienen que ser estables: componentes definidos a nivel de módulo, en un objeto también de módulo. El motor dibuja cada uno como un componente,
+   así que un renderer escrito en línea (`kinds={{ color: (p) => … }}`) es un componente nuevo en cada render del proveedor: su control se vuelve a montar y
+   pierde el foco. Un objeto en línea con renderers estables no rompe nada, pero hace que todo lo del kit se vuelva a dibujar.
 
    El portal lo monta en `src/portal/KitDelPortal.tsx`, que inyecta `enumLabel` (`etiqueta`, de `src/portal/forms/etiquetas.ts`) y `renderAlert` (su `Alerta`
    con tono de error). No pasa `texts`: los defaults del kit ya son el texto del SRTM, tal como estaba en `HijosPanel` y los formularios. Otra app con otras
@@ -73,27 +78,31 @@ El kit las usa en lugar de las suyas: `EditableList` toma `QueryState`, `EmptySt
 
 ## Qué hay
 
-| Archivo                         | Qué hace                                                                                                                                                                                      |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `boundaries.test.tsx`           | La frontera: imports permitidos y vocabulario prohibido (ver [Reglas](#reglas)).                                                                                                              |
-| `texts.ts`                      | `KitTexts` y `DEFAULT_TEXTS`: todas las cadenas del kit, en español, incluidas las funciones de plural y singular de la lista editable.                                                       |
-| `KitProvider.tsx`               | `KitProvider`, `useKit()` y `KitConfig` (`texts`, `enumLabel`, `renderAlert`, `kinds`): lo que la app inyecta.                                                                                |
-| `format.ts`                     | `formatMoney`, `formatNumber`, `formatDate` (ISO o instante a `DD/MM/AAAA`), `formatText` y `currentYear`.                                                                                    |
-| `forms/RecordForm.tsx`          | `RecordForm`: un formulario para cualquier entidad, a partir de secciones. Reglas, condiciones, errores del backend bajo su campo, cambios pendientes y guardado en grupo.                    |
-| `forms/FieldGrid.tsx`           | `FieldGrid`: el lado de solo lectura de las mismas secciones (la ficha), con la misma rejilla.                                                                                                |
-| `forms/spec.ts`                 | Los tipos de la spec (`FieldSpec`, `SectionSpec`, `FieldKind`, `FormValues`, `PlaceholderContext`, `SuggestSource`) y `dataFields` y `emptyOf`.                                               |
-| `forms/kinds.tsx`               | `CORE_KINDS`, `KindProps` y `KindRenderer`: el control de cada `kind`; la app añade los suyos con `kinds`.                                                                                    |
-| `forms/group.ts`                | `useFormGroup` y `useSharedFields`, con `FormHandle`, `FormLink` y `SharedFields`: varios formularios de una página que guarda un botón de fuera, y campos que son uno solo en varios.        |
-| `forms/locked.ts`               | `LOCKED`, `lockedOf`, `lock`, `unlock` y `lockedIn`: campos rellenados desde otro registro, en gris hasta que se desbloquean.                                                                 |
-| `forms/fieldId.ts`              | `FieldIdContext` y `useFieldId`: el id del control al que apunta su etiqueta, con alcance para que dos formularios de una página no se crucen.                                                |
-| `forms/styles.ts`               | `selectClass`, `SPAN` y `GRID`: las clases de la rejilla de seis columnas y del `<select>` nativo.                                                                                            |
-| `forms/NativeSelect.tsx`        | `NativeSelect`: el `<select>` nativo con el aspecto del `Input` de la librería y `data-slot="select-trigger"`.                                                                                |
-| `forms/geometry.ts`             | `Geometry` y `parseGeometry`: una geometría GeoJSON guardada como texto en un campo oculto.                                                                                                   |
-| `forms/SuggestInput.tsx`        | `SuggestInput`: texto libre con sugerencias (un `datalist`), una petición por pausa.                                                                                                          |
-| `crud/EditableList.tsx`         | `EditableList`, `EditableListProps` y `Column<T>`: la lista de filas que cuelgan de un registro, con "+", lápiz y papelera sobre la fila elegida, tabla paginada y diálogo de alta y edición. |
-| `ui/errorMessage.ts`            | `errorMessage(error, fallback)`: lo que dice un fallo, o el texto de respaldo si no dice nada útil.                                                                                           |
-| `ui/UnsavedChanges.tsx`         | `useUnsavedChanges(pending)`, que devuelve `{ dialog, allow }`, y `ConfirmDiscard`: pregunta antes de salir de la página o del navegador con cambios sin guardar. Pide un router de datos.    |
-| `*.test.tsx` (junto a cada uno) | Los tests de la pieza, sin importar nada del portal (salvo lo dicho en [Pendientes](#pendientes-conocidos)).                                                                                  |
+| Archivo                  | Qué hace                                                                                                                                                                                                                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `boundaries.test.tsx`    | La frontera: imports permitidos y vocabulario prohibido (ver [Reglas](#reglas)).                                                                                                                                                                                             |
+| `texts.ts`               | `KitTexts` y `DEFAULT_TEXTS`: todas las cadenas del kit, en español, incluidas las funciones de plural y singular de la lista editable.                                                                                                                                      |
+| `KitProvider.tsx`        | `KitProvider`, `useKit()` y `KitConfig` (`texts`, `enumLabel`, `renderAlert`, `kinds`): lo que la app inyecta.                                                                                                                                                               |
+| `format.ts`              | `formatMoney`, `formatNumber`, `formatDate` (ISO o instante a `DD/MM/AAAA`), `formatText` y `currentYear`.                                                                                                                                                                   |
+| `forms/RecordForm.tsx`   | `RecordForm`: un formulario para cualquier entidad, a partir de secciones. Reglas, condiciones, errores del backend bajo su campo, cambios pendientes y guardado en grupo.                                                                                                   |
+| `forms/FieldGrid.tsx`    | `FieldGrid`: el lado de solo lectura de las mismas secciones (la ficha), con la misma rejilla.                                                                                                                                                                               |
+| `forms/spec.ts`          | Los tipos de la spec (`FieldSpec`, `SectionSpec`, `FieldKind`, `FormValues`, `PlaceholderContext`, `SuggestSource`) y `dataFields` y `emptyOf`.                                                                                                                              |
+| `forms/kinds.tsx`        | `CORE_KINDS`, `KindProps` y `KindRenderer`: el control de cada `kind`; la app añade los suyos con `kinds`.                                                                                                                                                                   |
+| `forms/group.ts`         | `useFormGroup` y `useSharedFields`, con `FormHandle`, `FormLink` y `SharedFields`: varios formularios de una página que guarda un botón de fuera, y campos que son uno solo en varios.                                                                                       |
+| `forms/locked.ts`        | `LOCKED`, `lockedOf`, `lock`, `unlock` y `lockedIn`: campos rellenados desde otro registro, en gris hasta que se desbloquean.                                                                                                                                                |
+| `forms/fieldId.ts`       | `FieldIdContext` y `useFieldId`: el id del control al que apunta su etiqueta, con alcance para que dos formularios de una página no se crucen.                                                                                                                               |
+| `forms/styles.ts`        | `selectClass`, `SPAN` y `GRID`: las clases de la rejilla de seis columnas y del `<select>` nativo.                                                                                                                                                                           |
+| `forms/NativeSelect.tsx` | `NativeSelect`: el `<select>` nativo con el aspecto del `Input` de la librería y `data-slot="select-trigger"`.                                                                                                                                                               |
+| `forms/geometry.ts`      | `Geometry` y `parseGeometry`: una geometría GeoJSON guardada como texto en un campo oculto.                                                                                                                                                                                  |
+| `forms/SuggestInput.tsx` | `SuggestInput`: texto libre con sugerencias (un `datalist`), una petición por pausa.                                                                                                                                                                                         |
+| `crud/EditableList.tsx`  | `EditableList`, `EditableListProps` y `Column<T>`: la lista de filas que cuelgan de un registro, con "+", lápiz y papelera sobre la fila elegida, tabla paginada y diálogo de alta y edición.                                                                                |
+| `ui/errorMessage.ts`     | `errorMessage(error, fallback)`: lo que dice un fallo, o el texto de respaldo si no dice nada útil.                                                                                                                                                                          |
+| `ui/UnsavedChanges.tsx`  | `useUnsavedChanges(pending)`, que devuelve `{ dialog, allow }`, y `ConfirmDiscard`: pregunta antes de salir de la página o del navegador con cambios sin guardar. Pide un router de datos.                                                                                   |
+| `*.test.tsx`             | Los tests del kit: `KitProvider.test.tsx`, `forms/RecordForm.test.tsx`, `crud/EditableList.test.tsx`, `ui/UnsavedChanges.test.tsx`, `ui/errorMessage.test.tsx` y `boundaries.test.tsx`. No importan nada del portal (salvo lo dicho en [Pendientes](#pendientes-conocidos)). |
+
+`EditableList` vuelve a leer su propia consulta (`queryKey`) después de grabar o eliminar, así que una app no tiene que refrescarla; `onChanged` es para lo
+demás que deba leerse otra vez (el portal pasa `useRefresh`, que refresca fichas y totales). La columna de estado se titula `status.label` o, sin él,
+`texts.status` ('Estado' por defecto).
 
 ## Por pieza
 
