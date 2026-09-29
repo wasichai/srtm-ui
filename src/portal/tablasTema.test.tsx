@@ -4,13 +4,13 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { FieldGrid } from '../kit/forms/FieldGrid'
 import { SRTM_THEMES } from '../themes'
 import { EstadoBadge, MarcaAnulada } from './components/EstadoBadge'
 import { formatNumber } from './components/format'
 import { Paginador } from './components/Paginador'
 import { Pagination } from './components/Pagination'
 import { tonoDeEstado } from './components/tono'
-import { FieldGrid } from './forms/FieldGrid'
 import { DeclaracionesDelAnio } from './pages/Declaraciones'
 import { HijosPanel } from './pages/HijosPanel'
 
@@ -224,6 +224,7 @@ describe('the read-only ficha', () => {
       <FieldGrid
         sections={[
           {
+            id: 'datos',
             title: 'Datos',
             fields: [
               { name: 'nombres', label: 'Nombres', kind: 'text' },
@@ -242,7 +243,10 @@ describe('the read-only ficha', () => {
   it('marks each section and its title, so the theme can draw them as a group with its title on the border', () => {
     renderIn(
       'light',
-      <FieldGrid sections={[{ title: 'Datos', number: 1, fields: [{ name: 'nombres', label: 'Nombres', kind: 'text' }] }]} values={{ nombres: 'JUAN' }} />
+      <FieldGrid
+        sections={[{ id: 'datos', title: 'Datos', number: 1, fields: [{ name: 'nombres', label: 'Nombres', kind: 'text' }] }]}
+        values={{ nombres: 'JUAN' }}
+      />
     )
     const titulo = screen.getByRole('heading', { name: /Datos/ })
     expect(titulo).toHaveAttribute('data-ui', 'ficha-titulo')

@@ -2,9 +2,9 @@ import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@
 import { MapPin, MapPinCheck } from 'lucide-react'
 import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import type { FormValues } from '../../kit/forms/spec'
 import { parseGeometry, type Geometry } from '../components/geo'
 import { LotesMap } from '../components/LotesMap'
-import type { FormValues } from './specs'
 
 // the srtm's "buscar dirección" (pages 5-6): the domicilio's point, marked with a click on the map. it writes the
 // form's hidden `ubicacion` (geojson)

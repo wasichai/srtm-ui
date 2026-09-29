@@ -1,8 +1,8 @@
 import type { UseFormReturn } from 'react-hook-form'
+import type { FieldSpec, FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import type { DatosPersona } from '../types'
 import { errorDocumento } from './documento'
-import type { FieldSpec, FormValues } from './specs'
 
 // PIDE RENIEC (pages 3, 8 and 15): leaving the DNI of a contribuyente, a relacionado or a transferente asks RENIEC,
 // through the backend. its names fill apellidos and nombres, greyed, with fuente PIDE RENIEC (greyed too); without an
@@ -14,7 +14,7 @@ const MANUAL = 'MANUAL'
 const NOMBRES = ['apellido_paterno', 'apellido_materno', 'nombres'] as const
 
 // the number last asked, until the document changes: leaving the field again asks nothing (every consulta costs).
-// it rides in the form's values under a name no field has, so it is never sent (as forms/bloqueo.ts's list)
+// it rides in the form's values under a name no field has, so it is never sent (as the kit's forms/locked.ts list)
 const PEDIDO = '__reniec'
 
 type Form = UseFormReturn<FormValues>

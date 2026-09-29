@@ -3,10 +3,10 @@ import { render, screen, within } from '@testing-library/react'
 import { mockFetch, type FetchMock } from '@wasichai/testing'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { RecordForm } from '../kit/forms/RecordForm'
 import { UBICACION_SECTIONS } from './forms/declaracionSpecs'
 import { ABREVIATURA_UNIDAD_URBANA, describirUbicacion } from './forms/direccion'
 import { etiqueta } from './forms/etiquetas'
-import { RecordForm } from './forms/RecordForm'
 import { DOMICILIO_SECTIONS } from './forms/specs'
 
 // the tipos de unidad urbana are the catastro fiscal's TIPO_UU (srtm-backend's model/data/tipos_unidad_urbana.csv), in

@@ -1,12 +1,14 @@
+import type { FormValues, SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import type { Catalogos } from '../types'
+import { auto } from './auto'
 import { BuscarPrediosButton } from './BuscarPrediosButton'
 import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
 import { DireccionPreview } from './DireccionPreview'
 import { ObraCategoriaField } from './ObraCategoriaField'
 import { RENIEC } from './reniec'
-import { AUTO, conRuc, numeroSegunTipo, sinRuc, type FormValues, type SectionSpec } from './specs'
+import { conRuc, numeroSegunTipo, sinRuc } from './specs'
 import { UbigeoFields } from './UbigeoFields'
 import type { Elegido } from './ubicacion'
 import { UsoFields } from './UsoFields'
@@ -29,7 +31,7 @@ export const DOCUMENTOS_ADQUISICION = [
 
 // the predio's fields in datos del predio: a new declaración may be on a predio of the padrón, which has its code but
 // will get no number
-const DEL_PREDIO = { readOnly: true, placeholder: AUTO, existe: (v: FormValues) => Boolean(v.codigo_predio) }
+const DEL_PREDIO = { readOnly: true, placeholder: auto({ exists: (v) => Boolean(v.codigo_predio) }) }
 
 const CONDOMINO = 'CONDOMINO'
 const esCondomino = (v: FormValues) => v.condicion_propiedad === CONDOMINO
@@ -49,13 +51,14 @@ export function opcionesDatos(catalogos: Catalogos | undefined): Record<string, 
 // datos del predio: the declaration itself
 export const DJ_DATOS_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-de-predio',
     title: 'Datos de predio',
     fields: [
       // the predio's, shown here as in the srtm; tipo de predio is saved on the predio
       { name: 'codigo_predio', label: 'Código de predio', ...DEL_PREDIO, span: 2 },
       { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', ...DEL_PREDIO, span: 2 },
       { name: 'tipo_predio', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
-      { name: 'numero_declaracion', label: 'Número de declaración jurada', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
+      { name: 'numero_declaracion', label: 'Número de declaración jurada', kind: 'integer', readOnly: true, placeholder: auto(), span: 2 },
       { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACIÓN JURADA', span: 2 },
       // greyed in the srtm (pages 11 and 12): FÍSICO and the day it is presented
       { name: 'medio_presentacion', label: 'Medio de presentación', kind: 'enum', readOnly: true, span: 2 },
@@ -67,11 +70,12 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'datos-de-la-adquisicion',
     title: 'Datos de la adquisición',
     fields: [
       { name: 'tipo_adquisicion', label: 'Tipo de adquisición', kind: 'enum', required: true, span: 2 },
       { name: 'fecha_adquisicion', label: 'Fecha de adquisición', kind: 'date', required: true, span: 2 },
-      { name: 'fecha_actualizacion', label: 'Fecha de actualización', kind: 'date', readOnly: true, placeholder: AUTO, span: 2 },
+      { name: 'fecha_actualizacion', label: 'Fecha de actualización', kind: 'date', readOnly: true, placeholder: auto({ date: true }), span: 2 },
       // the backend's (srtm-backend#4): CONDÓMINO while the predio has other titulares that year and secuencia, greyed
       // then; a sole titular picks among the rest (opcionesDatos)
       { name: 'condicion_propiedad', label: 'Tipo de propiedad', kind: 'enum', required: true, span: 2, lockedWhen: esCondomino },
@@ -90,6 +94,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'condicion-del-predio',
     title: 'Condición del predio',
     fields: [
       { name: 'condicion_especial', label: 'Condición del predio', kind: 'enum', span: 2 },
@@ -103,6 +108,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'predio-inhabitable',
     title: 'Predio inhabitable',
     // as the srtm (pages 11 and 12): the número de resolución opens the rest
     fields: [
@@ -113,6 +119,7 @@ export const DJ_DATOS_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'otros-datos',
     title: 'Otros datos',
     fields: [{ name: 'otros_datos', label: 'Otros datos', kind: 'longtext', span: 6, placeholder: 'OTROS DATOS' }]
   }
@@ -130,9 +137,10 @@ const predioNuevo = (v: FormValues) => !v.direccion
 export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): SectionSpec[] {
   return [
     {
+      id: 'identificacion-del-predio',
       title: 'Identificación del predio',
       fields: [
-        { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', readOnly: true, placeholder: AUTO, span: 2 },
+        { name: 'numero_registro', label: 'Número de registro de predio', kind: 'integer', readOnly: true, placeholder: auto(), span: 2 },
         { name: 'tipo_predio', label: 'Tipo de predio', kind: 'enum', required: true, span: 2 },
         // not in the srtm (page 14): with both, the predio's code is sector-manzana-number; without, the backend
         // takes its lote's municipal code or its own series
@@ -141,6 +149,7 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
       ]
     },
     {
+      id: 'datos-de-la-ubicacion-del-predio',
       title: 'Datos de la ubicación del predio',
       action: (form) => <BuscarPrediosButton form={form} onPredio={onPredio} />,
       fields: [
@@ -158,7 +167,7 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
           kind: 'suggest',
           required: true,
           span: 2,
-          suggest: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content)
+          suggest: { fetch: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content), dependsOn: ['tipo_via', 'ubigeo'] }
         },
         { name: 'numero', label: 'Número principal', span: 1 },
         { name: 'numero_alterno', label: 'Número alterno', span: 1 },
@@ -182,7 +191,7 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
           kind: 'suggest',
           required: true,
           span: 2,
-          suggest: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_zona, v.ubigeo)).content)
+          suggest: { fetch: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_zona, v.ubigeo)).content), dependsOn: ['tipo_zona', 'ubigeo'] }
         },
         { name: 'sub_zona', label: 'Sub zona', kind: 'enum', span: 1 },
         { name: 'descripcion_sub_zona', label: 'Descripción de la sub zona', span: 1 },
@@ -196,11 +205,12 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
       ]
     },
     {
+      id: 'predio-de-catastro-fiscal',
       title: 'Predio de catastro fiscal',
       fields: [
         // asked in the srtm (page 14): a new predio is a lote of the catastro fiscal. one of the padrón may have none yet
         { name: 'codigo_cpu', label: 'Código CPU', required: predioNuevo, span: 2 },
-        { name: 'codigo', label: 'Código de predio municipal', readOnly: true, placeholder: AUTO, span: 2 },
+        { name: 'codigo', label: 'Código de predio municipal', readOnly: true, placeholder: auto(), span: 2 },
         { name: 'mapa', label: 'Mapa', kind: 'custom', span: 6, render: (form) => <CatastroMapa form={form} /> },
         { name: 'lote_geom', label: 'Lote', kind: 'geometry' }
       ]
@@ -213,6 +223,7 @@ export const UBICACION_SECTIONS: SectionSpec[] = ubicacionSections()
 // características: the declaration's uso and areas; niveles and obras are lists of their own
 export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
   {
+    id: 'caracteristicas-de-predio',
     title: 'Características de predio',
     fields: [
       // chained over the srtm's catalog of usos; the ficha still lists the three
@@ -229,6 +240,7 @@ export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
   },
   {
     // not on the srtm's screens (pages 17 and 20): what the fichas' totals add up
+    id: 'valores',
     title: 'Valores',
     fields: [
       { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 },
@@ -242,13 +254,15 @@ export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
 
 export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-de-la-declaracion',
     title: 'Datos de la declaración',
     fields: [
-      { name: 'codigo', label: 'Código del transferente', readOnly: true, placeholder: AUTO, span: 1 },
+      { name: 'codigo', label: 'Código del transferente', readOnly: true, placeholder: auto(), span: 1 },
       { name: 'porcentaje_transferido', label: '% de propiedad transferido', kind: 'decimal', required: true, span: 2 }
     ]
   },
   {
+    id: 'datos-personales',
     title: 'Datos personales',
     fields: [
       { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1, ...RENIEC.tipo },
@@ -270,6 +284,7 @@ export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'domicilio',
     title: 'Domicilio',
     fields: [
       { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
@@ -285,11 +300,12 @@ export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
 // a nivel, an obra and an otro frente have no estado in the srtm (pages 16 to 21): a new one is ACTIVO (the backend's)
 export const NIVEL_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-del-nivel',
     title: 'Datos del nivel',
     fields: [
       { name: 'tipo_nivel', label: 'Tipo de nivel', kind: 'enum', required: true, span: 2 },
       { name: 'numero_piso', label: 'Número de piso', kind: 'integer', required: true, span: 1 },
-      { name: 'anio_construccion', label: 'Año construcción', kind: 'year', required: true, span: 1 },
+      { name: 'anio_construccion', label: 'Año construcción', kind: 'year', yearFrom: 1900, required: true, span: 1 },
       { name: 'mes_construccion', label: 'Mes construcción', kind: 'month', required: true, span: 2 },
       { name: 'material', label: 'Material predominante', kind: 'enum', required: true, span: 2 },
       { name: 'estado_conservacion', label: 'Estado de conservación', kind: 'enum', required: true, span: 2 },
@@ -300,6 +316,7 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'datos-de-la-categoria',
     title: 'Datos de la categoría',
     fields: [
       { name: 'categorias', label: 'Categorías', kind: 'custom', span: 6, render: (form) => <CategoriasFields form={form} /> },
@@ -316,13 +333,14 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
 
 export const OBRA_SECTIONS: SectionSpec[] = [
   {
+    id: 'obra-complementaria',
     title: 'Obra complementaria',
     fields: [
       { name: 'ingreso', label: 'Ingreso', kind: 'enum', required: true, span: 2 },
       { name: 'material', label: 'Material predominante', kind: 'enum', required: true, span: 2 },
       { name: 'tipo_obra', label: 'Tipo de obra', kind: 'enum', required: true, span: 2 },
       { name: 'estado_conservacion', label: 'Estado de conservación', kind: 'enum', required: true, span: 2 },
-      { name: 'anio_construccion', label: 'Año construcción', kind: 'year', required: true, span: 2 },
+      { name: 'anio_construccion', label: 'Año construcción', kind: 'year', yearFrom: 1900, required: true, span: 2 },
       { name: 'mes_construccion', label: 'Mes construcción', kind: 'month', required: true, span: 2 },
       {
         name: 'categoria_catalogo',
@@ -344,6 +362,7 @@ export const OBRA_SECTIONS: SectionSpec[] = [
 
 export const FRENTE_SECTIONS: SectionSpec[] = [
   {
+    id: 'otro-frente',
     title: 'Otro frente',
     fields: [
       { name: 'tipo_via', label: 'Tipo vía', kind: 'enum', required: true, span: 2 },
@@ -353,7 +372,7 @@ export const FRENTE_SECTIONS: SectionSpec[] = [
         kind: 'suggest',
         required: true,
         span: 3,
-        suggest: async (q, v) => nombres((await rentas.vias(q, v.tipo_via)).content)
+        suggest: { fetch: async (q, v) => nombres((await rentas.vias(q, v.tipo_via)).content), dependsOn: ['tipo_via'] }
       },
       { name: 'numero', label: 'N° principal', span: 1 },
       { name: 'numero_alterno', label: 'N° alterno', span: 1 },

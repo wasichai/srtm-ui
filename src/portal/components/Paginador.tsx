@@ -1,6 +1,6 @@
 import { Button } from '@wasichai/ui'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { selectClass } from '../forms/styles'
+import { selectClass } from '../../kit/forms/styles'
 
 const TAMANOS = [5, 10, 25]
 

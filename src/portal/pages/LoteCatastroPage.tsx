@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardBody } from '@wasichai/ui'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import { emptyOf, type SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { LoadingState, QueryState } from '../components/QueryState'
 import { CatastroMapa } from '../forms/CatastroMapa'
-import { RecordForm } from '../forms/RecordForm'
-import { emptyOf, type SectionSpec } from '../forms/specs'
 import { UbigeoFields } from '../forms/UbigeoFields'
 import { useCatalogos, useRefresh } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
@@ -19,6 +19,7 @@ const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombr
 // the GeoJSON is imported (model/import_catastro.py), the catastro is kept by hand here
 export const LOTE_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-del-lote',
     title: 'Datos del lote',
     fields: [
       { name: 'codigo_cpu', label: 'Código CPU', required: true, span: 2 },
@@ -28,6 +29,7 @@ export const LOTE_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'ubicacion-del-lote',
     title: 'Ubicación del lote',
     fields: [
       { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
@@ -41,7 +43,7 @@ export const LOTE_SECTIONS: SectionSpec[] = [
         label: 'Descripción de la vía',
         kind: 'suggest',
         span: 2,
-        suggest: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content)
+        suggest: { fetch: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content), dependsOn: ['tipo_via', 'ubigeo'] }
       },
       { name: 'numero', label: 'Número principal', span: 1 },
       { name: 'kilometro', label: 'Kilómetro', span: 2 },
@@ -51,7 +53,7 @@ export const LOTE_SECTIONS: SectionSpec[] = [
         label: 'Descripción de la zona',
         kind: 'suggest',
         span: 3,
-        suggest: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_zona, v.ubigeo)).content)
+        suggest: { fetch: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_zona, v.ubigeo)).content), dependsOn: ['tipo_zona', 'ubigeo'] }
       },
       { name: 'manzana', label: 'Manzana', span: 1 },
       { name: 'lote', label: 'Lote', span: 1 },
@@ -59,6 +61,7 @@ export const LOTE_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'poligono-del-lote',
     title: 'Polígono del lote',
     fields: [
       {

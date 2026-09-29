@@ -1,8 +1,8 @@
 import type { UseFormReturn } from 'react-hook-form'
+import { lock, LOCKED, lockedOf } from '../../kit/forms/locked'
+import type { FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import type { CatastroFiscal, Predio, Ubigeo } from '../types'
-import { BLOQUEADOS, bloqueados, bloquear } from './bloqueo'
-import type { FormValues } from './specs'
 
 // what "buscar predios" hands to a ubicación form: a lote of the catastro fiscal or a predio of the padrón
 
@@ -77,7 +77,7 @@ const UBICACION_CAMPOS = [
 // lote's
 function codigoPropio(form: UseFormReturn<FormValues>): boolean {
   const inicial = form.formState.defaultValues ?? {}
-  return Boolean(inicial.codigo) && !bloqueados({ [BLOQUEADOS]: inicial[BLOQUEADOS] ?? '' }).includes('codigo')
+  return Boolean(inicial.codigo) && !lockedOf({ [LOCKED]: inicial[LOCKED] ?? '' }).includes('codigo')
 }
 
 // writes what was picked into a ubicación form. only what it knows: a lote leaves the rest as it was typed, and what
@@ -98,5 +98,5 @@ export async function llenarUbicacion(form: UseFormReturn<FormValues>, elegido: 
     const text = value === null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value)
     form.setValue(name, text, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
   }
-  bloquear(form, elegido.kind === 'catastro' ? camposDelLote(values as Partial<Predio>) : [])
+  lock(form, elegido.kind === 'catastro' ? camposDelLote(values as Partial<Predio>) : [])
 }

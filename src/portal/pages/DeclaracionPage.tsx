@@ -3,6 +3,10 @@ import { Badge, Button, Card } from '@wasichai/ui'
 import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
+import { FieldGrid } from '../../kit/forms/FieldGrid'
+import { useFormGroup, useSharedFields } from '../../kit/forms/group'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
 import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPendientes'
@@ -11,11 +15,7 @@ import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
-import { FieldGrid } from '../forms/FieldGrid'
-import { useComun, useGrupoFormularios } from '../forms/grupo'
 import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
-import { RecordForm } from '../forms/RecordForm'
-import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion } from '../types'
@@ -92,9 +92,9 @@ function DeclaracionPage({ id }: { id: string }) {
   const siguiente = DECLARACION_TABS[DECLARACION_TABS.findIndex((t) => t.id === activa) + 1]?.id
   const abrir = (tab: string, enAsistente = asistente) => setParams(enAsistente ? { tab, asistente: '1' } : { tab }, { replace: true })
 
-  const grupo = useGrupoFormularios(FORMULARIOS)
-  const comun = useComun(COMUNES)
-  const pendientes = grupo.pendientes.map(etiqueta)
+  const grupo = useFormGroup(FORMULARIOS)
+  const comun = useSharedFields(COMUNES)
+  const pendientes = grupo.pending.map(etiqueta)
   const salida = useSalidaConCambios(pendientes)
   // a save or a Cancelar starts the forms again, from the declaration as it is then
   const [version, setVersion] = useState(0)
@@ -105,7 +105,7 @@ function DeclaracionPage({ id }: { id: string }) {
 
   // what a refusal is about goes under its field, and its tab opens; anything else, under the buttons
   const rechazo = (e: unknown, de: Formulario[]) => {
-    const con = grupo.errores(e, de)
+    const con = grupo.errors(e, de)
     if (con.length > 0) abrir(con[0])
     else setError(e instanceof Error ? e.message : 'No se pudo guardar')
     return false
@@ -113,12 +113,12 @@ function DeclaracionPage({ id }: { id: string }) {
   // the pending changes of every form tab, over the declaration and its predio as they are now (the other tabs, a
   // condómino's %, may have changed them; core's update replaces every field): one save each
   const guardar = async (): Promise<boolean> => {
-    if (grupo.pendientes.length === 0) return true
+    if (grupo.pending.length === 0) return true
     setError(null)
     setGuardado(false)
     setGuardando(true)
     try {
-      const { valores, invalidos } = await grupo.cambios()
+      const { values: valores, invalid: invalidos } = await grupo.changes()
       if (invalidos.length > 0) {
         abrir(invalidos[0])
         return false
@@ -149,7 +149,7 @@ function DeclaracionPage({ id }: { id: string }) {
       }
       await refresh()
       setVersion((v) => v + 1)
-      comun.reiniciar()
+      comun.reset()
       setGuardado(true)
       return true
     } catch (e) {
@@ -163,7 +163,7 @@ function DeclaracionPage({ id }: { id: string }) {
     setDescartando(false)
     setError(null)
     setVersion((v) => v + 1)
-    comun.reiniciar()
+    comun.reset()
   }
 
   return (
@@ -185,8 +185,8 @@ function DeclaracionPage({ id }: { id: string }) {
           ) : (
             <RecordForm
               key={version}
-              enlace={grupo.enlaces[nombre]}
-              comun={comun}
+              link={grupo.links[nombre]}
+              shared={comun}
               hideActions
               sections={sections}
               options={options}
@@ -195,7 +195,7 @@ function DeclaracionPage({ id }: { id: string }) {
               onSubmit={guardar}
             />
           )
-        const hayCambios = grupo.pendientes.length > 0
+        const hayCambios = grupo.pending.length > 0
         return (
           <div className="space-y-5">
             <FichaHeader

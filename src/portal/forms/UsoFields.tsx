@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Label } from '@wasichai/ui'
 import type { UseFormReturn } from 'react-hook-form'
+import { useFieldId } from '../../kit/forms/fieldId'
+import { NativeSelect } from '../../kit/forms/NativeSelect'
+import type { FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { NativeSelect } from '../components/controles'
 import type { UsoPredio } from '../types'
-import { useCampoId } from './campoId'
-import type { FormValues } from './specs'
 
 const distinct = (values: string[]) => [...new Set(values)]
 
@@ -15,7 +15,7 @@ const distinct = (values: string[]) => [...new Set(values)]
 export function UsoFields({ form }: { form: UseFormReturn<FormValues> }) {
   const catalogo = useQuery({ queryKey: ['usos-predio'], queryFn: rentas.usosPredio, staleTime: Infinity })
   const [clase = '', subClase = '', uso = ''] = form.watch(['clase_uso', 'sub_clase_uso', 'uso'])
-  const campoId = useCampoId()
+  const campoId = useFieldId()
   const all: UsoPredio[] = catalogo.data ?? []
   const deClase = all.filter((u) => u.clase === clase)
 

@@ -1,10 +1,10 @@
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
 import { Ban } from 'lucide-react'
 import { useState } from 'react'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import type { SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { formatDate } from '../components/format'
-import { RecordForm } from '../forms/RecordForm'
-import type { SectionSpec } from '../forms/specs'
 import { useRefresh } from '../queries'
 import type { Declaracion } from '../types'
 
@@ -12,7 +12,7 @@ import type { Declaracion } from '../types'
 // totals and no condominio. no way back: the dialog asks why and is the confirmation
 
 const MOTIVO: SectionSpec[] = [
-  { title: 'Anulación', fields: [{ name: 'motivo_anulacion', label: 'Motivo de la anulación', kind: 'longtext', required: true, span: 6 }] }
+  { id: 'anulacion', title: 'Anulación', fields: [{ name: 'motivo_anulacion', label: 'Motivo de la anulación', kind: 'longtext', required: true, span: 6 }] }
 ]
 
 export function AnularDeclaracion({ declaracion }: { declaracion: Declaracion }) {

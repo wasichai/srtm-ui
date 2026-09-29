@@ -3,8 +3,8 @@ import { render, screen, within } from '@testing-library/react'
 import { mockFetch, type FetchMock } from '@wasichai/testing'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { RecordForm } from '../kit/forms/RecordForm'
 import { describirDomicilio } from './forms/direccion'
-import { RecordForm } from './forms/RecordForm'
 import { DOMICILIO_SECTIONS } from './forms/specs'
 
 // the two tipos de unidad urbana page 5 cuts ("ASOCIACION DE VIVIENDA D…", "…E I…"), named as the catastro fiscal's

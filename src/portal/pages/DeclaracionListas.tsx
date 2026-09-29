@@ -1,9 +1,10 @@
+import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { formatNumber, formatText, MESES, today } from '../components/format'
 import { COLUMNAS } from '../forms/CategoriasFields'
 import { FRENTE_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
 import { celda, etiqueta } from '../forms/etiquetas'
-import { emptyOf, nombreORazonSocial, type FormValues } from '../forms/specs'
+import { nombreORazonSocial } from '../forms/specs'
 import type { NivelConstruccion, ObraComplementaria, OtroFrente, Transferente } from '../types'
 import { HijosPanel } from './HijosPanel'
 

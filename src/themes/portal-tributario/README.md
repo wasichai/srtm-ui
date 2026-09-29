@@ -35,7 +35,7 @@ Tiene tres capas, de la más genérica a la más propia:
 | `src/themes/portal-tributario/controls.css` | Lo que la hoja de la librería deja a la app: `ghost` como enlace en el contenido, radios y checkboxes (#47, #66).                                    |
 | `src/themes/parciales.test.tsx`             | Cada parcial va bajo el tema, fuera de capas e importado; y los contrastes de sus colores propios.                                                   |
 | `src/themes/css.ts`                         | Ayudas de los tests: leer una regla CSS y medir un contraste.                                                                                        |
-| `src/portal/components/controles.tsx`       | `NativeSelect`, el `<select>` nativo con `data-slot="select-trigger"`. Botones y campos vienen de `@wasichai/ui` (#66).                              |
+| `src/kit/forms/NativeSelect.tsx`            | `NativeSelect`, el `<select>` nativo con `data-slot="select-trigger"`. Botones y campos vienen de `@wasichai/ui` (#66).                              |
 | `src/themes/portal-tributario/tabs.css`     | Pestañas de trabajo y fieldsets de `RecordForm` con la leyenda sobre el borde (#48). Las de la ficha son de la librería.                             |
 | `src/themes/portal-tributario/alerts.css`   | La caja de las alertas en cuatro tonos (#50).                                                                                                        |
 | `src/portal/components/Alerta.tsx`          | Alerta con tono, título y cierre; en light y dark se ve como el texto que sustituye (#50).                                                           |
@@ -167,7 +167,7 @@ controles directamente de `@wasichai/ui`: ya no hay envoltorio. La hoja alcanza 
 | `#content [data-slot='button'][data-variant='ghost']` | sin caja, texto `link`, hover `#F0F0F0`. Solo en el contenido: el shell y el admin no |
 | `input[type=radio]`, `input[type=checkbox]`           | 16px, `accent-color: var(--link)`                                                     |
 
-- **`NativeSelect`** (`src/portal/components/controles.tsx`) es el `<select>` nativo con `selectClass`; lleva
+- **`NativeSelect`** (`src/kit/forms/NativeSelect.tsx`) es el `<select>` nativo con `selectClass`; lleva
   `data-slot="select-trigger"`, así la hoja lo pinta como los selects de la librería.
 - **Botón-ícono redondo.** La variante `round` de #47 no tenía usos y se retiró con #66. Si hace falta, es un `Button`
   `ghost` de tamaño `icon` con `data-variant="round"` (la librería deja sobrescribir sus ganchos) y una regla aquí; el
@@ -492,7 +492,7 @@ Los atributos que ponen los componentes para que un tema los pinte desde CSS. En
 
 | Grupo             | Ganchos                                                                                                                                                                                             | Componente                                                                |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Controles         | `data-slot`: `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select-trigger`                                                                                                        | `@wasichai/ui`; `NativeSelect` (`controles.tsx`) usa `select-trigger`     |
+| Controles         | `data-slot`: `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select-trigger`                                                                                                        | `@wasichai/ui`; `NativeSelect` (`NativeSelect.tsx`) usa `select-trigger`  |
 | Formularios       | `record-fieldset`, `record-legend`, `record-number`, `record-title`, `record-action`, `record-acciones`, `record-nota`                                                                              | `RecordForm`                                                              |
 | Fichas            | `ficha-seccion`, `ficha-titulo`, `ficha-kv` (+ `data-tono` por fila)                                                                                                                                | `FieldGrid`                                                               |
 | Pestañas          | `data-slot`: `card`, `tabs`, `tabs-list`, `tabs-trigger`, `tabs-content`; `data-ui`: `workspace-tabs`, `workspace-tab`                                                                              | `Card`, `FichaTabs`, `TabBar`                                             |

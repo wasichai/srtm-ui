@@ -1,17 +1,9 @@
 import { AlertTriangle, MapPinCheck } from 'lucide-react'
+import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { formatText } from '../components/format'
 import { celda, etiqueta } from '../forms/etiquetas'
-import {
-  describirDomicilio,
-  DOMICILIO_SECTIONS,
-  emptyOf,
-  MEDIO_CONTACTO_SECTIONS,
-  nombreORazonSocial,
-  RELACIONADO_SECTIONS,
-  SUSTENTO_SECTIONS,
-  type FormValues
-} from '../forms/specs'
+import { describirDomicilio, DOMICILIO_SECTIONS, MEDIO_CONTACTO_SECTIONS, nombreORazonSocial, RELACIONADO_SECTIONS, SUSTENTO_SECTIONS } from '../forms/specs'
 import { UbicarDireccion } from '../forms/UbicarDireccion'
 import type { Contribuyente, Domicilio, MedioContacto, Relacionado, Sustento } from '../types'
 import { HijosPanel } from './HijosPanel'

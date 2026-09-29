@@ -1,15 +1,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render as renderRtl, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { FieldGrid } from '../kit/forms/FieldGrid'
+import { RecordForm } from '../kit/forms/RecordForm'
 import { DJ_DATOS_SECTIONS, FRENTE_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, UBICACION_SECTIONS } from './forms/declaracionSpecs'
 import { ABREVIATURA_VIA } from './forms/direccion'
-import { FieldGrid } from './forms/FieldGrid'
-import { RecordForm } from './forms/RecordForm'
 import { CONTRIBUYENTE_SECTIONS } from './forms/specs'
+import { KitDelPortal } from './KitDelPortal'
 import { BuscarPrediosDialog } from './pages/BuscarPrediosDialog'
 
 // the srtm's controls and wording (Presentacion2_.pdf, pages 2 to 21): the options show as the srtm writes them,
@@ -17,6 +18,9 @@ import { BuscarPrediosDialog } from './pages/BuscarPrediosDialog'
 
 // jsdom has no webgl: the map is not what these tests look at
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
+
+// the kit's forms and fichas as the portal sets them up: with its labels
+const render = (ui: ReactElement) => renderRtl(ui, { wrapper: KitDelPortal })
 
 const page = (content: unknown[]) => ({ content, page: 0, size: 20, totalElements: content.length, totalPages: 1 })
 
@@ -177,7 +181,7 @@ describe('the selects show the srtm wording', () => {
         sections={FRENTE_SECTIONS}
         options={{ tipo_via: ['AVENIDA'] }}
         initial={frente}
-        bloqueados={['tipo_via']}
+        locked={['tipo_via']}
         submitLabel="Grabar"
         onSubmit={onSubmit}
       />

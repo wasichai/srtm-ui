@@ -7,6 +7,7 @@ import { client } from './api'
 import { LoginPage } from './auth/LoginPage'
 import { RequireSession } from './auth/RequireSession'
 import { EmptyState } from './components/QueryState'
+import { KitDelPortal } from './KitDelPortal'
 import { BuscarPage } from './pages/BuscarPage'
 import { ContribuyenteRoute } from './pages/ContribuyentePage'
 import { DeclaracionRoute } from './pages/DeclaracionPage'
@@ -59,7 +60,8 @@ const rutas = createRoutesFromElements(
 // the end-user portal: municipal staff looking up and keeping contribuyentes, predios and declarations.
 // under core's providers, like the admin: one session, and the theme the user picked (stored for them) on both sides.
 // no modules: the portal draws its own screens. it registers srtm's themes like the admin does (their labels are in
-// core's i18n). spanish only, so a locale picked in the admin is left alone
+// core's i18n). spanish only, so a locale picked in the admin is left alone. the kit's forms take the portal's labels
+// and error box (KitDelPortal)
 export function PortalApp() {
   const [app] = useState(() => {
     const config = resolveConfig({ apiBaseUrl: '/api', storagePrefix: 'srtm', appName: 'Rentas municipales', languages: ['es'], themes: SRTM_THEMES })
@@ -71,7 +73,9 @@ export function PortalApp() {
 
   return (
     <WasichaiProviders config={app.config} registry={app.registry} apiClient={client} i18n={app.i18n} queryClient={app.queryClient}>
-      <RouterProvider router={app.router} />
+      <KitDelPortal>
+        <RouterProvider router={app.router} />
+      </KitDelPortal>
     </WasichaiProviders>
   )
 }
