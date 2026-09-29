@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@wasichai/testing'
 import { describe, expect, it, vi } from 'vitest'
@@ -254,6 +254,114 @@ describe('EditableList', () => {
     const dialog = await screen.findByRole('dialog')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }))
     expect(await within(dialog).findByText('No se pudo eliminar')).toBeInTheDocument()
+  })
+
+  it('forgets a failed removal when the confirmation closes, by Cancelar or by Escape', async () => {
+    setup({
+      remove: async () => {
+        throw new Error('Still in use')
+      }
+    })
+    const [, first, second] = within(await grid()).getAllByRole('row')
+    await userEvent.click(first)
+    const bin = screen.getByRole('button', { name: 'Eliminar thing' })
+    await userEvent.click(bin)
+    let dialog = await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }))
+    expect(await within(dialog).findByText('Still in use')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+
+    // the same row again: a fresh question, not the old failure
+    await userEvent.click(bin)
+    dialog = await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }))
+    expect(await within(dialog).findByText('Still in use')).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // another row: nothing of the first one's failure either
+    await userEvent.click(second)
+    await userEvent.click(bin)
+    dialog = await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('sends one removal for a double click on Eliminar', async () => {
+    let done: () => void = () => {}
+    const remove = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          done = resolve
+        })
+    )
+    setup({ remove })
+    const [, first] = within(await grid()).getAllByRole('row')
+    await userEvent.click(first)
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar thing' }))
+    const confirm = within(await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })).getByRole('button', { name: 'Eliminar' })
+    await userEvent.dblClick(confirm)
+    expect(remove).toHaveBeenCalledTimes(1)
+    // busy while it runs
+    expect(confirm).toBeDisabled()
+    await act(async () => done())
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(remove).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the removal be tried again once a failed one is over', async () => {
+    const remove = vi.fn(async () => {
+      throw new Error('Still in use')
+    })
+    setup({ remove })
+    const [, first] = within(await grid()).getAllByRole('row')
+    await userEvent.click(first)
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar thing' }))
+    const dialog = await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })
+    const confirm = within(dialog).getByRole('button', { name: 'Eliminar' })
+    await userEvent.click(confirm)
+    expect(await within(dialog).findByText('Still in use')).toBeInTheDocument()
+    expect(confirm).toBeEnabled()
+    await userEvent.click(confirm)
+    expect(remove).toHaveBeenCalledTimes(2)
+  })
+
+  it('reads its own list again after a save and a removal, with no onChanged', async () => {
+    let stored: Thing[] = [...ROWS]
+    renderWithProviders(
+      <EditableList<Thing>
+        queryKey={['things', 'alone']}
+        load={async () => stored}
+        save={async (_editing, values) => {
+          stored = [...stored, { ...values, id: 't3' }]
+        }}
+        remove={async (row) => {
+          stored = stored.filter((t) => t.id !== row.id)
+        }}
+        plural="things"
+        singular="thing"
+        sections={SECTIONS}
+        columns={COLUMNS}
+        newRow={() => ({ name: '' })}
+      />
+    )
+    await grid()
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar thing' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Nuevo thing' })
+    await userEvent.type(within(dialog).getByRole('textbox', { name: /^Name/ }), 'THIRD')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    expect(await within(await grid()).findByRole('row', { name: /THIRD/ })).toBeInTheDocument()
+
+    await userEvent.click(within(await grid()).getByRole('row', { name: /FIRST/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar thing' }))
+    await userEvent.click(within(await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })).getByRole('button', { name: 'Eliminar' }))
+    await waitFor(() => expect(within(screen.getByRole('grid')).queryByRole('row', { name: /FIRST/ })).not.toBeInTheDocument())
+    expect(
+      within(screen.getByRole('grid'))
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.textContent)
+    ).toEqual(['SECOND20', 'THIRD'])
   })
 
   it('has no Estado column while no status is given', async () => {

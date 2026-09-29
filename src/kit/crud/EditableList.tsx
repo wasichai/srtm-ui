@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmptyState, QueryState } from '@wasichai/core'
 import { Button, cn, ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogTitle, PageSizePagination, Table, Td, Th } from '@wasichai/ui'
 import { Box, Pencil, Plus, Trash2 } from 'lucide-react'
@@ -23,7 +23,7 @@ export interface EditableListProps<T extends { id?: string }> {
   // editing is the row being changed, null for a new one; values is what the form made
   save: (editing: T | null, values: T) => Promise<unknown>
   remove: (row: T) => Promise<unknown>
-  // after a save or a removal: what else must read again
+  // after a save or a removal: what else must read again, besides this list (it reads its own query again itself)
   onChanged?: () => Promise<unknown> | void
   // "domicilios": the list's heading. "domicilio": the dialogs'
   plural: string
@@ -71,11 +71,15 @@ export function EditableList<T extends { id?: string }>({
   readOnly
 }: EditableListProps<T>) {
   const { texts } = useKit()
-  const query = useQuery({ queryKey, queryFn: load })
+  const queryClient = useQueryClient()
+  // not `queryFn: load`: load takes no query context
+  const query = useQuery({ queryKey, queryFn: () => load() })
   const [editing, setEditing] = useState<T | null>(null)
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<T | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
+  // a removal on its way: the confirmation's button waits, so a double click sends one
+  const [removeBusy, setRemoveBusy] = useState(false)
   // the row the pencil and the bin act on: one of the page shown, so a removed row or another page drops it
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // paged: "Filas 10", "1 a 10 de 23 registros"
@@ -91,21 +95,31 @@ export function EditableList<T extends { id?: string }>({
     setEditing(null)
     setAdding(false)
   }
+  // after a write: this list, and what else the app says
+  const changed = () => Promise.all([queryClient.invalidateQueries({ queryKey }), onChanged?.()])
   const submit = async (values: T) => {
     await save(editing, values)
-    await onChanged?.()
+    await changed()
     close()
+  }
+  // the confirmation opens and closes with no failure of before: a failure belongs to one try
+  const askRemove = (row: T | null) => {
+    setRemoveError(null)
+    setRemoving(row)
   }
   const confirmRemove = async () => {
     if (!removing?.id) return
     setRemoveError(null)
+    setRemoveBusy(true)
     try {
       await remove(removing)
-      await onChanged?.()
+      await changed()
       setRemoving(null)
       setSelectedId(null)
     } catch (e) {
       setRemoveError(errorMessage(e, texts.removeFailed))
+    } finally {
+      setRemoveBusy(false)
     }
   }
   const open = adding || editing !== null
@@ -142,7 +156,7 @@ export function EditableList<T extends { id?: string }>({
               size="icon"
               disabled={!selected || reason !== undefined}
               title={reason}
-              onClick={() => setRemoving(selected)}
+              onClick={() => askRemove(selected)}
               aria-label={texts.remove(singular)}
             >
               <Trash2 className="size-4" />
@@ -239,9 +253,10 @@ export function EditableList<T extends { id?: string }>({
         <ConfirmDialog
           title={texts.removeTitle(singular)}
           description={texts.removeBody}
+          busy={removeBusy}
           error={removeError}
           onConfirm={() => void confirmRemove()}
-          onCancel={() => setRemoving(null)}
+          onCancel={() => askRemove(null)}
         />
       )}
     </div>
