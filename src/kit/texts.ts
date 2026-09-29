@@ -16,6 +16,20 @@ export interface KitTexts {
   leaveConfirm: string // 'Salir sin guardar'
   keepEditing: string // 'Seguir editando'
   pendingIn: (list: string) => string // list joined: 'Hay cambios sin guardar en A, B.'
+  // editable list (crud/EditableList): plural and singular name the rows
+  listOf: (plural: string) => string // 'Listado de domicilios'
+  add: (singular: string) => string // 'Agregar domicilio'
+  edit: (singular: string) => string // 'Editar domicilio'
+  remove: (singular: string) => string // 'Eliminar domicilio'
+  newOne: (singular: string) => string // 'Nuevo domicilio' (dialog title)
+  editOne: (singular: string) => string // 'Editar domicilio' (dialog title)
+  dataOf: (singular: string) => string // 'Datos del domicilio' (dialog description, screen readers only)
+  noResults: string // 'No se encontraron resultados!'
+  removeTitle: (singular: string) => string // '¿Eliminar este domicilio?'
+  removeBody: string // 'Se quita de la ficha. El historial del registro lo conserva.'
+  removeFailed: string // 'No se pudo eliminar'
+  save: string // 'Grabar'
+  status: string // 'Estado'
 }
 
 export const DEFAULT_TEXTS: KitTexts = {
@@ -34,5 +48,18 @@ export const DEFAULT_TEXTS: KitTexts = {
   leaveConsequence: 'Si sales, se pierden.',
   leaveConfirm: 'Salir sin guardar',
   keepEditing: 'Seguir editando',
-  pendingIn: (list) => `Hay cambios sin guardar en ${list}.`
+  pendingIn: (list) => `Hay cambios sin guardar en ${list}.`,
+  listOf: (plural) => `Listado de ${plural}`,
+  add: (singular) => `Agregar ${singular}`,
+  edit: (singular) => `Editar ${singular}`,
+  remove: (singular) => `Eliminar ${singular}`,
+  newOne: (singular) => `Nuevo ${singular}`,
+  editOne: (singular) => `Editar ${singular}`,
+  dataOf: (singular) => `Datos del ${singular}`,
+  noResults: 'No se encontraron resultados!',
+  removeTitle: (singular) => `¿Eliminar este ${singular}?`,
+  removeBody: 'Se quita de la ficha. El historial del registro lo conserva.',
+  removeFailed: 'No se pudo eliminar',
+  save: 'Grabar',
+  status: 'Estado'
 }
