@@ -3,16 +3,16 @@
 Web de **rentas municipales** (Perené) para [srtm-backend](../srtm-backend). Es una sola app Vite + React con dos
 partes, y ambas comparten el login (el mismo token en `localStorage['srtm.*']`):
 
-| Ruta | Para quién | Qué es |
-|---|---|---|
-| `/` | personal municipal (ventanilla, rentas) | el **portal**: buscar contribuyentes y predios, fichas en pestañas, alta y edición de contribuyentes, predios y declaraciones |
-| `/admin` | administradores | el `WasichaiApp` de wasichai-ui: objetos, vistas, formularios, páginas, workflows, documentos, usuarios |
+| Ruta     | Para quién                              | Qué es                                                                                                                        |
+| -------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `/`      | personal municipal (ventanilla, rentas) | el **portal**: buscar contribuyentes y predios, fichas en pestañas, alta y edición de contribuyentes, predios y declaraciones |
+| `/admin` | administradores                         | el `WasichaiApp` de wasichai-ui: objetos, vistas, formularios, páginas, workflows, documentos, usuarios                       |
 
-| | |
-|---|---|
-| Puerto | 5180 (`yarn dev` y `yarn preview`) |
-| API | proxy de `/api` a `http://localhost:8090` (`WASICHAI_API_URL`) |
-| Login de desarrollo | `admin@wasichai.local` / `admin` (seed de srtm-backend) |
+|                     |                                                                |
+| ------------------- | -------------------------------------------------------------- |
+| Puerto              | 5180 (`yarn dev` y `yarn preview`)                             |
+| API                 | proxy de `/api` a `http://localhost:8090` (`WASICHAI_API_URL`) |
+| Login de desarrollo | `admin@wasichai.local` / `admin` (seed de srtm-backend)        |
 
 ## Portal (`src/portal`)
 
@@ -59,23 +59,28 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Las opciones de los desplegables salen de `/api/srtm/catalogos`, es decir, del modelo.
   - Un error de validación del backend se muestra debajo de su campo.
 
-- **Tema**: sistema, claro, oscuro o *Portal tributario*, en el menú de tema de la cabecera.
-  - *Portal tributario* reproduce un portal tributario en línea: barra de marca azul, menú de trámites en árbol, pasos
+- **Tema**: sistema, claro, oscuro o _Portal tributario_, en el menú de tema de la cabecera.
+  - _Portal tributario_ reproduce un portal tributario en línea: barra de marca azul, menú de trámites en árbol, pasos
     en galón en los asistentes, banda de título, pestañas carpeta, fieldsets con la leyenda sobre el borde, tablas
     cebra y alertas en cuatro tonos, en Arial 14px. A diferencia de claro y oscuro, cambia también la estructura del
-    portal; el admin solo toma sus colores. Detalle, decisiones y contrastes en `src/themes/portal-tributario/README.md`.
-  - Los temas propios de srtm-ui están en `src/themes` (`SRTM_THEMES`); el portal y el admin los registran en core.
+    portal; el admin toma sus colores y la forma de sus controles, tablas y pestañas. Detalle, decisiones y contrastes
+    en `src/themes/portal-tributario/README.md`.
+  - El tema es de `@wasichai/*` (desde 0.3): `PORTAL_TRIBUTARIO_THEME` de `@wasichai/core` y la hoja
+    `@wasichai/ui/themes/portal-tributario.css`. srtm-ui añade los parciales de sus pantallas
+    (`src/themes/portal-tributario/`) y los componentes de la estructura de portal.
+  - Los temas que registra srtm-ui están en `src/themes` (`SRTM_THEMES`); el portal y el admin los registran en core.
   - `useVarianteTema()` dice si el tema aplicado pide la estructura de portal (`'portal'`) o la clásica (`'clasico'`).
   - **Añadir un tema**:
-    1. Un bloque `[data-theme='<id>']` en `src/themes/<id>/tokens.css` con los 18 tokens de `@wasichai/ui` y los de
-       extensión de `src/themes/extensions.css` (todos: un tema parcial hereda valores sueltos, ADR-034), importado
-       desde `src/themes/<id>/index.css` y este desde `src/index.css`.
-    2. Su entrada en `SRTM_THEMES` (`{ id, label, colorScheme }`, `id` en `^[a-z0-9-]{1,40}$`), su etiqueta en el
-       módulo i18n `srtm` de `src/themes/index.ts` y su `colorScheme` en el script de `index.html` (un test comprueba
-       que coinciden).
+    1. Un bloque `[data-theme='<id>']` con los 18 tokens base y los de extensión de `@wasichai/ui/theme.css` (todos: un
+       tema parcial hereda valores sueltos, ADR-034), en `src/themes/<id>/tokens.css`, importado desde
+       `src/themes/<id>/index.css` y este desde `src/index.css`. Si el tema es de la librería, basta con importar su
+       hoja.
+    2. Su entrada en `SRTM_THEMES` (`{ id, label, colorScheme }`, `id` en `^[a-z0-9-]{1,40}$`), su etiqueta en el i18n
+       (la de un tema de la librería ya viene en el de core) y su `colorScheme` en el script de `index.html` (un test
+       comprueba que coinciden).
     3. Si cambia la forma de los componentes, parciales `src/themes/<id>/*.css` fuera de capas, bajo el selector del
-       tema, enganchados en los atributos `data-ui` (catálogo en el README del tema). Si cambia la estructura, una
-       variante en `useVarianteTema`.
+       tema, enganchados en los `data-slot` de `@wasichai/ui` o en los atributos `data-ui` de srtm-ui (catálogo en el
+       README del tema). Si cambia la estructura, una variante en `useVarianteTema`.
   - El portal monta los providers de core (`WasichaiProviders`), así que la sesión y el tema son los mismos que en el
     admin.
   - La elección se guarda en `srtm.theme` y, con un backend que tenga `PUT /auth/me/preferences` (wasichai ≥ 0.2.0),
@@ -84,8 +89,8 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     como en core.
 
 - **Registro de predio y catastro fiscal** (fase 3, págs. 11-14 de la presentación):
-  - **"Buscar predios"** (pág. 13): un diálogo con pestañas *Buscar en Tributario* (el padrón, la que abre) y *Buscar
-    en Catastro Fiscal*.
+  - **"Buscar predios"** (pág. 13): un diálogo con pestañas _Buscar en Tributario_ (el padrón, la que abre) y _Buscar
+    en Catastro Fiscal_.
     - Tiene los filtros del SRTM, Limpiar / Buscar, y una tabla paginada (Filas 5/10/25).
     - Debajo, el mapa de los lotes: la fila elegida se resalta y un clic en un lote elige su fila. La cámara descarga
       una imagen del mapa.
@@ -94,17 +99,17 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
       ficha, o "Nuevo predio" ya ubicado).
     - Un lote elegido (pág. 14) copia su código de predio municipal al predio nuevo y deja en gris lo que trajo del
       catastro (departamento, provincia y distrito según su ubigeo, vía, zona, manzana, lote, código CPU, polígono),
-      hasta pulsar *Desbloquear*. Un predio que ya está en el padrón conserva su código.
-    - En *Buscar en Catastro Fiscal*, *Nuevo lote* y *Editar lote* abren el editor de lotes; sobre un formulario a
+      hasta pulsar _Desbloquear_. Un predio que ya está en el padrón conserva su código.
+    - En _Buscar en Catastro Fiscal_, _Nuevo lote_ y _Editar lote_ abren el editor de lotes; sobre un formulario a
       medio llenar lo abren en otra pestaña del navegador.
   - **Lotes del catastro fiscal** (`/catastro/nuevo`, `/catastro/:id`, también desde el inicio): código CPU, código
     municipal, ubicación y el polígono dibujado en el mapa, sobre los demás lotes del catastro. Cada lote abierto queda
     como pestaña de trabajo.
-  - **Ubicación del predio:** incluye la sección *Predio de catastro fiscal*, con código CPU, código municipal y un
+  - **Ubicación del predio:** incluye la sección _Predio de catastro fiscal_, con código CPU, código municipal y un
     mapa. En ese mapa se ve el lote del predio sobre los del catastro, se elige uno con un clic, o se dibuja / edita el
     polígono.
   - **Datos del predio de la DJ:** muestran código y número de registro del predio, el tipo de predio (que se guarda
-    en el predio), la fecha de actualización y *Otros datos*.
+    en el predio), la fecha de actualización y _Otros datos_.
   - **Ficha y alta de predio** (`/predios/:id`, `/predios/nuevo`) con la ubicación del SRTM, en lugar del formulario
     simple del padrón.
   - **Obra complementaria:** la categoría se elige del instructivo oficial y fija la unidad de medida. Sin catálogo

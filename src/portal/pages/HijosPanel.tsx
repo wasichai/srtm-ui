@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
+import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
 import { Box, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { HijosApi } from '../api'
 import { Alerta } from '../components/Alerta'
-import { Button } from '../components/controles'
 import { EstadoBadge } from '../components/EstadoBadge'
 import { Paginador } from '../components/Paginador'
 import { EmptyState, QueryState } from '../components/QueryState'
@@ -157,7 +156,7 @@ export function HijosPanel<T extends Hijo>({
           rows.length === 0 ? (
             <EmptyState title="No se encontraron resultados!" icon={Box} />
           ) : (
-            <Table data-ui="table" role="grid" aria-label={`Listado de ${plural}`}>
+            <Table role="grid" aria-label={`Listado de ${plural}`}>
               <thead>
                 <tr>
                   {columns.map((c) => (

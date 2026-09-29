@@ -102,7 +102,7 @@ describe('title band: fichas', () => {
   it("hangs the declaración's folder tabs from its header", async () => {
     start('portal-tributario', '/declaraciones/d1')
     const titulo = await h1('Declaración jurada predial - 39147')
-    expect(siguienteA(titulo).firstElementChild).toHaveAttribute('data-ui', 'ficha-tabs')
+    expect(siguienteA(titulo).firstElementChild).toHaveAttribute('data-slot', 'tabs')
   })
 })
 
@@ -132,7 +132,7 @@ describe('title band: wizards', () => {
     expect(siguiente).toHaveFocus()
     // stacked: the band, the chevron steps (#54) and the folder tabs
     const pasos = document.querySelector('[data-ui="pasos-galon"]')!
-    const pestanas = document.querySelector('[data-ui="ficha-tabs"]')!
+    const pestanas = document.querySelector('[data-slot="tabs"]')!
     expect(banda.compareDocumentPosition(pasos) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(pasos.compareDocumentPosition(pestanas) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })

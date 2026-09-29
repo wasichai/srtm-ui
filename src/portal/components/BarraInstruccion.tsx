@@ -1,7 +1,6 @@
-import { cn } from '@wasichai/ui'
+import { Button, cn } from '@wasichai/ui'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Button } from './controles'
 
 export interface Herramienta {
   label: string

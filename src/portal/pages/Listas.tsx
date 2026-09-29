@@ -56,7 +56,7 @@ export function ContribuyentesPage() {
               <EmptyState title={q ? `Nada coincide con “${q}”` : 'Aún no hay contribuyentes'} />
             ) : (
               <>
-                <Table data-ui="table">
+                <Table>
                   <thead>
                     <tr>
                       <Th>Documento</Th>
@@ -127,7 +127,7 @@ export function PrediosPage() {
               <EmptyState title={q ? `Nada coincide con “${q}”` : 'Aún no hay predios'} />
             ) : (
               <>
-                <Table data-ui="table">
+                <Table>
                   <thead>
                     <tr>
                       <Th>Código</Th>

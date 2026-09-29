@@ -101,7 +101,7 @@
 
 /* its tools: controls.css's primary button (steel, darker on hover), flat and side by side at 14.5px with a 15px icon,
    each after a line of 30% white. as specific as controls.css's own padding, and after it */
-[data-theme='portal-tributario'] [data-ui='barra-instruccion'] [data-ui='button'][data-variant='primary'] {
+[data-theme='portal-tributario'] [data-ui='barra-instruccion'] [data-slot='button'][data-variant='primary'] {
     padding: 12px 18px;
     border-width: 0 0 0 1px;
     border-color: color-mix(in srgb, var(--on-brand) 30%, transparent);
@@ -109,7 +109,7 @@
     font-size: 14.5px;
 }
 
-[data-theme='portal-tributario'] [data-ui='barra-instruccion'] [data-ui='button'] svg {
+[data-theme='portal-tributario'] [data-ui='barra-instruccion'] [data-slot='button'] svg {
     width: 15px;
     height: 15px;
 }

@@ -21,13 +21,15 @@ function Ficha() {
 describe('FichaTabs: the theme hooks', () => {
   it('marks the strip, each tab and each panel, keeping the tabs aria', () => {
     render(<Ficha />)
-    expect(screen.getByRole('tablist', { name: 'Ficha' }).parentElement).toHaveAttribute('data-ui', 'ficha-tabs')
+    const tablist = screen.getByRole('tablist', { name: 'Ficha' })
+    expect(tablist).toHaveAttribute('data-slot', 'tabs-list')
+    expect(tablist.parentElement).toHaveAttribute('data-slot', 'tabs')
     const datos = screen.getByRole('tab', { name: 'Datos' })
-    expect(datos).toHaveAttribute('data-ui', 'ficha-tab')
+    expect(datos).toHaveAttribute('data-slot', 'tabs-trigger')
     expect(datos).toHaveAttribute('aria-selected', 'true')
     expect(datos).toHaveAttribute('aria-controls', 'panel-datos')
     expect(screen.getByRole('tab', { name: 'Domicilios' })).toHaveAttribute('aria-selected', 'false')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-ui', 'ficha-panel')
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-slot', 'tabs-content')
   })
 
   it('keeps a disabled tab disabled and its icons', () => {

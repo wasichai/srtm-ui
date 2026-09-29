@@ -129,10 +129,11 @@ function portalTables(): { file: string; tag: string }[] {
 const numericas = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>(':scope > [data-numeric]')]
 
 describe('the portal tables', () => {
-  it('are all hooked for the theme', () => {
+  // the library's Table puts data-slot="table" itself (@wasichai/ui 0.3): no table overrides it or keeps an old hook
+  it("are all the library's Table, hooked by it", () => {
     const tables = portalTables()
     expect(tables.length).toBeGreaterThanOrEqual(7)
-    for (const { file, tag } of tables) expect(tag, file).toContain('data-ui="table"')
+    for (const { file, tag } of tables) expect(tag, file).not.toMatch(/data-(ui|slot)=/)
   })
 
   it('mark their numeric columns, right aligned with tabular figures in every theme, and keep the total in the foot', async () => {
@@ -154,7 +155,7 @@ describe('the portal tables', () => {
     ])
     renderIn('light', <DeclaracionesDelAnio side="contribuyente" id="c1" anio={year} />)
     const table = await screen.findByRole('table')
-    expect(table).toHaveAttribute('data-ui', 'table')
+    expect(table).toHaveAttribute('data-slot', 'table')
 
     const [head, body, foot] = within(table).getAllByRole('row')
     expect(numericas(head).map((th) => th.textContent)).toEqual(['% condominio', 'Autoavalúo', 'Valor afecto'])
@@ -191,7 +192,7 @@ describe('the portal tables', () => {
       />
     )
     const grid = await screen.findByRole('grid', { name: 'Listado de filas' })
-    expect(grid).toHaveAttribute('data-ui', 'table')
+    expect(grid).toHaveAttribute('data-slot', 'table')
     const [head, primera, segunda] = within(grid).getAllByRole('row')
     expect(numericas(head).map((th) => th.textContent)).toEqual(['Área'])
     expect(numericas(primera).map((td) => td.textContent)).toEqual([formatNumber(120.5)])

@@ -5,11 +5,11 @@
 
 /* the folder tabs hang from the header: the box that holds them (the card tabs.css steps aside) follows it without
    the page's gap. the row of badges and actions, when there is one, keeps a little room above the tabs */
-[data-theme='portal-tributario'] [data-ui='cabecera-banda']:has(+ * > [data-ui='ficha-tabs']) {
+[data-theme='portal-tributario'] [data-ui='cabecera-banda']:has(+ * > [data-slot='tabs']) {
     margin-block-end: 0;
 }
 
-[data-theme='portal-tributario'] [data-ui='cabecera-banda']:has(+ * > [data-ui='ficha-tabs']) > [data-ui='cabecera-fila'] {
+[data-theme='portal-tributario'] [data-ui='cabecera-banda']:has(+ * > [data-slot='tabs']) > [data-ui='cabecera-fila'] {
     padding-block-end: 10px;
 }
 

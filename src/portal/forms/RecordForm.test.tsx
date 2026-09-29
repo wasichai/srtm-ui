@@ -40,9 +40,9 @@ function renderForm() {
 describe('RecordForm: the theme hooks', () => {
   it('marks its inputs, text areas, selects and buttons', () => {
     renderForm()
-    expect(screen.getByRole('textbox', { name: /^Nombres/ })).toHaveAttribute('data-ui', 'input')
-    expect(screen.getByRole('textbox', { name: 'Observación' })).toHaveAttribute('data-ui', 'textarea')
-    expect(screen.getByRole('combobox', { name: /^Sexo/ })).toHaveAttribute('data-ui', 'select')
+    expect(screen.getByRole('textbox', { name: /^Nombres/ })).toHaveAttribute('data-slot', 'input')
+    expect(screen.getByRole('textbox', { name: 'Observación' })).toHaveAttribute('data-slot', 'textarea')
+    expect(screen.getByRole('combobox', { name: /^Sexo/ })).toHaveAttribute('data-slot', 'select-trigger')
     expect(screen.getByRole('button', { name: 'Guardar' })).toHaveAttribute('data-variant', 'primary')
     expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveAttribute('data-variant', 'secondary')
   })
@@ -51,7 +51,7 @@ describe('RecordForm: the theme hooks', () => {
     renderForm()
     const codigo = screen.getByRole('textbox', { name: 'Código' })
     expect(codigo).toBeDisabled()
-    expect(codigo).toHaveAttribute('data-ui', 'input')
+    expect(codigo).toHaveAttribute('data-slot', 'input')
   })
 
   it('marks each section as a fieldset whose legend has the number, the title and the action', () => {

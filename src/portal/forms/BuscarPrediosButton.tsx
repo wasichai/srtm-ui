@@ -1,7 +1,7 @@
 import { LockOpen, Search } from 'lucide-react'
 import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
-import { Button } from '../components/controles'
+import { Button } from '@wasichai/ui'
 import { BuscarPrediosDialog } from '../pages/BuscarPrediosDialog'
 import { bloqueadosEn, desbloquear } from './bloqueo'
 import type { FormValues } from './specs'

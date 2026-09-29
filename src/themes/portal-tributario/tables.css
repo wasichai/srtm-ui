@@ -1,51 +1,13 @@
-/* portal-tributario: the prototype's tables, read-only ficha and paginators (#49). out of layers, so these rules
-   beat tailwind's utilities, and only under the theme, so light and dark do not change. the components mark what
-   is styled here: data-ui="table" on the <table>, data-numeric on the cells of figures, data-ui="ficha-kv" on the
-   ficha's <dl> (data-tono on a row), data-ui="paginador" on the paginators. the greys with no token (#444, #ddd,
-   #ccc, #f0f0f0) are the prototype's */
+/* portal-tributario: what srtm adds to the library's tables (#49, #66): codes that do not break, the read-only ficha
+   and the paginators. out of layers, so these rules beat tailwind's utilities, and only under the theme, so light and
+   dark do not change. the components mark what is styled here: data-ui="ficha-kv" on the ficha's <dl> (data-tono on
+   a row), data-ui="ficha-seccion" and "ficha-titulo" on its sections, data-ui="paginador" on the paginators. the greys
+   with no token (#ccc, #f0f0f0) are the prototype's */
 
-/* header: bold sentence case over the table-head grey, on one line */
-/* a code in a cell (predio, dj) stays on one line: 01-01-0001 must not break at its hyphens */
-[data-theme='portal-tributario'] [data-ui='table'] td a {
+/* a code in a cell (predio, dj) stays on one line: 01-01-0001 must not break at its hyphens. the library's sheet
+   paints the header, the cells, the zebra rows and the total (@wasichai/ui/themes/portal-tributario.css) */
+[data-theme='portal-tributario'] [data-slot='table'] td a {
     white-space: nowrap;
-}
-
-[data-theme='portal-tributario'] [data-ui='table'] th {
-    padding: 11px 18px;
-    font-size: 13.5px;
-    font-weight: 700;
-    letter-spacing: normal;
-    text-transform: none;
-    white-space: nowrap;
-    color: #444;
-    background-color: var(--table-head);
-    border-bottom: 1px solid #ddd;
-}
-
-/* cells: the text colour stays the cell's own (ink, or a selected row's brand) */
-[data-theme='portal-tributario'] [data-ui='table'] td {
-    padding: 10px 18px;
-    font-size: 14.5px;
-    border-bottom: 1px solid var(--line);
-}
-
-/* zebra rows, white first. a selected row keeps its own background. no hover of its own: over a grey dark enough
-   to see, the warning tone would drop below AA */
-[data-theme='portal-tributario'] [data-ui='table'] > tbody > tr:nth-child(even):not([aria-selected='true']) {
-    background-color: var(--table-stripe);
-}
-
-/* the total row */
-[data-theme='portal-tributario'] [data-ui='table'] > tfoot td {
-    font-weight: 700;
-    background-color: var(--surface-muted);
-    border-top: 2px solid #ddd;
-}
-
-/* figures: the components already align them in every theme; here for any table that only marks them */
-[data-theme='portal-tributario'] [data-ui='table'] [data-numeric] {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
 }
 
 /* the read-only ficha as key-value rows: label beside value, alternate rows striped. one column, two from 64rem

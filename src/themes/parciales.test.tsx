@@ -5,26 +5,28 @@ import { describe, expect, it } from 'vitest'
 import { contrast, rule, rules } from './css'
 
 // portal-tributario's component partials, one per issue: every rule under the theme and outside any layer (so it wins
-// over tailwind's utilities), each imported by the theme's index.css after its tokens
+// over tailwind's utilities), each imported by the theme's index.css. the tokens are @wasichai/ui's (#66)
 
 const dir = join(__dirname, 'portal-tributario')
 const read = (file: string) => readFileSync(join(dir, file), 'utf8')
+// the theme's tokens, from @wasichai/ui's sheet
+const libraryTokens = () =>
+  readFileSync(join(__dirname, '..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', 'tokens.css'), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
 const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css', 'pasos.css', 'banda.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
-    const css = readdirSync(dir).filter((file) => file.endsWith('.css') && file !== 'index.css' && file !== 'tokens.css')
+    const css = readdirSync(dir).filter((file) => file.endsWith('.css') && file !== 'index.css')
     expect(css.sort()).toEqual([...PARCIALES].sort())
   })
 
   describe.each(PARCIALES)('%s', (file) => {
     const css = read(file)
 
-    it('is imported by the theme, after its tokens', () => {
-      const index = read('index.css')
-      expect(index.indexOf(`@import './${file}';`)).toBeGreaterThan(index.indexOf("@import './tokens.css';"))
+    it('is imported by the theme', () => {
+      expect(read('index.css')).toContain(`@import './${file}';`)
     })
 
     it('scopes every rule to the theme', () => {
@@ -41,34 +43,34 @@ describe('portal-tributario partials', () => {
 
 describe('controls.css', () => {
   const css = read('controls.css')
-  const button = (variant: string, state = '') => rule(css, `${PORTAL} [data-ui='button'][data-variant='${variant}']${state}`)
 
-  it('keeps the danger border of an invalid field', () => {
-    const invalid = rules(css).find((r) => r.selectors.some((s) => s.includes("[aria-invalid='true']")))
-    expect(invalid?.declarations.get('border-color')).toBe('var(--danger)')
+  // the library's sheet leaves ghost to the app: in the portal's content it reads as a link, not in the shell or admin
+  it("paints the content's ghost buttons as links", () => {
+    expect(rule(css, `${PORTAL} #content [data-slot='button'][data-variant='ghost']`).get('color')).toBe('var(--link)')
   })
 
-  // WCAG 1.4.11: the round icon button's white icon over its grey disc, at rest and hovered
-  it('draws the round icon button at 3:1 or more', () => {
-    for (const declarations of [button('round'), button('round', ':hover:not(:disabled)')])
-      expect(contrast(declarations.get('color') ?? '#fff', declarations.get('background') ?? '')).toBeGreaterThanOrEqual(3)
+  it('gives radios and checkboxes the link blue', () => {
+    expect(rule(css, `${PORTAL} input:is([type='radio'], [type='checkbox'])`).get('accent-color')).toBe('var(--link)')
   })
 
-  it('marks a disabled button without losing the not-allowed cursor', () => {
-    const disabled = rule(css, `${PORTAL} [data-ui='button']:disabled`)
-    expect(disabled.get('cursor')).toBe('not-allowed')
-    expect(disabled.get('pointer-events')).toBe('auto')
+  // buttons and fields are the library sheet's (@wasichai/ui/themes/portal-tributario.css): no copy here
+  it("does not repeat the library's controls", () => {
+    expect(css).not.toMatch(/\[data-ui='(button|input|textarea|select)'\]/)
   })
 })
 
 describe('tabs.css', () => {
   const css = read('tabs.css')
 
-  it('joins the active tab to its panel', () => {
-    const active = rule(css, `${PORTAL} [data-ui='ficha-tab'][aria-selected='true']`)
+  // the ficha's tabs are the library sheet's, on FichaTabs' data-slot
+  it("leaves the ficha's tabs to the library", () => {
+    expect(css).not.toMatch(/ficha-tab|ficha-panel|tabs-trigger/)
+  })
+
+  it('joins the active workspace tab to what is under it', () => {
+    const active = rule(css, `${PORTAL} [data-ui='workspace-tab']:has(> [aria-current='page'])`)
     expect(active.get('background')).toBe('var(--surface)')
     expect(active.get('border-bottom-color')).toBe('var(--surface)')
-    expect(rule(css, `${PORTAL} [data-ui='ficha-panel']`).get('border-top')).toBe('0')
   })
 
   it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {
@@ -107,7 +109,7 @@ describe('alerts.css', () => {
 
 describe('nav.css', () => {
   const css = read('nav.css')
-  const tokens = rule(read('tokens.css'), PORTAL)
+  const tokens = rule(libraryTokens(), PORTAL)
   const ARBOL = `${PORTAL} [data-ui='arbol-nav']`
   const arbol = (part: string) => rule(css, `${ARBOL} ${part}`)
   const actual = arbol("[data-ui='arbol-hoja'][aria-current='page']")
@@ -141,7 +143,7 @@ describe('nav.css', () => {
 
 describe('pasos.css', () => {
   const css = read('pasos.css')
-  const tokens = rule(read('tokens.css'), PORTAL)
+  const tokens = rule(libraryTokens(), PORTAL)
   const PASO = `${PORTAL} [data-ui='pasos-galon'] > [data-ui='paso']`
   const BARRA = `${PORTAL} [data-ui='barra-instruccion']`
 
@@ -206,13 +208,13 @@ describe('pasos.css', () => {
 
   // controls.css's primary button, flat, each after a line of 30% white
   it('lays its tools flat side by side', () => {
-    const herramienta = rule(css, `${BARRA} [data-ui='button'][data-variant='primary']`)
+    const herramienta = rule(css, `${BARRA} [data-slot='button'][data-variant='primary']`)
     expect(herramienta.get('padding')).toBe('12px 18px')
     expect(herramienta.get('font-size')).toBe('14.5px')
     expect(herramienta.get('border-radius')).toBe('0')
     expect(herramienta.get('border-width')).toBe('0 0 0 1px')
     expect(herramienta.get('border-color')).toBe('color-mix(in srgb, var(--on-brand) 30%, transparent)')
-    const icono = rule(css, `${BARRA} [data-ui='button'] svg`)
+    const icono = rule(css, `${BARRA} [data-slot='button'] svg`)
     expect(icono.get('width')).toBe('15px')
     expect(icono.get('height')).toBe('15px')
   })
@@ -231,8 +233,8 @@ describe('banda.css', () => {
   // the header, then the box whose child is FichaTabs' strip (the card tabs.css steps aside): one relative selector,
   // since a :has() cannot hold another
   it('hangs the folder tabs from the header, without the page gap', () => {
-    expect(rule(css, `${cabecera}:has(+ * > [data-ui='ficha-tabs'])`).get('margin-block-end')).toBe('0')
-    expect(rule(css, `${cabecera}:has(+ * > [data-ui='ficha-tabs']) > [data-ui='cabecera-fila']`).get('padding-block-end')).toBe('10px')
+    expect(rule(css, `${cabecera}:has(+ * > [data-slot='tabs'])`).get('margin-block-end')).toBe('0')
+    expect(rule(css, `${cabecera}:has(+ * > [data-slot='tabs']) > [data-ui='cabecera-fila']`).get('padding-block-end')).toBe('10px')
   })
 
   it("keeps a link of the band in the band's white, and its focus ring white", () => {

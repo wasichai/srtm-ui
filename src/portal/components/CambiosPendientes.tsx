@@ -1,7 +1,6 @@
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
 import { useCallback, useEffect, useRef } from 'react'
 import { useBlocker, type BlockerFunction } from 'react-router'
-import { Button } from './controles'
 
 // what a page has not saved yet, by the names the clerk knows it by (its tabs): leaving the page, its workspace tab
 // or the browser tab asks first. moving inside the page (another of its tabs: only the url's search) does not.

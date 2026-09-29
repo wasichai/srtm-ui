@@ -76,7 +76,7 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
           rows.length === 0 ? (
             <EmptyState title="No se encontraron resultados" />
           ) : (
-            <Table data-ui="table">
+            <Table>
               <thead>
                 <tr>
                   <Th>Titular</Th>

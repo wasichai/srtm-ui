@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest'
 const read = (...path: string[]) => readFileSync(join(__dirname, ...path), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const TABLE = `${PORTAL} [data-ui='table']`
+const TABLE = `${PORTAL} [data-slot='table']`
+// the header, cells, stripes and total are @wasichai/ui's theme sheet's since 0.3 (#66), scoped to the theme
+const LIB_TABLE = "[data-slot='table']"
 
 // the innermost rules (inside @media too), with their selector lists split at the top level
 function rules(css: string): { selectors: string[]; declarations: Map<string, string> }[] {
@@ -59,15 +61,15 @@ function contrast(a: string, b: string): number {
 }
 
 const tables = read('portal-tributario', 'tables.css')
-const tokens = rule(read('portal-tributario', 'tokens.css'), PORTAL)
+const library = (file: string) => read('..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', file)
+const libraryTables = library('tables.css')
+const tokens = rule(library('tokens.css'), PORTAL)
 const token = (name: string) => tokens.get(`--${name}`)!
 
 describe('tables.css of portal-tributario', () => {
-  it('is imported by the theme after its tokens', () => {
+  it('is imported by the theme', () => {
     const index = read('portal-tributario', 'index.css')
-    const imports = [...index.matchAll(/@import '([^']+)'/g)].map(([, path]) => path)
-    expect(imports).toContain('./tables.css')
-    expect(imports.indexOf('./tables.css')).toBeGreaterThan(imports.indexOf('./tokens.css'))
+    expect([...index.matchAll(/@import '([^']+)'/g)].map(([, path]) => path)).toContain('./tables.css')
   })
 
   // unlayered: it beats tailwind's utilities, and only ever under the theme, so light and dark do not change
@@ -79,34 +81,25 @@ describe('tables.css of portal-tributario', () => {
     for (const { selectors } of all) for (const selector of selectors) expect(selector.startsWith(`${PORTAL} `), selector).toBe(true)
   })
 
-  it("draws the prototype's header", () => {
-    const th = rule(tables, `${TABLE} th`)
+  // what srtm relies on from the library's sheet: the prototype's header, cells, stripes and total
+  it("gets the prototype's header, cells, stripes and total from the library", () => {
+    const th = rule(libraryTables, `${LIB_TABLE} th`)
     expect(th.get('padding')).toBe('11px 18px')
     expect(th.get('font-size')).toBe('13.5px')
-    expect(th.get('font-weight')).toBe('700')
     expect(th.get('background-color')).toBe('var(--table-head)')
     expect(th.get('white-space')).toBe('nowrap')
-    expect(th.get('text-transform')).toBe('none')
-  })
-
-  it('draws the cells over thin lines and stripes the rows', () => {
-    const td = rule(tables, `${TABLE} td`)
+    const td = rule(libraryTables, `${LIB_TABLE} td`)
     expect(td.get('font-size')).toBe('14.5px')
     expect(td.get('border-bottom')).toBe('1px solid var(--line)')
-    expect(rule(tables, `${TABLE} > tbody > tr:nth-child(even):not([aria-selected='true'])`).get('background-color')).toBe('var(--table-stripe)')
-  })
-
-  it('draws the total row of the foot', () => {
-    const total = rule(tables, `${TABLE} > tfoot td`)
+    expect(rule(libraryTables, `${LIB_TABLE} > tbody > tr:nth-child(even)`).get('background-color')).toBe('var(--table-stripe)')
+    const total = rule(libraryTables, `${LIB_TABLE} > tfoot td`)
     expect(total.get('font-weight')).toBe('700')
-    expect(total.get('background-color')).toBe('var(--surface-muted)')
     expect(total.get('border-top')).toMatch(/^2px solid /)
   })
 
-  it('keeps figures right aligned with digits of one width', () => {
-    const numeric = rule(tables, `${TABLE} [data-numeric]`)
-    expect(numeric.get('text-align')).toBe('right')
-    expect(numeric.get('font-variant-numeric')).toBe('tabular-nums')
+  it("does not repeat the library's header, cells, stripes or total", () => {
+    const selectors = rules(tables).flatMap((r) => r.selectors)
+    expect(selectors.filter((selector) => /\b(th|td)$|tbody|tfoot/.test(selector))).toEqual([])
   })
 
   it('stripes the key-value ficha, with a tone per row', () => {
@@ -147,7 +140,7 @@ describe('tables.css of portal-tributario', () => {
 
   // the text over the backgrounds this partial paints: header, stripes, total, a selected row
   it('keeps AA over the backgrounds it paints', () => {
-    const head = rule(tables, `${TABLE} th`).get('color')!
+    const head = rule(libraryTables, `${LIB_TABLE} th`).get('color')!
     const pairs: [string, string, string][] = [
       ['th', head, token('table-head')],
       ...['ink', 'ink-muted', 'link', 'success', 'danger', 'warning'].map((name): [string, string, string] => [
