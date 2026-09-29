@@ -14,12 +14,13 @@ import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { PasosAsistente } from '../components/PasosAsistente'
 import { QueryState } from '../components/QueryState'
+import { describirContribuyente, PERENE_PREDIO } from '../forms/bloques'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
 import { useCatalogos, useRefresh } from '../queries'
-import type { Contribuyente, Declaracion, Predio } from '../types'
+import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
@@ -30,13 +31,8 @@ const UBICACION_FORM = 'dj-ubicacion'
 // the clerk leaves them: what is presented is datos del predio as it is now, gone back to by its tab or not
 const SEGUIDOS = [...COMUNES, 'anio', 'secuencia_uso'] as const
 
-// the padrón's district, in the selva: where a new predio most likely is
-const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
-
 // datos del predio shows a few of the predio's fields beside the declaration's
 type DatosDelPredio = Declaracion & { tipo_predio?: string | null; codigo_predio?: string | null; numero_registro?: number | null }
-
-const describeContribuyente = (c: Contribuyente): Picked => ({ id: c.id!, label: `${c.numero_documento ?? 's/d'} · ${c.nombre_completo ?? ''}` })
 
 // /contribuyentes/:id/declaraciones/nueva from a contribuyente; /declaraciones/nueva?predio=<id> from a predio
 export function NuevaDeclaracionRoute() {
@@ -230,7 +226,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                               setPickError(undefined)
                             }}
                             search={(q) => rentas.contribuyentes(q, 0, 8)}
-                            describe={describeContribuyente}
+                            describe={describirContribuyente}
                             error={pickError}
                           />
                         </div>
@@ -264,7 +260,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       hideActions
                       sections={sections}
                       options={catalogos.data?.predio}
-                      initial={emptyOf<Predio>(sections, { ...PERENE, tipo_predio: tipoPredio })}
+                      initial={emptyOf<Predio>(sections, { ...PERENE_PREDIO, tipo_predio: tipoPredio })}
                       submitLabel="Guardar"
                       onSubmit={(predio) => presentar({ predio })}
                     />

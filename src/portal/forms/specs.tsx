@@ -1,9 +1,9 @@
 import type { FormValues, SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { auto } from './auto'
+import { nombres, ubigeoCampos } from './bloques'
 import { errorDocumento, pideNumero, SIN_DOCUMENTO } from './documento'
 import { RENIEC } from './reniec'
-import { UbigeoFields } from './UbigeoFields'
 
 // how each entity shows and edits (the kit's forms/spec.ts): sections, labels and value kinds. names are the model's
 // fields. the srtm screens lay a section out on six columns; span says how many a field takes
@@ -77,8 +77,6 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
 // the address one-liner lives with the ubicación's (forms/direccion.ts)
 export { describirDomicilio } from './direccion'
 
-const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
-
 export const DOMICILIO_SECTIONS: SectionSpec[] = [
   {
     id: 'datos-del-domicilio',
@@ -87,11 +85,7 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
       { name: 'tipo_domicilio', label: 'Tipo de domicilio', kind: 'enum', required: true, span: 1 },
       { name: 'tipo_predio', label: 'Tipo de predio', kind: 'enum', required: true, span: 1 },
       { name: 'estado', label: 'Estado', kind: 'enum', span: 1 },
-      { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
-      { name: 'ubigeo', label: 'Ubigeo', kind: 'hidden' },
-      { name: 'departamento', label: 'Departamento', kind: 'hidden', required: true },
-      { name: 'provincia', label: 'Provincia', kind: 'hidden', required: true },
-      { name: 'distrito', label: 'Distrito', kind: 'hidden', required: true },
+      ...ubigeoCampos(),
       { name: 'tipo_unidad_urbana', label: 'Tipo unidad urbana', kind: 'enum', span: 1 },
       {
         name: 'unidad_urbana',

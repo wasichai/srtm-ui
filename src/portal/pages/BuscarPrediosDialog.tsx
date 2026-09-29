@@ -13,6 +13,7 @@ import { recordIdOf } from '../components/geo'
 import { LotesMap } from '../components/LotesMap'
 import { Paginador } from '../components/Paginador'
 import { EmptyState } from '../components/QueryState'
+import { nombres } from '../forms/bloques'
 import { etiqueta } from '../forms/etiquetas'
 import type { Elegido } from '../forms/ubicacion'
 import { useCatalogos } from '../queries'
@@ -30,7 +31,6 @@ interface BuscarPrediosDialogProps {
   lotesAparte?: boolean
 }
 
-const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
 // a code, a CPU or a partida identify a predio by themselves; otherwise the srtm asks for the vía
 const identifica = (f: FiltrosPredio) => Boolean(f.codigo || f.codigo_cpu || f.partida_registral)
 

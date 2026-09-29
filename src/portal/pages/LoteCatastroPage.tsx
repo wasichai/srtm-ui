@@ -6,14 +6,12 @@ import { RecordForm } from '../../kit/forms/RecordForm'
 import { emptyOf, type SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { LoadingState, QueryState } from '../components/QueryState'
+import { nombres, PERENE_UBIGEO, ubigeoCampos } from '../forms/bloques'
 import { CatastroMapa } from '../forms/CatastroMapa'
-import { UbigeoFields } from '../forms/UbigeoFields'
 import { useCatalogos, useRefresh } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { CatastroFiscal, Ubigeo } from '../types'
 import { FichaHeader } from './FichaHeader'
-
-const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
 
 // a lote of the catastro fiscal (page 14's "predio de catastro fiscal"): its codes, where it is and its polygon. until
 // the GeoJSON is imported (model/import_catastro.py), the catastro is kept by hand here
@@ -32,11 +30,7 @@ export const LOTE_SECTIONS: SectionSpec[] = [
     id: 'ubicacion-del-lote',
     title: 'Ubicación del lote',
     fields: [
-      { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
-      { name: 'ubigeo', label: 'Ubigeo', kind: 'hidden' },
-      { name: 'departamento', label: 'Departamento', kind: 'hidden', required: true },
-      { name: 'provincia', label: 'Provincia', kind: 'hidden', required: true },
-      { name: 'distrito', label: 'Distrito', kind: 'hidden', required: true },
+      ...ubigeoCampos(),
       { name: 'tipo_via', label: 'Tipo de vía', kind: 'enum', span: 1 },
       {
         name: 'via',
@@ -96,9 +90,6 @@ const CAMPOS: (keyof CatastroFiscal)[] = [
 ]
 const cuerpo = (values: CatastroFiscal) => Object.fromEntries(CAMPOS.map((c) => [c, values[c] ?? null])) as unknown as CatastroFiscal
 
-// the padrón's district: where a new lote most likely is
-const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' }
-
 type LoteForm = CatastroFiscal & { departamento?: string | null; provincia?: string | null; distrito?: string | null }
 
 export function NuevoLotePage() {
@@ -107,7 +98,7 @@ export function NuevoLotePage() {
   return (
     <LoteCard
       title="Nuevo lote de catastro fiscal"
-      initial={emptyOf<LoteForm>(LOTE_SECTIONS, { ...PERENE, tipo_predio: 'PREDIO URBANO' })}
+      initial={emptyOf<LoteForm>(LOTE_SECTIONS, { ...PERENE_UBIGEO, tipo_predio: 'PREDIO URBANO' })}
       submitLabel="Registrar lote"
       save={async (values) => {
         const created = await rentas.crearLote(cuerpo(values))

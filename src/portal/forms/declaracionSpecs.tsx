@@ -2,6 +2,7 @@ import type { FormValues, SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import type { Catalogos } from '../types'
 import { auto } from './auto'
+import { nombres, ubigeoCampos } from './bloques'
 import { BuscarPrediosButton } from './BuscarPrediosButton'
 import { CatastroMapa } from './CatastroMapa'
 import { CategoriasFields, COLUMNAS } from './CategoriasFields'
@@ -9,13 +10,10 @@ import { DireccionPreview } from './DireccionPreview'
 import { ObraCategoriaField } from './ObraCategoriaField'
 import { RENIEC } from './reniec'
 import { conRuc, numeroSegunTipo, sinRuc } from './specs'
-import { UbigeoFields } from './UbigeoFields'
 import type { Elegido } from './ubicacion'
 import { UsoFields } from './UsoFields'
 
 // the srtm's declaración jurada predial, tab by tab (Presentacion2_.pdf, pages 11 to 21)
-
-const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
 
 // what an acquisition is proven with; several may apply, kept as one text
 export const DOCUMENTOS_ADQUISICION = [
@@ -153,11 +151,7 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
       title: 'Datos de la ubicación del predio',
       action: (form) => <BuscarPrediosButton form={form} onPredio={onPredio} />,
       fields: [
-        { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
-        { name: 'ubigeo', label: 'Ubigeo', kind: 'hidden' },
-        { name: 'departamento', label: 'Departamento', kind: 'hidden', required: true },
-        { name: 'provincia', label: 'Provincia', kind: 'hidden', required: true },
-        { name: 'distrito', label: 'Distrito', kind: 'hidden', required: true },
+        ...ubigeoCampos(),
         { name: 'region', label: 'Región', kind: 'enum', required: true, span: 1 },
         // optional in the srtm (page 14), but a new predio's dirección is built from it (the backend's)
         { name: 'tipo_via', label: 'Tipo de vía', kind: 'enum', required: predioNuevo, span: 1 },
@@ -286,14 +280,7 @@ export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   {
     id: 'domicilio',
     title: 'Domicilio',
-    fields: [
-      { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
-      { name: 'ubigeo', label: 'Ubigeo', kind: 'hidden' },
-      { name: 'departamento', label: 'Departamento', kind: 'hidden', required: true },
-      { name: 'provincia', label: 'Provincia', kind: 'hidden', required: true },
-      { name: 'distrito', label: 'Distrito', kind: 'hidden', required: true },
-      { name: 'descripcion_domicilio', label: 'Descripción domicilio', required: true, span: 6 }
-    ]
+    fields: [...ubigeoCampos(), { name: 'descripcion_domicilio', label: 'Descripción domicilio', required: true, span: 6 }]
   }
 ]
 
