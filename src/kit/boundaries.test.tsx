@@ -19,9 +19,10 @@ function sources(dir: string): string[] {
   })
 }
 
-// from '..', import '..', import('..'): dynamic import is a side door otherwise
+// from '..', import '..', import('..'): dynamic import is a side door otherwise. single or double quotes: the
+// formatter writes single, but a file it has not touched may not
 function importsOf(file: string): string[] {
-  return [...readFileSync(file, 'utf8').matchAll(/from '([^']+)'|import '([^']+)'|import\('([^']+)'\)/g)].map((match) => match[1] ?? match[2] ?? match[3])
+  return [...readFileSync(file, 'utf8').matchAll(/(?:from |import |import\()(['"])([^'"\n]+)\1/g)].map((match) => match[2])
 }
 
 const insideKit = (path: string) => path === SRC || path.startsWith(SRC + sep)
