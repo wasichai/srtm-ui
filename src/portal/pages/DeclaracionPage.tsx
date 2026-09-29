@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { QueryState } from '@wasichai/core'
 import { Badge, Button, Card } from '@wasichai/ui'
 import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
 import { useState } from 'react'
@@ -7,13 +8,13 @@ import { FieldGrid } from '../../kit/forms/FieldGrid'
 import { useFormGroup, useSharedFields } from '../../kit/forms/group'
 import { RecordForm } from '../../kit/forms/RecordForm'
 import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '../../kit/forms/spec'
+import { errorMessage } from '../../kit/ui/errorMessage'
+import { ConfirmDiscard, useUnsavedChanges } from '../../kit/ui/UnsavedChanges'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
-import { ConfirmarDescarte, useSalidaConCambios } from '../components/CambiosPendientes'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
-import { QueryState } from '../components/QueryState'
 import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
 import { useCatalogos, useRefresh } from '../queries'
@@ -95,7 +96,7 @@ function DeclaracionPage({ id }: { id: string }) {
   const grupo = useFormGroup(FORMULARIOS)
   const comun = useSharedFields(COMUNES)
   const pendientes = grupo.pending.map(etiqueta)
-  const salida = useSalidaConCambios(pendientes)
+  const salida = useUnsavedChanges(pendientes)
   // a save or a Cancelar starts the forms again, from the declaration as it is then
   const [version, setVersion] = useState(0)
   const [guardando, setGuardando] = useState(false)
@@ -107,7 +108,7 @@ function DeclaracionPage({ id }: { id: string }) {
   const rechazo = (e: unknown, de: Formulario[]) => {
     const con = grupo.errors(e, de)
     if (con.length > 0) abrir(con[0])
-    else setError(e instanceof Error ? e.message : 'No se pudo guardar')
+    else setError(errorMessage(e, 'No se pudo guardar'))
     return false
   }
   // the pending changes of every form tab, over the declaration and its predio as they are now (the other tabs, a
@@ -153,7 +154,7 @@ function DeclaracionPage({ id }: { id: string }) {
       setGuardado(true)
       return true
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo guardar')
+      setError(errorMessage(e, 'No se pudo guardar'))
       return false
     } finally {
       setGuardando(false)
@@ -321,15 +322,15 @@ function DeclaracionPage({ id }: { id: string }) {
                 ]}
               />
             </Card>
-            {salida.dialogo}
+            {salida.dialog}
             {descartando && (
-              <ConfirmarDescarte
-                titulo="¿Descartar los cambios?"
-                pendientes={pendientes}
-                consecuencia="Si los descartas, se pierden."
-                confirmar="Descartar cambios"
-                onConfirmar={descartar}
-                onSeguir={() => setDescartando(false)}
+              <ConfirmDiscard
+                title="¿Descartar los cambios?"
+                pending={pendientes}
+                consequence="Si los descartas, se pierden."
+                confirmLabel="Descartar cambios"
+                onConfirm={descartar}
+                onKeep={() => setDescartando(false)}
               />
             )}
           </div>

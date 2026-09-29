@@ -5,6 +5,7 @@ import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-fo
 import { formatDate } from '../format'
 import { useKit } from '../KitProvider'
 import type { KitTexts } from '../texts'
+import { errorMessage } from '../ui/errorMessage'
 import { FieldIdContext, useFieldId } from './fieldId'
 import { parseGeometry } from './geometry'
 import type { FormLink, SharedFields } from './group'
@@ -117,7 +118,7 @@ export function RecordForm<T extends object>({
     try {
       await onSubmit(output(current))
     } catch (e) {
-      if (!showErrors(e)) setFormError(e instanceof Error ? e.message : texts.saveFailed)
+      if (!showErrors(e)) setFormError(errorMessage(e, texts.saveFailed))
     }
   })
 

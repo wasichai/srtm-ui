@@ -1,4 +1,4 @@
-// Default Spanish strings for kit forms
+// Default Spanish strings for kit forms and flows
 export interface KitTexts {
   required: string // 'Este dato es obligatorio'
   integer: string // 'Debe ser un número entero'
@@ -11,6 +11,11 @@ export interface KitTexts {
   yes: string // 'SÍ'
   no: string // 'NO'
   months: readonly string[] // ENERO … DICIEMBRE (SETIEMBRE)
+  leaveTitle: string // '¿Salir sin guardar?'
+  leaveConsequence: string // 'Si sales, se pierden.'
+  leaveConfirm: string // 'Salir sin guardar'
+  keepEditing: string // 'Seguir editando'
+  pendingIn: (list: string) => string // list joined: 'Hay cambios sin guardar en A, B.'
 }
 
 export const DEFAULT_TEXTS: KitTexts = {
@@ -24,5 +29,10 @@ export const DEFAULT_TEXTS: KitTexts = {
   datePlaceholder: 'DD/MM/AAAA',
   yes: 'SÍ',
   no: 'NO',
-  months: ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+  months: ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'],
+  leaveTitle: '¿Salir sin guardar?',
+  leaveConsequence: 'Si sales, se pierden.',
+  leaveConfirm: 'Salir sin guardar',
+  keepEditing: 'Seguir editando',
+  pendingIn: (list) => `Hay cambios sin guardar en ${list}.`
 }

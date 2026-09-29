@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, Table, Td, Th } from '@wasichai/ui'
+import { EmptyState } from '@wasichai/core'
+import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, PageSizePagination, Table, Td, Th } from '@wasichai/ui'
 import { Camera, FileText, Pencil, Plus, RotateCcw, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
@@ -11,8 +12,6 @@ import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
 import { recordIdOf } from '../components/geo'
 import { LotesMap } from '../components/LotesMap'
-import { Paginador } from '../components/Paginador'
-import { EmptyState } from '../components/QueryState'
 import { nombres } from '../forms/bloques'
 import { etiqueta } from '../forms/etiquetas'
 import type { Elegido } from '../forms/ubicacion'
@@ -294,7 +293,7 @@ function Busqueda({
               </tbody>
             </Table>
             {resultados.data && (
-              <Paginador
+              <PageSizePagination
                 page={resultados.data.page}
                 size={size}
                 total={resultados.data.totalElements}

@@ -191,7 +191,7 @@ lo propio de srtm, enganchado en atributos que ponen los componentes:
 | `data-numeric`                   | las celdas de cifras (`NUMERICA` de `src/portal/components/tabla.ts`, `numeric` en `HijosPanel`) | nada: `NUMERICA` ya las alinea a la derecha con `tabular-nums` en todos los temas   |
 | `data-ui="ficha-kv"`             | el `<dl>` de `FieldGrid`, la ficha en solo lectura (Datos del contribuyente, del predio…)        | filas clave-valor alternas                                                          |
 | `data-tono="verde\|ambar\|rojo"` | una fila (hijo directo) de un `data-ui="ficha-kv"`                                               | la fila entera con el fondo de la alerta y el texto del tono                        |
-| `data-ui="paginador"`            | `Paginador` y `Pagination`                                                                       | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
+| `data-slot="pagination"`         | `Pagination` y `PageSizePagination` de `@wasichai/ui` (`data-mode` `pages` o `range`)            | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
 | `data-ui="estado"` + `data-tono` | `EstadoBadge` con la variante `portal`                                                           | nada: el tono lo ponen sus clases (`text-success`…); el gancho queda para el tema   |
 
 **Tablas.** Como el prototipo, en la hoja de la librería:
@@ -230,7 +230,7 @@ borde, en `shell`, 15px en negrita y sin mayúsculas, como la "ficha del contrib
 un código enlazado (el predio `01-01-0001`) no se corta en los guiones.
 
 **Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
-hover `#F0F0F0`) con CSS propio, acotado a `[data-ui='paginador']`. Podría delegarse en los ganchos de botón de
+hover `#F0F0F0`) con CSS propio, acotado a `[data-slot='pagination']`. Podría delegarse en los ganchos de botón de
 `controls.css` si los paginadores pasan a `controles.tsx`.
 
 ### Pestañas y fieldsets (`tabs.css`, #48, #66)
@@ -496,7 +496,7 @@ Los atributos que ponen los componentes para que un tema los pinte desde CSS. En
 | Formularios       | `record-fieldset`, `record-legend`, `record-number`, `record-title`, `record-action`, `record-acciones`, `record-nota`                                                                              | `RecordForm`                                                              |
 | Fichas            | `ficha-seccion`, `ficha-titulo`, `ficha-kv` (+ `data-tono` por fila)                                                                                                                                | `FieldGrid`                                                               |
 | Pestañas          | `data-slot`: `card`, `tabs`, `tabs-list`, `tabs-trigger`, `tabs-content`; `data-ui`: `workspace-tabs`, `workspace-tab`                                                                              | `Card`, `FichaTabs`, `TabBar`                                             |
-| Tablas            | `data-slot`: `table`, `table-head`, `table-cell`, `badge`; `data-ui`: `paginador`, `estado` (+ `data-tono`); `data-numeric` en las celdas de cifras                                                 | `Table`/`Th`/`Td`, `Paginador`, `Pagination`, `EstadoBadge`               |
+| Tablas            | `data-slot`: `table`, `table-head`, `table-cell`, `badge`, `pagination`; `data-ui`: `estado` (+ `data-tono`); `data-numeric` en las celdas de cifras                                                | `Table`/`Th`/`Td`, `Pagination`, `PageSizePagination`, `EstadoBadge`      |
 | Alertas           | `alerta` (+ `data-tono`), `alerta-texto`, `alerta-cerrar`                                                                                                                                           | `Alerta`                                                                  |
 | Estructura portal | `menu-sesion-panel`, `menu-sesion-cabecera`, `arbol-nav`, `arbol-grupo`, `arbol-hoja`, `arbol-caret`, `pasos-galon`, `paso`, `barra-instruccion`, `banda-titulo`, `cabecera-banda`, `cabecera-fila` | `MenuSesion`, `ArbolNav`, `PasosGalon`, `BarraInstruccion`, `BandaTitulo` |
 

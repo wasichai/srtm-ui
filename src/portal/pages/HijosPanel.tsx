@@ -1,15 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
+import { EmptyState, QueryState } from '@wasichai/core'
+import { Button, cn, ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogTitle, PageSizePagination, Table, Td, Th } from '@wasichai/ui'
 import { Box, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { RecordForm } from '../../kit/forms/RecordForm'
 import type { FormValues, SectionSpec } from '../../kit/forms/spec'
+import { errorMessage } from '../../kit/ui/errorMessage'
 import type { HijosApi } from '../api'
-import { Alerta } from '../components/Alerta'
 import { EstadoBadge } from '../components/EstadoBadge'
-import { Paginador } from '../components/Paginador'
-import { EmptyState, QueryState } from '../components/QueryState'
 import { NUMERICA } from '../components/tabla'
 import { useCatalogos, useRefresh } from '../queries'
 import type { CatalogKey } from '../types'
@@ -106,7 +105,7 @@ export function HijosPanel<T extends Hijo>({
       setRemoving(null)
       setSelectedId(null)
     } catch (e) {
-      setRemoveError(e instanceof Error ? e.message : 'No se pudo eliminar')
+      setRemoveError(errorMessage(e, 'No se pudo eliminar'))
     }
   }
   const open = adding || editing !== null
@@ -208,7 +207,7 @@ export function HijosPanel<T extends Hijo>({
         }
       </QueryState>
       {rows.length > 0 && (
-        <Paginador
+        <PageSizePagination
           page={Math.min(page, last)}
           size={size}
           total={rows.length}
@@ -241,25 +240,13 @@ export function HijosPanel<T extends Hijo>({
       )}
 
       {removing && (
-        <Dialog open onOpenChange={(o) => !o && setRemoving(null)}>
-          <DialogContent className="max-w-md">
-            <DialogTitle className="text-lg font-semibold">¿Eliminar este {singular}?</DialogTitle>
-            <DialogDescription className="mt-2 text-sm text-ink-muted">Se quita de la ficha. El historial del registro lo conserva.</DialogDescription>
-            {removeError && (
-              <Alerta tono="error" className="mt-3">
-                {removeError}
-              </Alerta>
-            )}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setRemoving(null)}>
-                Cancelar
-              </Button>
-              <Button variant="danger" onClick={() => void remove()}>
-                Eliminar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          title={`¿Eliminar este ${singular}?`}
+          description="Se quita de la ficha. El historial del registro lo conserva."
+          error={removeError}
+          onConfirm={() => void remove()}
+          onCancel={() => setRemoving(null)}
+        />
       )}
     </div>
   )

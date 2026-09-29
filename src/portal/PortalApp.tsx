@@ -1,12 +1,12 @@
 import { QueryClient } from '@tanstack/react-query'
-import { ApiError, createRegistry, createWasichaiI18n, resolveConfig, WasichaiProviders } from '@wasichai/core'
+import { ApiError, createRegistry, createWasichaiI18n, EmptyState, resolveConfig, WasichaiProviders } from '@wasichai/core'
 import { useState } from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router'
 import { SRTM_THEMES } from '../themes'
 import { client } from './api'
 import { LoginPage } from './auth/LoginPage'
 import { RequireSession } from './auth/RequireSession'
-import { EmptyState } from './components/QueryState'
+import { ajustarI18n } from './i18n'
 import { KitDelPortal } from './KitDelPortal'
 import { BuscarPage } from './pages/BuscarPage'
 import { ContribuyenteRoute } from './pages/ContribuyentePage'
@@ -60,13 +60,14 @@ const rutas = createRoutesFromElements(
 // the end-user portal: municipal staff looking up and keeping contribuyentes, predios and declarations.
 // under core's providers, like the admin: one session, and the theme the user picked (stored for them) on both sides.
 // no modules: the portal draws its own screens. it registers srtm's themes like the admin does (their labels are in
-// core's i18n). spanish only, so a locale picked in the admin is left alone. the kit's forms take the portal's labels
-// and error box (KitDelPortal)
+// core's i18n). spanish only, so a locale picked in the admin is left alone, with the srtm's wording and figures over
+// core's strings (ajustarI18n). the kit's forms take the portal's labels and error box (KitDelPortal)
 export function PortalApp() {
   const [app] = useState(() => {
     const config = resolveConfig({ apiBaseUrl: '/api', storagePrefix: 'srtm', appName: 'Rentas municipales', languages: ['es'], themes: SRTM_THEMES })
     const registry = createRegistry([])
     const i18n = createWasichaiI18n({ languages: config.languages, storageKey: client.keys.lang, modules: registry.modules })
+    ajustarI18n(i18n)
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry, refetchOnWindowFocus: false } } })
     return { config, registry, i18n, queryClient, router: createBrowserRouter(rutas) }
   })

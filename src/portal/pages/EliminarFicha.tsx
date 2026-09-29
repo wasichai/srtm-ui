@@ -1,7 +1,8 @@
-import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
+import { Button, ConfirmDialog } from '@wasichai/ui'
 import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { errorMessage } from '../../kit/ui/errorMessage'
 import { useWorkspaceTabs } from '../shell/WorkspaceTabs'
 
 // deleting a contribuyente or predio from its ficha (srtm-backend#7): confirmed first. the backend refuses, and says
@@ -23,7 +24,7 @@ export function EliminarFicha({ path, singular, borrar }: { path: string; singul
     try {
       await borrar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo eliminar')
+      setError(errorMessage(e, 'No se pudo eliminar'))
       setBusy(false)
       return
     }
@@ -39,27 +40,14 @@ export function EliminarFicha({ path, singular, borrar }: { path: string; singul
         Eliminar
       </Button>
       {open && (
-        <Dialog open onOpenChange={(o) => !o && cerrar()}>
-          <DialogContent className="max-w-md">
-            <DialogTitle className="text-lg font-semibold">¿Eliminar este {singular}?</DialogTitle>
-            <DialogDescription className="mt-2 text-sm text-ink-muted">
-              Solo se puede eliminar si no tiene declaraciones juradas, vigentes ni anuladas. No se puede deshacer.
-            </DialogDescription>
-            {error && (
-              <p role="alert" className="mt-3 text-sm text-danger">
-                {error}
-              </p>
-            )}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="secondary" onClick={cerrar}>
-                Cancelar
-              </Button>
-              <Button variant="danger" disabled={busy} onClick={() => void eliminar()}>
-                Eliminar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          title={`¿Eliminar este ${singular}?`}
+          description="Solo se puede eliminar si no tiene declaraciones juradas, vigentes ni anuladas. No se puede deshacer."
+          busy={busy}
+          error={error}
+          onConfirm={() => void eliminar()}
+          onCancel={cerrar}
+        />
       )}
     </>
   )

@@ -1,4 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { QueryState } from '@wasichai/core'
 import { Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -7,13 +8,13 @@ import { FieldGrid } from '../../kit/forms/FieldGrid'
 import { useFormGroup, useSharedFields } from '../../kit/forms/group'
 import { RecordForm } from '../../kit/forms/RecordForm'
 import { emptyOf } from '../../kit/forms/spec'
+import { errorMessage } from '../../kit/ui/errorMessage'
+import { useUnsavedChanges } from '../../kit/ui/UnsavedChanges'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
-import { useSalidaConCambios } from '../components/CambiosPendientes'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { PasosAsistente } from '../components/PasosAsistente'
-import { QueryState } from '../components/QueryState'
 import { describirContribuyente, PERENE_PREDIO } from '../forms/bloques'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
@@ -76,7 +77,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
   const grupo = useFormGroup(['datos', 'ubicacion'] as const)
-  const salida = useSalidaConCambios(grupo.pending.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
+  const salida = useUnsavedChanges(grupo.pending.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
   const [sections] = useState(() =>
     ubicacionSections((elegido: Elegido) => {
       const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
@@ -115,14 +116,14 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       }
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
       await refresh()
-      salida.permitir()
+      salida.allow()
       // just presented: no transferentes yet
       navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0)}&asistente=1`, { replace: true })
     } catch (e) {
       // what was refused goes under its field, in its step (this one, when the field is in both)
       const con = grupo.errors(e, ['datos', 'ubicacion'])
       if (con.length > 0) setTab(con.includes(tab) ? tab : con[0])
-      else setError(e instanceof Error ? e.message : 'No se pudo guardar')
+      else setError(errorMessage(e, 'No se pudo guardar'))
     } finally {
       enviando.current = false
       setBusy(false)
@@ -271,7 +272,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
           }))}
         />
       </Card>
-      {salida.dialogo}
+      {salida.dialog}
     </div>
   )
 }

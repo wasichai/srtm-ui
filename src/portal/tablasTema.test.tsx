@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { mockFetch, renderWithProviders, type FetchMock } from '@wasichai/testing'
+import { PageSizePagination, Pagination } from '@wasichai/ui'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ReactElement } from 'react'
@@ -8,8 +9,6 @@ import { FieldGrid } from '../kit/forms/FieldGrid'
 import { SRTM_THEMES } from '../themes'
 import { EstadoBadge, MarcaAnulada } from './components/EstadoBadge'
 import { formatNumber } from './components/format'
-import { Paginador } from './components/Paginador'
-import { Pagination } from './components/Pagination'
 import { tonoDeEstado } from './components/tono'
 import { DeclaracionesDelAnio } from './pages/Declaraciones'
 import { HijosPanel } from './pages/HijosPanel'
@@ -199,7 +198,7 @@ describe('the portal tables', () => {
     for (const cell of [...numericas(head), ...numericas(primera)]) expect(cell).toHaveClass('text-right', 'tabular-nums')
     expect(within(primera).getByText('Activo')).toHaveAttribute('data-tono', 'verde')
     expect(within(segunda).getByText('Inactivo')).toHaveAttribute('data-tono', 'rojo')
-    expect(screen.getByText('1 a 2 de 2 registros').closest('[data-ui="paginador"]')).toBeInTheDocument()
+    expect(screen.getByText('1 a 2 de 2 registros').closest('[data-slot="pagination"]')).toBeInTheDocument()
   })
 })
 
@@ -209,11 +208,11 @@ describe('the paginators', () => {
       'light',
       <>
         <Pagination page={0} totalPages={3} totalElements={47} onPage={() => {}} />
-        <Paginador page={0} size={10} total={47} onPage={() => {}} onSize={() => {}} />
+        <PageSizePagination page={0} size={10} total={47} onPage={() => {}} onSize={() => {}} />
       </>
     )
-    expect(screen.getByText('Página 1 de 3').closest('[data-ui="paginador"]')).toBeInTheDocument()
-    expect(screen.getByText('1 a 10 de 47 registros').closest('[data-ui="paginador"]')).toBeInTheDocument()
+    expect(screen.getByText('Página 1 de 3').closest('[data-slot="pagination"]')).toHaveAttribute('data-mode', 'pages')
+    expect(screen.getByText('1 a 10 de 47 registros').closest('[data-slot="pagination"]')).toHaveAttribute('data-mode', 'range')
   })
 })
 

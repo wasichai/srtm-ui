@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { anulada } from '../components/EstadoBadge'
 import type { DeclaracionDetalle } from '../types'
 
@@ -36,29 +37,31 @@ export function AvisoTitulares({ titulares, contribuyente, anio }: { titulares: 
   const propia = titulares.find((t) => t.declaracion.contribuyente === contribuyente)
   const primera = titulares[0]
   return (
-    <div role="alert" className="flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
-      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-      {propia ? (
-        <p>
-          {nombre(propia)} ya declara este predio en {anio}.{' '}
-          <Link to={`/declaraciones/${propia.declaracion.id}`} className={enlace}>
-            Abrir su declaración
-          </Link>
-        </p>
-      ) : (
-        <div className="space-y-1">
-          <p className="font-semibold">
-            El predio ya tiene titular en {anio}: {titulares.map(nombre).join(', ')}.
-          </p>
-          <p>
-            Otro titular se agrega como condómino, con su % de propiedad, desde{' '}
-            <Link to={`/declaraciones/${primera.declaracion.id}?tab=condominos`} className={enlace}>
-              Datos de los condóminos
-            </Link>{' '}
-            de esa declaración. Si el predio cambió de dueño, anula antes la declaración del anterior (descargo).
-          </p>
-        </div>
-      )}
-    </div>
+    <Alerta tono="error" className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3">
+      <span className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+        {propia ? (
+          <span className="block">
+            {nombre(propia)} ya declara este predio en {anio}.{' '}
+            <Link to={`/declaraciones/${propia.declaracion.id}`} className={enlace}>
+              Abrir su declaración
+            </Link>
+          </span>
+        ) : (
+          <span className="block space-y-1">
+            <span className="block font-semibold">
+              El predio ya tiene titular en {anio}: {titulares.map(nombre).join(', ')}.
+            </span>
+            <span className="block">
+              Otro titular se agrega como condómino, con su % de propiedad, desde{' '}
+              <Link to={`/declaraciones/${primera.declaracion.id}?tab=condominos`} className={enlace}>
+                Datos de los condóminos
+              </Link>{' '}
+              de esa declaración. Si el predio cambió de dueño, anula antes la declaración del anterior (descargo).
+            </span>
+          </span>
+        )}
+      </span>
+    </Alerta>
   )
 }
