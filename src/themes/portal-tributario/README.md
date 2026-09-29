@@ -230,8 +230,8 @@ borde, en `shell`, 15px en negrita y sin mayúsculas, como la "ficha del contrib
 un código enlazado (el predio `01-01-0001`) no se corta en los guiones.
 
 **Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
-hover `#F0F0F0`) con CSS propio, acotado a `[data-slot='pagination']`. Podría delegarse en los ganchos de botón de
-`controls.css` si los paginadores pasan a `controles.tsx`.
+hover `#F0F0F0`) con CSS propio, acotado a `[data-slot='pagination']`. Los paginadores son los de `@wasichai/ui`
+(0.4.0-dev.0) y sus botones ya son `Button` con `data-slot="button"`: podría delegarse en los ganchos de botón.
 
 ### Pestañas y fieldsets (`tabs.css`, #48, #66)
 
@@ -415,7 +415,7 @@ Componentes (en `src/portal/components/`):
   enfocan. El recorte también cortaría el contorno de foco, así que el botón dibuja el anillo alrededor de su texto,
   dentro del galón, en el color del texto.
 - `BarraInstruccion`: `paso?` (en negrita), `children` (la instrucción, con `aria-live="polite"`) y `herramientas?`
-  (`{ label, icon, onClick }[]`), que son `Button` primarios de `controles.tsx`. Hoy nadie pasa herramientas: el
+  (`{ label, icon, onClick }[]`), que son `Button` primarios de `@wasichai/ui`. Hoy nadie pasa herramientas: el
   portal no tiene Recuperar, Importar ni Limpiar.
 - `PasosAsistente` junta los dos sobre una tarjeta, solo con la variante `portal`; en la clásica no pinta nada. Lo
   usan Nuevo contribuyente, la ficha del contribuyente mientras sigue la inscripción (`?inscripcion=1`, sobre sus
@@ -487,8 +487,9 @@ dibuja con la variante `portal`:
 ## Ganchos `data-slot` y `data-ui`
 
 Los atributos que ponen los componentes para que un tema los pinte desde CSS. En light y dark no hacen nada. Los
-`data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn) y los pinta la hoja del tema de la librería; los
-`data-ui` son de srtm y los pintan sus parciales.
+`data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn; `pagination`, desde 0.4.0-dev.0) y los pinta la hoja
+del tema de la librería, salvo `pagination`, que pinta `tables.css`; los `data-ui` son de srtm y los pintan sus
+parciales.
 
 | Grupo             | Ganchos                                                                                                                                                                                             | Componente                                                                |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |

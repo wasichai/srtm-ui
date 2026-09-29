@@ -122,7 +122,7 @@ describe('BarraInstruccion', () => {
     expect(screen.queryAllByRole('button')).toEqual([])
   })
 
-  // the portal's primary Button (controles.tsx), so the theme knows it as one
+  // @wasichai/ui's primary Button, so the theme knows it as one
   it('draws its tools as primary buttons, each with its icon and label', async () => {
     const importar = vi.fn()
     render(
