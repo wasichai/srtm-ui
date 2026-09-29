@@ -327,6 +327,54 @@ describe('EditableList', () => {
     expect(remove).toHaveBeenCalledTimes(2)
   })
 
+  it('without onChanged, reads again after a save rather than joining a slower read begun before it', async () => {
+    let stored: Thing[] = [...ROWS]
+    // the next read hangs, holding the rows of before the save, until the test lets it go
+    let hold = false
+    let release: () => void = () => {}
+    const load = vi.fn((): Promise<Thing[]> => {
+      const rows = [...stored]
+      if (!hold) return Promise.resolve(rows)
+      hold = false
+      return new Promise((resolve) => {
+        release = () => resolve(rows)
+      })
+    })
+    const { queryClient } = renderWithProviders(
+      <EditableList<Thing>
+        queryKey={['things', 'slow']}
+        load={load}
+        save={async (_editing, values) => {
+          stored = [...stored, { ...values, id: 't3' }]
+        }}
+        remove={async () => {}}
+        plural="things"
+        singular="thing"
+        sections={SECTIONS}
+        columns={COLUMNS}
+        newRow={() => ({ name: '' })}
+      />
+    )
+    await grid()
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar thing' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Nuevo thing' })
+    await userEvent.type(within(dialog).getByRole('textbox', { name: /^Name/ }), 'THIRD')
+    // a read the list did not ask for (a refocus, say) is on its way when the save lands
+    hold = true
+    act(() => void queryClient.refetchQueries({ queryKey: ['things', 'slow'] }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    await act(async () => release())
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(await within(await grid()).findByRole('row', { name: /THIRD/ })).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('grid'))
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.textContent)
+    ).toEqual(['FIRST10', 'SECOND20', 'THIRD'])
+  })
+
   it('reads its list once per save and per removal when onChanged also refreshes it', async () => {
     let client: QueryClient | undefined
     // like an app's global refresh: every query goes stale, this list's too

@@ -95,9 +95,10 @@ export function EditableList<T extends { id?: string }>({
     setEditing(null)
     setAdding(false)
   }
-  // after a write: what else the app says, then this list. onChanged first and no cancelRefetch: when the app's refresh
-  // already reloads this list too, the list joins that fetch instead of cancelling it and asking again
-  const changed = () => Promise.all([onChanged?.(), queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })])
+  // after a write: what else the app says, then this list. with onChanged (an app refresh, first): a fetch of this list
+  // in flight began after the write, so join it, not cancel and ask again. without: one in flight may be older than the
+  // write, so cancel it and read again
+  const changed = () => Promise.all([onChanged?.(), queryClient.invalidateQueries({ queryKey }, { cancelRefetch: !onChanged })])
   const submit = async (values: T) => {
     await save(editing, values)
     await changed()
