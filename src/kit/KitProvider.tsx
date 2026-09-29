@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useMemo, use } from 'react'
 import type { ReactNode } from 'react'
 import type { KindRenderer } from './forms/kinds'

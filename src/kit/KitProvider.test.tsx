@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react'
+import { render, renderHook, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 import { KitProvider, useKit } from './KitProvider'
@@ -26,9 +26,21 @@ describe('KitProvider', () => {
     expect(result.current.enumLabel('x', 'A')).toBe('A!')
   })
 
-  it('provides renderAlert as default', () => {
+  it('draws the form-level error as a red alert paragraph by default', () => {
     const { result } = renderHook(() => useKit())
-    const alert = result.current.renderAlert('test message')
-    expect(alert).toBeDefined()
+    render(<>{result.current.renderAlert('Could not save')}</>)
+    const alert = screen.getByRole('alert')
+    expect(alert.tagName).toBe('P')
+    expect(alert).toHaveClass('text-sm', 'text-danger')
+    expect(alert).toHaveTextContent('Could not save')
+  })
+
+  it('draws the form-level error with the renderAlert it is given', () => {
+    const box = (message: string) => <div role="status">Error: {message}</div>
+    const wrapper = ({ children }: { children: ReactNode }) => <KitProvider renderAlert={box}>{children}</KitProvider>
+    const { result } = renderHook(() => useKit(), { wrapper })
+    render(<>{result.current.renderAlert('Could not save')}</>)
+    expect(screen.getByRole('status')).toHaveTextContent('Error: Could not save')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
