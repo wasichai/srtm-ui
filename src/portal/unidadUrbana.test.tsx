@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RecordForm } from '../kit/forms/RecordForm'
 import { describirDomicilio } from './forms/direccion'
 import { DOMICILIO_SECTIONS } from './forms/specs'
+import { KitDelPortal } from './KitDelPortal'
 
 // the two tipos de unidad urbana page 5 cuts ("ASOCIACION DE VIVIENDA D…", "…E I…"), named as the catastro fiscal's
 // TIPO_UU domain (srtm-backend's model.json): the srtm writes its address catalogs as they are, without accents
@@ -29,7 +30,9 @@ describe('tipos de unidad urbana de la pág. 5', () => {
         <MemoryRouter>
           <RecordForm sections={DOMICILIO_SECTIONS} options={{ tipo_unidad_urbana: PAGINA_5 }} initial={{}} submitLabel="Grabar" onSubmit={vi.fn()} />
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
+      // under the portal's KitProvider: the options go through etiqueta, as in the app
+      { wrapper: KitDelPortal }
     )
     const opciones = within(screen.getByLabelText(/Tipo unidad urbana/))
       .getAllByRole('option')

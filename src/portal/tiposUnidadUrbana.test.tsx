@@ -8,6 +8,7 @@ import { UBICACION_SECTIONS } from './forms/declaracionSpecs'
 import { ABREVIATURA_UNIDAD_URBANA, describirUbicacion } from './forms/direccion'
 import { etiqueta } from './forms/etiquetas'
 import { DOMICILIO_SECTIONS } from './forms/specs'
+import { KitDelPortal } from './KitDelPortal'
 
 // the tipos de unidad urbana are the catastro fiscal's TIPO_UU (srtm-backend's model/data/tipos_unidad_urbana.csv), in
 // page 5's order: the selects show them as they are, without accents, and the address writes their ABREV_UU
@@ -27,10 +28,12 @@ function conDatos(ui: React.ReactNode) {
     { path: '/srtm/vias', body: page([]) }
   ])
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  // under the portal's KitProvider: the options go through etiqueta, as in the app
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
+    { wrapper: KitDelPortal }
   )
 }
 
