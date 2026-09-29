@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@wasichai/testing'
@@ -324,6 +325,29 @@ describe('EditableList', () => {
     expect(confirm).toBeEnabled()
     await userEvent.click(confirm)
     expect(remove).toHaveBeenCalledTimes(2)
+  })
+
+  it('reads its list once per save and per removal when onChanged also refreshes it', async () => {
+    let client: QueryClient | undefined
+    // like an app's global refresh: every query goes stale, this list's too
+    const onChanged = vi.fn(() => client?.invalidateQueries())
+    const { load, queryClient } = setup({ onChanged })
+    client = queryClient
+    await grid()
+    expect(load).toHaveBeenCalledTimes(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar thing' }))
+    await userEvent.click(within(await screen.findByRole('dialog', { name: 'Nuevo thing' })).getByRole('button', { name: 'Grabar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(onChanged).toHaveBeenCalledTimes(1)
+    expect(load).toHaveBeenCalledTimes(2)
+
+    await userEvent.click(within(await grid()).getByRole('row', { name: /FIRST/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar thing' }))
+    await userEvent.click(within(await screen.findByRole('dialog', { name: '¿Eliminar este thing?' })).getByRole('button', { name: 'Eliminar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(onChanged).toHaveBeenCalledTimes(2)
+    expect(load).toHaveBeenCalledTimes(3)
   })
 
   it('reads its own list again after a save and a removal, with no onChanged', async () => {
