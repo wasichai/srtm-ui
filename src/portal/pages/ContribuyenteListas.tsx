@@ -1,17 +1,11 @@
 import { AlertTriangle, MapPinCheck } from 'lucide-react'
+import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
+import { Alerta } from '../components/Alerta'
 import { formatText } from '../components/format'
+import { PERENE_UBIGEO } from '../forms/bloques'
 import { celda, etiqueta } from '../forms/etiquetas'
-import {
-  describirDomicilio,
-  DOMICILIO_SECTIONS,
-  emptyOf,
-  MEDIO_CONTACTO_SECTIONS,
-  nombreORazonSocial,
-  RELACIONADO_SECTIONS,
-  SUSTENTO_SECTIONS,
-  type FormValues
-} from '../forms/specs'
+import { describirDomicilio, DOMICILIO_SECTIONS, MEDIO_CONTACTO_SECTIONS, nombreORazonSocial, RELACIONADO_SECTIONS, SUSTENTO_SECTIONS } from '../forms/specs'
 import { UbicarDireccion } from '../forms/UbicarDireccion'
 import type { Contribuyente, Domicilio, MedioContacto, Relacionado, Sustento } from '../types'
 import { HijosPanel } from './HijosPanel'
@@ -29,9 +23,6 @@ const TIPO_FIJO = DOMICILIO_SECTIONS.map((s) => ({
   fields: s.fields.map((f) => (f.name === 'tipo_domicilio' ? { ...f, readOnly: true } : f))
 }))
 
-// the padrón's district: where a new domicilio most likely is
-const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' }
-
 export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyente }) {
   return (
     <HijosPanel<Domicilio>
@@ -46,7 +37,7 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
       fijo={(d, rows) => (unicoFiscal(d, rows) ? 'Es el único domicilio fiscal activo: no se puede eliminar' : null)}
       nuevo={(rows) =>
         emptyOf<Domicilio>(DOMICILIO_SECTIONS, {
-          ...PERENE,
+          ...PERENE_UBIGEO,
           tipo_domicilio: rows.some(esFiscalActivo) ? 'REAL' : 'FISCAL',
           tipo_predio: 'PREDIO URBANO',
           estado: 'ACTIVO'
@@ -54,13 +45,17 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
       }
       aviso={(rows) =>
         rows.some(esFiscalActivo) ? null : (
-          <div role="alert" className="flex items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <div>
-              <p className="font-semibold">(*) Registrar al menos 1 domicilio fiscal</p>
-              {contribuyente.domicilio_fiscal && <p className="mt-0.5 text-ink-muted">Domicilio fiscal del padrón: {contribuyente.domicilio_fiscal}</p>}
-            </div>
-          </div>
+          <Alerta tono="error" className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3">
+            <span className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <span>
+                <span className="block font-semibold">(*) Registrar al menos 1 domicilio fiscal</span>
+                {contribuyente.domicilio_fiscal && (
+                  <span className="mt-0.5 block text-ink-muted">Domicilio fiscal del padrón: {contribuyente.domicilio_fiscal}</span>
+                )}
+              </span>
+            </span>
+          </Alerta>
         )
       }
       footer={(values: FormValues, form) => (

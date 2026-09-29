@@ -35,7 +35,7 @@ Tiene tres capas, de la más genérica a la más propia:
 | `src/themes/portal-tributario/controls.css` | Lo que la hoja de la librería deja a la app: `ghost` como enlace en el contenido, radios y checkboxes (#47, #66).                                    |
 | `src/themes/parciales.test.tsx`             | Cada parcial va bajo el tema, fuera de capas e importado; y los contrastes de sus colores propios.                                                   |
 | `src/themes/css.ts`                         | Ayudas de los tests: leer una regla CSS y medir un contraste.                                                                                        |
-| `src/portal/components/controles.tsx`       | `NativeSelect`, el `<select>` nativo con `data-slot="select-trigger"`. Botones y campos vienen de `@wasichai/ui` (#66).                              |
+| `src/kit/forms/NativeSelect.tsx`            | `NativeSelect`, el `<select>` nativo con `data-slot="select-trigger"`. Botones y campos vienen de `@wasichai/ui` (#66).                              |
 | `src/themes/portal-tributario/tabs.css`     | Pestañas de trabajo y fieldsets de `RecordForm` con la leyenda sobre el borde (#48). Las de la ficha son de la librería.                             |
 | `src/themes/portal-tributario/alerts.css`   | La caja de las alertas en cuatro tonos (#50).                                                                                                        |
 | `src/portal/components/Alerta.tsx`          | Alerta con tono, título y cierre; en light y dark se ve como el texto que sustituye (#50).                                                           |
@@ -167,7 +167,7 @@ controles directamente de `@wasichai/ui`: ya no hay envoltorio. La hoja alcanza 
 | `#content [data-slot='button'][data-variant='ghost']` | sin caja, texto `link`, hover `#F0F0F0`. Solo en el contenido: el shell y el admin no |
 | `input[type=radio]`, `input[type=checkbox]`           | 16px, `accent-color: var(--link)`                                                     |
 
-- **`NativeSelect`** (`src/portal/components/controles.tsx`) es el `<select>` nativo con `selectClass`; lleva
+- **`NativeSelect`** (`src/kit/forms/NativeSelect.tsx`) es el `<select>` nativo con `selectClass`; lleva
   `data-slot="select-trigger"`, así la hoja lo pinta como los selects de la librería.
 - **Botón-ícono redondo.** La variante `round` de #47 no tenía usos y se retiró con #66. Si hace falta, es un `Button`
   `ghost` de tamaño `icon` con `data-variant="round"` (la librería deja sobrescribir sus ganchos) y una regla aquí; el
@@ -191,7 +191,7 @@ lo propio de srtm, enganchado en atributos que ponen los componentes:
 | `data-numeric`                   | las celdas de cifras (`NUMERICA` de `src/portal/components/tabla.ts`, `numeric` en `HijosPanel`) | nada: `NUMERICA` ya las alinea a la derecha con `tabular-nums` en todos los temas   |
 | `data-ui="ficha-kv"`             | el `<dl>` de `FieldGrid`, la ficha en solo lectura (Datos del contribuyente, del predio…)        | filas clave-valor alternas                                                          |
 | `data-tono="verde\|ambar\|rojo"` | una fila (hijo directo) de un `data-ui="ficha-kv"`                                               | la fila entera con el fondo de la alerta y el texto del tono                        |
-| `data-ui="paginador"`            | `Paginador` y `Pagination`                                                                       | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
+| `data-slot="pagination"`         | `Pagination` y `PageSizePagination` de `@wasichai/ui` (`data-mode` `pages` o `range`)            | nota bajo la tabla: `table-stripe`, 13.5px, `ink-muted`; botones como el secundario |
 | `data-ui="estado"` + `data-tono` | `EstadoBadge` con la variante `portal`                                                           | nada: el tono lo ponen sus clases (`text-success`…); el gancho queda para el tema   |
 
 **Tablas.** Como el prototipo, en la hoja de la librería:
@@ -230,8 +230,8 @@ borde, en `shell`, 15px en negrita y sin mayúsculas, como la "ficha del contrib
 un código enlazado (el predio `01-01-0001`) no se corta en los guiones.
 
 **Paginadores.** Los botones de página toman el aspecto del botón secundario del prototipo (blanco, borde `#CCC`,
-hover `#F0F0F0`) con CSS propio, acotado a `[data-ui='paginador']`. Podría delegarse en los ganchos de botón de
-`controls.css` si los paginadores pasan a `controles.tsx`.
+hover `#F0F0F0`) con CSS propio, acotado a `[data-slot='pagination']`. Los paginadores son los de `@wasichai/ui`
+(0.4.0-dev.0) y sus botones ya son `Button` con `data-slot="button"`: podría delegarse en los ganchos de botón.
 
 ### Pestañas y fieldsets (`tabs.css`, #48, #66)
 
@@ -415,7 +415,7 @@ Componentes (en `src/portal/components/`):
   enfocan. El recorte también cortaría el contorno de foco, así que el botón dibuja el anillo alrededor de su texto,
   dentro del galón, en el color del texto.
 - `BarraInstruccion`: `paso?` (en negrita), `children` (la instrucción, con `aria-live="polite"`) y `herramientas?`
-  (`{ label, icon, onClick }[]`), que son `Button` primarios de `controles.tsx`. Hoy nadie pasa herramientas: el
+  (`{ label, icon, onClick }[]`), que son `Button` primarios de `@wasichai/ui`. Hoy nadie pasa herramientas: el
   portal no tiene Recuperar, Importar ni Limpiar.
 - `PasosAsistente` junta los dos sobre una tarjeta, solo con la variante `portal`; en la clásica no pinta nada. Lo
   usan Nuevo contribuyente, la ficha del contribuyente mientras sigue la inscripción (`?inscripcion=1`, sobre sus
@@ -487,16 +487,17 @@ dibuja con la variante `portal`:
 ## Ganchos `data-slot` y `data-ui`
 
 Los atributos que ponen los componentes para que un tema los pinte desde CSS. En light y dark no hacen nada. Los
-`data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn) y los pinta la hoja del tema de la librería; los
-`data-ui` son de srtm y los pintan sus parciales.
+`data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn; `pagination`, desde 0.4.0-dev.0) y los pinta la hoja
+del tema de la librería, salvo `pagination`, que pinta `tables.css`; los `data-ui` son de srtm y los pintan sus
+parciales.
 
 | Grupo             | Ganchos                                                                                                                                                                                             | Componente                                                                |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Controles         | `data-slot`: `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select-trigger`                                                                                                        | `@wasichai/ui`; `NativeSelect` (`controles.tsx`) usa `select-trigger`     |
+| Controles         | `data-slot`: `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select-trigger`                                                                                                        | `@wasichai/ui`; `NativeSelect` (`NativeSelect.tsx`) usa `select-trigger`  |
 | Formularios       | `record-fieldset`, `record-legend`, `record-number`, `record-title`, `record-action`, `record-acciones`, `record-nota`                                                                              | `RecordForm`                                                              |
 | Fichas            | `ficha-seccion`, `ficha-titulo`, `ficha-kv` (+ `data-tono` por fila)                                                                                                                                | `FieldGrid`                                                               |
 | Pestañas          | `data-slot`: `card`, `tabs`, `tabs-list`, `tabs-trigger`, `tabs-content`; `data-ui`: `workspace-tabs`, `workspace-tab`                                                                              | `Card`, `FichaTabs`, `TabBar`                                             |
-| Tablas            | `data-slot`: `table`, `table-head`, `table-cell`, `badge`; `data-ui`: `paginador`, `estado` (+ `data-tono`); `data-numeric` en las celdas de cifras                                                 | `Table`/`Th`/`Td`, `Paginador`, `Pagination`, `EstadoBadge`               |
+| Tablas            | `data-slot`: `table`, `table-head`, `table-cell`, `badge`, `pagination`; `data-ui`: `estado` (+ `data-tono`); `data-numeric` en las celdas de cifras                                                | `Table`/`Th`/`Td`, `Pagination`, `PageSizePagination`, `EstadoBadge`      |
 | Alertas           | `alerta` (+ `data-tono`), `alerta-texto`, `alerta-cerrar`                                                                                                                                           | `Alerta`                                                                  |
 | Estructura portal | `menu-sesion-panel`, `menu-sesion-cabecera`, `arbol-nav`, `arbol-grupo`, `arbol-hoja`, `arbol-caret`, `pasos-galon`, `paso`, `barra-instruccion`, `banda-titulo`, `cabecera-banda`, `cabecera-fila` | `MenuSesion`, `ArbolNav`, `PasosGalon`, `BarraInstruccion`, `BandaTitulo` |
 

@@ -1,4 +1,4 @@
-// the native controls the portal draws itself, looking like @wasichai/ui's Input
+// a native select, looking like @wasichai/ui's Input
 export const selectClass =
   'h-9 w-full rounded-md border border-border bg-surface px-3 text-sm text-ink disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted aria-[invalid=true]:border-danger'
 

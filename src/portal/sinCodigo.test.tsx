@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
-import { AUTO, SIN_CODIGO, SIN_FECHA, vacioDe, type FieldSpec } from './forms/specs'
+import { auto, AUTO, SIN_CODIGO, SIN_FECHA } from './forms/auto'
 import { PortalApp } from './PortalApp'
 
 // the backend's codes and numbers: "(AUTOGENERADO)" only before the record exists. one imported from the padrón,
@@ -76,16 +76,13 @@ const leido = (label: string) => panel().getByText(label, { selector: 'dt' }).ne
 
 describe('placeholders of the backend codes', () => {
   it('promise a code only while the record is new', () => {
-    const codigo: FieldSpec = { name: 'codigo', label: 'Código', readOnly: true, placeholder: AUTO }
-    expect(vacioDe(codigo, {}, false)).toBe(AUTO)
-    expect(vacioDe(codigo, {}, true)).toBe(SIN_CODIGO)
-    expect(vacioDe({ ...codigo, kind: 'date' }, {}, true)).toBe(SIN_FECHA)
-    // any other placeholder is just that
-    expect(vacioDe({ name: 'observacion', label: 'Observación', placeholder: 'OBSERVACIÓN' }, {}, true)).toBe('OBSERVACIÓN')
+    expect(auto()({ values: {}, saved: false })).toBe(AUTO)
+    expect(auto()({ values: {}, saved: true })).toBe(SIN_CODIGO)
+    expect(auto({ date: true })({ values: {}, saved: true })).toBe(SIN_FECHA)
     // a field of another record says whether that one exists
-    const deOtro: FieldSpec = { ...codigo, existe: (v) => Boolean(v.codigo_predio) }
-    expect(vacioDe(deOtro, { codigo_predio: '01-01-0001' }, false)).toBe(SIN_CODIGO)
-    expect(vacioDe(deOtro, { codigo_predio: '' }, true)).toBe(AUTO)
+    const deOtro = auto({ exists: (v) => Boolean(v.codigo_predio) })
+    expect(deOtro({ values: { codigo_predio: '01-01-0001' }, saved: false })).toBe(SIN_CODIGO)
+    expect(deOtro({ values: { codigo_predio: '' }, saved: true })).toBe(AUTO)
   })
 
   it('shows an imported contribuyente without code, number or fecha del registro, read and edited', async () => {

@@ -1,23 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
 import { Label } from '@wasichai/ui'
 import type { UseFormReturn } from 'react-hook-form'
+import { useFieldId } from '../../kit/forms/fieldId'
+import { lockedIn } from '../../kit/forms/locked'
+import { NativeSelect } from '../../kit/forms/NativeSelect'
+import type { FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { NativeSelect } from '../components/controles'
 import type { Ubigeo } from '../types'
-import { bloqueadosEn } from './bloqueo'
-import { useCampoId } from './campoId'
-import type { FormValues } from './specs'
 
 const distinct = (values: string[]) => [...new Set(values)]
 
 // departamento -> provincia -> distrito over the INEI list, writing the form's four hidden fields
 // (departamento, provincia, distrito and the ubigeo code). changing one level clears the ones under it. a level a lote
-// of the catastro filled is greyed (forms/bloqueo.ts)
+// of the catastro filled is greyed (the kit's forms/locked.ts)
 export function UbigeoFields({ form }: { form: UseFormReturn<FormValues> }) {
   const ubigeos = useQuery({ queryKey: ['ubigeos'], queryFn: rentas.ubigeos, staleTime: Infinity })
   const [departamento = '', provincia = '', distrito = ''] = form.watch(['departamento', 'provincia', 'distrito'])
-  const bloqueados = bloqueadosEn(form)
-  const campoId = useCampoId()
+  const bloqueados = lockedIn(form)
+  const campoId = useFieldId()
   const all: Ubigeo[] = ubigeos.data ?? []
   const departamentos = distinct(all.map((u) => u.departamento))
   const provincias = distinct(all.filter((u) => u.departamento === departamento).map((u) => u.provincia))

@@ -1,9 +1,9 @@
+import type { Geometry } from '../../kit/forms/geometry'
+
 // the geojson the portal handles: the backend sends and takes it in EPSG:4326
 
-export interface Geometry {
-  type: string
-  coordinates: unknown
-}
+// the kit's, for the portal's importers
+export { parseGeometry, type Geometry } from '../../kit/forms/geometry'
 
 export interface Feature {
   type: 'Feature'
@@ -53,15 +53,4 @@ export function boundsOf(geometries: (Geometry | null | undefined)[]): [[number,
         [maxX, maxY]
       ]
     : null
-}
-
-// a geometry kept in a form's hidden field, as text
-export const parseGeometry = (text: string | null | undefined): Geometry | null => {
-  if (!text) return null
-  try {
-    const value = JSON.parse(text) as Geometry
-    return value && typeof value.type === 'string' ? value : null
-  } catch {
-    return null
-  }
 }

@@ -1,6 +1,6 @@
+import { EmptyState, QueryState } from '@wasichai/core'
 import { Card, CardHeader, CardTitle } from '@wasichai/ui'
 import { Link, useSearchParams } from 'react-router'
-import { EmptyState, QueryState } from '../components/QueryState'
 import { useContribuyentes, usePredios } from '../queries'
 
 // the header search: both padrones at once, the first matches of each

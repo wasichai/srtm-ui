@@ -1,16 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardBody, CardHeader, CardTitle } from '@wasichai/ui'
 import { useLocation, useNavigate } from 'react-router'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import { emptyOf } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { RecordForm } from '../forms/RecordForm'
+import { PERENE_PREDIO } from '../forms/bloques'
 import { UBICACION_SECTIONS } from '../forms/declaracionSpecs'
-import { emptyOf } from '../forms/specs'
 import { camposDelLote, ubicacionDeLote } from '../forms/ubicacion'
 import { useCatalogos, useRefresh } from '../queries'
 import type { CatastroFiscal, Predio } from '../types'
-
-// the padrón's district, in the selva: where a new predio most likely is
-const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
 
 const sinVacios = (values: Partial<Predio>) => Object.fromEntries(Object.entries(values).filter(([, v]) => v !== null && v !== undefined))
 
@@ -26,7 +24,7 @@ export function NuevoPredioPage() {
   const ubigeos = useQuery({ queryKey: ['ubigeos'], queryFn: rentas.ubigeos, staleTime: Infinity, enabled: Boolean(lote?.ubigeo) })
   const delLote = lote ? sinVacios(ubicacionDeLote(lote, ubigeos.data)) : {}
   // Perené's place and región only for a lote there, or for no lote
-  const base = !lote?.ubigeo || lote.ubigeo === PERENE.ubigeo ? PERENE : {}
+  const base = !lote?.ubigeo || lote.ubigeo === PERENE_PREDIO.ubigeo ? PERENE_PREDIO : {}
   return (
     <Card className="mx-auto max-w-6xl">
       <CardHeader>
@@ -41,7 +39,7 @@ export function NuevoPredioPage() {
             options={catalogos.data?.predio}
             initial={emptyOf<Predio>(UBICACION_SECTIONS, { ...base, tipo_predio: 'PREDIO URBANO', ...delLote })}
             // what the lote brought stays greyed until "desbloquear"
-            bloqueados={camposDelLote(delLote)}
+            locked={camposDelLote(delLote)}
             submitLabel="Registrar predio"
             onCancel={() => navigate(-1)}
             onSubmit={async (values) => {
