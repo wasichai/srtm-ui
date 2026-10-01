@@ -3,11 +3,11 @@ import { Check, PenLine } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { Button } from '@wasichai/ui'
+import { lockedIn } from '../../kit/forms/locked'
+import type { FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { parseGeometry, recordIdOf, type Bbox, type Feature, type FeatureCollection, type Geometry } from '../components/geo'
 import { LotesMap } from '../components/LotesMap'
-import { bloqueadosEn } from './bloqueo'
-import type { FormValues } from './specs'
 
 const PROPIO = 'lote-del-predio'
 
@@ -28,7 +28,7 @@ export function CatastroMapa({
   const [bbox, setBbox] = useState<Bbox | null>(null)
   const [dibujando, setDibujando] = useState(false)
   const lote = parseGeometry(form.watch('lote_geom'))
-  const fijo = bloqueadosEn(form).includes('lote_geom')
+  const fijo = lockedIn(form).includes('lote_geom')
   const vecinos = useQuery({
     queryKey: ['lotes', 'catastro', bbox],
     queryFn: () => rentas.lotes('catastro_fiscal', bbox!),

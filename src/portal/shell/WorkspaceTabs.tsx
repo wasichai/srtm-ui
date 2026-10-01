@@ -51,7 +51,7 @@ export function WorkspaceTabsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // closing the tab on screen moves to its right neighbour, else the left one, else home. the tab goes once the move
-  // happens: a page with changes not saved may keep the clerk there (useSalidaConCambios), with its tab
+  // happens: a page with changes not saved may keep the clerk there (useUnsavedChanges), with its tab
   const close = useCallback(
     (path: string) => {
       const index = tabs.findIndex((t) => t.path === path)

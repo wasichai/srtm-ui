@@ -132,7 +132,7 @@ describe('tables.css of portal-tributario', () => {
   })
 
   it('writes the paginators as a muted note under the table', () => {
-    const paginador = rule(tables, `${PORTAL} [data-ui='paginador']`)
+    const paginador = rule(tables, `${PORTAL} [data-slot='pagination']`)
     expect(paginador.get('background-color')).toBe('var(--table-stripe)')
     expect(paginador.get('color')).toBe('var(--ink-muted)')
     expect(paginador.get('font-size')).toBe('13.5px')

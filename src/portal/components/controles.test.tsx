@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { Button, Input, Textarea } from '@wasichai/ui'
 import { describe, expect, it } from 'vitest'
-import { NativeSelect } from './controles'
+import { NativeSelect } from '../../kit/forms/NativeSelect'
 
 // the controls carry the hooks a theme styles them by: @wasichai/ui's data-slot (its portal-tributario sheet), and the
 // portal's native select, which wears the library's select-trigger slot

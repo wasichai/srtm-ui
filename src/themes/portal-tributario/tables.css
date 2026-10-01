@@ -1,8 +1,9 @@
 /* portal-tributario: what srtm adds to the library's tables (#49, #66): codes that do not break, the read-only ficha
    and the paginators. out of layers, so these rules beat tailwind's utilities, and only under the theme, so light and
    dark do not change. the components mark what is styled here: data-ui="ficha-kv" on the ficha's <dl> (data-tono on
-   a row), data-ui="ficha-seccion" and "ficha-titulo" on its sections, data-ui="paginador" on the paginators. the greys
-   with no token (#ccc, #f0f0f0) are the prototype's */
+   a row), data-ui="ficha-seccion" and "ficha-titulo" on its sections; the library's paginators carry
+   data-slot="pagination" (Pagination and PageSizePagination, told apart by data-mode). the greys with no token (#ccc,
+   #f0f0f0) are the prototype's */
 
 /* a code in a cell (predio, dj) stays on one line: 01-01-0001 must not break at its hyphens. the library's sheet
    paints the header, the cells, the zebra rows and the total (@wasichai/ui/themes/portal-tributario.css) */
@@ -107,7 +108,7 @@
 }
 
 /* the paginators: a muted note under the table */
-[data-theme='portal-tributario'] [data-ui='paginador'] {
+[data-theme='portal-tributario'] [data-slot='pagination'] {
     font-size: 13.5px;
     color: var(--ink-muted);
     background-color: var(--table-stripe);
@@ -115,12 +116,12 @@
 }
 
 /* its page buttons as the prototype's secondary button: white, #ccc border, #f0f0f0 on hover */
-[data-theme='portal-tributario'] [data-ui='paginador'] button {
+[data-theme='portal-tributario'] [data-slot='pagination'] button {
     color: var(--ink);
     background-color: var(--surface);
     border: 1px solid #ccc;
 }
 
-[data-theme='portal-tributario'] [data-ui='paginador'] button:hover:not(:disabled) {
+[data-theme='portal-tributario'] [data-slot='pagination'] button:hover:not(:disabled) {
     background-color: #f0f0f0;
 }

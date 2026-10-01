@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import type { UseFormReturn } from 'react-hook-form'
+import { NativeSelect } from '../../kit/forms/NativeSelect'
+import type { FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { NativeSelect } from '../components/controles'
 import { COLUMNAS_CATEGORIA } from '../types'
-import type { FormValues } from './specs'
 
 // the srtm's "datos de la categoría": one row per column of the official unit-value table, its letter (A-I) and,
 // beside it, what that letter means. the letters offered are the ones the table describes for that column

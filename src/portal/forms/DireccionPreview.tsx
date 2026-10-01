@@ -1,6 +1,6 @@
 import { useWatch, type UseFormReturn } from 'react-hook-form'
+import type { FormValues } from '../../kit/forms/spec'
 import { describirUbicacion } from './direccion'
-import type { FormValues } from './specs'
 
 // the ubicación's direccion as the backend will write it, live, below the fields it is made of (as the domicilio's)
 export function DireccionPreview({ form }: { form: UseFormReturn<FormValues> }) {

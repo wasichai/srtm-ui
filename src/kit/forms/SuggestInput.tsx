@@ -2,7 +2,7 @@ import { Input } from '@wasichai/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useId, useState, type ComponentProps } from 'react'
 
-// free text with catalog suggestions (a native datalist): a vía missing from the catalog can still be typed
+// free text with suggestions (a native datalist): a value missing from the list can still be typed
 export function SuggestInput({
   value,
   fetch,
@@ -16,7 +16,7 @@ export function SuggestInput({
     const timer = setTimeout(() => setQ(value), 250)
     return () => clearTimeout(timer)
   }, [value])
-  const suggestions = useQuery({ queryKey: ['sugerencias', ...queryKey, q], queryFn: () => fetch(q), staleTime: 60_000 })
+  const suggestions = useQuery({ queryKey: ['suggestions', ...queryKey, q], queryFn: () => fetch(q), staleTime: 60_000 })
   return (
     <>
       <Input {...props} value={value} list={listId} autoComplete="off" />

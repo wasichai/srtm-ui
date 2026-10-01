@@ -1,28 +1,28 @@
 import { useQuery } from '@tanstack/react-query'
+import { EmptyState, QueryState } from '@wasichai/core'
 import { Badge, Button, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
 import { FileText, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import type { SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { anulada } from '../components/EstadoBadge'
 import { currentYear, formatMoney, formatNumber, formatText } from '../components/format'
-import { EmptyState, QueryState } from '../components/QueryState'
 import { NUMERICA } from '../components/tabla'
-import { RecordForm } from '../forms/RecordForm'
+import { describirContribuyente } from '../forms/bloques'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
-import type { SectionSpec } from '../forms/specs'
 import { useRefresh } from '../queries'
-import type { Contribuyente, Declaracion, DeclaracionDetalle, Predio } from '../types'
+import type { Declaracion, DeclaracionDetalle, Predio } from '../types'
 
 // "datos de los condóminos": the titulares of the declaración's predio, year and secuencia de uso. each declares its
 // own %; condición, valor de condominio and valor afecto are the backend's (srtm-backend#4), shown here read-only.
 // an annulled declaración is out of the condominio (srtm-backend#7)
 
 const PORCENTAJE: SectionSpec[] = [
-  { title: 'Condómino', fields: [{ name: 'porcentaje_condominio', label: '% de propiedad', kind: 'decimal', required: true, span: 2 }] }
+  { id: 'condomino', title: 'Condómino', fields: [{ name: 'porcentaje_condominio', label: '% de propiedad', kind: 'decimal', required: true, span: 2 }] }
 ]
 
-const describir = (c: Contribuyente): Picked => ({ id: c.id!, label: `${c.numero_documento ?? 's/d'} · ${c.nombre_completo ?? ''}` })
 const nombre = (row: DeclaracionDetalle) => row.contribuyente?.nombre_completo ?? 'el condómino'
 
 export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion: Declaracion; predio: Predio; readOnly?: boolean }) {
@@ -196,7 +196,7 @@ function AgregarCondominoDialog({ onSave, onClose }: { onSave: (contribuyente: s
               setPickError(undefined)
             }}
             search={(q) => rentas.contribuyentes(q, 0, 8)}
-            describe={describir}
+            describe={describirContribuyente}
             error={pickError}
           />
         </RecordForm>

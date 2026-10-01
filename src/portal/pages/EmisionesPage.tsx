@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ApiError } from '@wasichai/core'
-import { Badge, Button, Card, CardBody, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
+import { ApiError, EmptyState, QueryState } from '@wasichai/core'
+import { Badge, Button, Card, CardBody, cn, ConfirmDialog, Table, Td, Th } from '@wasichai/ui'
 import { Download, Loader2, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { errorMessage } from '../../kit/ui/errorMessage'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
 import { guardarArchivo } from '../components/descarga'
 import { currentYear, formatDate, formatText } from '../components/format'
-import { EmptyState, QueryState } from '../components/QueryState'
 import type { Tono } from '../components/tono'
 import { YearSelect } from '../components/YearSelect'
 import { useEmisiones } from '../queries'
@@ -33,7 +33,7 @@ const PILDORA: Record<Tono, string> = {
   '': 'bg-surface-muted text-ink-muted'
 }
 
-const mensajeDe = (error: unknown) => (error instanceof Error ? error.message : 'No se pudo completar')
+const mensajeDe = (error: unknown) => errorMessage(error, 'No se pudo completar')
 const conEstado = (error: unknown, status: number) => error instanceof ApiError && error.status === status
 
 // what the POST's error says: a 403 in the portal's words, with the backend's detail when it sends one (the client
@@ -41,7 +41,7 @@ const conEstado = (error: unknown, status: number) => error instanceof ApiError 
 function errorAlEmitir(error: unknown) {
   if (conEstado(error, 409)) return 'Ya hay una emisión en proceso'
   if (conEstado(error, 403)) {
-    const detalle = mensajeDe(error)
+    const detalle = errorMessage(error, '')
     return detalle && detalle !== 'Forbidden' ? `No tiene permiso para lanzar emisiones masivas: ${detalle}` : 'No tiene permiso para lanzar emisiones masivas'
   }
   return mensajeDe(error)
@@ -211,27 +211,14 @@ function EliminarEmision({ emision }: { emision: Emision }) {
         Eliminar
       </Button>
       {open && (
-        <Dialog open onOpenChange={(o) => !o && cerrar()}>
-          <DialogContent className="max-w-md">
-            <DialogTitle className="text-lg font-semibold">¿Eliminar esta emisión?</DialogTitle>
-            <DialogDescription className="mt-2 text-sm text-ink-muted">
-              {`Se borran el registro de la emisión ${emision.anio} y su archivo. No se puede deshacer.`}
-            </DialogDescription>
-            {borrar.isError && (
-              <p role="alert" className="mt-3 text-sm text-danger">
-                {conEstado(borrar.error, 409) ? 'La emisión está en curso: no se puede eliminar mientras corre' : mensajeDe(borrar.error)}
-              </p>
-            )}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="secondary" onClick={cerrar}>
-                Cancelar
-              </Button>
-              <Button variant="danger" disabled={borrar.isPending} onClick={() => borrar.mutate()}>
-                Eliminar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          title="¿Eliminar esta emisión?"
+          description={`Se borran el registro de la emisión ${emision.anio} y su archivo. No se puede deshacer.`}
+          busy={borrar.isPending}
+          error={borrar.isError && (conEstado(borrar.error, 409) ? 'La emisión está en curso: no se puede eliminar mientras corre' : mensajeDe(borrar.error))}
+          onConfirm={() => borrar.mutate()}
+          onCancel={cerrar}
+        />
       )}
     </>
   )

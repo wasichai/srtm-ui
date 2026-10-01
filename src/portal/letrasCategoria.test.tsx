@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { mockFetch, type FetchMock } from '@wasichai/testing'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { RecordForm } from '../kit/forms/RecordForm'
 import { NIVEL_SECTIONS } from './forms/declaracionSpecs'
-import { RecordForm } from './forms/RecordForm'
 
 // which letters of a nivel de construcción are valued: the cuadros de valores unitarios oficiales de edificación from the
 // ejercicio 2023 on have three columns only (R.D. 003-2022-VIVIENDA/VMVU-DGPRVU), and the srtm greys the other four for

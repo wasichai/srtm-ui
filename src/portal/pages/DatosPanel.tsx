@@ -1,9 +1,9 @@
 import { Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@wasichai/ui'
-import { FieldGrid } from '../forms/FieldGrid'
-import { RecordForm } from '../forms/RecordForm'
-import type { SectionSpec } from '../forms/specs'
+import { FieldGrid } from '../../kit/forms/FieldGrid'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import type { SectionSpec } from '../../kit/forms/spec'
 import { useRefresh } from '../queries'
 
 // the Datos tab: read first, edit on demand, back to reading once saved

@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import { LoadingState } from '@wasichai/core'
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@wasichai/ui'
 import { FileText, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { rentas, type TitularPu } from '../api'
 import { anulada } from '../components/EstadoBadge'
 import { PdfDialog } from '../components/PdfDialog'
-import { LoadingState } from '../components/QueryState'
 
 // Ver PU and Ver HR (wasichai/srtm-ui#61): srtm-backend makes the PDF, PdfDialog shows it
 

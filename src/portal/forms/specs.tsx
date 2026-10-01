@@ -1,95 +1,12 @@
-import type { ReactNode } from 'react'
-import type { UseFormReturn } from 'react-hook-form'
+import type { FormValues, SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import type { CatalogKey } from '../types'
+import { auto } from './auto'
+import { nombres, ubigeoCampos } from './bloques'
 import { errorDocumento, pideNumero, SIN_DOCUMENTO } from './documento'
 import { RENIEC } from './reniec'
-import { UbigeoFields } from './UbigeoFields'
 
-// how each entity shows and edits: sections, labels and value kinds. names are the model's fields.
-// the srtm screens lay a section out on six columns; span says how many a field takes
-
-export type FieldKind =
-  | 'text'
-  | 'longtext'
-  | 'enum'
-  | 'integer'
-  | 'decimal'
-  | 'money'
-  | 'date'
-  | 'month'
-  // picked from this year down to 1900 (the srtm's año de construcción)
-  | 'year'
-  | 'boolean'
-  | 'multi'
-  | 'suggest'
-  | 'hidden'
-  | 'geometry'
-  | 'custom'
-
-// the form's values, as the inputs hold them (strings)
-export type FormValues = Record<string, string>
-
-export interface FieldSpec {
-  name: string
-  label: string
-  kind?: FieldKind
-  // a function when it depends on another field (nombres only for a persona natural)
-  required?: boolean | ((values: FormValues) => boolean)
-  // shown, validated and sent only while this holds
-  when?: (values: FormValues) => boolean
-  // shown always, but greyed (and neither required nor sent) until this holds: the srtm's dependent fields
-  enabledWhen?: (values: FormValues) => boolean
-  // what it shows while greyed, from the live and the stored values (default: nothing)
-  greyedValue?: (values: FormValues, stored: FormValues) => string
-  // greyed but still validated and sent while this holds, as a bloqueado (the names RENIEC gave)
-  lockedWhen?: (values: FormValues) => boolean
-  // a filled field's own check (a document number by its tipo): true, or the message
-  validate?: (value: string, values: FormValues) => true | string
-  // what the clerk's own change or leaving the field sets off, once the form holds the value (the DNI's consulta)
-  onChange?: (form: UseFormReturn<FormValues>) => void
-  onBlur?: (form: UseFormReturn<FormValues>) => void
-  // kind multi: the choices, kept as one comma-separated text
-  choices?: string[]
-  // the backend's (codigo, fecha del registro...): shown, never edited
-  readOnly?: boolean
-  // AUTO: the backend's code, number or date, which only a new record is promised (vacioDe)
-  placeholder?: string
-  // placeholder AUTO on a field of another record shown beside the form's (the predio's in datos del predio): whether
-  // that record exists. without it, the form's own record decides
-  existe?: (values: FormValues) => boolean
-  span?: 1 | 2 | 3 | 4 | 6
-  // kind suggest: free text with catalog suggestions
-  suggest?: (q: string, values: FormValues) => Promise<string[]>
-  // kind custom: its own inputs, bound to hidden fields of the same form (not sent itself)
-  render?: (form: UseFormReturn<FormValues>) => ReactNode
-  // kind hidden: listed in the ficha all the same (the uso's cascade edits three of them)
-  shownInFicha?: boolean
-}
-
-export interface SectionSpec {
-  title: string
-  // the srtm's numbered circles: 1 datos de la declaración, 2 identificación...
-  number?: number
-  // on the right of the section's title (the ubicación's "buscar predios")
-  action?: (form: UseFormReturn<FormValues>) => ReactNode
-  fields: FieldSpec[]
-}
-
-export type { CatalogKey }
-
-export const AUTO = '(AUTOGENERADO)'
-// what such a field shows once its record exists without it: one imported from the padrón, never numbered
-export const SIN_CODIGO = 'SIN CÓDIGO (padrón)'
-export const SIN_FECHA = 'SIN FECHA (padrón)'
-
-// what an empty field shows: its placeholder, but AUTO only while its record is new. guardado: the form's record
-// exists (it has an id)
-export function vacioDe(field: FieldSpec, values: FormValues, guardado: boolean): string | undefined {
-  if (field.placeholder !== AUTO) return field.placeholder
-  if (!(field.existe ? field.existe(values) : guardado)) return AUTO
-  return field.kind === 'date' ? SIN_FECHA : SIN_CODIGO
-}
+// how each entity shows and edits (the kit's forms/spec.ts): sections, labels and value kinds. names are the model's
+// fields. the srtm screens lay a section out on six columns; span says how many a field takes
 
 // a persona natural (or sociedad conyugal) has surnames and names; everyone else a razón social.
 // imported contribuyentes have no tipo_contribuyente yet: their tipo_persona decides (a SUCESION has a razón social).
@@ -99,12 +16,13 @@ export const esPersonaNatural = (v: FormValues) =>
 
 export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-de-la-declaracion',
     title: 'Datos de la declaración',
     number: 1,
     fields: [
-      { name: 'codigo', label: 'Código de contribuyente', readOnly: true, placeholder: AUTO, span: 1 },
-      { name: 'numero_declaracion', label: 'Número de declaración', kind: 'integer', readOnly: true, placeholder: AUTO, span: 1 },
-      { name: 'fecha_registro', label: 'Fecha del registro', kind: 'date', readOnly: true, placeholder: AUTO, span: 1 },
+      { name: 'codigo', label: 'Código de contribuyente', readOnly: true, placeholder: auto(), span: 1 },
+      { name: 'numero_declaracion', label: 'Número de declaración', kind: 'integer', readOnly: true, placeholder: auto(), span: 1 },
+      { name: 'fecha_registro', label: 'Fecha del registro', kind: 'date', readOnly: true, placeholder: auto({ date: true }), span: 1 },
       { name: 'motivo', label: 'Motivo', kind: 'enum', readOnly: true, placeholder: 'INSCRIPCION', span: 1 },
       { name: 'medio_determinacion', label: 'Medio de determinación', kind: 'enum', readOnly: true, placeholder: 'DECLARACIÓN JURADA', span: 1 },
       { name: 'medio_presentacion', label: 'Medio de presentación', kind: 'enum', required: true, span: 1 },
@@ -117,6 +35,7 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'datos-de-identificacion',
     title: 'Datos de identificación',
     number: 2,
     fields: [
@@ -137,6 +56,7 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
     ]
   },
   {
+    id: 'datos-personales',
     title: 'Datos personales',
     number: 3,
     fields: [
@@ -157,20 +77,15 @@ export const CONTRIBUYENTE_SECTIONS: SectionSpec[] = [
 // the address one-liner lives with the ubicación's (forms/direccion.ts)
 export { describirDomicilio } from './direccion'
 
-const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)
-
 export const DOMICILIO_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-del-domicilio',
     title: 'Datos del domicilio',
     fields: [
       { name: 'tipo_domicilio', label: 'Tipo de domicilio', kind: 'enum', required: true, span: 1 },
       { name: 'tipo_predio', label: 'Tipo de predio', kind: 'enum', required: true, span: 1 },
       { name: 'estado', label: 'Estado', kind: 'enum', span: 1 },
-      { name: 'ubigeo_cascada', label: 'Ubigeo', kind: 'custom', span: 6, render: (form) => <UbigeoFields form={form} /> },
-      { name: 'ubigeo', label: 'Ubigeo', kind: 'hidden' },
-      { name: 'departamento', label: 'Departamento', kind: 'hidden', required: true },
-      { name: 'provincia', label: 'Provincia', kind: 'hidden', required: true },
-      { name: 'distrito', label: 'Distrito', kind: 'hidden', required: true },
+      ...ubigeoCampos(),
       { name: 'tipo_unidad_urbana', label: 'Tipo unidad urbana', kind: 'enum', span: 1 },
       {
         name: 'unidad_urbana',
@@ -179,7 +94,10 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
         // an address may have no unidad urbana, or no street ("Mz/Lt, AA.HH."): each is asked only with its tipo
         required: (v) => !!v.tipo_unidad_urbana,
         span: 2,
-        suggest: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_unidad_urbana, v.ubigeo)).content)
+        suggest: {
+          fetch: async (q, v) => nombres((await rentas.unidadesUrbanas(q, v.tipo_unidad_urbana, v.ubigeo)).content),
+          dependsOn: ['tipo_unidad_urbana', 'ubigeo']
+        }
       },
       { name: 'tipo_via', label: 'Tipo de vía', kind: 'enum', span: 1 },
       {
@@ -188,7 +106,7 @@ export const DOMICILIO_SECTIONS: SectionSpec[] = [
         kind: 'suggest',
         required: (v) => !!v.tipo_via,
         span: 2,
-        suggest: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content)
+        suggest: { fetch: async (q, v) => nombres((await rentas.vias(q, v.tipo_via, v.ubigeo)).content), dependsOn: ['tipo_via', 'ubigeo'] }
       },
       { name: 'numero', label: 'Número principal', span: 1 },
       { name: 'numero_alterno', label: 'Número alterno', span: 1 },
@@ -232,14 +150,16 @@ export function nombreORazonSocial(p: Persona): string {
 
 export const RELACIONADO_SECTIONS: SectionSpec[] = [
   {
+    id: 'datos-de-la-declaracion',
     title: 'Datos de la declaración',
     fields: [
-      { name: 'codigo', label: 'Código del relacionado', readOnly: true, placeholder: AUTO, span: 1 },
+      { name: 'codigo', label: 'Código del relacionado', readOnly: true, placeholder: auto(), span: 1 },
       { name: 'tipo_relacionado', label: 'Tipo de relacionado', kind: 'enum', required: true, span: 2 },
       { name: 'estado', label: 'Estado', kind: 'enum', span: 1 }
     ]
   },
   {
+    id: 'datos-personales',
     title: 'Datos personales',
     fields: [
       { name: 'tipo_documento', label: 'Tipo de documento', kind: 'enum', required: true, span: 1, ...RENIEC.tipo },
@@ -263,6 +183,7 @@ export const RELACIONADO_SECTIONS: SectionSpec[] = [
 
 export const MEDIO_CONTACTO_SECTIONS: SectionSpec[] = [
   {
+    id: 'medio-de-contacto',
     title: 'Medio de contacto',
     fields: [
       { name: 'tipo', label: 'Tipo', kind: 'enum', required: true, span: 2 },
@@ -277,6 +198,7 @@ export const MEDIO_CONTACTO_SECTIONS: SectionSpec[] = [
 
 export const SUSTENTO_SECTIONS: SectionSpec[] = [
   {
+    id: 'documento-sustento',
     title: 'Documento sustento',
     fields: [
       { name: 'documento', label: 'Documento', kind: 'enum', required: true, span: 3 },
@@ -287,12 +209,3 @@ export const SUSTENTO_SECTIONS: SectionSpec[] = [
     ]
   }
 ]
-
-// the fields a form sends: everything but the custom ones, which only drive hidden fields
-export const dataFields = (sections: SectionSpec[]) => sections.flatMap((s) => s.fields).filter((f) => f.kind !== 'custom')
-
-// every field of the sections, empty: the starting point of a "new" form
-export function emptyOf<T>(sections: SectionSpec[], extra: Partial<T> = {}): T {
-  const empty = Object.fromEntries(dataFields(sections).map((f) => [f.name, null]))
-  return { ...empty, ...extra } as T
-}

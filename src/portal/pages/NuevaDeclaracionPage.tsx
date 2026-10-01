@@ -1,25 +1,27 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { QueryState } from '@wasichai/core'
 import { Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { FieldGrid } from '../../kit/forms/FieldGrid'
+import { useFormGroup, useSharedFields } from '../../kit/forms/group'
+import { RecordForm } from '../../kit/forms/RecordForm'
+import { emptyOf } from '../../kit/forms/spec'
+import { errorMessage } from '../../kit/ui/errorMessage'
+import { useUnsavedChanges } from '../../kit/ui/UnsavedChanges'
 import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
-import { useSalidaConCambios } from '../components/CambiosPendientes'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { PasosAsistente } from '../components/PasosAsistente'
-import { QueryState } from '../components/QueryState'
+import { describirContribuyente, PERENE_PREDIO } from '../forms/bloques'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
-import { FieldGrid } from '../forms/FieldGrid'
-import { useComun, useGrupoFormularios } from '../forms/grupo'
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
-import { RecordForm } from '../forms/RecordForm'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
-import { emptyOf } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
-import type { Contribuyente, Declaracion, Predio } from '../types'
+import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
@@ -30,13 +32,8 @@ const UBICACION_FORM = 'dj-ubicacion'
 // the clerk leaves them: what is presented is datos del predio as it is now, gone back to by its tab or not
 const SEGUIDOS = [...COMUNES, 'anio', 'secuencia_uso'] as const
 
-// the padrón's district, in the selva: where a new predio most likely is
-const PERENE = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
-
 // datos del predio shows a few of the predio's fields beside the declaration's
 type DatosDelPredio = Declaracion & { tipo_predio?: string | null; codigo_predio?: string | null; numero_registro?: number | null }
-
-const describeContribuyente = (c: Contribuyente): Picked => ({ id: c.id!, label: `${c.numero_documento ?? 's/d'} · ${c.nombre_completo ?? ''}` })
 
 // /contribuyentes/:id/declaraciones/nueva from a contribuyente; /declaraciones/nueva?predio=<id> from a predio
 export function NuevaDeclaracionRoute() {
@@ -72,27 +69,27 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const predioFijo = fijo.data?.predio ?? null
   const existente = predioFijo ?? buscado
   // the tipo de predio of both steps is one value; the año and secuencia de uso are followed (SEGUIDOS)
-  const comun = useComun(SEGUIDOS)
+  const comun = useSharedFields(SEGUIDOS)
   // one that already has a titular that year is not presented on: a condómino joins from that declaración
-  const anio = comun.valores.anio === undefined ? datos?.anio : Number(comun.valores.anio) || null
-  const titulares = useTitularesDelPredio(existente?.id, anio, comun.valores.secuencia_uso ?? datos?.secuencia_uso)
+  const anio = comun.values.anio === undefined ? datos?.anio : Number(comun.values.anio) || null
+  const titulares = useTitularesDelPredio(existente?.id, anio, comun.values.secuencia_uso ?? datos?.secuencia_uso)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
-  const grupo = useGrupoFormularios(['datos', 'ubicacion'] as const)
-  const salida = useSalidaConCambios(grupo.pendientes.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
+  const grupo = useFormGroup(['datos', 'ubicacion'] as const)
+  const salida = useUnsavedChanges(grupo.pending.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
   const [sections] = useState(() =>
     ubicacionSections((elegido: Elegido) => {
       const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
       if (!predio) return false
       setBuscado(predio)
       // the declaration is on that predio: its tipo is the predio's
-      if (predio.tipo_predio) comun.cambiar('tipo_predio', predio.tipo_predio)
+      if (predio.tipo_predio) comun.change('tipo_predio', predio.tipo_predio)
       setError(null)
       return true
     })
   )
-  const tipoPredio = comun.valores.tipo_predio ?? (datos as DatosDelPredio | null)?.tipo_predio ?? 'PREDIO URBANO'
+  const tipoPredio = comun.values.tipo_predio ?? (datos as DatosDelPredio | null)?.tipo_predio ?? 'PREDIO URBANO'
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice
   const enviando = useRef(false)
@@ -105,7 +102,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
     setBusy(true)
     try {
       // datos del predio as it is now: the clerk may have gone back to it
-      const actual = (await grupo.valores('datos')) as DatosDelPredio | null
+      const actual = (await grupo.values('datos')) as DatosDelPredio | null
       if (!actual) {
         setTab('datos')
         return
@@ -119,14 +116,14 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       }
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
       await refresh()
-      salida.permitir()
+      salida.allow()
       // just presented: no transferentes yet
       navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0)}&asistente=1`, { replace: true })
     } catch (e) {
       // what was refused goes under its field, in its step (this one, when the field is in both)
-      const con = grupo.errores(e, ['datos', 'ubicacion'])
+      const con = grupo.errors(e, ['datos', 'ubicacion'])
       if (con.length > 0) setTab(con.includes(tab) ? tab : con[0])
-      else setError(e instanceof Error ? e.message : 'No se pudo guardar')
+      else setError(errorMessage(e, 'No se pudo guardar'))
     } finally {
       enviando.current = false
       setBusy(false)
@@ -191,8 +188,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                   ) : (
                     <RecordForm
                       formId={DATOS_FORM}
-                      enlace={grupo.enlaces.datos}
-                      comun={comun}
+                      link={grupo.links.datos}
+                      shared={comun}
                       hideActions
                       sections={DJ_DATOS_SECTIONS}
                       options={opcionesDatos(catalogos.data)}
@@ -230,7 +227,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                               setPickError(undefined)
                             }}
                             search={(q) => rentas.contribuyentes(q, 0, 8)}
-                            describe={describeContribuyente}
+                            describe={describirContribuyente}
                             error={pickError}
                           />
                         </div>
@@ -259,12 +256,12 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                   ) : (
                     <RecordForm
                       formId={UBICACION_FORM}
-                      enlace={grupo.enlaces.ubicacion}
-                      comun={comun}
+                      link={grupo.links.ubicacion}
+                      shared={comun}
                       hideActions
                       sections={sections}
                       options={catalogos.data?.predio}
-                      initial={emptyOf<Predio>(sections, { ...PERENE, tipo_predio: tipoPredio })}
+                      initial={emptyOf<Predio>(sections, { ...PERENE_PREDIO, tipo_predio: tipoPredio })}
                       submitLabel="Guardar"
                       onSubmit={(predio) => presentar({ predio })}
                     />
@@ -275,7 +272,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
           }))}
         />
       </Card>
-      {salida.dialogo}
+      {salida.dialog}
     </div>
   )
 }

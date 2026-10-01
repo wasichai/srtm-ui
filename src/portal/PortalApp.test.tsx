@@ -399,6 +399,12 @@ describe('portal', () => {
     expect(screen.getByText('Página 2 de 2')).toBeInTheDocument()
   })
 
+  it('counts a long list as the srtm writes figures (es-PE)', async () => {
+    start('/contribuyentes', [{ path: '/srtm/contribuyentes', body: page([contribuyente], 0, 12345, 618) }])
+    expect(await screen.findByText('12,345 registros')).toBeInTheDocument()
+    expect(screen.getByText('Página 1 de 618')).toBeInTheDocument()
+  })
+
   it('keeps every open ficha as a workspace tab, and closing one moves to its neighbour', async () => {
     start('/contribuyentes')
     await userEvent.click(await screen.findByRole('link', { name: '20529936' }))

@@ -5,9 +5,10 @@ import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { RecordForm } from '../kit/forms/RecordForm'
 import { today } from './components/format'
 import { DJ_DATOS_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from './forms/declaracionSpecs'
-import { RecordForm } from './forms/RecordForm'
+import { KitDelPortal } from './KitDelPortal'
 import { PortalApp } from './PortalApp'
 
 // which fields of the declaración jurada are greyed and which are asked for, as in the srtm (Presentacion2_.pdf,
@@ -33,7 +34,9 @@ function conDatos(ui: ReactNode, routes: MockRoute[] = []) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
+    // as the portal sets the kit's forms up: with its labels
+    { wrapper: KitDelPortal }
   )
 }
 
@@ -71,7 +74,9 @@ const datos = {
 }
 
 function datosDelPredio(initial: object, onSubmit = vi.fn(async () => {})) {
-  render(<RecordForm sections={DJ_DATOS_SECTIONS} options={opcionesDatos(catalogos)} initial={initial} submitLabel="Grabar" onSubmit={onSubmit} />)
+  render(<RecordForm sections={DJ_DATOS_SECTIONS} options={opcionesDatos(catalogos)} initial={initial} submitLabel="Grabar" onSubmit={onSubmit} />, {
+    wrapper: KitDelPortal
+  })
   return onSubmit
 }
 
