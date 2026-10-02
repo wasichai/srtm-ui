@@ -561,3 +561,17 @@ export interface ArbitriosContribuyente {
   total: number
   fecha_calculo: string | null
 }
+
+// a cuota as the backend writes it (POST …/arbitrios answers the ones it wrote)
+export interface CuotaArbitrio {
+  id: string
+  predio: string
+  contribuyente: string
+  servicio: string
+  anio: number
+  periodo: number
+  monto: number
+  parametro_aplicado: string
+  fecha_calculo: string
+  observacion: string
+}

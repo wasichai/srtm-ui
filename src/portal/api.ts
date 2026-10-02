@@ -7,6 +7,7 @@ import type {
   CategoriaValor,
   Contribuyente,
   ContribuyenteFicha,
+  CuotaArbitrio,
   DatosPersona,
   Declaracion,
   DeclaracionDetalle,
@@ -214,6 +215,13 @@ export const rentas = {
   // the arbitrios of a year: a predio's servicio by month, and a contribuyente's by predio (only its own cuotas)
   arbitriosDePredio: (id: string, anio: number) => get<MatrizArbitrios>(`/srtm/predios/${id}/arbitrios${query({ anio })}`),
   arbitriosDeContribuyente: (id: string, anio: number) => get<ArbitriosContribuyente>(`/srtm/contribuyentes/${id}/arbitrios${query({ anio })}`),
+  // the cuotas still to determine, written: [] when none was pending. 422 with what is missing, 400 for the observación,
+  // 403 without CREATE on cuota_arbitrio
+  determinarArbitriosDePredio: (id: string, anio: number, observacion: string) =>
+    send<CuotaArbitrio[]>('POST', `/srtm/predios/${id}/arbitrios`, { anio, observacion }),
+  // every predio of its declarations of the year: all of them or none
+  determinarArbitriosDeContribuyente: (id: string, anio: number, observacion: string) =>
+    send<CuotaArbitrio[]>('POST', `/srtm/contribuyentes/${id}/arbitrios`, { anio, observacion }),
 
   // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
   emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),

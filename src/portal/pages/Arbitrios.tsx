@@ -6,7 +6,8 @@ import { rentas } from '../api'
 import { Alerta } from '../components/Alerta'
 import { formatDate, formatMoney, MESES } from '../components/format'
 import { NUMERICA } from '../components/tabla'
-import type { MatrizArbitrios, PersonaArbitrio } from '../types'
+import type { ArbitriosContribuyente, MatrizArbitrios, PersonaArbitrio } from '../types'
+import { DeterminarArbitrios } from './DeterminarArbitrios'
 
 // the arbitrios of a year as they were determined (wasichai/srtm-backend#62): servicio by month, the titular the rule
 // charges each month, and the totals. every total is the backend's, never summed here; a figure carries the date it was
@@ -16,7 +17,16 @@ const MES_CORTO = MESES.map((m) => m.slice(0, 3))
 
 export function ArbitriosDelPredio({ id, anio }: { id: string; anio: number }) {
   const query = useQuery({ queryKey: ['arbitrios', 'predio', id, anio], queryFn: () => rentas.arbitriosDePredio(id, anio), placeholderData: keepPreviousData })
-  return <QueryState query={query}>{(matriz) => <Matriz matriz={matriz} />}</QueryState>
+  return (
+    <QueryState query={query}>
+      {(matriz) => (
+        <div className="space-y-4">
+          <DeterminarArbitrios alcance="predio" id={id} anio={anio} />
+          <Matriz matriz={matriz} />
+        </div>
+      )}
+    </QueryState>
+  )
 }
 
 // only the cuotas charged to the contribuyente, by predio
@@ -35,6 +45,7 @@ export function ArbitriosDelContribuyente({ id, anio }: { id: string; anio: numb
           </EmptyState>
         ) : (
           <div className="space-y-6">
+            <DeterminarArbitrios alcance="contribuyente" id={id} anio={anio} avisos={avisosDeOtrosTitulares(a)} />
             {a.predios.map((m) => (
               <section key={m.predio.id ?? m.predio.codigo} className="space-y-2" aria-label={`Predio ${m.predio.codigo ?? ''}`}>
                 <h3 className="text-sm font-semibold">
@@ -169,4 +180,32 @@ function Titulares({ matriz: m }: { matriz: MatrizArbitrios }) {
       ))}
     </ul>
   )
+}
+
+// the months of each predio the rule charges to someone else: determining from this ficha writes them too, in their name
+export function avisosDeOtrosTitulares(a: ArbitriosContribuyente): string[] {
+  return a.predios.flatMap((m) => {
+    const ajenos = new Map<string, { titular: PersonaArbitrio; meses: number[] }>()
+    for (const { periodo, titular } of m.titulares) {
+      if (!titular?.id || titular.id === a.contribuyente.id) continue
+      const grupo = ajenos.get(titular.id) ?? { titular, meses: [] }
+      grupo.meses.push(periodo)
+      ajenos.set(titular.id, grupo)
+    }
+    return [...ajenos.values()].map(
+      ({ titular, meses }) =>
+        `Las cuotas del predio ${m.predio.codigo ?? ''} de ${rango(meses)} quedarán a nombre de ${[titular.codigo, titular.nombre].filter(Boolean).join(' · ')}: es su titular principal.`
+    )
+  })
+}
+
+// consecutive months as ENE–MAY, the rest one by one
+function rango(meses: number[]): string {
+  const tramos: [number, number][] = []
+  for (const m of meses) {
+    const ultimo = tramos[tramos.length - 1]
+    if (ultimo && ultimo[1] === m - 1) ultimo[1] = m
+    else tramos.push([m, m])
+  }
+  return tramos.map(([desde, hasta]) => (desde === hasta ? MES_CORTO[desde - 1] : `${MES_CORTO[desde - 1]}–${MES_CORTO[hasta - 1]}`)).join(', ')
 }
