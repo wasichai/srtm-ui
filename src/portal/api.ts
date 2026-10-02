@@ -25,10 +25,12 @@ import type {
   ObraComplementaria,
   OtroFrente,
   Pagina,
+  ParametrosArbitrios,
   Predio,
   PredioFicha,
   Relacionado,
   Resumen,
+  ServicioArbitrio,
   Sustento,
   Transferente,
   Ubigeo,
@@ -215,6 +217,11 @@ export const rentas = {
   // the arbitrios of a year: a predio's servicio by month, and a contribuyente's by predio (only its own cuotas)
   arbitriosDePredio: (id: string, anio: number) => get<MatrizArbitrios>(`/srtm/predios/${id}/arbitrios${query({ anio })}`),
   arbitriosDeContribuyente: (id: string, anio: number) => get<ArbitriosContribuyente>(`/srtm/contribuyentes/${id}/arbitrios${query({ anio })}`),
+  // a page of the year's cuotas, by servicio when given (422 names a filter it cannot serve)
+  cuotasArbitrio: (anio: number, servicio: string | null, page: number, size = PAGE_SIZE) =>
+    get<Pagina<CuotaArbitrio>>(`/srtm/arbitrios${query({ anio, servicio, page, size })}`),
+  serviciosArbitrio: (anio: number) => get<ServicioArbitrio[]>(`/srtm/arbitrios/servicios${query({ anio })}`),
+  parametrosArbitrio: (anio: number) => get<ParametrosArbitrios>(`/srtm/arbitrios/parametros${query({ anio })}`),
   // the cuotas still to determine, written: [] when none was pending. 422 with what is missing, 400 for the observación,
   // 403 without CREATE on cuota_arbitrio
   determinarArbitriosDePredio: (id: string, anio: number, observacion: string) =>
