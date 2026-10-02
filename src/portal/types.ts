@@ -575,3 +575,37 @@ export interface CuotaArbitrio {
   fecha_calculo: string
   observacion: string
 }
+
+// a row of parametro_tributario: a normative value in force from vigencia_desde to vigencia_hasta (open when null)
+export interface ParametroTributario {
+  id: string | null
+  tipo: string
+  clave: string | null
+  vigencia_desde: string | null
+  vigencia_hasta: string | null
+  valor_numerico: number | null
+  texto: string | null
+  norma: string | null
+  fuente: string | null
+  transcribio: string | null
+  verifico: string | null
+}
+
+export interface OrdenanzaArbitrio {
+  id: string | null
+  anio: number
+  numero: string | null
+  fecha_publicacion: string | null
+  acuerdo_ratificacion: string | null
+  fecha_ratificacion: string | null
+  municipalidad_ratificante: string | null
+}
+
+// GET /srtm/arbitrios/parametros: the year's ordinance, servicios and the ordinance's rows, and what the year lacks
+export interface ParametrosArbitrios {
+  anio: number
+  ordenanza: OrdenanzaArbitrio | null
+  servicios: ServicioArbitrio[]
+  parametros: ParametroTributario[]
+  faltan: string[]
+}
