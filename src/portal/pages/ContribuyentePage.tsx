@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, FileText, MapPinned, Receipt } from 'lucide-react'
+import { Coins, FileText, Landmark, MapPinned, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
@@ -15,6 +15,7 @@ import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
+import { ArbitriosDelContribuyente } from './Arbitrios'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
@@ -32,7 +33,7 @@ export const CONTRIBUYENTE_TABS = [
 
 // the inscription wizard's steps (pp. 4, 7, 9): Domicilios right away; once a fiscal domicilio is active, Relacionados,
 // and then each tab opens the next when it is visited. rentas' own tabs come after the srtm's last
-const PASOS: Record<string, number> = { datos: 0, domicilios: 1, relacionados: 2, contacto: 3, sustento: 4, predios: 5, declaraciones: 5 }
+const PASOS: Record<string, number> = { datos: 0, domicilios: 1, relacionados: 2, contacto: 3, sustento: 4, predios: 5, declaraciones: 5, arbitrios: 5 }
 
 // keyed by id: another contribuyente is a fresh ficha (first tab, this year), not this one reused
 export function ContribuyenteRoute() {
@@ -171,6 +172,16 @@ function ContribuyentePage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <HistorialDeclaraciones side="contribuyente" id={id} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'arbitrios',
+                  label: 'Arbitrios',
+                  icon: Landmark,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <ArbitriosDelContribuyente id={id} anio={anio} />
                     </div>
                   )
                 }
