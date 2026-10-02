@@ -20,7 +20,7 @@ import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
-import { VerHr } from './VerPdf'
+import { VerHla, VerHr } from './VerPdf'
 
 // the srtm's registro de contribuyente, in its order, then what rentas adds: the year's predios and every declaration
 export const CONTRIBUYENTE_TABS = [
@@ -88,6 +88,7 @@ function ContribuyentePage({ id }: { id: string }) {
               <div className="flex items-center gap-3">
                 <YearSelect value={anio} onChange={setAnio} />
                 <VerHr contribuyente={id} codigo={contribuyente.codigo ?? contribuyente.numero_documento ?? id} anio={anio} />
+                <VerHla contribuyente={id} codigo={contribuyente.codigo ?? contribuyente.numero_documento ?? id} anio={anio} />
                 <EliminarFicha path={`/contribuyentes/${id}`} singular="contribuyente" borrar={() => rentas.borrarContribuyente(id)} />
               </div>
             }

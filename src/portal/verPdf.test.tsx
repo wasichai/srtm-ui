@@ -41,6 +41,7 @@ const routes: MockRoute[] = [
   // a PDF: mockFetch answers JSON, which is a body as good as any to turn into a blob
   { path: /^\/srtm\/predios\/p\d\/pu\?/, body: null },
   { path: /^\/srtm\/contribuyentes\/c\d\/hr\?/, body: null },
+  { path: /^\/srtm\/contribuyentes\/c\d\/hla\?/, body: null },
   { path: '/srtm/predios/p1/declaraciones', body: [{ declaracion: declaracion('d1', 'p1', 'c1', 100), predio: null, contribuyente: juan }] },
   { path: '/srtm/predios/p1', body: { predio: solo, anio: year, titulares: 1, totales } },
   {
@@ -79,7 +80,7 @@ function start(path: string, extra: MockRoute[] = []) {
 }
 
 // the PDFs asked for, in order
-const pedidos = () => fetch!.calls.map((c) => c.path).filter((p) => /\/(pu|hr)\?/.test(p))
+const pedidos = () => fetch!.calls.map((c) => c.path).filter((p) => /\/(pu|hr|hla)\?/.test(p))
 
 describe('Ver PU desde la ficha del predio', () => {
   it('opens the PU of its one titular for the year picked', async () => {
@@ -140,6 +141,33 @@ describe('Ver HR y PU desde la ficha del contribuyente', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ver HR' }))
     const dialog = await screen.findByRole('dialog', { name: `HR — 000123 — ${year}` })
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(`Faltan parámetros: UIT ${year}`)
+  })
+
+  it('opens the HLA of the year', async () => {
+    start('/contribuyentes/c1')
+    await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })
+    await userEvent.click(screen.getByRole('button', { name: 'Ver HLA' }))
+    const dialog = await screen.findByRole('dialog', { name: `HLA — 000123 — ${year}` })
+    await within(dialog).findByTitle(`HLA — 000123 — ${year}`)
+    expect(pedidos()).toEqual([`/srtm/contribuyentes/c1/hla?anio=${year}`])
+  })
+
+  it('says why there is no HLA yet (422)', async () => {
+    start('/contribuyentes/c1', [
+      {
+        path: '/srtm/contribuyentes/c1/hla',
+        status: 422,
+        body: {
+          title: 'Unprocessable Content',
+          detail: `No se pueden determinar los arbitrios de ${year}`,
+          faltan: ['Predio 01-01-0003: 24 cuotas de arbitrios por determinar']
+        }
+      }
+    ])
+    await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })
+    await userEvent.click(screen.getByRole('button', { name: 'Ver HLA' }))
+    const dialog = await screen.findByRole('dialog', { name: `HLA — 000123 — ${year}` })
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Predio 01-01-0003: 24 cuotas de arbitrios por determinar')
   })
 
   it('opens the PU of each of its predios, as its titular', async () => {
