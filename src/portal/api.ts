@@ -12,6 +12,7 @@ import type {
   Declaracion,
   DeclaracionDetalle,
   DeclaracionJurada,
+  DeterminacionMasiva,
   FiltrosPredio,
   Domicilio,
   Emision,
@@ -229,6 +230,12 @@ export const rentas = {
   // every predio of its declarations of the year: all of them or none
   determinarArbitriosDeContribuyente: (id: string, anio: number, observacion: string) =>
     send<CuotaArbitrio[]>('POST', `/srtm/contribuyentes/${id}/arbitrios`, { anio, observacion }),
+
+  // the determinación masiva of a year's arbitrios: one per year at a time (409), the newest first. 403 without the
+  // permissions its lotes use; 422 with what the year lacks; 400 for the observación
+  determinaciones: (anio?: number) => get<DeterminacionMasiva[]>(`/srtm/arbitrios/determinaciones${query({ anio })}`),
+  determinarMasiva: (anio: number, observacion: string) => send<DeterminacionMasiva>('POST', '/srtm/arbitrios/determinaciones', { anio, observacion }),
+  borrarDeterminacion: (id: string) => remove(`/srtm/arbitrios/determinaciones/${id}`),
 
   // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
   emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),

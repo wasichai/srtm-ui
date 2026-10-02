@@ -12,6 +12,7 @@ import { BuscarPage } from './pages/BuscarPage'
 import { ContribuyenteRoute } from './pages/ContribuyentePage'
 import { DeclaracionRoute } from './pages/DeclaracionPage'
 import { ConsultaArbitriosPage, TasasArbitriosPage } from './pages/ArbitriosPages'
+import { DeterminacionesPage } from './pages/DeterminacionesPage'
 import { EmisionesPage } from './pages/EmisionesPage'
 import { NuevaDeclaracionRoute } from './pages/NuevaDeclaracionPage'
 import { InicioPage } from './pages/InicioPage'
@@ -55,6 +56,7 @@ const rutas = createRoutesFromElements(
       <Route path="emisiones" element={<EmisionesPage />} />
       <Route path="arbitrios" element={<ConsultaArbitriosPage />} />
       <Route path="arbitrios/tasas" element={<TasasArbitriosPage />} />
+      <Route path="arbitrios/determinaciones" element={<DeterminacionesPage />} />
       <Route path="*" element={<EmptyState title="Esta página no existe" />} />
     </Route>
   </>

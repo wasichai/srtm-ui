@@ -24,7 +24,7 @@ const FORMATOS: { valor: FormatoEmision; label: string }[] = [
 ]
 
 // ENSAMBLANDO (wasichai/srtm-ui#70): every part of the job is done, the backend is still building the final file
-const ESTADOS: Record<EstadoEmision, string> = {
+export const ESTADOS: Record<EstadoEmision, string> = {
   PENDIENTE: 'Pendiente',
   EN_PROCESO: 'En proceso',
   ENSAMBLANDO: 'Ensamblando',
@@ -32,8 +32,8 @@ const ESTADOS: Record<EstadoEmision, string> = {
   FALLIDA: 'Fallida'
 }
 // the tone of each estado: running ones in amber, a failed one in red
-const TONOS: Record<EstadoEmision, Tono> = { PENDIENTE: 'ambar', EN_PROCESO: 'ambar', ENSAMBLANDO: 'ambar', TERMINADA: 'verde', FALLIDA: 'rojo' }
-const PILDORA: Record<Tono, string> = {
+export const TONOS: Record<EstadoEmision, Tono> = { PENDIENTE: 'ambar', EN_PROCESO: 'ambar', ENSAMBLANDO: 'ambar', TERMINADA: 'verde', FALLIDA: 'rojo' }
+export const PILDORA: Record<Tono, string> = {
   verde: 'bg-success/10 text-success',
   ambar: 'bg-warning/10 text-warning',
   rojo: 'bg-danger/10 text-danger',
@@ -260,7 +260,7 @@ function Progreso({ emision }: { emision: Emision }) {
 
 // an instant in Perú's time: the day, as the srtm writes it, and the hour
 const HORA = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: false })
-function formatInstante(valor: string | null | undefined) {
+export function formatInstante(valor: string | null | undefined) {
   if (!valor) return '—'
   const fecha = new Date(valor)
   return Number.isNaN(fecha.getTime()) ? formatText(valor) : `${formatDate(valor)} ${HORA.format(fecha)}`
