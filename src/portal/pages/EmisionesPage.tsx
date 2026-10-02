@@ -23,9 +23,16 @@ const FORMATOS: { valor: FormatoEmision; label: string }[] = [
   { valor: 'ZIP', label: 'ZIP: un PDF por predio y la HR de cada contribuyente' }
 ]
 
-const ESTADOS: Record<EstadoEmision, string> = { PENDIENTE: 'Pendiente', EN_PROCESO: 'En proceso', TERMINADA: 'Terminada', FALLIDA: 'Fallida' }
+// ENSAMBLANDO (wasichai/srtm-ui#70): every part of the job is done, the backend is still building the final file
+const ESTADOS: Record<EstadoEmision, string> = {
+  PENDIENTE: 'Pendiente',
+  EN_PROCESO: 'En proceso',
+  ENSAMBLANDO: 'Ensamblando',
+  TERMINADA: 'Terminada',
+  FALLIDA: 'Fallida'
+}
 // the tone of each estado: running ones in amber, a failed one in red
-const TONOS: Record<EstadoEmision, Tono> = { PENDIENTE: 'ambar', EN_PROCESO: 'ambar', TERMINADA: 'verde', FALLIDA: 'rojo' }
+const TONOS: Record<EstadoEmision, Tono> = { PENDIENTE: 'ambar', EN_PROCESO: 'ambar', ENSAMBLANDO: 'ambar', TERMINADA: 'verde', FALLIDA: 'rojo' }
 const PILDORA: Record<Tono, string> = {
   verde: 'bg-success/10 text-success',
   ambar: 'bg-warning/10 text-warning',
@@ -142,7 +149,8 @@ function FilaEmision({ emision }: { emision: Emision }) {
   const terminada = emision.estado === 'TERMINADA'
   // purged by the retention: known from the list (no file) or from the download (410)
   const depurado = terminada && (!emision.archivo || conEstado(descargar.error, 410))
-  const corriendo = emision.estado === 'PENDIENTE' || emision.estado === 'EN_PROCESO'
+  // ENSAMBLANDO also counts as running: the backend refuses to delete it (409), so no "Eliminar" here either
+  const corriendo = emision.estado === 'PENDIENTE' || emision.estado === 'EN_PROCESO' || emision.estado === 'ENSAMBLANDO'
 
   return (
     <tr className="align-top">
@@ -225,24 +233,27 @@ function EliminarEmision({ emision }: { emision: Emision }) {
 }
 
 function Progreso({ emision }: { emision: Emision }) {
-  const { procesados, total } = emision
+  const { procesados, total, estado, anio } = emision
+  // ENSAMBLANDO has no procesados/total left to show (every part is already done): an ARIA indeterminate
+  // progressbar instead, no aria-valuenow/aria-valuemax, a full, pulsing bar
+  const ensamblando = estado === 'ENSAMBLANDO'
   const porcentaje = total > 0 ? Math.min(100, Math.round((procesados / total) * 100)) : 0
   return (
     <div className="space-y-1">
       <div
         role="progressbar"
-        aria-label={`Progreso de la emisión ${emision.anio}`}
+        aria-label={`Progreso de la emisión ${anio}`}
         aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={procesados}
+        aria-valuemax={ensamblando ? undefined : total}
+        aria-valuenow={ensamblando ? undefined : procesados}
         className="h-2 w-full overflow-hidden rounded-full bg-surface-muted"
       >
         <div
-          className={cn('h-full rounded-full transition-[width]', emision.estado === 'FALLIDA' ? 'bg-danger' : 'bg-brand')}
-          style={{ width: `${porcentaje}%` }}
+          className={cn('h-full rounded-full transition-[width]', estado === 'FALLIDA' ? 'bg-danger' : 'bg-brand', ensamblando && 'w-full animate-pulse')}
+          style={ensamblando ? undefined : { width: `${porcentaje}%` }}
         />
       </div>
-      <p className="text-xs text-ink-muted tabular-nums">{`${procesados}/${total}`}</p>
+      <p className="text-xs text-ink-muted tabular-nums">{ensamblando ? 'Ensamblando el archivo…' : `${procesados}/${total}`}</p>
     </div>
   )
 }

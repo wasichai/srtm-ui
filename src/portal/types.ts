@@ -486,7 +486,8 @@ export type Catalogos = Partial<Record<CatalogKey, Record<string, string[]>>>
 
 // the emisión masiva of a year's HR and PU (GET /srtm/emisiones): a job the backend runs in the background
 export type FormatoEmision = 'PDF' | 'ZIP'
-export type EstadoEmision = 'PENDIENTE' | 'EN_PROCESO' | 'TERMINADA' | 'FALLIDA'
+// ENSAMBLANDO: every part is done, the final file is not built yet (wasichai/srtm-ui#70)
+export type EstadoEmision = 'PENDIENTE' | 'EN_PROCESO' | 'ENSAMBLANDO' | 'TERMINADA' | 'FALLIDA'
 
 export interface Emision {
   id: string
