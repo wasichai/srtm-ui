@@ -1,19 +1,24 @@
 import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
+  ArbitriosContribuyente,
   CatastroFiscal,
   Catalogos,
   CategoriaValor,
   Contribuyente,
   ContribuyenteFicha,
+  CuotaArbitrio,
   DatosPersona,
   Declaracion,
   DeclaracionDetalle,
   DeclaracionJurada,
+  DeterminacionMasiva,
+  DocumentoEmision,
   FiltrosPredio,
   Domicilio,
   Emision,
   FormatoEmision,
+  MatrizArbitrios,
   MedioContacto,
   NivelConstruccion,
   NuevaDeclaracion,
@@ -22,10 +27,12 @@ import type {
   ObraComplementaria,
   OtroFrente,
   Pagina,
+  ParametrosArbitrios,
   Predio,
   PredioFicha,
   Relacionado,
   Resumen,
+  ServicioArbitrio,
   Sustento,
   Transferente,
   Ubigeo,
@@ -209,10 +216,34 @@ export const rentas = {
 
   actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body),
 
+  // the arbitrios of a year: a predio's servicio by month, and a contribuyente's by predio (only its own cuotas)
+  arbitriosDePredio: (id: string, anio: number) => get<MatrizArbitrios>(`/srtm/predios/${id}/arbitrios${query({ anio })}`),
+  arbitriosDeContribuyente: (id: string, anio: number) => get<ArbitriosContribuyente>(`/srtm/contribuyentes/${id}/arbitrios${query({ anio })}`),
+  // a page of the year's cuotas, by servicio when given (422 names a filter it cannot serve)
+  cuotasArbitrio: (anio: number, servicio: string | null, page: number, size = PAGE_SIZE) =>
+    get<Pagina<CuotaArbitrio>>(`/srtm/arbitrios${query({ anio, servicio, page, size })}`),
+  serviciosArbitrio: (anio: number) => get<ServicioArbitrio[]>(`/srtm/arbitrios/servicios${query({ anio })}`),
+  parametrosArbitrio: (anio: number) => get<ParametrosArbitrios>(`/srtm/arbitrios/parametros${query({ anio })}`),
+  // the cuotas still to determine, written: [] when none was pending. 422 with what is missing, 400 for the observación,
+  // 403 without CREATE on cuota_arbitrio
+  determinarArbitriosDePredio: (id: string, anio: number, observacion: string) =>
+    send<CuotaArbitrio[]>('POST', `/srtm/predios/${id}/arbitrios`, { anio, observacion }),
+  // every predio of its declarations of the year: all of them or none
+  determinarArbitriosDeContribuyente: (id: string, anio: number, observacion: string) =>
+    send<CuotaArbitrio[]>('POST', `/srtm/contribuyentes/${id}/arbitrios`, { anio, observacion }),
+
+  // the determinación masiva of a year's arbitrios: one per year at a time (409), the newest first. 403 without the
+  // permissions its lotes use; 422 with what the year lacks; 400 for the observación
+  determinaciones: (anio?: number) => get<DeterminacionMasiva[]>(`/srtm/arbitrios/determinaciones${query({ anio })}`),
+  determinarMasiva: (anio: number, observacion: string) => send<DeterminacionMasiva>('POST', '/srtm/arbitrios/determinaciones', { anio, observacion }),
+  borrarDeterminacion: (id: string) => remove(`/srtm/arbitrios/determinaciones/${id}`),
+
   // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
   emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),
   // 403 without UPDATE on emision_masiva
-  emitir: (anio: number, formato: FormatoEmision) => send<Emision>('POST', '/srtm/emisiones', { anio, formato }),
+  // documentos only when they are not the default (HR and PU); asking for the HLA is a 422 with what the year lacks for it
+  emitir: (anio: number, formato: FormatoEmision, documentos?: DocumentoEmision[]) =>
+    send<Emision>('POST', '/srtm/emisiones', documentos ? { anio, formato, documentos } : { anio, formato }),
   // the record and its file; refused (409) while it runs
   borrarEmision: (id: string) => remove(`/srtm/emisiones/${id}`)
 }

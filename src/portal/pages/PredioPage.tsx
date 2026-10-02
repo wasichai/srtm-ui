@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, MapPin, Receipt, Users } from 'lucide-react'
+import { Coins, Landmark, MapPin, Receipt, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
@@ -12,6 +12,7 @@ import { YearSelect } from '../components/YearSelect'
 import { UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
+import { ArbitriosDelPredio } from './Arbitrios'
 import { DatosPanel } from './DatosPanel'
 import { camposDe } from './DeclaracionPage'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
@@ -108,6 +109,16 @@ function PredioPage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <HistorialDeclaraciones side="predio" id={id} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'arbitrios',
+                  label: 'Arbitrios',
+                  icon: Landmark,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <ArbitriosDelPredio id={id} anio={anio} />
                     </div>
                   )
                 }

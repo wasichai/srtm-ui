@@ -83,11 +83,12 @@ describe('NAV_TREE', () => {
       ['Predios', ['Buscar predios /predios', 'Nuevo predio /predios/nuevo']],
       ['Declaraciones', ['Nueva declaración /declaraciones/nueva']],
       ['Catastro', ['Nuevo lote /catastro/nuevo']],
+      ['Arbitrios', ['Consulta de cuotas /arbitrios', 'Tasas del año /arbitrios/tasas', 'Determinación masiva /arbitrios/determinaciones']],
       ['Emisión', ['Emisión masiva /emisiones']],
       'Administración /admin'
     ])
     expect(ver(arbolPara(NAV_TREE, { isAdmin: false }))).not.toContain('Administración /admin')
-    expect(arbolPara(NAV_TREE, { isAdmin: false })).toHaveLength(5)
+    expect(arbolPara(NAV_TREE, { isAdmin: false })).toHaveLength(6)
   })
 
   // a leaf is current on its route and the routes under it, the most specific leaf winning; a ficha with no leaf of
@@ -107,6 +108,9 @@ describe('NAV_TREE', () => {
     ['/catastro/nuevo', 'Nuevo lote'],
     ['/catastro/l1', undefined],
     ['/emisiones', 'Emisión masiva'],
+    ['/arbitrios', 'Consulta de cuotas'],
+    ['/arbitrios/tasas', 'Tasas del año'],
+    ['/arbitrios/determinaciones', 'Determinación masiva'],
     ['/contribuyentesx', undefined],
     ['/admin', undefined]
   ])('on %s the current leaf is %s', (path, label) => {
@@ -161,7 +165,7 @@ describe('portal-tributario tree menu', () => {
     expect(within(nav).getByRole('link', { name: 'Ir al inicio' })).toHaveAttribute('aria-current', 'page')
     expect(within(nav).getByRole('button', { name: 'Ocultar el menú' })).toHaveAttribute('aria-controls', 'sidebar')
 
-    const grupos = ['Contribuyentes', 'Predios', 'Declaraciones', 'Catastro', 'Emisión'].map((name) => within(nav).getByRole('button', { name }))
+    const grupos = ['Contribuyentes', 'Predios', 'Declaraciones', 'Catastro', 'Arbitrios', 'Emisión'].map((name) => within(nav).getByRole('button', { name }))
     for (const grupo of grupos) {
       expect(grupo).toHaveAttribute('aria-expanded', 'true')
       expect(grupo).toHaveClass('text-[17px]', 'font-bold', 'text-ink')
@@ -178,6 +182,9 @@ describe('portal-tributario tree menu', () => {
       ['Nuevo predio', '/predios/nuevo'],
       ['Nueva declaración', '/declaraciones/nueva'],
       ['Nuevo lote', '/catastro/nuevo'],
+      ['Consulta de cuotas', '/arbitrios'],
+      ['Tasas del año', '/arbitrios/tasas'],
+      ['Determinación masiva', '/arbitrios/determinaciones'],
       ['Emisión masiva', '/emisiones'],
       ['Administración', '/admin']
     ])
@@ -353,7 +360,7 @@ describe('portal-tributario tree menu', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent)
-    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Emisión masiva'])
+    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Arbitrios', 'Emisión masiva'])
     expect(within(nav).queryByText('Mis trámites')).not.toBeInTheDocument()
     const menu = within(screen.getByRole('banner')).getByRole('button', { name: 'Menú' })
     expect(menu).toHaveClass('md:hidden')

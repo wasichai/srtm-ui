@@ -11,7 +11,7 @@ import { currentYear, formatDate, formatText } from '../components/format'
 import type { Tono } from '../components/tono'
 import { YearSelect } from '../components/YearSelect'
 import { useEmisiones } from '../queries'
-import type { Emision, EstadoEmision, FormatoEmision } from '../types'
+import type { DocumentoEmision, Emision, EstadoEmision, FormatoEmision } from '../types'
 
 // the emisión masiva of a year's HR and PU (wasichai/srtm-backend#37): launched here, run by the backend in the
 // background, followed here (the list is asked again every 2 s while a job runs) and, once it ends, downloaded.
@@ -23,8 +23,17 @@ const FORMATOS: { valor: FormatoEmision; label: string }[] = [
   { valor: 'ZIP', label: 'ZIP: un PDF por predio y la HR de cada contribuyente' }
 ]
 
+// what each contribuyente gets, in this order; by default its HR and PUs, as before the HLA (srtm-backend#65)
+const DOCUMENTOS: { valor: DocumentoEmision; label: string }[] = [
+  { valor: 'HR', label: 'HR (hoja de resumen)' },
+  { valor: 'PU', label: 'PU de cada predio' },
+  { valor: 'HLA', label: 'HLA (liquidación de arbitrios)' }
+]
+const POR_DEFECTO: DocumentoEmision[] = ['HR', 'PU']
+const esPorDefecto = (documentos: DocumentoEmision[]) => documentos.length === POR_DEFECTO.length && POR_DEFECTO.every((d) => documentos.includes(d))
+
 // ENSAMBLANDO (wasichai/srtm-ui#70): every part of the job is done, the backend is still building the final file
-const ESTADOS: Record<EstadoEmision, string> = {
+export const ESTADOS: Record<EstadoEmision, string> = {
   PENDIENTE: 'Pendiente',
   EN_PROCESO: 'En proceso',
   ENSAMBLANDO: 'Ensamblando',
@@ -32,8 +41,8 @@ const ESTADOS: Record<EstadoEmision, string> = {
   FALLIDA: 'Fallida'
 }
 // the tone of each estado: running ones in amber, a failed one in red
-const TONOS: Record<EstadoEmision, Tono> = { PENDIENTE: 'ambar', EN_PROCESO: 'ambar', ENSAMBLANDO: 'ambar', TERMINADA: 'verde', FALLIDA: 'rojo' }
-const PILDORA: Record<Tono, string> = {
+export const TONOS: Record<EstadoEmision, Tono> = { PENDIENTE: 'ambar', EN_PROCESO: 'ambar', ENSAMBLANDO: 'ambar', TERMINADA: 'verde', FALLIDA: 'rojo' }
+export const PILDORA: Record<Tono, string> = {
   verde: 'bg-success/10 text-success',
   ambar: 'bg-warning/10 text-warning',
   rojo: 'bg-danger/10 text-danger',
@@ -59,9 +68,16 @@ export function EmisionesPage() {
   const queryClient = useQueryClient()
   const [anio, setAnio] = useState(currentYear)
   const [formato, setFormato] = useState<FormatoEmision>('PDF')
+  const [documentos, setDocumentos] = useState<DocumentoEmision[]>(POR_DEFECTO)
+  const alternar = (documento: DocumentoEmision) =>
+    setDocumentos((actuales) =>
+      actuales.includes(documento)
+        ? actuales.filter((d) => d !== documento)
+        : DOCUMENTOS.map((d) => d.valor).filter((d) => d === documento || actuales.includes(d))
+    )
 
   const emitir = useMutation({
-    mutationFn: () => rentas.emitir(anio, formato),
+    mutationFn: () => rentas.emitir(anio, formato, esPorDefecto(documentos) ? undefined : documentos),
     onSuccess: async (job) => {
       // the new job at once, then the backend's list (which starts the polling)
       queryClient.setQueryData<Emision[]>(['emisiones'], (actuales = []) => [job, ...actuales.filter((e) => e.id !== job.id)])
@@ -93,7 +109,16 @@ export function EmisionesPage() {
                 </label>
               ))}
             </fieldset>
-            <Button type="submit" disabled={emitir.isPending}>
+            <fieldset className="space-y-1">
+              <legend className="text-sm text-ink-muted">Documentos de cada contribuyente</legend>
+              {DOCUMENTOS.map(({ valor, label }) => (
+                <label key={valor} className="flex items-center gap-2 text-sm text-ink">
+                  <input type="checkbox" name="documentos" value={valor} checked={documentos.includes(valor)} onChange={() => alternar(valor)} />
+                  {label}
+                </label>
+              ))}
+            </fieldset>
+            <Button type="submit" disabled={emitir.isPending || documentos.length === 0}>
               {emitir.isPending && <Loader2 className="size-4 animate-spin" />}
               Emitir
             </Button>
@@ -155,7 +180,10 @@ function FilaEmision({ emision }: { emision: Emision }) {
   return (
     <tr className="align-top">
       <Td className="font-medium">{emision.anio}</Td>
-      <Td>{emision.formato}</Td>
+      <Td>
+        {emision.formato}
+        {emision.documentos && !esPorDefecto(emision.documentos) && <p className="text-xs text-ink-muted">{emision.documentos.join(', ')}</p>}
+      </Td>
       <Td>
         <Badge data-tono={tono} className={PILDORA[tono]}>
           {ESTADOS[emision.estado] ?? emision.estado}
@@ -260,7 +288,7 @@ function Progreso({ emision }: { emision: Emision }) {
 
 // an instant in Perú's time: the day, as the srtm writes it, and the hour
 const HORA = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: false })
-function formatInstante(valor: string | null | undefined) {
+export function formatInstante(valor: string | null | undefined) {
   if (!valor) return '—'
   const fecha = new Date(valor)
   return Number.isNaN(fecha.getTime()) ? formatText(valor) : `${formatDate(valor)} ${HORA.format(fecha)}`

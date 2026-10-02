@@ -505,4 +505,131 @@ export interface Emision {
   mensaje: string | null
   iniciado: string | null
   terminado: string | null
+  // what each contribuyente got: HR, PU and, when asked for, HLA (none in a job from before the HLA: HR and PU)
+  documentos?: DocumentoEmision[]
+}
+
+// the documents of each contribuyente of an emisión masiva (srtm-backend#65); by default the HR and the PUs
+export type DocumentoEmision = 'HR' | 'PU' | 'HLA'
+
+// the arbitrios (wasichai/srtm-backend#62): what a predio or a contribuyente owes by servicio and month, as determined.
+// every total comes from the backend, never summed here; every figure carries the date it was determined on
+export interface ServicioArbitrio {
+  id: string
+  codigo: string
+  nombre: string | null
+  orden: number | null
+  vigencia_desde: string | null
+  vigencia_hasta: string | null
+}
+
+export interface PersonaArbitrio {
+  id: string | null
+  codigo: string | null
+  nombre: string | null
+}
+
+export interface CuotaMes {
+  id: string | null
+  monto: number
+  contribuyente: string | null
+  fecha_calculo: string | null
+  parametro_aplicado: string | null
+}
+
+// one servicio's twelve months: null where there is no cuota
+export interface FilaServicio {
+  servicio: ServicioArbitrio
+  meses: (CuotaMes | null)[]
+  total: number
+}
+
+export interface MatrizArbitrios {
+  anio: number
+  predio: { id: string | null; codigo: string | null; direccion: string | null }
+  filas: FilaServicio[]
+  // who the rule charges each month (the titular principal); null: no one that month
+  titulares: { periodo: number; titular: PersonaArbitrio | null }[]
+  totales_por_mes: number[]
+  total: number
+  // of the latest cuota; null while none is determined
+  fecha_calculo: string | null
+  // how many cuotas a determination would add now, and what it lacks to
+  pendientes: number
+  faltan: string[]
+}
+
+export interface ArbitriosContribuyente {
+  anio: number
+  contribuyente: PersonaArbitrio
+  predios: MatrizArbitrios[]
+  total: number
+  fecha_calculo: string | null
+}
+
+// a cuota as the backend writes it (POST …/arbitrios answers the ones it wrote)
+export interface CuotaArbitrio {
+  id: string
+  predio: string
+  contribuyente: string
+  servicio: string
+  anio: number
+  periodo: number
+  monto: number
+  parametro_aplicado: string
+  fecha_calculo: string
+  observacion: string
+}
+
+// a row of parametro_tributario: a normative value in force from vigencia_desde to vigencia_hasta (open when null)
+export interface ParametroTributario {
+  id: string | null
+  tipo: string
+  clave: string | null
+  vigencia_desde: string | null
+  vigencia_hasta: string | null
+  valor_numerico: number | null
+  texto: string | null
+  norma: string | null
+  fuente: string | null
+  transcribio: string | null
+  verifico: string | null
+}
+
+export interface OrdenanzaArbitrio {
+  id: string | null
+  anio: number
+  numero: string | null
+  fecha_publicacion: string | null
+  acuerdo_ratificacion: string | null
+  fecha_ratificacion: string | null
+  municipalidad_ratificante: string | null
+}
+
+// GET /srtm/arbitrios/parametros: the year's ordinance, servicios and the ordinance's rows, and what the year lacks
+export interface ParametrosArbitrios {
+  anio: number
+  ordenanza: OrdenanzaArbitrio | null
+  servicios: ServicioArbitrio[]
+  parametros: ParametroTributario[]
+  faltan: string[]
+}
+
+// the determinación masiva of a year's arbitrios (GET /srtm/arbitrios/determinaciones): a job the backend runs in the
+// background, by lotes of predios. it ends without a file: never ENSAMBLANDO
+export interface DeterminacionMasiva {
+  id: string
+  anio: number
+  estado: EstadoEmision
+  // predios
+  total: number
+  procesados: number
+  // cuotas written
+  generadas: number
+  // the predios it could not determine, by code, and why
+  errores: { predio: string; mensaje: string }[]
+  mensaje: string | null
+  observacion: string | null
+  iniciado: string | null
+  terminado: string | null
 }
