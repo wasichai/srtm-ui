@@ -15,8 +15,10 @@ export function usePredios(q: string, page: number) {
   return useQuery({ queryKey: ['predios', q, page], queryFn: () => rentas.predios(q, page), placeholderData: keepPreviousData })
 }
 
-// a job still to end: the backend moves it on its own, so the list is asked again
-export const hayActivos = (emisiones: Emision[] | undefined) => (emisiones ?? []).some((e) => e.estado === 'PENDIENTE' || e.estado === 'EN_PROCESO')
+// a job still to end: the backend moves it on its own, so the list is asked again. ENSAMBLANDO is still active:
+// every part is done, but the final file is not built yet
+export const hayActivos = (emisiones: Emision[] | undefined) =>
+  (emisiones ?? []).some((e) => e.estado === 'PENDIENTE' || e.estado === 'EN_PROCESO' || e.estado === 'ENSAMBLANDO')
 
 // the emisiones masivas, newest first: asked every 2 s while one of them runs, not at all otherwise
 export function useEmisiones() {
