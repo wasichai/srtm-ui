@@ -50,7 +50,8 @@ export const NAV_TREE: NodoNav[] = [
     label: 'Arbitrios',
     hijos: [
       { label: 'Consulta de cuotas', to: '/arbitrios' },
-      { label: 'Tasas del año', to: '/arbitrios/tasas' }
+      { label: 'Tasas del año', to: '/arbitrios/tasas' },
+      { label: 'Determinación masiva', to: '/arbitrios/determinaciones' }
     ]
   },
   // the HR and PU of a whole year, in the background

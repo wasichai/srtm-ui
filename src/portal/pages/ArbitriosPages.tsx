@@ -9,6 +9,7 @@ import { currentYear, formatDate, formatMoney, formatText, MESES } from '../comp
 import { NUMERICA } from '../components/tabla'
 import { YearSelect } from '../components/YearSelect'
 import type { ParametroTributario, ServicioArbitrio } from '../types'
+import { SubnavArbitrios } from './SubnavArbitrios'
 
 // the arbitrios of a year beyond one ficha (wasichai/srtm-backend#62): the cuotas determined, by servicio, and the
 // ordinance they come from with its tasas, zonas, usos and due dates. a predio's or a contribuyente's own are in its
@@ -37,6 +38,7 @@ export function ConsultaArbitriosPage() {
 
   return (
     <div className="space-y-5">
+      <SubnavArbitrios />
       <div>
         <h1 className="text-xl font-semibold text-ink">Consulta de cuotas de arbitrios</h1>
         <p className="text-sm text-ink-muted">Las cuotas determinadas de un año, mes a mes. Las de un predio o un contribuyente están en su ficha.</p>
@@ -129,6 +131,7 @@ export function TasasArbitriosPage() {
 
   return (
     <div className="space-y-5">
+      <SubnavArbitrios />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-ink">Tasas de arbitrios</h1>
@@ -139,6 +142,7 @@ export function TasasArbitriosPage() {
       <QueryState query={query}>
         {(p) => (
           <div className="space-y-5">
+            <SubnavArbitrios />
             {p.faltan.length > 0 && (
               <Alerta tono="atencion" titulo={`Al año ${anio} le falta:`}>
                 {p.faltan.join('; ')}. Sin eso no se determinan sus arbitrios.

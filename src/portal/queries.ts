@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
-import type { Emision } from './types'
+import type { DeterminacionMasiva, Emision } from './types'
 
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
@@ -29,4 +29,14 @@ export function useEmisiones() {
 export function useRefresh() {
   const queryClient = useQueryClient()
   return useCallback(() => queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'catalogos' }), [queryClient])
+}
+
+// the determinaciones masivas de arbitrios, newest first: asked every 2 s while one of them runs
+export function useDeterminaciones() {
+  return useQuery({
+    queryKey: ['arbitrios', 'determinaciones'],
+    queryFn: () => rentas.determinaciones(),
+    refetchInterval: (query) =>
+      (query.state.data ?? []).some((d: DeterminacionMasiva) => d.estado === 'PENDIENTE' || d.estado === 'EN_PROCESO') ? 2000 : false
+  })
 }

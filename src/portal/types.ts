@@ -609,3 +609,22 @@ export interface ParametrosArbitrios {
   parametros: ParametroTributario[]
   faltan: string[]
 }
+
+// the determinación masiva of a year's arbitrios (GET /srtm/arbitrios/determinaciones): a job the backend runs in the
+// background, by lotes of predios. it ends without a file: never ENSAMBLANDO
+export interface DeterminacionMasiva {
+  id: string
+  anio: number
+  estado: EstadoEmision
+  // predios
+  total: number
+  procesados: number
+  // cuotas written
+  generadas: number
+  // the predios it could not determine, by code, and why
+  errores: { predio: string; mensaje: string }[]
+  mensaje: string | null
+  observacion: string | null
+  iniciado: string | null
+  terminado: string | null
+}
