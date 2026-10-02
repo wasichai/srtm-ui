@@ -1,6 +1,7 @@
 import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
+  ArbitriosContribuyente,
   CatastroFiscal,
   Catalogos,
   CategoriaValor,
@@ -14,6 +15,7 @@ import type {
   Domicilio,
   Emision,
   FormatoEmision,
+  MatrizArbitrios,
   MedioContacto,
   NivelConstruccion,
   NuevaDeclaracion,
@@ -208,6 +210,10 @@ export const rentas = {
   borrarPredio: (id: string) => remove(`/srtm/predios/${id}`),
 
   actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body),
+
+  // the arbitrios of a year: a predio's servicio by month, and a contribuyente's by predio (only its own cuotas)
+  arbitriosDePredio: (id: string, anio: number) => get<MatrizArbitrios>(`/srtm/predios/${id}/arbitrios${query({ anio })}`),
+  arbitriosDeContribuyente: (id: string, anio: number) => get<ArbitriosContribuyente>(`/srtm/contribuyentes/${id}/arbitrios${query({ anio })}`),
 
   // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
   emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),

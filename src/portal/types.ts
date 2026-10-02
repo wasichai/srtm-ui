@@ -506,3 +506,58 @@ export interface Emision {
   iniciado: string | null
   terminado: string | null
 }
+
+// the arbitrios (wasichai/srtm-backend#62): what a predio or a contribuyente owes by servicio and month, as determined.
+// every total comes from the backend, never summed here; every figure carries the date it was determined on
+export interface ServicioArbitrio {
+  id: string
+  codigo: string
+  nombre: string | null
+  orden: number | null
+  vigencia_desde: string | null
+  vigencia_hasta: string | null
+}
+
+export interface PersonaArbitrio {
+  id: string | null
+  codigo: string | null
+  nombre: string | null
+}
+
+export interface CuotaMes {
+  id: string | null
+  monto: number
+  contribuyente: string | null
+  fecha_calculo: string | null
+  parametro_aplicado: string | null
+}
+
+// one servicio's twelve months: null where there is no cuota
+export interface FilaServicio {
+  servicio: ServicioArbitrio
+  meses: (CuotaMes | null)[]
+  total: number
+}
+
+export interface MatrizArbitrios {
+  anio: number
+  predio: { id: string | null; codigo: string | null; direccion: string | null }
+  filas: FilaServicio[]
+  // who the rule charges each month (the titular principal); null: no one that month
+  titulares: { periodo: number; titular: PersonaArbitrio | null }[]
+  totales_por_mes: number[]
+  total: number
+  // of the latest cuota; null while none is determined
+  fecha_calculo: string | null
+  // how many cuotas a determination would add now, and what it lacks to
+  pendientes: number
+  faltan: string[]
+}
+
+export interface ArbitriosContribuyente {
+  anio: number
+  contribuyente: PersonaArbitrio
+  predios: MatrizArbitrios[]
+  total: number
+  fecha_calculo: string | null
+}
