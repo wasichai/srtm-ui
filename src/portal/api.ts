@@ -13,6 +13,7 @@ import type {
   DeclaracionDetalle,
   DeclaracionJurada,
   DeterminacionMasiva,
+  DocumentoEmision,
   FiltrosPredio,
   Domicilio,
   Emision,
@@ -240,7 +241,9 @@ export const rentas = {
   // the emisión masiva: one at a time (409 while another is PENDIENTE or EN_PROCESO), the newest first
   emisiones: (anio?: number) => get<Emision[]>(`/srtm/emisiones${query({ anio })}`),
   // 403 without UPDATE on emision_masiva
-  emitir: (anio: number, formato: FormatoEmision) => send<Emision>('POST', '/srtm/emisiones', { anio, formato }),
+  // documentos only when they are not the default (HR and PU); asking for the HLA is a 422 with what the year lacks for it
+  emitir: (anio: number, formato: FormatoEmision, documentos?: DocumentoEmision[]) =>
+    send<Emision>('POST', '/srtm/emisiones', documentos ? { anio, formato, documentos } : { anio, formato }),
   // the record and its file; refused (409) while it runs
   borrarEmision: (id: string) => remove(`/srtm/emisiones/${id}`)
 }

@@ -339,4 +339,45 @@ describe('emisión masiva', () => {
     expect(await within(dialogo).findByRole('alert')).toHaveTextContent('La emisión está en curso: no se puede eliminar mientras corre')
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
+
+  // srtm-backend#65: each contribuyente's documents, HR and PU by default, the HLA when asked for
+  describe('documentos', () => {
+    it('asks for the HLA too when it is checked, and for nothing when none is', async () => {
+      start('/emisiones', { path: '/srtm/emisiones', body: [] }, [
+        { method: 'POST', path: '/srtm/emisiones', status: 202, body: job({ documentos: ['HR', 'PU', 'HLA'] }) }
+      ])
+      await screen.findByText('Aún no hay emisiones')
+      await userEvent.click(screen.getByRole('checkbox', { name: 'HLA (liquidación de arbitrios)' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Emitir' }))
+      await waitFor(() => expect(fetch!.calls.find((c) => c.method === 'POST')?.body).toEqual({ anio: year, formato: 'PDF', documentos: ['HR', 'PU', 'HLA'] }))
+
+      for (const nombre of ['HR (hoja de resumen)', 'PU de cada predio', 'HLA (liquidación de arbitrios)']) {
+        await userEvent.click(screen.getByRole('checkbox', { name: nombre }))
+      }
+      expect(screen.getByRole('button', { name: 'Emitir' })).toBeDisabled()
+    })
+
+    it('says what the year lacks for the HLA (422)', async () => {
+      const detalle = `Faltan parámetros tributarios de ${year}: ARBITRIO_VENCIMIENTO 1 ${year}`
+      start('/emisiones', { path: '/srtm/emisiones', body: [] }, [
+        {
+          method: 'POST',
+          path: '/srtm/emisiones',
+          status: 422,
+          body: { title: 'Unprocessable Content', detail: detalle, faltan: [`ARBITRIO_VENCIMIENTO 1 ${year}`] }
+        }
+      ])
+      await screen.findByText('Aún no hay emisiones')
+      await userEvent.click(screen.getByRole('checkbox', { name: 'HLA (liquidación de arbitrios)' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Emitir' }))
+      expect(await screen.findByText(detalle)).toBeInTheDocument()
+    })
+
+    it('lists what a job emits when it is not the HR and PU alone', async () => {
+      start('/emisiones', { path: '/srtm/emisiones', body: [job({ id: 'e2', documentos: ['HLA'] }), job({ id: 'e3', documentos: ['HR', 'PU'] })] })
+      const [, conHla, sinHla] = within(await screen.findByRole('table', { name: 'Emisiones' })).getAllByRole('row')
+      expect(conHla).toHaveTextContent('HLA')
+      expect(sinHla).not.toHaveTextContent('HLA')
+    })
+  })
 })

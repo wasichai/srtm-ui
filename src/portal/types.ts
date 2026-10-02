@@ -505,7 +505,12 @@ export interface Emision {
   mensaje: string | null
   iniciado: string | null
   terminado: string | null
+  // what each contribuyente got: HR, PU and, when asked for, HLA (none in a job from before the HLA: HR and PU)
+  documentos?: DocumentoEmision[]
 }
+
+// the documents of each contribuyente of an emisión masiva (srtm-backend#65); by default the HR and the PUs
+export type DocumentoEmision = 'HR' | 'PU' | 'HLA'
 
 // the arbitrios (wasichai/srtm-backend#62): what a predio or a contribuyente owes by servicio and month, as determined.
 // every total comes from the backend, never summed here; every figure carries the date it was determined on

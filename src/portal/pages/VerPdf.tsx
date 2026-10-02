@@ -135,6 +135,27 @@ export function VerHr({ contribuyente, codigo, anio }: { contribuyente: string; 
   )
 }
 
+// the HLA (hoja de liquidación de arbitrios) of the year, its cuotas as determined (srtm-backend#65): a 422 names what
+// is still to determine or missing, a 404 says nothing is charged to it
+export function VerHla({ contribuyente, codigo, anio }: { contribuyente: string; codigo: string; anio: number }) {
+  const [abierto, setAbierto] = useState(false)
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setAbierto(true)}>
+        <FileText className="size-4" />
+        Ver HLA
+      </Button>
+      {abierto && (
+        <PdfDialog
+          path={`/srtm/contribuyentes/${contribuyente}/hla?${new URLSearchParams({ anio: String(anio) })}`}
+          titulo={`HLA — ${codigo} — ${anio}`}
+          onClose={() => setAbierto(false)}
+        />
+      )}
+    </>
+  )
+}
+
 // the PU of one of a contribuyente's predios, as its titular: a row's action
 export function PuDeFila({ predio, codigo, contribuyente, anio }: { predio: string; codigo: string; contribuyente: string; anio: number }) {
   const [abierto, setAbierto] = useState(false)
