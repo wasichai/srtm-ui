@@ -140,6 +140,48 @@ describe('emisión masiva', () => {
     expect(pedidosDeLista()).toBe(3)
   })
 
+  it('keeps polling while ENSAMBLANDO (every part done, the file not built yet) and stops once TERMINADA', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    const lista: MockRoute = { path: '/srtm/emisiones', body: [job({ estado: 'EN_PROCESO', total: 10, procesados: 10 })] }
+    start('/emisiones', lista)
+
+    await screen.findByRole('progressbar')
+    expect(pedidosDeLista()).toBe(1)
+
+    lista.body = [job({ estado: 'ENSAMBLANDO', total: 10, procesados: 10 })]
+    await act(() => vi.advanceTimersByTimeAsync(2000))
+    await waitFor(() => expect(filas()[0]).toHaveTextContent('Ensamblando'))
+    expect(pedidosDeLista()).toBe(2)
+
+    // still ENSAMBLANDO: a second poll goes out
+    await act(() => vi.advanceTimersByTimeAsync(2000))
+    expect(pedidosDeLista()).toBe(3)
+
+    lista.body = [job({ estado: 'TERMINADA', total: 10, procesados: 10, archivo: `emision-${year}-e1.pdf`, terminado: `${year}-09-27T15:05:00Z` })]
+    await act(() => vi.advanceTimersByTimeAsync(2000))
+    expect(await screen.findByRole('button', { name: /Descargar/ })).toBeInTheDocument()
+    expect(pedidosDeLista()).toBe(4)
+
+    // nothing runs: no more asking
+    await act(() => vi.advanceTimersByTimeAsync(6000))
+    expect(pedidosDeLista()).toBe(4)
+  })
+
+  it('shows "Ensamblando" with an indeterminate progress, no download and no delete while the file is being built', async () => {
+    start('/emisiones', { path: '/srtm/emisiones', body: [job({ estado: 'ENSAMBLANDO', total: 10, procesados: 10 })] })
+    await waitFor(() => expect(filas()).toHaveLength(1))
+    const [fila] = filas()
+
+    expect(fila).toHaveTextContent('Ensamblando')
+    expect(fila).toHaveTextContent('Ensamblando el archivo…')
+    const barra = within(fila).getByRole('progressbar')
+    expect(barra).toHaveAttribute('aria-label', `Progreso de la emisión ${year}`)
+    expect(barra).not.toHaveAttribute('aria-valuenow')
+    expect(barra).not.toHaveAttribute('aria-valuemax')
+    expect(within(fila).queryByRole('button', { name: /Descargar/ })).not.toBeInTheDocument()
+    expect(within(fila).queryByRole('button', { name: 'Eliminar' })).not.toBeInTheDocument()
+  })
+
   it('downloads the file of a finished job with its filename', async () => {
     const terminada = job({ id: 'e7', formato: 'ZIP', estado: 'TERMINADA', total: 3, procesados: 3, archivo: 'x', tamano: 2048 })
     start('/emisiones', { path: '/srtm/emisiones', body: [terminada] })
