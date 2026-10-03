@@ -15,6 +15,7 @@ import type {
   Declaracion,
   DeclaracionDetalle,
   DeclaracionJurada,
+  DescargoPapeleta,
   DeterminacionMasiva,
   DocumentoEmision,
   ExpedienteInfraccion,
@@ -54,7 +55,12 @@ import type {
   UsoPredio,
   SubsanacionNotificacion,
   VersionCuisCreada,
-  Via
+  Via,
+  NotificacionResolucion,
+  NuevaNotificacionResolucion,
+  NuevaResolucion,
+  NuevoDescargo,
+  ResolucionGerencia
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -321,5 +327,20 @@ export const rentas = {
   expediente: (id: string) => get<ExpedienteInfraccion>(`/srtm/infracciones/actas/${id}`),
   // fecha today when not given. 409 when already anulada, 422 when dejada sin efecto, 403 without CREATE on
   // anulacion_papeleta
-  anularActa: (id: string, body: NuevaAnulacion) => send<AnulacionPapeleta>('POST', `/srtm/infracciones/actas/${id}/anulacion`, body)
+  anularActa: (id: string, body: NuevaAnulacion) => send<AnulacionPapeleta>('POST', `/srtm/infracciones/actas/${id}/anulacion`, body),
+  // 201 with presentado_hasta, en_plazo and plazo_texto, the backend's (a late one is written all the same). 422 with
+  // `faltan` (the PLAZO DESCARGO_PAPELETA, the FERIADOS of a year), 409 for a número de expediente already written, 403
+  // without CREATE on descargo_papeleta
+  registrarDescargo: (id: string, body: NuevoDescargo) => send<DescargoPapeleta>('POST', `/srtm/infracciones/actas/${id}/descargos`, body),
+  // 201 with its número (RIS-AAAA-NNNNNN or RGR-AAAA-NNNNNN). 422 with `faltan` (PLAZO RG_RECURSO), for SE_REDUCE or a
+  // descargo of another acta; 409 for a second RIS or a second one for the same descargo; 403 without CREATE on
+  // resolucion_gerencia
+  dictarResolucion: (id: string, body: NuevaResolucion) => send<ResolucionGerencia>('POST', `/srtm/infracciones/actas/${id}/resoluciones`, body),
+  // a resolución's PDF, drawn again from its frozen data: for PdfDialog
+  pdfResolucion: (id: string) => `/srtm/infracciones/resoluciones/${id}/pdf`,
+  // 201 with its intento and, when it takes effect, exigible_desde (the backend's). without direccion, the obligado's
+  // domicilio fiscal in force at the diligencia. 422 with `faltan` (PLAZO RG_RECURSO, FERIADOS), 403 without CREATE on
+  // notificacion_resolucion
+  notificarResolucion: (id: string, body: NuevaNotificacionResolucion) =>
+    send<NotificacionResolucion>('POST', `/srtm/infracciones/resoluciones/${id}/notificacion`, body)
 }

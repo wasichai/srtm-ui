@@ -14,14 +14,16 @@ import { formatDate, formatText, today } from '../components/format'
 import { usePuede } from '../components/permisos'
 import { claves, useExpediente } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
-import type { AccionPermitida, ExpedienteInfraccion } from '../types'
+import type { ExpedienteInfraccion } from '../types'
+import { AccionImpedible, Descargos, DictarResolucion, impedimento, RegistrarDescargo, Resoluciones } from './DescargosYResoluciones'
 import { FichaHeader } from './FichaHeader'
 import { SubnavInfracciones } from './SubnavInfracciones'
 
 // an expediente de infracción (the prototype's inf-exp): its acta with the multa frozen on fecha_calculo and the CUIS
 // version used, its acts in the legal order the backend gives, where it stands (fase at fase_al_dia) and its estado de
-// la deuda, two names side by side. an action the legal order does not allow yet, or the account may not do, is shown
-// impeded with why: the legal order's reason is the backend's (acciones.*.motivo), never decided here
+// la deuda, two names side by side; its descargos and resoluciones (with their PDF and notificaciones). an action the
+// legal order does not allow yet, or the account may not do, is shown impeded with why: the legal order's reason is the
+// backend's (acciones.*.motivo), never decided here
 
 export function ExpedienteRoute() {
   const { id } = useParams()
@@ -54,7 +56,13 @@ function ExpedientePage({ id }: { id: string }) {
                 <span>· Referencia {e.referencia}</span>
               </>
             }
-            aside={<Anular expediente={e} />}
+            aside={
+              <div className="flex flex-wrap items-start justify-end gap-3">
+                <RegistrarDescargo expediente={e} />
+                <DictarResolucion expediente={e} />
+                <Anular expediente={e} />
+              </div>
+            }
           />
           {e.anulacion && (
             <Alerta tono="aviso" titulo="Acta anulada.">
@@ -102,6 +110,8 @@ function ExpedientePage({ id }: { id: string }) {
             </CardHeader>
             <Actos expediente={e} />
           </Card>
+          <Descargos expediente={e} />
+          <Resoluciones expediente={e} />
         </div>
       )}
     </QueryState>
@@ -187,29 +197,21 @@ function Actos({ expediente: e }: { expediente: ExpedienteInfraccion }) {
   )
 }
 
-// why an action cannot be done now: the legal order's reason first (the backend's), then the account's
-function impedimento(accion: AccionPermitida, puede: boolean, sinPermiso: string): string | null {
-  if (!accion.permitida) return accion.motivo ?? 'El estado del expediente no lo admite.'
-  if (!puede) return sinPermiso
-  return null
-}
-
 function Anular({ expediente: e }: { expediente: ExpedienteInfraccion }) {
   const puede = usePuede('anulacion_papeleta')
   const [abierto, setAbierto] = useState(false)
   const queryClient = useQueryClient()
   const motivo = impedimento(e.acciones.anulacion, puede, 'Sin permiso: anular pide creación sobre las anulaciones de papeleta.')
   return (
-    <div className="flex flex-col items-end gap-1">
+    <AccionImpedible motivo={motivo}>
       <Button variant="secondary" disabled={motivo !== null} onClick={() => setAbierto(true)}>
         <Ban className="size-4" />
         Anular
       </Button>
-      {motivo && <p className="max-w-xs text-right text-xs text-ink-muted">{motivo}</p>}
       {abierto && (
         <DialogoAnular expediente={e} onExito={() => queryClient.invalidateQueries({ queryKey: claves.infracciones })} onCerrar={() => setAbierto(false)} />
       )}
-    </div>
+    </AccionImpedible>
   )
 }
 
