@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
-import type { DeterminacionMasiva, Emision } from './types'
+import type { DeterminacionMasiva, Emision, FiltrosCuis } from './types'
 
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
@@ -39,4 +39,16 @@ export function useDeterminaciones() {
     refetchInterval: (query) =>
       (query.state.data ?? []).some((d: DeterminacionMasiva) => d.estado === 'PENDIENTE' || d.estado === 'EN_PROCESO') ? 2000 : false
   })
+}
+
+// the infracciones administrativas' query keys: all under ['infracciones'], so an act invalidates every list, ficha
+// and panel that reads them at once (queryKey: claves.infracciones)
+export const claves = {
+  infracciones: ['infracciones'] as const,
+  cuis: ({ vigentes_a, materia, q }: FiltrosCuis) => ['infracciones', 'cuis', vigentes_a ?? null, materia ?? null, q ?? null] as const
+}
+
+// the CUIS in force on a day, with each code's multa at that day's UIT (the backend's, never computed here)
+export function useCuis(filtros: FiltrosCuis) {
+  return useQuery({ queryKey: claves.cuis(filtros), queryFn: () => rentas.catalogoCuis(filtros), placeholderData: keepPreviousData })
 }

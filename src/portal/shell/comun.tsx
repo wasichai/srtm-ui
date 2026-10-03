@@ -1,5 +1,5 @@
 import { cn } from '@wasichai/ui'
-import { Home, Landmark, MapPinned, Printer, Search, Users } from 'lucide-react'
+import { Gavel, Home, Landmark, MapPinned, Printer, Search, Users } from 'lucide-react'
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 
@@ -13,6 +13,8 @@ export const NAV = [
   { to: '/predios', label: 'Predios', icon: MapPinned, end: false },
   // its pages link to each other (SubnavArbitrios)
   { to: '/arbitrios', label: 'Arbitrios', icon: Landmark, end: false },
+  // its pages link to each other (SubnavInfracciones); the CUIS until the expedientes' page is there
+  { to: '/infracciones/cuis', label: 'Infracciones', icon: Gavel, end: false },
   { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false }
 ]
 
