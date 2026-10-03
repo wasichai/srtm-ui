@@ -46,12 +46,13 @@ export function useDeterminaciones() {
 export const claves = {
   infracciones: ['infracciones'] as const,
   cuis: ({ vigentes_a, materia, q }: FiltrosCuis) => ['infracciones', 'cuis', vigentes_a ?? null, materia ?? null, q ?? null] as const,
-  notificaciones: ({ numero, contribuyente, desde, hasta, vencidas_a }: FiltrosNotificaciones, page: number) =>
-    ['infracciones', 'notificaciones', numero ?? null, contribuyente ?? null, desde ?? null, hasta ?? null, vencidas_a ?? null, page] as const,
+  notificaciones: ({ numero, q, contribuyente, desde, hasta, vencidas_a }: FiltrosNotificaciones, page: number) =>
+    ['infracciones', 'notificaciones', numero ?? null, contribuyente ?? null, desde ?? null, hasta ?? null, vencidas_a ?? null, page, q ?? null] as const,
   actas: ({ numero, administrado, codigo, fase, desde, hasta }: FiltrosActas, page: number) =>
     ['infracciones', 'actas', numero ?? null, administrado ?? null, codigo ?? null, fase ?? null, desde ?? null, hasta ?? null, page] as const,
   acta: (id: string) => ['infracciones', 'acta', id] as const,
   panel: (anio: number) => ['infracciones', 'panel', anio] as const,
+  plazos: (anio: number) => ['infracciones', 'plazos', anio] as const,
   vencidas: (corte: string, page: number) => ['infracciones', 'vencidas', corte, page] as const,
   notificacionesDe: (contribuyente: string, page: number) => ['infracciones', 'notificaciones-de', contribuyente, page] as const,
   infraccionesDe: (de: 'contribuyentes' | 'predios', id: string) => ['infracciones', 'de', de, id] as const
@@ -80,6 +81,11 @@ export function useExpediente(id: string) {
 // a year's panel: actas, resoluciones, notificadas and what falls due this week, at al_dia (the backend's figures)
 export function usePanelInfracciones(anio: number) {
   return useQuery({ queryKey: claves.panel(anio), queryFn: () => rentas.panelInfracciones(anio), placeholderData: keepPreviousData })
+}
+
+// the plazos and feriados loaded for a year, and what is missing (the backend's)
+export function usePlazosInfracciones(anio: number) {
+  return useQuery({ queryKey: claves.plazos(anio), queryFn: () => rentas.plazosInfracciones(anio), placeholderData: keepPreviousData })
 }
 
 // the notificaciones previas vencidas at corte that led to no acta, as the backend says (never computed here)

@@ -378,7 +378,7 @@ describe('Nueva acta', () => {
     expect(registrar()).toBeEnabled()
   })
 
-  it('offers as notificación previa only the ones not subsanadas nor with an acta', async () => {
+  it('offers as notificación previa only the ones not subsanadas nor with an acta, found by part of their número', async () => {
     const previa = (valores: Partial<NotificacionPrevia>): NotificacionPrevia => ({
       id: 'n1',
       numero: 'NP-0001',
@@ -409,7 +409,7 @@ describe('Nueva acta', () => {
       }
     ])
     await formulario()
-    fireEvent.change(screen.getByLabelText('Notificación previa'), { target: { value: 'NP' } })
+    fireEvent.change(screen.getByLabelText('Notificación previa'), { target: { value: '0001' } })
     const lista = await screen.findByRole('list', { name: 'Resultados de notificación previa' })
     await waitFor(() =>
       expect(
@@ -419,7 +419,10 @@ describe('Nueva acta', () => {
       ).toEqual([`NP-0001 · 01/02/${year} · OTRO FICTICIO`])
     )
     const leida = fetch!.calls.find((c) => c.path.startsWith('/srtm/infracciones/notificaciones'))!
-    expect(new URLSearchParams(leida.path.split('?')[1]).get('numero')).toBe('NP')
+    // part of the número, not the whole: q, never numero (exact)
+    const params = new URLSearchParams(leida.path.split('?')[1])
+    expect(params.get('q')).toBe('0001')
+    expect(params.has('numero')).toBe(false)
   })
 
   it('sends the acta and shows the desglose the backend computed, with its date and referencia', async () => {
@@ -557,7 +560,53 @@ describe('Ficha del expediente', () => {
     expect(datos).toHaveTextContent('ReincidenciaSegunda vez')
     expect(datos).toHaveTextContent(`Fecha10/02/${year} 10:30`)
     expect(datos).toHaveTextContent(`Notificación previaNP-0001 del 01/02/${year}`)
+    // an older backend without partes: the ids alone are linked
     expect(within(datos).getByRole('link', { name: 'Ver el obligado' })).toHaveAttribute('href', '/contribuyentes/c1')
+  })
+
+  it('names the obligado with its documento and domicilio fiscal, the contribuyente and the predio, each linking its ficha', async () => {
+    start('/infracciones/a1', [
+      {
+        path: '/srtm/infracciones/actas/a1',
+        body: expediente({
+          acta: papeleta({ obligado: 'c1', contribuyente: 'c2', predio: 'p1' }),
+          partes: {
+            obligado: { id: 'c1', nombre: 'OBLIGADO FICTICIO', documento: '00000001', domicilio_fiscal: 'Av. Ficticia 456' },
+            contribuyente: { id: 'c2', nombre: 'CONTRIBUYENTE FICTICIO', documento: '20000000001' },
+            predio: { id: 'p1', codigo: 'P-0001', direccion: 'Jr. Ficticio 123' }
+          }
+        })
+      }
+    ])
+    await ficha()
+    const datos = screen.getByLabelText('Datos del acta')
+    expect(within(datos).getByRole('link', { name: 'OBLIGADO FICTICIO · 00000001' })).toHaveAttribute('href', '/contribuyentes/c1')
+    expect(datos).toHaveTextContent('Domicilio fiscalAv. Ficticia 456')
+    expect(within(datos).getByRole('link', { name: 'CONTRIBUYENTE FICTICIO · 20000000001' })).toHaveAttribute('href', '/contribuyentes/c2')
+    expect(within(datos).getByRole('link', { name: 'P-0001 · Jr. Ficticio 123' })).toHaveAttribute('href', '/predios/p1')
+    expect(within(datos).queryByRole('link', { name: /^Ver el/ })).not.toBeInTheDocument()
+  })
+
+  it('says when the obligado has no domicilio fiscal, and a dash without contribuyente nor predio', async () => {
+    start('/infracciones/a1', [
+      {
+        path: '/srtm/infracciones/actas/a1',
+        body: expediente({
+          acta: papeleta({ contribuyente: null, predio: null }),
+          partes: {
+            obligado: { id: 'c1', nombre: 'OBLIGADO FICTICIO', documento: null, domicilio_fiscal: null },
+            contribuyente: null,
+            predio: null
+          }
+        })
+      }
+    ])
+    await ficha()
+    const datos = screen.getByLabelText('Datos del acta')
+    expect(within(datos).getByRole('link', { name: 'OBLIGADO FICTICIO' })).toHaveAttribute('href', '/contribuyentes/c1')
+    expect(datos).toHaveTextContent('Domicilio fiscalEl obligado no tiene domicilio fiscal registrado.')
+    expect(datos).toHaveTextContent('Contribuyente—')
+    expect(datos).toHaveTextContent('Predio—')
   })
 
   it('without a fase (annulled) shows "—" beside the estado, never the nearest fase', async () => {

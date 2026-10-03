@@ -5,20 +5,21 @@ import { useId, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { useSession } from '../auth/session'
+import { Alerta } from '../components/Alerta'
 import { BadgeDeMapa } from '../components/BadgeDeMapa'
-import { formatDate, formatText, today } from '../components/format'
+import { currentYear, formatDate, formatText, today } from '../components/format'
 import { NUMERICA } from '../components/tabla'
+import { YearSelect } from '../components/YearSelect'
 import { describirContribuyente } from '../forms/bloques'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
-import { useNotificacionesDe, useVencidas } from '../queries'
-import type { NotificacionPrevia, NotificacionVencida, Pagina } from '../types'
+import { useNotificacionesDe, usePlazosInfracciones, useVencidas } from '../queries'
+import type { NotificacionPrevia, NotificacionVencida, Pagina, PlazosInfracciones } from '../types'
 import { VENCIDA, vencida } from './NotificacionesPage'
 import { SubnavInfracciones } from './SubnavInfracciones'
 
 // escalas y plazos: the padrones of the notificaciones previas (the vencidas without an acta at a corte, and a
-// contribuyente's), and where the plazos and feriados the backend counts with are loaded. vencimiento, vencida and the
-// corte are the backend's (one definition, SPEC §6): nothing here adds days to a date. there is no endpoint listing the
-// plazos loaded for a year: the page says how they are configured, and an act that lacks one names it (`faltan`)
+// contribuyente's), and the plazos and feriados the backend counts with for a year, with where they are loaded.
+// vencimiento, vencida and the corte are the backend's (one definition, SPEC §6): nothing here adds days to a date
 
 const plazo = (dias: number | null) => (dias === null ? 'Sin plazo' : `${dias} ${dias === 1 ? 'día' : 'días'}`)
 
@@ -214,55 +215,123 @@ function ListadoDe({ resultado, nombre, onPage }: { resultado: Pagina<Notificaci
   )
 }
 
-// how the plazos and feriados are configured: there is no query of the ones loaded for a year, and none is invented
+// the plazos and feriados loaded for a year, as the backend reads them (GET /infracciones/plazos), what is missing
+// named in an Alerta (never a 0), and how they are configured
 function PlazosCargados() {
   const { isAdmin } = useSession()
+  const titulo = useId()
+  const [anio, setAnio] = useState(currentYear)
+  const query = usePlazosInfracciones(anio)
   return (
     <Card>
-      <CardBody className="space-y-3 text-sm text-ink">
-        <h2 className="text-base font-semibold text-ink">Plazos cargados</h2>
-        <p>
-          Los plazos y feriados no están en el código: son parámetros tributarios (<code>parametro_tributario</code>), cada uno con su vigencia, y el sistema
-          toma el vigente a la fecha del acto.
-        </p>
-        <ul className="list-disc space-y-1 pl-5">
-          <li>
-            <code>PLAZO</code> <code>DESCARGO_PAPELETA</code>: los días hábiles para presentar un descargo, contados desde la fecha de la infracción (valor
-            numérico; texto <code>DIAS_HABILES</code>).
-          </li>
-          <li>
-            <code>PLAZO</code> <code>RG_RECURSO</code>: los días hábiles para recurrir una resolución; también fija desde cuándo es exigible una resolución
-            notificada.
-          </li>
-          <li>
-            <code>FERIADOS</code> <code>&lt;año&gt;</code>: los feriados del año que no son nacionales (fechas separadas por coma), vigente del 1 de enero al 31
-            de diciembre. Se suman a los nacionales.
-          </li>
-        </ul>
-        <p>
-          Si al año le falta uno, el acto que lo necesita no se registra y una alerta nombra lo que falta (por ejemplo <code>PLAZO DESCARGO_PAPELETA</code> o{' '}
-          <code>FERIADOS</code> con su año). Las escalas de las multas (el % de la UIT por grado de reincidencia) están en el{' '}
-          <Link to="/infracciones/cuis" className="text-link hover:underline">
-            CUIS
-          </Link>
-          .
-        </p>
-        <p>
-          Se cargan con el importador de parámetros de srtm-backend (<code>import_parametros.py</code>)
-          {isAdmin ? (
-            <>
-              {' '}
-              o en la{' '}
-              <a href={PARAMETROS_EN_ADMIN} className="text-link hover:underline">
-                lista de parámetros tributarios de la administración
-              </a>
-            </>
-          ) : (
-            ' o en la administración (rol ADMIN)'
-          )}
-          .
-        </p>
+      <CardBody>
+        <section aria-labelledby={titulo} className="space-y-3 text-sm text-ink">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id={titulo} className="text-base font-semibold text-ink">
+              Plazos cargados
+            </h2>
+            <YearSelect value={anio} onChange={setAnio} siguiente />
+          </div>
+          <QueryState query={query}>{(p) => <Cargados plazos={p} />}</QueryState>
+          <p>
+            Los plazos y feriados no están en el código: son parámetros tributarios (<code>parametro_tributario</code>), cada uno con su vigencia, y el sistema
+            toma el vigente a la fecha del acto.
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <code>PLAZO</code> <code>DESCARGO_PAPELETA</code>: los días hábiles para presentar un descargo, contados desde la fecha de la infracción (valor
+              numérico; texto <code>DIAS_HABILES</code>).
+            </li>
+            <li>
+              <code>PLAZO</code> <code>RG_RECURSO</code>: los días hábiles para recurrir una resolución; también fija desde cuándo es exigible una resolución
+              notificada.
+            </li>
+            <li>
+              <code>FERIADOS</code> <code>&lt;año&gt;</code>: los feriados del año que no son nacionales (fechas separadas por coma), vigente del 1 de enero al
+              31 de diciembre. Se suman a los nacionales.
+            </li>
+          </ul>
+          <p>
+            Si al año le falta uno, el acto que lo necesita no se registra y una alerta nombra lo que falta (por ejemplo <code>PLAZO DESCARGO_PAPELETA</code> o{' '}
+            <code>FERIADOS</code> con su año). Las escalas de las multas (el % de la UIT por grado de reincidencia) están en el{' '}
+            <Link to="/infracciones/cuis" className="text-link hover:underline">
+              CUIS
+            </Link>
+            .
+          </p>
+          <p>
+            Se cargan con el importador de parámetros de srtm-backend (<code>import_parametros.py</code>)
+            {isAdmin ? (
+              <>
+                {' '}
+                o en la{' '}
+                <a href={PARAMETROS_EN_ADMIN} className="text-link hover:underline">
+                  lista de parámetros tributarios de la administración
+                </a>
+              </>
+            ) : (
+              ' o en la administración (rol ADMIN)'
+            )}
+            .
+          </p>
+        </section>
       </CardBody>
     </Card>
+  )
+}
+
+const UNIDADES: Record<string, string> = { DIAS_HABILES: 'Días hábiles', DIAS_CALENDARIO: 'Días calendario' }
+
+// the backend's rows as they are: nothing here counts a day
+function Cargados({ plazos: p }: { plazos: PlazosInfracciones }) {
+  const al = formatDate(p.al_dia)
+  return (
+    <div className="space-y-3">
+      {p.faltan.length > 0 && (
+        <Alerta tono="atencion" titulo={`Faltan para ${p.anio}:`}>
+          {p.faltan.join('; ')}. Un acto que los necesite no se registra hasta que se carguen.
+        </Alerta>
+      )}
+      {p.plazos.length > 0 && (
+        <Table aria-label={`Plazos de ${p.anio}, vigentes al ${al}`}>
+          <thead>
+            <tr>
+              <Th>Clave</Th>
+              <Th {...NUMERICA}>Días</Th>
+              <Th>Unidad</Th>
+              <Th>Vigencia</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {p.plazos.map((plazo) => (
+              <tr key={plazo.parametro_id}>
+                <Td>
+                  <code>PLAZO {plazo.clave}</code>
+                </Td>
+                <Td {...NUMERICA}>{plazo.dias}</Td>
+                <Td>{UNIDADES[plazo.unidad] ?? plazo.unidad}</Td>
+                <Td className="whitespace-nowrap">
+                  {formatDate(plazo.vigencia_desde)} – {plazo.vigencia_hasta ? formatDate(plazo.vigencia_hasta) : 'en adelante'}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+      {p.feriados && (
+        <div>
+          <p>
+            <code>FERIADOS {p.anio}</code>: {p.feriados.fechas.length === 0 ? 'cargado sin fechas; solo cuentan los nacionales.' : 'se suman a los nacionales.'}
+          </p>
+          {p.feriados.fechas.length > 0 && (
+            <ul aria-label={`Feriados de ${p.anio}`} className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              {p.feriados.fechas.map((fecha) => (
+                <li key={fecha}>{formatDate(fecha)}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

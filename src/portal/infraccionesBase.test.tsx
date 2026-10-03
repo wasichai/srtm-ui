@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SRTM_THEMES } from '../themes'
 import { rentas, RentasError, send } from './api'
 import { BadgeDeMapa } from './components/BadgeDeMapa'
+import { MensajeDeError } from './components/DialogoDeActo'
 import { FaseBadge } from './components/FaseBadge'
 
 // la base común de las infracciones administrativas (PR U1): `send` lanza un RentasError que conserva `faltan`,
@@ -111,5 +112,26 @@ describe('FaseBadge', () => {
     conTema(<BadgeDeMapa valor="VENCIDA" mapa={{}} />, 'portal-tributario')
     expect(screen.getByText('VENCIDA')).toHaveAttribute('data-tono', '')
     expect(screen.queryByText('Inactivo')).not.toBeInTheDocument()
+  })
+})
+
+describe('MensajeDeError', () => {
+  const SIN_RESPUESTA = 'No hubo respuesta del servidor. Vuelva a intentarlo: el acto no se registra dos veces.'
+
+  it.each(['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed'])(
+    'says the server did not answer when fetch rejects with «%s»',
+    (mensaje) => {
+      const { container } = conTema(<MensajeDeError error={new TypeError(mensaje)} siFalla="No se pudo registrar" />, 'light')
+      expect(container).toHaveTextContent(SIN_RESPUESTA)
+      expect(container).not.toHaveTextContent(mensaje)
+    }
+  )
+
+  it('leaves any other failure as it is: a TypeError of its own, and the backend detail with what it lacks', () => {
+    const { container, rerender } = conTema(<MensajeDeError error={new TypeError('x is not a function')} siFalla="No se pudo registrar" />, 'light')
+    expect(container).toHaveTextContent('x is not a function')
+    rerender(<MensajeDeError error={new RentasError(422, 'No se puede cifrar', [], [], ['UIT 2099'])} siFalla="No se pudo registrar" />)
+    expect(container).toHaveTextContent('No se puede cifrar Falta: UIT 2099.')
+    expect(container).not.toHaveTextContent(SIN_RESPUESTA)
   })
 })

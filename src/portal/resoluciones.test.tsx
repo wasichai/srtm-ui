@@ -635,6 +635,48 @@ describe('Notificación de una resolución', () => {
     expect(await within(dialogo).findByRole('alert')).toHaveTextContent(`Falta: PLAZO RG_RECURSO ${year}; FERIADOS ${year}.`)
   })
 
+  it('impedes «Notificar» with the reason the backend gives, and only on the resolución it gives it for', async () => {
+    const motivo = 'No queda nada que notificar: motivo ficticio del backend.'
+    start([
+      {
+        path: '/srtm/infracciones/actas/a1',
+        body: {
+          ...completo(),
+          resoluciones: completo().resoluciones.map((r, i) => ({
+            ...r,
+            acciones: { notificacion: i === 0 ? { permitida: false, motivo } : { permitida: true, motivo: null } }
+          }))
+        }
+      }
+    ])
+    await ficha()
+    const ris = screen.getByRole('button', { name: `Notificar RIS-${year}-000001` })
+    expect(ris).toBeDisabled()
+    expect(within(ris.closest('td')!).getByText(motivo)).toBeInTheDocument()
+    fireEvent.click(ris)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const rgr = screen.getByRole('button', { name: `Notificar RGR-${year}-000001` })
+    expect(rgr).toBeEnabled()
+    expect(within(rgr.closest('td')!).queryByText(motivo)).not.toBeInTheDocument()
+    // the account may: no permission is blamed
+    expect(screen.queryByText(/^Sin permiso/)).not.toBeInTheDocument()
+  })
+
+  it('says the server did not answer when no answer comes, and lets it be sent again', async () => {
+    start([{ path: '/srtm/infracciones/actas/a1', body: expediente({ resoluciones: [{ ...resolucion(), notificaciones: [] }] }) }])
+    // no answer at all: fetch rejects as the browser does
+    const conRespuesta = globalThis.fetch
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
+      init?.method === 'POST' ? Promise.reject(new TypeError('Failed to fetch')) : conRespuesta(input, init)) as typeof globalThis.fetch
+    const dialogo = await llenar()
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Registrar' }))
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent(
+      'No hubo respuesta del servidor. Vuelva a intentarlo: el acto no se registra dos veces.'
+    )
+    expect(within(dialogo).getByRole('alert')).not.toHaveTextContent('Failed to fetch')
+    expect(within(dialogo).getByRole('button', { name: 'Registrar' })).toBeEnabled()
+  })
+
   it('without CREATE on notificacion_resolucion it is impeded, and says why', async () => {
     start([{ path: '/srtm/infracciones/actas/a1', body: completo() }], {
       permisos: { admin: false, objects: { papeleta: ['READ'], resolucion_gerencia: ['READ'], notificacion_resolucion: ['READ'] } }

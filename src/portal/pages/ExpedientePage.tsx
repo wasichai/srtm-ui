@@ -127,7 +127,7 @@ function Dato({ termino, children }: { termino: string; children: ReactNode }) {
   )
 }
 
-// the people and the predio are ids in the acta: each opens its ficha
+// the people and the predio: each opens its ficha
 function Ficha({ to, texto }: { to: string; texto: string }) {
   return (
     <Link to={to} className="text-link hover:underline">
@@ -150,17 +150,49 @@ function Datos({ expediente: e }: { expediente: ExpedienteInfraccion }) {
       <Dato termino="Código CUIS">{e.codigo_infraccion.codigo}</Dato>
       <Dato termino="Reincidencia">{REINCIDENCIAS[a.reincidencia] ?? a.reincidencia}</Dato>
       <Dato termino="Medida complementaria">{formatText(a.medida_complementaria)}</Dato>
-      <Dato termino="Obligado">
-        <Ficha to={`/contribuyentes/${a.obligado}`} texto="Ver el obligado" />
-      </Dato>
-      <Dato termino="Contribuyente">{a.contribuyente ? <Ficha to={`/contribuyentes/${a.contribuyente}`} texto="Ver el contribuyente" /> : '—'}</Dato>
-      <Dato termino="Predio">{a.predio ? <Ficha to={`/predios/${a.predio}`} texto="Ver el predio" /> : '—'}</Dato>
+      <Partes expediente={e} />
       <Dato termino="Notificación previa">
         {e.notificacion_previa ? `${e.notificacion_previa.numero} del ${formatDate(e.notificacion_previa.fecha)}` : 'Ninguna'}
       </Dato>
       <Dato termino="Inspector">{formatText(a.inspector)}</Dato>
       <Dato termino="Descripción del hecho">{formatText(a.descripcion_hecho)}</Dato>
     </dl>
+  )
+}
+
+const conDocumento = (nombre: string, documento: string | null) => (documento ? `${nombre} · ${documento}` : nombre)
+
+// the obligado, the contribuyente and the predio, as the backend reads them (partes), each opening its ficha; an
+// older backend sends no partes, and the ids alone are linked
+function Partes({ expediente: e }: { expediente: ExpedienteInfraccion }) {
+  const a = e.acta
+  const p = e.partes
+  if (!p) {
+    return (
+      <>
+        <Dato termino="Obligado">
+          <Ficha to={`/contribuyentes/${a.obligado}`} texto="Ver el obligado" />
+        </Dato>
+        <Dato termino="Contribuyente">{a.contribuyente ? <Ficha to={`/contribuyentes/${a.contribuyente}`} texto="Ver el contribuyente" /> : '—'}</Dato>
+        <Dato termino="Predio">{a.predio ? <Ficha to={`/predios/${a.predio}`} texto="Ver el predio" /> : '—'}</Dato>
+      </>
+    )
+  }
+  return (
+    <>
+      <Dato termino="Obligado">
+        <Ficha to={`/contribuyentes/${p.obligado.id}`} texto={conDocumento(p.obligado.nombre, p.obligado.documento)} />
+      </Dato>
+      <Dato termino="Domicilio fiscal">
+        {p.obligado.domicilio_fiscal ?? <span className="text-ink-muted">El obligado no tiene domicilio fiscal registrado.</span>}
+      </Dato>
+      <Dato termino="Contribuyente">
+        {p.contribuyente ? <Ficha to={`/contribuyentes/${p.contribuyente.id}`} texto={conDocumento(p.contribuyente.nombre, p.contribuyente.documento)} /> : '—'}
+      </Dato>
+      <Dato termino="Predio">
+        {p.predio ? <Ficha to={`/predios/${p.predio.id}`} texto={[p.predio.codigo ?? 's/c', p.predio.direccion].filter(Boolean).join(' · ')} /> : '—'}
+      </Dato>
+    </>
   )
 }
 

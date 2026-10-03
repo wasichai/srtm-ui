@@ -63,7 +63,8 @@ import type {
   ResolucionGerencia,
   InfraccionesDe,
   NotificacionVencida,
-  PanelInfracciones
+  PanelInfracciones,
+  PlazosInfracciones
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -353,6 +354,8 @@ export const rentas = {
     get<Pagina<NotificacionVencida>>(`/srtm/infracciones/notificaciones/vencidas${query({ corte, page, size })}`),
   notificacionesDe: (contribuyente: string, page: number, size = PAGE_SIZE) =>
     get<Pagina<NotificacionPrevia>>(`/srtm/infracciones/notificaciones/por-contribuyente${query({ contribuyente, page, size })}`),
+  // the plazos and feriados loaded for a year (the current one when not given), with what is missing (faltan)
+  plazosInfracciones: (anio: number) => get<PlazosInfracciones>(`/srtm/infracciones/plazos${query({ anio })}`),
   // a year's figures at al_dia, all the backend's. coactiva is null with its nota: srtm does not collect
   panelInfracciones: (anio: number) => get<PanelInfracciones>(`/srtm/infracciones/panel${query({ anio })}`),
   // every acta of a contribuyente (as obligado or contribuyente) or of a predio, with its fase and estado at al_dia

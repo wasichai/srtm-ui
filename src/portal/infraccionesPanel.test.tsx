@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
 import { claves } from './queries'
-import type { InfraccionesDe, NotificacionPrevia, NotificacionVencida, Pagina, PanelInfracciones, Procedimiento } from './types'
+import type { InfraccionesDe, NotificacionPrevia, NotificacionVencida, Pagina, PanelInfracciones, PlazosInfracciones, Procedimiento } from './types'
 
 // escalas y plazos, el panel y la pestaña Infracciones de las fichas (épica de infracciones administrativas, PR U5):
 // el panel muestra las cifras del backend, cada una con su fecha, y «En coactiva» como «no aplica» con la nota del
 // backend (nunca un 0); las vencidas sin acta a una fecha de corte que se ve; las notificaciones de un contribuyente;
-// cómo se cargan los plazos (no hay consulta de los cargados: no se inventa); la pestaña de las dos fichas con la fase y
+// los plazos y feriados cargados de un año tal como los lee el backend (también el siguiente), con lo que falta en una
+// Alerta, y cómo se cargan; la pestaña de las dos fichas con la fase y
 // el estado de la deuda en dos columnas con sus nombres, también durante la inscripción; las dos estructuras de tema y
 // los menús. números, nombres, fechas e importes FICTICIOS
 
@@ -87,6 +88,34 @@ const vencidaSinActa = (valores: Partial<NotificacionVencida> = {}): Notificacio
   ...valores
 })
 
+const plazos = (valores: Partial<PlazosInfracciones> = {}): PlazosInfracciones => ({
+  anio: year,
+  al_dia: `${year}-01-01`,
+  plazos: [
+    {
+      clave: 'DESCARGO_PAPELETA',
+      dias: 7,
+      unidad: 'DIAS_HABILES',
+      texto: '7 DIAS_HABILES',
+      vigencia_desde: `${year - 3}-01-01`,
+      vigencia_hasta: null,
+      parametro_id: 'p-desc'
+    },
+    {
+      clave: 'RG_RECURSO',
+      dias: 13,
+      unidad: 'DIAS_HABILES',
+      texto: '13 DIAS_HABILES',
+      vigencia_desde: `${year}-01-01`,
+      vigencia_hasta: `${year}-12-31`,
+      parametro_id: 'p-rg'
+    }
+  ],
+  feriados: { fechas: [`${year}-02-17`, `${year}-09-23`], parametro_id: 'p-fer' },
+  faltan: [],
+  ...valores
+})
+
 const notificacion = (valores: Partial<NotificacionPrevia> = {}): NotificacionPrevia => ({
   id: 'n7',
   numero: 'NP-0007',
@@ -145,7 +174,7 @@ describe('panel de infracciones', () => {
   it('shows the backend figures, each with its date, and the week they fall due in', async () => {
     start('/infracciones', rutasExpedientes())
     expect((await tarjeta('Actas levantadas')).textContent).toBe(`Actas levantadas17al ${dmy(`${year}-03-04`)}`)
-    expect((await tarjeta('Resoluciones dictadas')).textContent).toBe(`Resoluciones dictadas5al ${dmy(`${year}-03-04`)}`)
+    expect((await tarjeta('Resoluciones de sanción (RIS)')).textContent).toBe(`Resoluciones de sanción (RIS)5al ${dmy(`${year}-03-04`)}`)
     expect((await tarjeta('Notificadas')).textContent).toBe(`Notificadas3al ${dmy(`${year}-03-04`)}`)
     const semana = await tarjeta('Vencen esta semana')
     expect(within(semana).getByText('4')).toBeInTheDocument()
@@ -182,6 +211,7 @@ describe('panel de infracciones', () => {
 
   it('keeps its queries under the infracciones keys', () => {
     expect(claves.panel(year)).toEqual(['infracciones', 'panel', year])
+    expect(claves.plazos(year + 1)).toEqual(['infracciones', 'plazos', year + 1])
     expect(claves.vencidas(`${year}-03-04`, 2)).toEqual(['infracciones', 'vencidas', `${year}-03-04`, 2])
     expect(claves.notificacionesDe('c7', 0)).toEqual(['infracciones', 'notificaciones-de', 'c7', 0])
     expect(claves.infraccionesDe('predios', 'p1')).toEqual(['infracciones', 'de', 'predios', 'p1'])
@@ -189,7 +219,8 @@ describe('panel de infracciones', () => {
 })
 
 describe('Escalas y plazos', () => {
-  const rutas = (vencidas: NotificacionVencida[] = [vencidaSinActa()]): MockRoute[] => [
+  const rutas = (vencidas: NotificacionVencida[] = [vencidaSinActa()], cargados: PlazosInfracciones = plazos()): MockRoute[] => [
+    { path: '/srtm/infracciones/plazos', body: cargados },
     { path: '/srtm/infracciones/notificaciones/vencidas', body: pagina(vencidas) },
     { path: '/srtm/infracciones/notificaciones/por-contribuyente', body: pagina([notificacion()]) },
     {
@@ -249,10 +280,64 @@ describe('Escalas y plazos', () => {
     expect(within(fila).getByRole('link', { name: 'ACTA-0007' })).toHaveAttribute('href', '/infracciones/a7')
   })
 
-  it('says how the plazos are configured, with the admin list for an admin', async () => {
+  const cargados = () => screen.findByRole('region', { name: 'Plazos cargados' })
+
+  it("lists the year's plazos and feriados as the backend reads them, this year by default", async () => {
     start('/infracciones/plazos', rutas())
-    const titulo = await screen.findByRole('heading', { name: 'Plazos cargados' })
-    const seccion = titulo.parentElement!
+    const seccion = await cargados()
+    const t = await within(seccion).findByRole('table', { name: `Plazos de ${year}, vigentes al 01/01/${year}` })
+    expect(
+      within(t)
+        .getAllByRole('columnheader')
+        .map((c) => c.textContent)
+    ).toEqual(['Clave', 'Días', 'Unidad', 'Vigencia'])
+    expect(
+      within(t)
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) =>
+          within(r)
+            .getAllByRole('cell')
+            .map((c) => c.textContent)
+        )
+    ).toEqual([
+      ['PLAZO DESCARGO_PAPELETA', '7', 'Días hábiles', `01/01/${year - 3} – en adelante`],
+      ['PLAZO RG_RECURSO', '13', 'Días hábiles', `01/01/${year} – 31/12/${year}`]
+    ])
+    expect(
+      within(within(seccion).getByRole('list', { name: `Feriados de ${year}` }))
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+    ).toEqual([`17/02/${year}`, `23/09/${year}`])
+    expect(within(seccion).queryByRole('status')).not.toBeInTheDocument()
+    expect(params(lecturas('/srtm/infracciones/plazos')[0].path)).toEqual({ anio: String(year) })
+  })
+
+  it('names in an Alerta what the year lacks, never a 0', async () => {
+    start('/infracciones/plazos', rutas([vencidaSinActa()], plazos({ plazos: [], feriados: null, faltan: [`PLAZO RG_RECURSO ${year}`, `FERIADOS ${year}`] })))
+    const seccion = await cargados()
+    // the Alerta, not the loading status
+    expect((await within(seccion).findByText(`Faltan para ${year}:`)).closest('[role="status"]')).toHaveTextContent(
+      `Faltan para ${year}: PLAZO RG_RECURSO ${year}; FERIADOS ${year}. Un acto que los necesite no se registra hasta que se carguen.`
+    )
+    expect(within(seccion).queryByRole('table')).not.toBeInTheDocument()
+    expect(within(seccion).queryByRole('list', { name: /^Feriados/ })).not.toBeInTheDocument()
+  })
+
+  it('asks for next year too, to check what is loaded before it applies', async () => {
+    start('/infracciones/plazos', rutas())
+    const seccion = await cargados()
+    await within(seccion).findByRole('table', { name: `Plazos de ${year}, vigentes al 01/01/${year}` })
+    const anio = within(seccion).getByLabelText('Año')
+    expect(within(anio).getAllByRole('option')[0]).toHaveValue(String(year + 1))
+    fireEvent.change(anio, { target: { value: String(year + 1) } })
+    await waitFor(() => expect(lecturas('/srtm/infracciones/plazos')).toHaveLength(2))
+    expect(params(lecturas('/srtm/infracciones/plazos')[1].path)).toEqual({ anio: String(year + 1) })
+  })
+
+  it('keeps saying how the plazos are configured, with the admin list for an admin', async () => {
+    start('/infracciones/plazos', rutas())
+    const seccion = await cargados()
     for (const texto of ['parametro_tributario', 'DESCARGO_PAPELETA', 'RG_RECURSO', 'FERIADOS', 'DIAS_HABILES', 'import_parametros.py']) {
       expect(within(seccion).getAllByText(texto).length).toBeGreaterThan(0)
     }
@@ -261,14 +346,12 @@ describe('Escalas y plazos', () => {
       '/admin/data/objects/parametro_tributario/records'
     )
     expect(within(seccion).getByRole('link', { name: 'CUIS' })).toHaveAttribute('href', '/infracciones/cuis')
-    // no query of the plazos loaded is invented
-    expect(fetch!.calls.filter((c) => /parametro|plazos/.test(c.path))).toEqual([])
   })
 
   it('without the ADMIN role names the administration without linking it', async () => {
     start('/infracciones/plazos', rutas(), { user: usuario, permisos: { admin: false, objects: {} } })
     await screen.findByRole('table', { name: `Vencidas sin acta al ${dmy(hoy())}` })
-    const seccion = (await screen.findByRole('heading', { name: 'Plazos cargados' })).parentElement!
+    const seccion = await cargados()
     expect(within(seccion).queryByRole('link', { name: /administración/ })).not.toBeInTheDocument()
     expect(seccion).toHaveTextContent('o en la administración (rol ADMIN).')
   })

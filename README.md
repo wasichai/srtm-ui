@@ -128,19 +128,21 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     columna) y el **estado de la deuda** (pendiente, anulada, dejada sin efecto) son dos columnas con sus nombres, y los
     dos los dice el backend; un acta anulada o dejada sin efecto no tiene fase («—»). Cada fila abre su expediente.
     - Encabeza la página el **panel** del ejercicio (selector de año; `/srtm/infracciones/panel?anio`): actas
-      levantadas, resoluciones dictadas, notificadas y notificaciones previas que vencen esta semana (con la semana,
+      levantadas, resoluciones de sanción (RIS), notificadas y notificaciones previas que vencen esta semana (con la semana,
       de lunes a domingo), cada cifra del backend y con su fecha (`al_dia`). _En coactiva_ dice «No aplica» con la nota
       del backend: srtm no cobra, y no se muestra un 0.
   - **Nueva acta** (`/infracciones/nueva`): número del formulario, fecha y hora, lugar, el código del CUIS vigente el día
     de la infracción (la lista cambia con la fecha), la reincidencia que declara el inspector, el **obligado** (se elige
     siempre: no se deduce del contribuyente), el contribuyente o el predio (al menos uno), la notificación previa si la
-    hubo (solo las no subsanadas y sin acta), expediente, inspector, descripción del hecho y observación. Pide creación
+    hubo (solo las no subsanadas y sin acta; se busca por parte de su número, `q`), expediente, inspector, descripción del hecho y observación. Pide creación
     sobre `papeleta`. El backend cifra la multa con la UIT y el CUIS de ese día y la congela en el acta: la pantalla
     muestra su desglose (base imponible = UIT, % e importe de la infracción, % a cobrar, importe a pagar, con beneficio
     «—», fecha de cálculo y referencia `PAPELETA-…`). Si falta la UIT del año o el % del grado en el CUIS, una alerta lo
     nombra y el acta no se registra.
   - **Ficha del expediente** (`/infracciones/:id`, también como pestaña de trabajo): la fase y el estado de la deuda con
-    sus nombres, la referencia, el acta con su multa congelada y su fecha, la versión del CUIS aplicada (código,
+    sus nombres, la referencia, el acta con su multa congelada y su fecha, sus **partes** (el obligado con su
+    documento y su domicilio fiscal, el contribuyente y el predio, cada uno con el enlace a su ficha; con un backend
+    que no manda `partes`, solo los enlaces), la versión del CUIS aplicada (código,
     vigencia, base legal) y los **actos del expediente** en el orden legal que da el backend (Nº, acto, fecha,
     documento, estado). **Anular** (motivo, fecha, hoy si va en blanco, y observación) pide creación sobre
     `anulacion_papeleta`; impedido, dice por qué con el motivo del backend (`acciones.anulacion.motivo`) o por permiso.
@@ -161,7 +163,8 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
       diligencia (hoy si va en blanco), modalidad, resultado, notificador, dirección (vacía: el domicilio fiscal
       vigente a la fecha de la diligencia), receptor, documento, vínculo, acuse y observación; pide creación sobre
       `notificacion_resolucion`. Cada intento muestra desde cuándo es exigible la resolución, según el backend, o que
-      no surte efecto (no ubicado).
+      no surte efecto (no ubicado). Con el acta anulada o dejada sin efecto no queda nada que notificar: **Notificar**
+      se ve deshabilitado con el motivo del backend (`resoluciones[].acciones.notificacion.motivo`) bajo el botón.
     - Las acciones impedidas por el orden legal dicen el motivo del backend (`acciones.descargo.motivo`,
       `acciones.resolucion.motivo`); las que no permite la cuenta, el permiso que falta.
   - **CUIS** (`/infracciones/cuis`): el cuadro único de infracciones y sanciones vigente a una fecha (hoy, por
@@ -184,8 +187,10 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
       omisión; el título de la tabla dice la que aplicó el backend), con su plazo y su vencimiento.
     - **Por contribuyente**: las notificaciones previas del contribuyente elegido, con vencimiento, vencida o no,
       subsanación y el acta que originaron.
-    - **Plazos cargados**: no hay consulta de los plazos cargados de un año, así que la página explica cómo se
-      configuran: parámetros tributarios (`parametro_tributario`) `PLAZO` `DESCARGO_PAPELETA` y `PLAZO` `RG_RECURSO`
+    - **Plazos cargados** (`/srtm/infracciones/plazos?anio`; el selector incluye el año siguiente, para revisar lo
+      cargado antes de que rija): los `PLAZO` vigentes del año (clave, días, unidad, vigencia) y los `FERIADOS` del año
+      con sus fechas, tal como los lee el backend; lo que falta (`faltan`) lo nombra una alerta, nunca un 0. Debajo, cómo
+      se configuran: parámetros tributarios (`parametro_tributario`) `PLAZO` `DESCARGO_PAPELETA` y `PLAZO` `RG_RECURSO`
       (días hábiles, texto `DIAS_HABILES`) y `FERIADOS` `<año>` (los no nacionales, del 1 de enero al 31 de diciembre),
       cargados con `import_parametros.py` de srtm-backend o desde la lista de la administración (enlace solo para el
       rol `ADMIN`). Si al año le falta uno, el acto que lo necesita lo nombra en una alerta. Las escalas de las multas
@@ -196,7 +201,8 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     fecha de cálculo, y la fase y el estado de la deuda en dos columnas, a la fecha que da el backend (`al_dia`).
   - Lo común a los actos está en `src/portal`: `send` de `api.ts` lanza un `RentasError` con `faltan`, `errors` y
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
-    caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
+    caracteres, y su `MensajeDeError` traduce un fallo de red (`fetch` sin respuesta) a «No hubo respuesta del
+    servidor. Vuelva a intentarlo: el acto no se registra dos veces.»; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
     cuenta puede hacer una acción; `StatCard` acepta la fecha de su cifra (`fecha`) y una `nota`. Las consultas cuelgan
     de la clave `['infracciones', …]`.
 - **Otros:**
