@@ -121,8 +121,25 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - **Consulta de cuotas** (`/arbitrios`), **Tasas del año** (`/arbitrios/tasas`: la ordenanza, sus tasas, zonas, usos
     y vencimientos, y lo que le falta al año) y **Determinación masiva** (`/arbitrios/determinaciones`).
   - **Emisión masiva** (`/emisiones`): la HR y el PU de todo un año, y la HLA si se pide, en segundo plano.
-- **Infracciones administrativas** (grupo del menú entre Arbitrios y Emisión; en el menú clásico, _Infracciones_ con
-  sus páginas enlazadas entre sí):
+- **Infracciones administrativas** (grupo del menú entre Arbitrios y Emisión; en el menú clásico, _Infracciones_ abre
+  los expedientes, con sus páginas enlazadas entre sí):
+  - **Expedientes** (`/infracciones`): las actas por número, administrado (documento o nombre), código CUIS, fase y
+    fechas, con su importe a pagar y la fecha en que se cifró. La **fase** del procedimiento (a la fecha que encabeza su
+    columna) y el **estado de la deuda** (pendiente, anulada, dejada sin efecto) son dos columnas con sus nombres, y los
+    dos los dice el backend; un acta anulada o dejada sin efecto no tiene fase («—»). Cada fila abre su expediente.
+  - **Nueva acta** (`/infracciones/nueva`): número del formulario, fecha y hora, lugar, el código del CUIS vigente el día
+    de la infracción (la lista cambia con la fecha), la reincidencia que declara el inspector, el **obligado** (se elige
+    siempre: no se deduce del contribuyente), el contribuyente o el predio (al menos uno), la notificación previa si la
+    hubo (solo las no subsanadas y sin acta), expediente, inspector, descripción del hecho y observación. Pide creación
+    sobre `papeleta`. El backend cifra la multa con la UIT y el CUIS de ese día y la congela en el acta: la pantalla
+    muestra su desglose (base imponible = UIT, % e importe de la infracción, % a cobrar, importe a pagar, con beneficio
+    «—», fecha de cálculo y referencia `PAPELETA-…`). Si falta la UIT del año o el % del grado en el CUIS, una alerta lo
+    nombra y el acta no se registra.
+  - **Ficha del expediente** (`/infracciones/:id`, también como pestaña de trabajo): la fase y el estado de la deuda con
+    sus nombres, la referencia, el acta con su multa congelada y su fecha, la versión del CUIS aplicada (código,
+    vigencia, base legal) y los **actos del expediente** en el orden legal que da el backend (Nº, acto, fecha,
+    documento, estado). **Anular** (motivo, fecha, hoy si va en blanco, y observación) pide creación sobre
+    `anulacion_papeleta`; impedido, dice por qué con el motivo del backend (`acciones.anulacion.motivo`) o por permiso.
   - **CUIS** (`/infracciones/cuis`): el cuadro único de infracciones y sanciones vigente a una fecha (hoy, por
     omisión), por materia y por código o descripción, con la multa de cada código a la UIT de ese día (primera,
     segunda y tercera vez). Las multas las cifra el backend; la pantalla no multiplica nada. Sin UIT, una alerta nombra
@@ -142,7 +159,7 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
     caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
     cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
-  - Expedientes, nueva acta, escalas y plazos y la pestaña de las fichas llegan en los PR siguientes.
+  - Descargos y resoluciones, escalas y plazos, el panel y la pestaña de las fichas llegan en los PR siguientes.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

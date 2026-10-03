@@ -375,6 +375,8 @@ describe('menú de las notificaciones previas', () => {
         .getAllByRole('link')
         .map((l) => [l.textContent, l.getAttribute('href')])
     ).toEqual([
+      ['Expedientes', '/infracciones'],
+      ['Nueva acta', '/infracciones/nueva'],
       ['Notificaciones previas', '/infracciones/notificaciones'],
       ['CUIS', '/infracciones/cuis']
     ])
