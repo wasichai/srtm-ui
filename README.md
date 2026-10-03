@@ -136,6 +136,24 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
   - Expedientes, nueva acta, notificaciones previas, escalas y plazos y la pestaña de las fichas llegan en los PR
     siguientes.
+- **Anuncios y propaganda** (grupo del menú después de Infracciones administrativas; en el menú clásico, _Anuncios_
+  con sus páginas enlazadas entre sí). El estado (vigente, vencido, cesado, retirado), la vigencia que rige y la tasa
+  son del backend, a la fecha que muestra la pantalla; la pantalla no los deduce de las fechas.
+  - **Padrón de anuncios** (`/anuncios`): por titular, clase, estado y texto, con el estado y la vigencia a una fecha
+    (hoy, por omisión).
+  - **Nuevo anuncio** (`/anuncios/nuevo`): titular, predio opcional y los datos del anuncio, con observación. El backend
+    lo numera (`AN-AAAA-NNNNNN`) y devenga la tasa de su clase: la pantalla nunca manda una tasa. Cada intento de alta
+    lleva un `Idempotency-Key` propio que se repite en sus reintentos (una respuesta perdida, un 5xx); si el backend
+    responde que ya estaba registrado (200, `ya_existia`), la pantalla lo dice y no se devenga otra vez. Sin la tasa de
+    la clase, una alerta nombra la llave que falta (`TASA_ANUNCIO PANEL 2026`), nunca un 0.
+  - **Ficha del anuncio** (`/anuncios/:id`): sus datos, sus movimientos (acto, fecha, ejercicio, referencia de cargo,
+    tasa con su fecha, vigencia, motivo, observación), el estado y la vigencia al día y lo devengado con su fecha.
+    **Renovar**, **Cesar** y **Retirar** piden observación (y motivo, cesar y retirar); un acto que el estado no admite
+    (renovar un anuncio cesado o retirado, retirar sin cese previo) o que la cuenta no puede escribir (creación sobre
+    `movimiento_anuncio`) se ve deshabilitado y dice por qué.
+  - **Tasas de anuncios** (`/anuncios/tasas`): la tasa de cada clase en el año, con su vigencia, y las clases sin tasa.
+  - Pestaña **Anuncios** de las fichas de contribuyente y de predio (`?tab=anuncios`), con el estado al día.
+  - Las consultas cuelgan de la clave `['anuncios', …]` (`claves.anuncios`): un acto refresca padrón, ficha y pestañas.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

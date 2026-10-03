@@ -15,6 +15,9 @@ import { ConsultaArbitriosPage, TasasArbitriosPage } from './pages/ArbitriosPage
 import { DeterminacionesPage } from './pages/DeterminacionesPage'
 import { EmisionesPage } from './pages/EmisionesPage'
 import { CuisPage } from './pages/CuisPage'
+import { AnuncioRoute } from './pages/AnuncioPage'
+import { PadronAnunciosPage, TasasAnunciosPage } from './pages/AnunciosPages'
+import { NuevoAnuncioPage } from './pages/NuevoAnuncioPage'
 import { NuevaDeclaracionRoute } from './pages/NuevaDeclaracionPage'
 import { InicioPage } from './pages/InicioPage'
 import { LoteCatastroRoute, NuevoLotePage } from './pages/LoteCatastroPage'
@@ -59,6 +62,10 @@ const rutas = createRoutesFromElements(
       <Route path="arbitrios/tasas" element={<TasasArbitriosPage />} />
       <Route path="arbitrios/determinaciones" element={<DeterminacionesPage />} />
       <Route path="infracciones/cuis" element={<CuisPage />} />
+      <Route path="anuncios" element={<PadronAnunciosPage />} />
+      <Route path="anuncios/nuevo" element={<NuevoAnuncioPage />} />
+      <Route path="anuncios/tasas" element={<TasasAnunciosPage />} />
+      <Route path="anuncios/:id" element={<AnuncioRoute />} />
       <Route path="*" element={<EmptyState title="Esta página no existe" />} />
     </Route>
   </>

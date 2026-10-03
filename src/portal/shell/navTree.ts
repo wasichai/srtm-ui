@@ -58,6 +58,16 @@ export const NAV_TREE: NodoNav[] = [
   // épica's later PRs add Expedientes (/infracciones, its ficha /infracciones/:id), Nueva acta, Notificaciones previas
   // and Escalas y plazos, each with its route
   { label: 'Infracciones administrativas', hijos: [{ label: 'CUIS', to: '/infracciones/cuis' }] },
+  // the tasa de anuncios y propaganda (SPEC §8.2): the padrón (an anuncio's ficha, /anuncios/:id, is under it), a new
+  // anuncio with its autorización, and the tasas of a year by clase
+  {
+    label: 'Anuncios y propaganda',
+    hijos: [
+      { label: 'Padrón de anuncios', to: '/anuncios' },
+      { label: 'Nuevo anuncio', to: '/anuncios/nuevo' },
+      { label: 'Tasas de anuncios', to: '/anuncios/tasas' }
+    ]
+  },
   // the HR and PU of a whole year, in the background
   { label: 'Emisión', hijos: [{ label: 'Emisión masiva', to: '/emisiones' }] },
   { label: 'Administración', to: '/admin', externa: true, soloAdmin: true, icono: Settings }

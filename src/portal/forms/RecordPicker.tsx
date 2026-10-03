@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button, Label } from '@wasichai/ui'
 import { Check, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { Pagina } from '../types'
 
 export interface Picked {
@@ -17,10 +17,14 @@ interface RecordPickerProps<T> {
   search: (q: string) => Promise<Pagina<T>>
   describe: (record: T) => Picked
   error?: string
+  // marked with an asterisk; an optional one (an anuncio's predio) can be left empty
+  requerido?: boolean
 }
 
-// search-as-you-type for a contribuyente: the titular of a declaration opened from a predio, or a condómino
-export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error }: RecordPickerProps<T>) {
+// search-as-you-type for a contribuyente (the titular of a declaration opened from a predio, a condómino, an anuncio's)
+// or a predio
+export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error, requerido = true }: RecordPickerProps<T>) {
+  const id = useId()
   const [editing, setEditing] = useState(value === null)
   const [q, setQ] = useState('')
   const term = q.trim()
@@ -45,13 +49,14 @@ export function RecordPicker<T>({ label, placeholder, value, onChange, search, d
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="picker">
-        {label} <span className="text-danger">*</span>
+      <Label htmlFor={id}>
+        {label}
+        {requerido && <span className="text-danger"> *</span>}
       </Label>
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
         <input
-          id="picker"
+          id={id}
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}

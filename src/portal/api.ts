@@ -1,6 +1,9 @@
 import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
+  AnuncioEnPadron,
+  AnuncioRegistrado,
+  AnunciosDe,
   ArbitriosContribuyente,
   CatalogoCuis,
   CatastroFiscal,
@@ -15,6 +18,8 @@ import type {
   DeclaracionJurada,
   DeterminacionMasiva,
   DocumentoEmision,
+  FichaAnuncio,
+  FiltrosAnuncios,
   FiltrosCuis,
   FiltrosPredio,
   Domicilio,
@@ -22,8 +27,12 @@ import type {
   FormatoEmision,
   MatrizArbitrios,
   MedioContacto,
+  MovimientoAnuncio,
   NivelConstruccion,
   NuevaDeclaracion,
+  NuevaRenovacion,
+  NuevoAnuncio,
+  NuevoCese,
   NuevoCondomino,
   NuevaVersionCuis,
   ObraCategoria,
@@ -37,6 +46,7 @@ import type {
   Resumen,
   ServicioArbitrio,
   Sustento,
+  TasasAnuncios,
   Transferente,
   Ubigeo,
   UnidadUrbana,
@@ -284,5 +294,27 @@ export const rentas = {
   catalogoCuis: (filtros: FiltrosCuis = {}) => get<CatalogoCuis>(`/srtm/infracciones/cuis${query({ ...filtros })}`),
   // a new version of a code: it closes the one in force (answered as `cerrada`). 422 when it does not start after the
   // one in force, 400 for a field or the observación, 403 without CREATE on codigo_infraccion
-  crearVersionCuis: (body: NuevaVersionCuis) => send<VersionCuisCreada>('POST', '/srtm/infracciones/cuis', body)
+  crearVersionCuis: (body: NuevaVersionCuis) => send<VersionCuisCreada>('POST', '/srtm/infracciones/cuis', body),
+
+  // the tasa de anuncios y propaganda (SPEC §7, Anuncios). the padrón with each anuncio's estado and vigencia at
+  // vigentes_a (today when not given): 422 names a filter it cannot read (an estado out of VIGENTE, VENCIDO, CESADO,
+  // RETIRADO)
+  anuncios: (filtros: FiltrosAnuncios, page: number, size = PAGE_SIZE) => get<Pagina<AnuncioEnPadron>>(`/srtm/anuncios${query({ ...filtros, page, size })}`),
+  // an anuncio and its AUTORIZACION, accruing the clase's tasa: never one sent from here. the same Idempotency-Key
+  // answers the first one (200, ya_existia) without accruing again. 422 with `faltan` (TASA_ANUNCIO PANEL 2026), 404
+  // for a contribuyente or predio that is not there, 400 for a field or the observación, 403 without CREATE on anuncio
+  registrarAnuncio: (body: NuevoAnuncio, idempotencyKey: string) =>
+    send<AnuncioRegistrado>('POST', '/srtm/anuncios', body, { 'Idempotency-Key': idempotencyKey }),
+  anuncio: (id: string) => get<FichaAnuncio>(`/srtm/anuncios/${id}`),
+  // the acts: 403 without CREATE on movimiento_anuncio. a renovación accrues the ejercicio it renews: 409 when it is
+  // accrued already, 422 when cesado or retirado, when it spans several ejercicios or goes back, 422 with `faltan`
+  renovarAnuncio: (id: string, body: NuevaRenovacion) => send<MovimientoAnuncio>('POST', `/srtm/anuncios/${id}/renovacion`, body),
+  // 409 when the act exists already; 422 for a date out of order
+  cesarAnuncio: (id: string, body: NuevoCese) => send<MovimientoAnuncio>('POST', `/srtm/anuncios/${id}/cese`, body),
+  // 422 without a cese before
+  retirarAnuncio: (id: string, body: NuevoCese) => send<MovimientoAnuncio>('POST', `/srtm/anuncios/${id}/retiro`, body),
+  // each clase's tasa of a year, and the ones missing (200, never a 0)
+  tasasAnuncios: (anio: number) => get<TasasAnuncios>(`/srtm/anuncios/tasas${query({ anio })}`),
+  // a titular's or a predio's anuncios, each with its estado at al_dia
+  anunciosDe: (de: 'contribuyentes' | 'predios', id: string) => get<AnunciosDe>(`/srtm/${de}/${id}/anuncios`)
 }
