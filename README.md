@@ -140,6 +140,26 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     vigencia, base legal) y los **actos del expediente** en el orden legal que da el backend (Nº, acto, fecha,
     documento, estado). **Anular** (motivo, fecha, hoy si va en blanco, y observación) pide creación sobre
     `anulacion_papeleta`; impedido, dice por qué con el motivo del backend (`acciones.anulacion.motivo`) o por permiso.
+    - **Registrar descargo** (número de expediente, tipo de recurso, fecha de presentación, sustento y observación) pide
+      creación sobre `descargo_papeleta`. Lo escrito dice su plazo (`5 DIAS_HABILES`), hasta cuándo se podía presentar y
+      si se presentó dentro del plazo o fuera de él («se registra igual y se resuelve improcedente»): todo del backend,
+      la pantalla no cuenta días hábiles. Si faltan el `PLAZO DESCARGO_PAPELETA` o los `FERIADOS` del año, una alerta
+      los nombra.
+    - **Dictar resolución**: la administrativa (RIS, sanciona; una por acta, con sanción accesoria) o la de recurso
+      (RGR, resuelve un descargo: se eligen el descargo, el sentido del fallo y el efecto sobre la multa). _Se reduce_
+      se ofrece deshabilitado con su porqué: no hay regla de reducción, la fija la ordenanza. Fecha (hoy si va en
+      blanco), sustento y observación; pide creación sobre `resolucion_gerencia`. Lo escrito dice su número y abre su
+      PDF; una segunda RIS o una segunda resolución del mismo descargo, o el `PLAZO RG_RECURSO` que falta, se muestran
+      en el diálogo.
+    - Los **descargos** (fechas, plazo, presentado hasta, en plazo, la resolución que lo resolvió) y las
+      **resoluciones** (número, tipo, fecha, descargo, fallo, plazo de recurso) tienen su tabla. Cada resolución tiene
+      **Ver PDF** (`/srtm/infracciones/resoluciones/{id}/pdf`, regenerado de sus datos) y **Notificar**: fecha de la
+      diligencia (hoy si va en blanco), modalidad, resultado, notificador, dirección (vacía: el domicilio fiscal
+      vigente a la fecha de la diligencia), receptor, documento, vínculo, acuse y observación; pide creación sobre
+      `notificacion_resolucion`. Cada intento muestra desde cuándo es exigible la resolución, según el backend, o que
+      no surte efecto (no ubicado).
+    - Las acciones impedidas por el orden legal dicen el motivo del backend (`acciones.descargo.motivo`,
+      `acciones.resolucion.motivo`); las que no permite la cuenta, el permiso que falta.
   - **CUIS** (`/infracciones/cuis`): el cuadro único de infracciones y sanciones vigente a una fecha (hoy, por
     omisión), por materia y por código o descripción, con la multa de cada código a la UIT de ese día (primera,
     segunda y tercera vez). Las multas las cifra el backend; la pantalla no multiplica nada. Sin UIT, una alerta nombra
@@ -159,7 +179,7 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
     caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
     cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
-  - Descargos y resoluciones, escalas y plazos, el panel y la pestaña de las fichas llegan en los PR siguientes.
+  - Escalas y plazos, el panel y la pestaña de las fichas llegan en el PR siguiente.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");
