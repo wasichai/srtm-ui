@@ -3,7 +3,10 @@ import { NavLink } from 'react-router'
 
 // the infracciones administrativas' pages, one from another: the classic menu has a single entry for them. each PR
 // of the épica adds its page here, in the order of the tree menu's group (NAV_TREE)
-const PAGINAS = [{ to: '/infracciones/cuis', label: 'CUIS' }]
+const PAGINAS = [
+  { to: '/infracciones/notificaciones', label: 'Notificaciones previas' },
+  { to: '/infracciones/cuis', label: 'CUIS' }
+]
 
 export function SubnavInfracciones() {
   return (

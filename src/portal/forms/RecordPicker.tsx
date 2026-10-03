@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button, Label } from '@wasichai/ui'
 import { Check, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { Pagina } from '../types'
 
 export interface Picked {
@@ -17,11 +17,15 @@ interface RecordPickerProps<T> {
   search: (q: string) => Promise<Pagina<T>>
   describe: (record: T) => Picked
   error?: string
+  // an optional pick: no asterisk, and a picked one can be removed
+  onQuitar?: () => void
 }
 
-// search-as-you-type for a contribuyente: the titular of a declaration opened from a predio, or a condómino
-export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error }: RecordPickerProps<T>) {
+// search-as-you-type for a contribuyente or a predio: the titular of a declaration opened from a predio, a condómino,
+// the administrado of a notificación previa
+export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error, onQuitar }: RecordPickerProps<T>) {
   const [editing, setEditing] = useState(value === null)
+  const id = useId()
   const [q, setQ] = useState('')
   const term = q.trim()
   const results = useQuery({ queryKey: ['picker', label, term], queryFn: () => search(term), enabled: editing && term.length >= 2 })
@@ -35,9 +39,25 @@ export function RecordPicker<T>({ label, placeholder, value, onChange, search, d
             <Check className="size-4 text-success" />
             {value.label}
           </span>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
-            Cambiar
-          </Button>
+          <span className="flex gap-1">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
+              Cambiar
+            </Button>
+            {onQuitar && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onQuitar()
+                  setQ('')
+                  setEditing(true)
+                }}
+              >
+                Quitar
+              </Button>
+            )}
+          </span>
         </div>
       </div>
     )
@@ -45,13 +65,14 @@ export function RecordPicker<T>({ label, placeholder, value, onChange, search, d
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="picker">
-        {label} <span className="text-danger">*</span>
+      <Label htmlFor={id}>
+        {label}
+        {!onQuitar && <span className="text-danger"> *</span>}
       </Label>
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
         <input
-          id="picker"
+          id={id}
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}

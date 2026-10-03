@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
-import type { DeterminacionMasiva, Emision, FiltrosCuis } from './types'
+import type { DeterminacionMasiva, Emision, FiltrosCuis, FiltrosNotificaciones } from './types'
 
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
@@ -45,10 +45,17 @@ export function useDeterminaciones() {
 // and panel that reads them at once (queryKey: claves.infracciones)
 export const claves = {
   infracciones: ['infracciones'] as const,
-  cuis: ({ vigentes_a, materia, q }: FiltrosCuis) => ['infracciones', 'cuis', vigentes_a ?? null, materia ?? null, q ?? null] as const
+  cuis: ({ vigentes_a, materia, q }: FiltrosCuis) => ['infracciones', 'cuis', vigentes_a ?? null, materia ?? null, q ?? null] as const,
+  notificaciones: ({ numero, contribuyente, desde, hasta, vencidas_a }: FiltrosNotificaciones, page: number) =>
+    ['infracciones', 'notificaciones', numero ?? null, contribuyente ?? null, desde ?? null, hasta ?? null, vencidas_a ?? null, page] as const
 }
 
 // the CUIS in force on a day, with each code's multa at that day's UIT (the backend's, never computed here)
 export function useCuis(filtros: FiltrosCuis) {
   return useQuery({ queryKey: claves.cuis(filtros), queryFn: () => rentas.catalogoCuis(filtros), placeholderData: keepPreviousData })
+}
+
+// a page of the notificaciones previas, vencida or not at vencidas_a as the backend says (never computed here)
+export function useNotificaciones(filtros: FiltrosNotificaciones, page: number) {
+  return useQuery({ queryKey: claves.notificaciones(filtros, page), queryFn: () => rentas.notificaciones(filtros, page), placeholderData: keepPreviousData })
 }
