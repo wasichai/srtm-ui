@@ -13,7 +13,7 @@ import { describirContribuyente } from '../forms/bloques'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import { useAnuncios, useAnunciosDe, useTasasAnuncios } from '../queries'
 import type { ClaseAnuncio, EstadoAnuncio, FiltrosAnuncios } from '../types'
-import { CLASES_ANUNCIO, etiqueta, TIPOS_ANUNCIO, vigenciaVigente } from './etiquetasAnuncio'
+import { CLASES_ANUNCIO, etiqueta, TIPOS_ANUNCIO, vigenciaAlDia } from './etiquetasAnuncio'
 import { SubnavAnuncios } from './SubnavAnuncios'
 
 // the tasa de anuncios y propaganda beyond one ficha: the padrón with each anuncio's estado on a day and the tasas of a
@@ -168,7 +168,7 @@ export function PadronAnunciosPage() {
                           {a.denominacion && <span className="block text-xs text-ink-muted">{a.denominacion}</span>}
                         </Td>
                         <Td {...NUMERICA}>{formatNumber(a.area)}</Td>
-                        <Td className="whitespace-nowrap">{vigenciaVigente(a.vigencia_hasta_vigente)}</Td>
+                        <Td className="whitespace-nowrap">{vigenciaAlDia(a)}</Td>
                         <Td>
                           <EstadoAnuncioBadge estado={a.estado} />
                         </Td>
@@ -200,7 +200,7 @@ export function TasasAnunciosPage() {
             La tasa de cada clase de anuncio en el año, por ejercicio completo. Sin tasa, una clase no se autoriza ni se renueva.
           </p>
         </div>
-        <YearSelect value={anio} onChange={setAnio} />
+        <YearSelect value={anio} onChange={setAnio} siguiente />
       </div>
       <QueryState query={query}>
         {(t) => (
@@ -281,7 +281,7 @@ export function AnunciosDe({ de, id }: { de: 'contribuyentes' | 'predios'; id: s
                     <Td>{etiqueta(TIPOS_ANUNCIO, a.tipo)}</Td>
                     <Td>{a.direccion}</Td>
                     <Td>{formatDate(a.fecha_autorizacion)}</Td>
-                    <Td className="whitespace-nowrap">{vigenciaVigente(a.vigencia_hasta_vigente)}</Td>
+                    <Td className="whitespace-nowrap">{vigenciaAlDia(a)}</Td>
                     <Td>
                       <EstadoAnuncioBadge estado={a.estado} />
                     </Td>

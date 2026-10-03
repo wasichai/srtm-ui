@@ -15,7 +15,7 @@ import { NUMERICA } from '../components/tabla'
 import { claves, useAnuncio } from '../queries'
 import type { AccionPermitida, AccionesAnuncio, EstadoAnuncio, FichaAnuncio, MovimientoAnuncio } from '../types'
 import { Campo } from './AnunciosPages'
-import { CLASES_ANUNCIO, etiqueta, MOVIMIENTOS_ANUNCIO, TIPOS_ANUNCIO, vigenciaVigente } from './etiquetasAnuncio'
+import { CLASES_ANUNCIO, etiqueta, MOVIMIENTOS_ANUNCIO, terminoDeVigencia, TIPOS_ANUNCIO, vigenciaAlDia } from './etiquetasAnuncio'
 import { FichaHeader } from './FichaHeader'
 import { SubnavAnuncios } from './SubnavAnuncios'
 
@@ -90,7 +90,12 @@ function Ficha({ ficha }: { ficha: FichaAnuncio }) {
         }
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard icon={CalendarClock} label={`Vigente hasta (al ${al})`} value={vigenciaVigente(ficha.vigencia_hasta_vigente)} />
+        <StatCard
+          icon={CalendarClock}
+          label={`Vigente hasta (al ${al})`}
+          value={vigenciaAlDia(ficha)}
+          nota={terminoDeVigencia(ficha.estado, ficha.movimientos) ?? undefined}
+        />
         <StatCard icon={Coins} label={`Devengado al ${formatDate(devengado.al_dia)}`} value={formatMoney(devengado.importe)} />
       </div>
 

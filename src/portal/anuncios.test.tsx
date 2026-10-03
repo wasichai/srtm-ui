@@ -187,6 +187,35 @@ describe('padrón de anuncios', () => {
     expect(new URLSearchParams(lecturas('/srtm/anuncios')[0].path.split('?')[1]).get('vigentes_a')).toBe(hoy())
   })
 
+  it('shows «—» as the vigencia of the cesados and retirados, never their last term', async () => {
+    start('/anuncios', [
+      {
+        path: '/srtm/anuncios',
+        body: page([
+          enPadron({ id: 'a1', numero: `AN-${year}-000001`, estado: 'CESADO', vigencia_hasta_vigente: `${year}-12-31` }),
+          enPadron({ id: 'a2', numero: `AN-${year}-000002`, estado: 'RETIRADO', vigencia_hasta_vigente: `${year}-12-31` }),
+          enPadron({ id: 'a3', numero: `AN-${year}-000003`, estado: 'VENCIDO', vigencia_hasta_vigente: null })
+        ])
+      }
+    ])
+    const t = await screen.findByRole('table', { name: `Anuncios al ${dmy(hoy())}` })
+    expect(
+      within(t)
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) =>
+          within(r)
+            .getAllByRole('cell')
+            .slice(6)
+            .map((c) => c.textContent)
+        )
+    ).toEqual([
+      ['—', 'Cesado'],
+      ['—', 'Retirado'],
+      ['Sin plazo', 'Vencido']
+    ])
+  })
+
   it('filters by titular, clase, estado, date and text', async () => {
     start('/anuncios', [{ path: '/srtm/anuncios', body: page([enPadron()]) }])
     await screen.findByRole('table')
@@ -352,8 +381,55 @@ describe('ficha del anuncio', () => {
     expect(within(cese).getAllByRole('cell')[6]).toHaveTextContent('Cierre ficticio del local')
     expect(screen.getByTestId('estado-anuncio')).toHaveTextContent(`Al ${dmy(hoy())}: Cesado`)
     expect(screen.getByText(`Devengado al ${dmy(hoy())}`).nextSibling).toHaveTextContent(/S\/\s?77[.,]77/)
-    expect(screen.getByText(`Vigente hasta (al ${dmy(hoy())})`).nextSibling).toHaveTextContent(`31/12/${year}`)
+    // cesado: in force no longer, whatever its last term said; the day it ceased, from its movimiento
+    const vigencia = screen.getByText(`Vigente hasta (al ${dmy(hoy())})`).parentElement!
+    expect(vigencia).toHaveTextContent(`Vigente hasta (al ${dmy(hoy())})—cesado el 01/02/${year}`)
+    expect(vigencia).not.toHaveTextContent(`31/12/${year}`)
     expect(screen.getByText('Denominación').nextSibling).toHaveTextContent('BODEGA FICTICIA')
+  })
+
+  it('says until when a vigente anuncio is in force', async () => {
+    start('/anuncios/a1', [{ path: '/srtm/anuncios/a1', body: ficha() }])
+    await fichaEn()
+    expect(screen.getByText(`Vigente hasta (al ${dmy(hoy())})`).parentElement).toHaveTextContent(`Vigente hasta (al ${dmy(hoy())})31/12/${year}`)
+  })
+
+  it('a retirado anuncio shows «—» and the day of its retiro, not its last term', async () => {
+    const retirado = cesado()
+    start('/anuncios/a1', [
+      {
+        path: '/srtm/anuncios/a1',
+        body: {
+          ...retirado,
+          estado: 'RETIRADO',
+          movimientos: [
+            ...retirado.movimientos,
+            movimiento({
+              id: 'm3',
+              tipo: 'RETIRO',
+              fecha: `${year}-03-05`,
+              anio: null,
+              referencia_cargo: null,
+              tasa: null,
+              vigencia_hasta: null,
+              motivo: 'Desmontado ficticio',
+              clave: 'a1|RETIRO',
+              parametro: null
+            })
+          ]
+        }
+      }
+    ])
+    await fichaEn()
+    const vigencia = screen.getByText(`Vigente hasta (al ${dmy(hoy())})`).parentElement!
+    expect(vigencia).toHaveTextContent(`Vigente hasta (al ${dmy(hoy())})—retirado el 05/03/${year}`)
+    expect(vigencia).not.toHaveTextContent('cesado')
+  })
+
+  it('without its movimiento a cesado anuncio still shows «—», and no date of its own', async () => {
+    start('/anuncios/a1', [{ path: '/srtm/anuncios/a1', body: ficha({ estado: 'CESADO' }) }])
+    await fichaEn()
+    expect(screen.getByText(`Vigente hasta (al ${dmy(hoy())})`).parentElement).toHaveTextContent(new RegExp(`^Vigente hasta \\(al ${dmy(hoy())}\\)—$`))
   })
 
   it("shows the backend's estado even when the vigencia in force has passed", async () => {
@@ -496,6 +572,16 @@ describe('tasas de anuncios', () => {
     expect(t.textContent).not.toMatch(/0[.,]00/)
     expect(new URLSearchParams(lecturas('/srtm/anuncios/tasas')[0].path.split('?')[1]).get('anio')).toBe(String(year))
   })
+
+  it("asks for next year's tasas too, to check them before they apply", async () => {
+    start('/anuncios/tasas', [{ path: '/srtm/anuncios/tasas', body: { anio: year, tasas: [], faltan: [] } }])
+    await screen.findByText(`Sin tasas de anuncios en ${year}`)
+    const anio = screen.getByLabelText('Año')
+    expect(within(anio).getAllByRole('option')[0]).toHaveValue(String(year + 1))
+    fireEvent.change(anio, { target: { value: String(year + 1) } })
+    await waitFor(() => expect(lecturas('/srtm/anuncios/tasas')).toHaveLength(2))
+    expect(new URLSearchParams(lecturas('/srtm/anuncios/tasas')[1].path.split('?')[1]).get('anio')).toBe(String(year + 1))
+  })
 })
 
 const fichaContribuyente = {
@@ -519,6 +605,40 @@ describe('pestaña Anuncios de las fichas', () => {
     // VENCIDO although the vigencia in force is still ahead: the backend's
     expect(within(fila).getAllByRole('cell').at(-1)).toHaveTextContent('Vencido')
     expect(screen.getByText(`Estado y vigencia al ${dmy(hoy())}.`)).toBeInTheDocument()
+  })
+
+  it.each([
+    ['contribuyentes', 'c1', fichaContribuyente],
+    ['predios', 'p1', fichaPredio]
+  ] as const)('shows «—» as the vigencia of a cesado or retirado anuncio in the %s tab', async (de, id, cuerpo) => {
+    start(`/${de}/${id}?tab=anuncios`, [
+      {
+        path: `/srtm/${de}/${id}/anuncios`,
+        body: {
+          al_dia: hoy(),
+          anuncios: [
+            { ...anuncio(), estado: 'CESADO', vigencia_hasta_vigente: `${year}-12-31` },
+            { ...anuncio({ id: 'a2', numero: `AN-${year}-000002` }), estado: 'RETIRADO', vigencia_hasta_vigente: `${year}-12-31` }
+          ]
+        }
+      },
+      { path: `/srtm/${de}/${id}`, body: cuerpo }
+    ])
+    const t = await screen.findByRole('table', { name: `Anuncios al ${dmy(hoy())}` })
+    expect(
+      within(t)
+        .getAllByRole('row')
+        .slice(1)
+        .map((r) =>
+          within(r)
+            .getAllByRole('cell')
+            .slice(5)
+            .map((c) => c.textContent)
+        )
+    ).toEqual([
+      ['—', 'Cesado'],
+      ['—', 'Retirado']
+    ])
   })
 
   it('opens during the inscription once the fiscal domicilio is there (its step)', async () => {
