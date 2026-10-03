@@ -2626,6 +2626,11 @@ terra-draw@1.33.0:
   resolved "https://registry.yarnpkg.com/terra-draw/-/terra-draw-1.33.0.tgz#1c40231b060c62d9839569688fa8f56934674d65"
   integrity sha512-EOJpu0RaKfvFI2Mx48l/OsBpIGdNOpHbvMGzegDQzCepxnxrovxVHFbm85RQljJ6RV3EbLCuvMjZ0HWkJswphA==
 
+terra-draw@1.35.0:
+  version "1.35.0"
+  resolved "https://registry.yarnpkg.com/terra-draw/-/terra-draw-1.35.0.tgz#38cfdb47d8acb98fa3f06d17e375ba4239d1bd83"
+  integrity sha512-uQI8lcPiUMqwVV29CexTfvT/AM4lGHtA+xWraW4njVExiM1+eGvRetYOBXmXEmgy5pL4X2dmjwMRH8JEYVtbgw==
+
 tinybench@6.1.4:
   version "6.1.4"
   resolved "https://registry.yarnpkg.com/tinybench/-/tinybench-6.1.4.tgz#f855bb3ad1f2fe85cf624490d58bb4f4f5d30da8"
