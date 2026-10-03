@@ -13,8 +13,8 @@ export const NAV = [
   { to: '/predios', label: 'Predios', icon: MapPinned, end: false },
   // its pages link to each other (SubnavArbitrios)
   { to: '/arbitrios', label: 'Arbitrios', icon: Landmark, end: false },
-  // its pages link to each other (SubnavInfracciones); the CUIS until the expedientes' page is there
-  { to: '/infracciones/cuis', label: 'Infracciones', icon: Gavel, end: false },
+  // its pages link to each other (SubnavInfracciones)
+  { to: '/infracciones', label: 'Infracciones', icon: Gavel, end: false },
   { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false }
 ]
 

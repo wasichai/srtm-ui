@@ -1,6 +1,8 @@
 import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
+  ActaCreada,
+  AnulacionPapeleta,
   ArbitriosContribuyente,
   CatalogoCuis,
   CatastroFiscal,
@@ -15,6 +17,8 @@ import type {
   DeclaracionJurada,
   DeterminacionMasiva,
   DocumentoEmision,
+  ExpedienteInfraccion,
+  FiltrosActas,
   FiltrosCuis,
   FiltrosNotificaciones,
   FiltrosPredio,
@@ -27,10 +31,13 @@ import type {
   NuevaDeclaracion,
   NuevoCondomino,
   NuevaVersionCuis,
+  NuevaActa,
+  NuevaAnulacion,
   NuevaNotificacion,
   NuevaSubsanacion,
   NotificacionPrevia,
   ObraCategoria,
+  Procedimiento,
   ObraComplementaria,
   OtroFrente,
   Pagina,
@@ -301,5 +308,18 @@ export const rentas = {
   // fecha today when not given. 422 when vencida at that fecha, when it already has an acta or for a future fecha; 409
   // when already subsanada; 403 without CREATE on subsanacion_notificacion
   subsanarNotificacion: (id: string, body: NuevaSubsanacion) =>
-    send<SubsanacionNotificacion>('POST', `/srtm/infracciones/notificaciones/${id}/subsanacion`, body)
+    send<SubsanacionNotificacion>('POST', `/srtm/infracciones/notificaciones/${id}/subsanacion`, body),
+
+  // the expedientes: each acta with its multa as frozen (fecha_calculo), and where its procedure stands at fase_al_dia
+  // (today) with its estado de la deuda, both the backend's. 422 names a fase it does not take
+  actas: (filtros: FiltrosActas, page: number, size = PAGE_SIZE) => get<Pagina<Procedimiento>>(`/srtm/infracciones/actas${query({ ...filtros, page, size })}`),
+  // 201 with the acta, its referencia (PAPELETA-<id>) and the desglose computed and frozen by the backend. 422 with
+  // `faltan` (the UIT of the year, the CUIS's % for the grade), or naming a code not in force that day or a subsanada
+  // previa; 409 for a número already written; 403 without CREATE on papeleta
+  registrarActa: (body: NuevaActa) => send<ActaCreada>('POST', '/srtm/infracciones/actas', body),
+  // the ficha: the acta, the CUIS version used, its acts in legal order, fase, estado and what can be done now (acciones)
+  expediente: (id: string) => get<ExpedienteInfraccion>(`/srtm/infracciones/actas/${id}`),
+  // fecha today when not given. 409 when already anulada, 422 when dejada sin efecto, 403 without CREATE on
+  // anulacion_papeleta
+  anularActa: (id: string, body: NuevaAnulacion) => send<AnulacionPapeleta>('POST', `/srtm/infracciones/actas/${id}/anulacion`, body)
 }

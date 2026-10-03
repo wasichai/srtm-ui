@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Button, Card, CardBody, CardHeader, CardTitle } from '@wasichai/ui'
-import { FileText, LandPlot, MapPinned, Plus, User, Users } from 'lucide-react'
+import { FileText, Gavel, LandPlot, MapPinned, Plus, User, Users } from 'lucide-react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { StatCard } from '../components/StatCard'
@@ -84,6 +84,8 @@ export function InicioPage() {
                         <FileText className="size-4" />
                       ) : tab.kind === 'lote' ? (
                         <LandPlot className="size-4" />
+                      ) : tab.kind === 'expediente' ? (
+                        <Gavel className="size-4" />
                       ) : (
                         <User className="size-4" />
                       )}

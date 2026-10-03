@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
-import type { DeterminacionMasiva, Emision, FiltrosCuis, FiltrosNotificaciones } from './types'
+import type { DeterminacionMasiva, Emision, FiltrosActas, FiltrosCuis, FiltrosNotificaciones } from './types'
 
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
@@ -47,7 +47,10 @@ export const claves = {
   infracciones: ['infracciones'] as const,
   cuis: ({ vigentes_a, materia, q }: FiltrosCuis) => ['infracciones', 'cuis', vigentes_a ?? null, materia ?? null, q ?? null] as const,
   notificaciones: ({ numero, contribuyente, desde, hasta, vencidas_a }: FiltrosNotificaciones, page: number) =>
-    ['infracciones', 'notificaciones', numero ?? null, contribuyente ?? null, desde ?? null, hasta ?? null, vencidas_a ?? null, page] as const
+    ['infracciones', 'notificaciones', numero ?? null, contribuyente ?? null, desde ?? null, hasta ?? null, vencidas_a ?? null, page] as const,
+  actas: ({ numero, administrado, codigo, fase, desde, hasta }: FiltrosActas, page: number) =>
+    ['infracciones', 'actas', numero ?? null, administrado ?? null, codigo ?? null, fase ?? null, desde ?? null, hasta ?? null, page] as const,
+  acta: (id: string) => ['infracciones', 'acta', id] as const
 }
 
 // the CUIS in force on a day, with each code's multa at that day's UIT (the backend's, never computed here)
@@ -58,4 +61,14 @@ export function useCuis(filtros: FiltrosCuis) {
 // a page of the notificaciones previas, vencida or not at vencidas_a as the backend says (never computed here)
 export function useNotificaciones(filtros: FiltrosNotificaciones, page: number) {
   return useQuery({ queryKey: claves.notificaciones(filtros, page), queryFn: () => rentas.notificaciones(filtros, page), placeholderData: keepPreviousData })
+}
+
+// a page of the expedientes, each with its fase at fase_al_dia and its estado de la deuda (the backend's)
+export function useActas(filtros: FiltrosActas, page: number) {
+  return useQuery({ queryKey: claves.actas(filtros, page), queryFn: () => rentas.actas(filtros, page), placeholderData: keepPreviousData })
+}
+
+// an expediente's ficha: its acta and acts in legal order, and what the legal order allows now
+export function useExpediente(id: string) {
+  return useQuery({ queryKey: claves.acta(id), queryFn: () => rentas.expediente(id) })
 }
