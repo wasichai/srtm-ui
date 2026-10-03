@@ -1,6 +1,8 @@
 import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
+  ActaCreada,
+  AnulacionPapeleta,
   AnuncioEnPadron,
   AnuncioRegistrado,
   AnunciosDe,
@@ -16,11 +18,15 @@ import type {
   Declaracion,
   DeclaracionDetalle,
   DeclaracionJurada,
+  DescargoPapeleta,
   DeterminacionMasiva,
   DocumentoEmision,
+  ExpedienteInfraccion,
   FichaAnuncio,
+  FiltrosActas,
   FiltrosAnuncios,
   FiltrosCuis,
+  FiltrosNotificaciones,
   FiltrosPredio,
   Domicilio,
   Emision,
@@ -35,7 +41,13 @@ import type {
   NuevoCese,
   NuevoCondomino,
   NuevaVersionCuis,
+  NuevaActa,
+  NuevaAnulacion,
+  NuevaNotificacion,
+  NuevaSubsanacion,
+  NotificacionPrevia,
   ObraCategoria,
+  Procedimiento,
   ObraComplementaria,
   OtroFrente,
   Pagina,
@@ -51,8 +63,18 @@ import type {
   Ubigeo,
   UnidadUrbana,
   UsoPredio,
+  SubsanacionNotificacion,
   VersionCuisCreada,
-  Via
+  Via,
+  NotificacionResolucion,
+  NuevaNotificacionResolucion,
+  NuevaResolucion,
+  NuevoDescargo,
+  ResolucionGerencia,
+  InfraccionesDe,
+  NotificacionVencida,
+  PanelInfracciones,
+  PlazosInfracciones
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -295,6 +317,59 @@ export const rentas = {
   // a new version of a code: it closes the one in force (answered as `cerrada`). 422 when it does not start after the
   // one in force, 400 for a field or the observación, 403 without CREATE on codigo_infraccion
   crearVersionCuis: (body: NuevaVersionCuis) => send<VersionCuisCreada>('POST', '/srtm/infracciones/cuis', body),
+
+  // the notificaciones previas, each with what the backend derives at vencidas_a (today when not given): its
+  // vencimiento, whether it is vencida, its subsanación and the acta it led to. 422 names a filter it cannot read
+  notificaciones: (filtros: FiltrosNotificaciones, page: number, size = PAGE_SIZE) =>
+    get<Pagina<NotificacionPrevia>>(`/srtm/infracciones/notificaciones${query({ ...filtros, page, size })}`),
+  // 201 with the record and its derivados. 404 for a contribuyente that does not exist, 409 for a número already
+  // written, 400 for a field or the observación, 403 without CREATE on notificacion_administrativa
+  registrarNotificacion: (body: NuevaNotificacion) => send<NotificacionPrevia>('POST', '/srtm/infracciones/notificaciones', body),
+  // fecha today when not given. 422 when vencida at that fecha, when it already has an acta or for a future fecha; 409
+  // when already subsanada; 403 without CREATE on subsanacion_notificacion
+  subsanarNotificacion: (id: string, body: NuevaSubsanacion) =>
+    send<SubsanacionNotificacion>('POST', `/srtm/infracciones/notificaciones/${id}/subsanacion`, body),
+
+  // the expedientes: each acta with its multa as frozen (fecha_calculo), and where its procedure stands at fase_al_dia
+  // (today) with its estado de la deuda, both the backend's. 422 names a fase it does not take
+  actas: (filtros: FiltrosActas, page: number, size = PAGE_SIZE) => get<Pagina<Procedimiento>>(`/srtm/infracciones/actas${query({ ...filtros, page, size })}`),
+  // 201 with the acta, its referencia (PAPELETA-<id>) and the desglose computed and frozen by the backend. 422 with
+  // `faltan` (the UIT of the year, the CUIS's % for the grade), or naming a code not in force that day or a subsanada
+  // previa; 409 for a número already written; 403 without CREATE on papeleta
+  registrarActa: (body: NuevaActa) => send<ActaCreada>('POST', '/srtm/infracciones/actas', body),
+  // the ficha: the acta, the CUIS version used, its acts in legal order, fase, estado and what can be done now (acciones)
+  expediente: (id: string) => get<ExpedienteInfraccion>(`/srtm/infracciones/actas/${id}`),
+  // fecha today when not given. 409 when already anulada, 422 when dejada sin efecto, 403 without CREATE on
+  // anulacion_papeleta
+  anularActa: (id: string, body: NuevaAnulacion) => send<AnulacionPapeleta>('POST', `/srtm/infracciones/actas/${id}/anulacion`, body),
+  // 201 with presentado_hasta, en_plazo and plazo_texto, the backend's (a late one is written all the same). 422 with
+  // `faltan` (the PLAZO DESCARGO_PAPELETA, the FERIADOS of a year), 409 for a número de expediente already written, 403
+  // without CREATE on descargo_papeleta
+  registrarDescargo: (id: string, body: NuevoDescargo) => send<DescargoPapeleta>('POST', `/srtm/infracciones/actas/${id}/descargos`, body),
+  // 201 with its número (RIS-AAAA-NNNNNN or RGR-AAAA-NNNNNN). 422 with `faltan` (PLAZO RG_RECURSO), for SE_REDUCE or a
+  // descargo of another acta; 409 for a second RIS or a second one for the same descargo; 403 without CREATE on
+  // resolucion_gerencia
+  dictarResolucion: (id: string, body: NuevaResolucion) => send<ResolucionGerencia>('POST', `/srtm/infracciones/actas/${id}/resoluciones`, body),
+  // a resolución's PDF, drawn again from its frozen data: for PdfDialog
+  pdfResolucion: (id: string) => `/srtm/infracciones/resoluciones/${id}/pdf`,
+  // 201 with its intento and, when it takes effect, exigible_desde (the backend's). without direccion, the obligado's
+  // domicilio fiscal in force at the diligencia. 422 with `faltan` (PLAZO RG_RECURSO, FERIADOS), 403 without CREATE on
+  // notificacion_resolucion
+  notificarResolucion: (id: string, body: NuevaNotificacionResolucion) =>
+    send<NotificacionResolucion>('POST', `/srtm/infracciones/resoluciones/${id}/notificacion`, body),
+
+  // the padrones of the notificaciones previas: the ones not subsanadas and without an acta that are vencidas at corte
+  // (each row with its vencimiento and that corte), and a contribuyente's (its id), with their derivados
+  notificacionesVencidas: (corte: string, page: number, size = PAGE_SIZE) =>
+    get<Pagina<NotificacionVencida>>(`/srtm/infracciones/notificaciones/vencidas${query({ corte, page, size })}`),
+  notificacionesDe: (contribuyente: string, page: number, size = PAGE_SIZE) =>
+    get<Pagina<NotificacionPrevia>>(`/srtm/infracciones/notificaciones/por-contribuyente${query({ contribuyente, page, size })}`),
+  // the plazos and feriados loaded for a year (the current one when not given), with what is missing (faltan)
+  plazosInfracciones: (anio: number) => get<PlazosInfracciones>(`/srtm/infracciones/plazos${query({ anio })}`),
+  // a year's figures at al_dia, all the backend's. coactiva is null with its nota: srtm does not collect
+  panelInfracciones: (anio: number) => get<PanelInfracciones>(`/srtm/infracciones/panel${query({ anio })}`),
+  // every acta of a contribuyente (as obligado or contribuyente) or of a predio, with its fase and estado at al_dia
+  infraccionesDe: (de: 'contribuyentes' | 'predios', id: string) => get<InfraccionesDe>(`/srtm/${de}/${id}/infracciones`),
 
   // the tasa de anuncios y propaganda (SPEC §7, Anuncios). the padrón with each anuncio's estado and vigencia at
   // vigentes_a (today when not given): 422 names a filter it cannot read (an estado out of VIGENTE, VENCIDO, CESADO,

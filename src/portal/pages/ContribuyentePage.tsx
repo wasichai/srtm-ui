@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, FileText, Landmark, MapPinned, Megaphone, Receipt } from 'lucide-react'
+import { Coins, FileText, Gavel, Landmark, MapPinned, Megaphone, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
@@ -21,6 +21,7 @@ import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
+import { InfraccionesDe } from './InfraccionesDe'
 import { VerHla, VerHr } from './VerPdf'
 
 // the srtm's registro de contribuyente, in its order, then what rentas adds: the year's predios and every declaration
@@ -43,6 +44,7 @@ const PASOS: Record<string, number> = {
   predios: 5,
   declaraciones: 5,
   arbitrios: 5,
+  infracciones: 5,
   anuncios: 5
 }
 
@@ -194,6 +196,16 @@ function ContribuyentePage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <ArbitriosDelContribuyente id={id} anio={anio} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'infracciones',
+                  label: 'Infracciones',
+                  icon: Gavel,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <InfraccionesDe de="contribuyentes" id={id} />
                     </div>
                   )
                 },

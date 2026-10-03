@@ -121,8 +121,52 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - **Consulta de cuotas** (`/arbitrios`), **Tasas del año** (`/arbitrios/tasas`: la ordenanza, sus tasas, zonas, usos
     y vencimientos, y lo que le falta al año) y **Determinación masiva** (`/arbitrios/determinaciones`).
   - **Emisión masiva** (`/emisiones`): la HR y el PU de todo un año, y la HLA si se pide, en segundo plano.
-- **Infracciones administrativas** (grupo del menú entre Arbitrios y Emisión; en el menú clásico, _Infracciones_ con
-  sus páginas enlazadas entre sí):
+- **Infracciones administrativas** (grupo del menú entre Arbitrios y Emisión; en el menú clásico, _Infracciones_ abre
+  los expedientes, con sus páginas enlazadas entre sí):
+  - **Expedientes** (`/infracciones`): las actas por número, administrado (documento o nombre), código CUIS, fase y
+    fechas, con su importe a pagar y la fecha en que se cifró. La **fase** del procedimiento (a la fecha que encabeza su
+    columna) y el **estado de la deuda** (pendiente, anulada, dejada sin efecto) son dos columnas con sus nombres, y los
+    dos los dice el backend; un acta anulada o dejada sin efecto no tiene fase («—»). Cada fila abre su expediente.
+    - Encabeza la página el **panel** del ejercicio (selector de año; `/srtm/infracciones/panel?anio`): actas
+      levantadas, resoluciones de sanción (RIS), notificadas y notificaciones previas que vencen esta semana (con la semana,
+      de lunes a domingo), cada cifra del backend y con su fecha (`al_dia`). _En coactiva_ dice «No aplica» con la nota
+      del backend: srtm no cobra, y no se muestra un 0.
+  - **Nueva acta** (`/infracciones/nueva`): número del formulario, fecha y hora, lugar, el código del CUIS vigente el día
+    de la infracción (la lista cambia con la fecha), la reincidencia que declara el inspector, el **obligado** (se elige
+    siempre: no se deduce del contribuyente), el contribuyente o el predio (al menos uno), la notificación previa si la
+    hubo (solo las no subsanadas y sin acta; se busca por parte de su número, `q`), expediente, inspector, descripción del hecho y observación. Pide creación
+    sobre `papeleta`. El backend cifra la multa con la UIT y el CUIS de ese día y la congela en el acta: la pantalla
+    muestra su desglose (base imponible = UIT, % e importe de la infracción, % a cobrar, importe a pagar, con beneficio
+    «—», fecha de cálculo y referencia `PAPELETA-…`). Si falta la UIT del año o el % del grado en el CUIS, una alerta lo
+    nombra y el acta no se registra.
+  - **Ficha del expediente** (`/infracciones/:id`, también como pestaña de trabajo): la fase y el estado de la deuda con
+    sus nombres, la referencia, el acta con su multa congelada y su fecha, sus **partes** (el obligado con su
+    documento y su domicilio fiscal, el contribuyente y el predio, cada uno con el enlace a su ficha; con un backend
+    que no manda `partes`, solo los enlaces), la versión del CUIS aplicada (código,
+    vigencia, base legal) y los **actos del expediente** en el orden legal que da el backend (Nº, acto, fecha,
+    documento, estado). **Anular** (motivo, fecha, hoy si va en blanco, y observación) pide creación sobre
+    `anulacion_papeleta`; impedido, dice por qué con el motivo del backend (`acciones.anulacion.motivo`) o por permiso.
+    - **Registrar descargo** (número de expediente, tipo de recurso, fecha de presentación, sustento y observación) pide
+      creación sobre `descargo_papeleta`. Lo escrito dice su plazo (`5 DIAS_HABILES`), hasta cuándo se podía presentar y
+      si se presentó dentro del plazo o fuera de él («se registra igual y se resuelve improcedente»): todo del backend,
+      la pantalla no cuenta días hábiles. Si faltan el `PLAZO DESCARGO_PAPELETA` o los `FERIADOS` del año, una alerta
+      los nombra.
+    - **Dictar resolución**: la administrativa (RIS, sanciona; una por acta, con sanción accesoria) o la de recurso
+      (RGR, resuelve un descargo: se eligen el descargo, el sentido del fallo y el efecto sobre la multa). _Se reduce_
+      se ofrece deshabilitado con su porqué: no hay regla de reducción, la fija la ordenanza. Fecha (hoy si va en
+      blanco), sustento y observación; pide creación sobre `resolucion_gerencia`. Lo escrito dice su número y abre su
+      PDF; una segunda RIS o una segunda resolución del mismo descargo, o el `PLAZO RG_RECURSO` que falta, se muestran
+      en el diálogo.
+    - Los **descargos** (fechas, plazo, presentado hasta, en plazo, la resolución que lo resolvió) y las
+      **resoluciones** (número, tipo, fecha, descargo, fallo, plazo de recurso) tienen su tabla. Cada resolución tiene
+      **Ver PDF** (`/srtm/infracciones/resoluciones/{id}/pdf`, regenerado de sus datos) y **Notificar**: fecha de la
+      diligencia (hoy si va en blanco), modalidad, resultado, notificador, dirección (vacía: el domicilio fiscal
+      vigente a la fecha de la diligencia), receptor, documento, vínculo, acuse y observación; pide creación sobre
+      `notificacion_resolucion`. Cada intento muestra desde cuándo es exigible la resolución, según el backend, o que
+      no surte efecto (no ubicado). Con el acta anulada o dejada sin efecto no queda nada que notificar: **Notificar**
+      se ve deshabilitado con el motivo del backend (`resoluciones[].acciones.notificacion.motivo`) bajo el botón.
+    - Las acciones impedidas por el orden legal dicen el motivo del backend (`acciones.descargo.motivo`,
+      `acciones.resolucion.motivo`); las que no permite la cuenta, el permiso que falta.
   - **CUIS** (`/infracciones/cuis`): el cuadro único de infracciones y sanciones vigente a una fecha (hoy, por
     omisión), por materia y por código o descripción, con la multa de cada código a la UIT de ese día (primera,
     segunda y tercera vez). Las multas las cifra el backend; la pantalla no multiplica nada. Sin UIT, una alerta nombra
@@ -130,12 +174,37 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Un código no se edita: **Nueva versión** (o **Nuevo código**) crea una versión con su observación y cierra la
     vigente el día anterior. Pide creación sobre `codigo_infraccion`; sin ese permiso los botones se ven deshabilitados
     y dicen por qué.
+  - **Notificaciones previas** (`/infracciones/notificaciones`): lo que se notificó antes de un acta, por número,
+    contribuyente y fechas, con su plazo, su vencimiento y si está vencida a una fecha (hoy, por omisión; el encabezado
+    la dice). Vencimiento y vencida son del backend (una sola definición): la pantalla no suma días. Cada fila dice si
+    se subsanó y cuándo, y abre el acta que originó. **Nueva notificación** (número del formulario, fecha, contribuyente
+    y predio opcionales, dirección, motivo, plazo en días opcional y observación) pide creación sobre
+    `notificacion_administrativa`; **Subsanar** (fecha, hoy si va en blanco, y observación) pide creación sobre
+    `subsanacion_notificacion` y se ve deshabilitado, con el porqué, si la fila ya está subsanada, ya tiene acta o está
+    vencida a esa fecha.
+  - **Escalas y plazos** (`/infracciones/plazos`):
+    - **Vencidas sin acta**: las notificaciones previas no subsanadas y sin acta vencidas a una fecha de corte (hoy, por
+      omisión; el título de la tabla dice la que aplicó el backend), con su plazo y su vencimiento.
+    - **Por contribuyente**: las notificaciones previas del contribuyente elegido, con vencimiento, vencida o no,
+      subsanación y el acta que originaron.
+    - **Plazos cargados** (`/srtm/infracciones/plazos?anio`; el selector incluye el año siguiente, para revisar lo
+      cargado antes de que rija): los `PLAZO` vigentes del año (clave, días, unidad, vigencia) y los `FERIADOS` del año
+      con sus fechas, tal como los lee el backend; lo que falta (`faltan`) lo nombra una alerta, nunca un 0. Debajo, cómo
+      se configuran: parámetros tributarios (`parametro_tributario`) `PLAZO` `DESCARGO_PAPELETA` y `PLAZO` `RG_RECURSO`
+      (días hábiles, texto `DIAS_HABILES`) y `FERIADOS` `<año>` (los no nacionales, del 1 de enero al 31 de diciembre),
+      cargados con `import_parametros.py` de srtm-backend o desde la lista de la administración (enlace solo para el
+      rol `ADMIN`). Si al año le falta uno, el acto que lo necesita lo nombra en una alerta. Las escalas de las multas
+      (% de la UIT por grado) están en el CUIS.
+  - Pestaña **Infracciones** de las fichas de contribuyente y de predio (`?tab=infracciones`, después de Arbitrios;
+    también durante la inscripción del contribuyente): sus actas (las del contribuyente como obligado o como
+    contribuyente; las que nombran el predio) con número (abre el expediente), fecha, código, importe a pagar con su
+    fecha de cálculo, y la fase y el estado de la deuda en dos columnas, a la fecha que da el backend (`al_dia`).
   - Lo común a los actos está en `src/portal`: `send` de `api.ts` lanza un `RentasError` con `faltan`, `errors` y
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
-    caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
-    cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
-  - Expedientes, nueva acta, notificaciones previas, escalas y plazos y la pestaña de las fichas llegan en los PR
-    siguientes.
+    caracteres, y su `MensajeDeError` traduce un fallo de red (`fetch` sin respuesta) a «No hubo respuesta del
+    servidor. Vuelva a intentarlo: el acto no se registra dos veces.»; `FaseBadge` / `BadgeDeMapa` muestran una fase o
+    un estado con un mapa explícito; `usePuede` dice si la cuenta puede hacer una acción; `StatCard` acepta la fecha de
+    su cifra (`fecha`) y una `nota`. Las consultas cuelgan de la clave `['infracciones', …]`.
 - **Anuncios y propaganda** (grupo del menú después de Infracciones administrativas; en el menú clásico, _Anuncios_
   con sus páginas enlazadas entre sí). El estado (vigente, vencido, cesado, retirado), la vigencia que rige y la tasa
   son del backend, a la fecha que muestra la pantalla; la pantalla no los deduce de las fechas. Un anuncio cesado o

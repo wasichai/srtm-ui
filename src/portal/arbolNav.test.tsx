@@ -84,7 +84,16 @@ describe('NAV_TREE', () => {
       ['Declaraciones', ['Nueva declaración /declaraciones/nueva']],
       ['Catastro', ['Nuevo lote /catastro/nuevo']],
       ['Arbitrios', ['Consulta de cuotas /arbitrios', 'Tasas del año /arbitrios/tasas', 'Determinación masiva /arbitrios/determinaciones']],
-      ['Infracciones administrativas', ['CUIS /infracciones/cuis']],
+      [
+        'Infracciones administrativas',
+        [
+          'Expedientes /infracciones',
+          'Nueva acta /infracciones/nueva',
+          'Notificaciones previas /infracciones/notificaciones',
+          'CUIS /infracciones/cuis',
+          'Escalas y plazos /infracciones/plazos'
+        ]
+      ],
       ['Anuncios y propaganda', ['Padrón de anuncios /anuncios', 'Nuevo anuncio /anuncios/nuevo', 'Tasas de anuncios /anuncios/tasas']],
       ['Emisión', ['Emisión masiva /emisiones']],
       'Administración /admin'
@@ -113,7 +122,12 @@ describe('NAV_TREE', () => {
     ['/arbitrios', 'Consulta de cuotas'],
     ['/arbitrios/tasas', 'Tasas del año'],
     ['/arbitrios/determinaciones', 'Determinación masiva'],
+    ['/infracciones', 'Expedientes'],
+    ['/infracciones/0b5e8f1a-0000-4000-8000-000000000001', 'Expedientes'],
+    ['/infracciones/nueva', 'Nueva acta'],
+    ['/infracciones/notificaciones', 'Notificaciones previas'],
     ['/infracciones/cuis', 'CUIS'],
+    ['/infracciones/plazos', 'Escalas y plazos'],
     ['/anuncios', 'Padrón de anuncios'],
     ['/anuncios/a1', 'Padrón de anuncios'],
     ['/anuncios/nuevo', 'Nuevo anuncio'],
@@ -201,7 +215,11 @@ describe('portal-tributario tree menu', () => {
       ['Consulta de cuotas', '/arbitrios'],
       ['Tasas del año', '/arbitrios/tasas'],
       ['Determinación masiva', '/arbitrios/determinaciones'],
+      ['Expedientes', '/infracciones'],
+      ['Nueva acta', '/infracciones/nueva'],
+      ['Notificaciones previas', '/infracciones/notificaciones'],
       ['CUIS', '/infracciones/cuis'],
+      ['Escalas y plazos', '/infracciones/plazos'],
       ['Padrón de anuncios', '/anuncios'],
       ['Nuevo anuncio', '/anuncios/nuevo'],
       ['Tasas de anuncios', '/anuncios/tasas'],

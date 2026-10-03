@@ -54,10 +54,19 @@ export const NAV_TREE: NodoNav[] = [
       { label: 'Determinación masiva', to: '/arbitrios/determinaciones' }
     ]
   },
-  // the multas administrativas (SPEC §8.2): the CUIS in force on a day, with each code's multa at that day's UIT. the
-  // épica's later PRs add Expedientes (/infracciones, its ficha /infracciones/:id), Nueva acta, Notificaciones previas
-  // and Escalas y plazos, each with its route
-  { label: 'Infracciones administrativas', hijos: [{ label: 'CUIS', to: '/infracciones/cuis' }] },
+  // the multas administrativas (SPEC §8.2): the expedientes (an acta's ficha is Expedientes'), a new acta, the
+  // notificaciones previas with their subsanación, the CUIS in force on a day, with each code's multa at that day's UIT,
+  // and Escalas y plazos (the padrones of the vencidas and where the plazos are loaded)
+  {
+    label: 'Infracciones administrativas',
+    hijos: [
+      { label: 'Expedientes', to: '/infracciones', tambienEn: ['/infracciones/:id'] },
+      { label: 'Nueva acta', to: '/infracciones/nueva' },
+      { label: 'Notificaciones previas', to: '/infracciones/notificaciones' },
+      { label: 'CUIS', to: '/infracciones/cuis' },
+      { label: 'Escalas y plazos', to: '/infracciones/plazos' }
+    ]
+  },
   // the tasa de anuncios y propaganda (SPEC §8.2): the padrón (an anuncio's ficha, /anuncios/:id, is under it), a new
   // anuncio with its autorización, and the tasas of a year by clase
   {
@@ -85,11 +94,14 @@ export function arbolPara(nodos: NodoNav[], { isAdmin }: { isAdmin: boolean }): 
 
 const hojas = (nodos: NodoNav[]): HojaNav[] => nodos.flatMap((nodo) => (esGrupo(nodo) ? hojas(nodo.hijos) : [nodo]))
 
-// the leaf current on a path: one whose tambienEn matches it, else the one whose route is the path or the longest
-// start of it (/contribuyentes/nuevo is Nuevo contribuyente, /contribuyentes/123 Buscar contribuyentes). a page with
-// no leaf of its own (a declaration's ficha, a lote's) has none
+// the leaf current on a path: the one whose route is the path, else one whose tambienEn matches it, else the one whose
+// route is the longest start of it (/contribuyentes/nuevo is Nuevo contribuyente, /contribuyentes/123 Buscar
+// contribuyentes). a leaf's own route goes first: /infracciones/:id (an expediente) matches /infracciones/cuis too. a
+// page with no leaf of its own (a declaration's ficha, a lote's) has none
 export function hojaActiva(nodos: NodoNav[], pathname: string): HojaNav | undefined {
   const propias = hojas(nodos).filter((hoja) => !hoja.externa)
+  const propia = propias.find((hoja) => pathname === hoja.to)
+  if (propia) return propia
   const porPatron = propias.find((hoja) => hoja.tambienEn?.some((patron) => matchPath(patron, pathname)))
   if (porPatron) return porPatron
   return propias
