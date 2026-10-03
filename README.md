@@ -202,9 +202,30 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Lo común a los actos está en `src/portal`: `send` de `api.ts` lanza un `RentasError` con `faltan`, `errors` y
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
     caracteres, y su `MensajeDeError` traduce un fallo de red (`fetch` sin respuesta) a «No hubo respuesta del
-    servidor. Vuelva a intentarlo: el acto no se registra dos veces.»; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
-    cuenta puede hacer una acción; `StatCard` acepta la fecha de su cifra (`fecha`) y una `nota`. Las consultas cuelgan
-    de la clave `['infracciones', …]`.
+    servidor. Vuelva a intentarlo: el acto no se registra dos veces.»; `FaseBadge` / `BadgeDeMapa` muestran una fase o
+    un estado con un mapa explícito; `usePuede` dice si la cuenta puede hacer una acción; `StatCard` acepta la fecha de
+    su cifra (`fecha`) y una `nota`. Las consultas cuelgan de la clave `['infracciones', …]`.
+- **Anuncios y propaganda** (grupo del menú después de Infracciones administrativas; en el menú clásico, _Anuncios_
+  con sus páginas enlazadas entre sí). El estado (vigente, vencido, cesado, retirado), la vigencia que rige y la tasa
+  son del backend, a la fecha que muestra la pantalla; la pantalla no los deduce de las fechas. Un anuncio cesado o
+  retirado ya no rige: su vigencia se ve como «—» en el padrón, la ficha y las pestañas, nunca la de su último plazo.
+  - **Padrón de anuncios** (`/anuncios`): por titular, clase, estado y texto, con el estado y la vigencia a una fecha
+    (hoy, por omisión).
+  - **Nuevo anuncio** (`/anuncios/nuevo`): titular, predio opcional y los datos del anuncio, con observación. El backend
+    lo numera (`AN-AAAA-NNNNNN`) y devenga la tasa de su clase: la pantalla nunca manda una tasa. Cada intento de alta
+    lleva un `Idempotency-Key` propio que se repite en sus reintentos (una respuesta perdida, un 5xx); si el backend
+    responde que ya estaba registrado (200, `ya_existia`), la pantalla lo dice y no se devenga otra vez. Sin la tasa de
+    la clase, una alerta nombra la llave que falta (`TASA_ANUNCIO PANEL 2026`), nunca un 0.
+  - **Ficha del anuncio** (`/anuncios/:id`): sus datos, sus movimientos (acto, fecha, ejercicio, referencia de cargo,
+    tasa con su fecha, vigencia, motivo, observación), el estado y la vigencia al día (cesado o retirado: «—» con
+    «cesado el …» / «retirado el …», la fecha de su movimiento) y lo devengado con su fecha.
+    **Renovar**, **Cesar** y **Retirar** piden observación (y motivo, cesar y retirar); un acto que el estado no admite
+    (renovar un anuncio cesado o retirado, retirar sin cese previo) o que la cuenta no puede escribir (creación sobre
+    `movimiento_anuncio`) se ve deshabilitado y dice por qué.
+  - **Tasas de anuncios** (`/anuncios/tasas`): la tasa de cada clase en el año, con su vigencia, y las clases sin tasa.
+    El selector incluye el año siguiente, para revisar las tasas cargadas antes de que rijan.
+  - Pestaña **Anuncios** de las fichas de contribuyente y de predio (`?tab=anuncios`), con el estado al día.
+  - Las consultas cuelgan de la clave `['anuncios', …]` (`claves.anuncios`): un acto refresca padrón, ficha y pestañas.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

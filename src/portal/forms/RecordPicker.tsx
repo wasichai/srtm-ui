@@ -17,13 +17,15 @@ interface RecordPickerProps<T> {
   search: (q: string) => Promise<Pagina<T>>
   describe: (record: T) => Picked
   error?: string
+  // marked with an asterisk; an optional one (an anuncio's predio) can be left empty
+  requerido?: boolean
   // an optional pick: no asterisk, and a picked one can be removed
   onQuitar?: () => void
 }
 
 // search-as-you-type for a contribuyente or a predio: the titular of a declaration opened from a predio, a condómino,
-// the administrado of a notificación previa
-export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error, onQuitar }: RecordPickerProps<T>) {
+// the administrado of a notificación previa, an anuncio's titular
+export function RecordPicker<T>({ label, placeholder, value, onChange, search, describe, error, requerido = true, onQuitar }: RecordPickerProps<T>) {
   const [editing, setEditing] = useState(value === null)
   const id = useId()
   const [q, setQ] = useState('')
@@ -67,7 +69,7 @@ export function RecordPicker<T>({ label, placeholder, value, onChange, search, d
     <div className="space-y-1.5">
       <Label htmlFor={id}>
         {label}
-        {!onQuitar && <span className="text-danger"> *</span>}
+        {requerido && !onQuitar && <span className="text-danger"> *</span>}
       </Label>
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />

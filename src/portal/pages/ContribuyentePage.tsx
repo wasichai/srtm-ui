@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, FileText, Gavel, Landmark, MapPinned, Receipt } from 'lucide-react'
+import { Coins, FileText, Gavel, Landmark, MapPinned, Megaphone, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
@@ -15,6 +15,7 @@ import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
+import { AnunciosDe } from './AnunciosPages'
 import { ArbitriosDelContribuyente } from './Arbitrios'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
@@ -43,7 +44,8 @@ const PASOS: Record<string, number> = {
   predios: 5,
   declaraciones: 5,
   arbitrios: 5,
-  infracciones: 5
+  infracciones: 5,
+  anuncios: 5
 }
 
 // keyed by id: another contribuyente is a fresh ficha (first tab, this year), not this one reused
@@ -204,6 +206,16 @@ function ContribuyentePage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <InfraccionesDe de="contribuyentes" id={id} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'anuncios',
+                  label: 'Anuncios',
+                  icon: Megaphone,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <AnunciosDe de="contribuyentes" id={id} />
                     </div>
                   )
                 }

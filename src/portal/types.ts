@@ -1075,3 +1075,160 @@ export interface PlazosInfracciones {
   feriados: { fechas: string[]; parametro_id: string } | null
   faltan: string[]
 }
+
+// the tasa de anuncios y propaganda (SPEC §7, Anuncios): the estado, the vigencia in force and every tasa are the
+// backend's, never derived here; each travels with its date (vigentes_a, al_dia)
+export type ClaseAnuncio = 'LETRERO' | 'PANEL' | 'TOLDO' | 'BANDEROLA' | 'PANTALLA_DIGITAL' | 'GLOBO_AEROSTATICO'
+export type TipoAnuncio = 'AVISO_SIMPLE' | 'AVISO_LUMINOSO' | 'AVISO_ILUMINADO' | 'AVISO_ELECTRONICO'
+// only AUTORIZACION and RENOVACION accrue a tasa
+export type TipoMovimientoAnuncio = 'AUTORIZACION' | 'RENOVACION' | 'CESE' | 'RETIRO'
+// where an anuncio stands on a day: RETIRADO over CESADO over VENCIDO over VIGENTE
+export type EstadoAnuncio = 'VIGENTE' | 'VENCIDO' | 'CESADO' | 'RETIRADO'
+
+// an anuncio as written: never edited. numero AN-AAAA-NNNNNN; contribuyente is the titular's id
+export interface Anuncio {
+  id: string
+  anio: number
+  correlativo: number
+  numero: string
+  clase: ClaseAnuncio
+  tipo: TipoAnuncio
+  emplazamiento: string | null
+  forma: string | null
+  denominacion: string | null
+  direccion: string
+  area: number
+  lados: number
+  cantidad: number
+  fecha_autorizacion: string
+  vigencia_hasta: string | null
+  expediente: string | null
+  fecha_expediente: string | null
+  licencia_texto: string | null
+  clave_idempotencia?: string | null
+  observacion: string
+  contribuyente: string
+  predio: string | null
+}
+
+// an act on an anuncio (movimiento_anuncio), append only. one that accrues (AUTORIZACION, RENOVACION) carries its
+// ejercicio (anio), its stable charge reference (ANUNCIO-<id>-<anio>), the tasa copied from TASA_ANUNCIO and the
+// parámetro read; CESE and RETIRO carry a motivo instead
+export interface MovimientoAnuncio {
+  id: string
+  tipo: TipoMovimientoAnuncio
+  fecha: string
+  anio: number | null
+  referencia_cargo: string | null
+  tasa: number | null
+  vigencia_hasta: string | null
+  motivo: string | null
+  clave: string
+  observacion: string
+  anuncio: string
+  parametro: string | null
+}
+
+// what the backend derives of an anuncio on a day
+export interface EstadoAnuncioAlDia {
+  estado: EstadoAnuncio
+  // the vigencia_hasta of the last act that accrues: null is without term
+  vigencia_hasta_vigente: string | null
+}
+
+// a row of GET /srtm/anuncios: the estado at vigentes_a
+export interface AnuncioEnPadron extends Anuncio, EstadoAnuncioAlDia {
+  contribuyente_nombre: string | null
+  vigentes_a: string
+}
+
+export interface FiltrosAnuncios {
+  // the titular's id
+  contribuyente?: string
+  clase?: ClaseAnuncio
+  estado?: EstadoAnuncio
+  vigentes_a?: string
+  q?: string
+}
+
+// POST /srtm/anuncios: never a tasa (the backend reads it, and ignores one sent). lados and cantidad 1 and
+// fecha_autorizacion today when not given
+export interface NuevoAnuncio {
+  contribuyente: string
+  predio?: string | null
+  clase: ClaseAnuncio
+  tipo: TipoAnuncio
+  emplazamiento?: string | null
+  forma?: string | null
+  denominacion?: string | null
+  direccion: string
+  area: number
+  lados?: number
+  cantidad?: number
+  fecha_autorizacion?: string
+  vigencia_hasta?: string | null
+  expediente?: string | null
+  fecha_expediente?: string | null
+  licencia_texto?: string | null
+  observacion: string
+}
+
+// its answer: 201 with the anuncio and its AUTORIZACION; 200 and ya_existia on a resubmission with the same
+// Idempotency-Key, the first one's, nothing accrued again
+export interface AnuncioRegistrado {
+  anuncio: Anuncio
+  movimiento: MovimientoAnuncio
+  ya_existia: boolean
+}
+
+// whether an act is allowed now, and why not: optional, the backend may send it (else the ficha reads its estado)
+export interface AccionesAnuncio {
+  renovacion: AccionPermitida
+  cese: AccionPermitida
+  retiro: AccionPermitida
+}
+
+// GET /srtm/anuncios/{id}: estado and vigencia at al_dia; the tasas accrued (devengado) at its own al_dia
+export interface FichaAnuncio extends EstadoAnuncioAlDia {
+  anuncio: Anuncio
+  movimientos: MovimientoAnuncio[]
+  al_dia: string
+  devengado: { importe: number; al_dia: string }
+  acciones?: AccionesAnuncio
+}
+
+// POST /srtm/anuncios/{id}/renovacion: fecha today when not given
+export interface NuevaRenovacion {
+  fecha?: string
+  vigencia_hasta?: string | null
+  observacion: string
+}
+
+// POST /srtm/anuncios/{id}/cese and /retiro
+export interface NuevoCese {
+  fecha?: string
+  motivo: string
+  observacion: string
+}
+
+// a clase's tasa of a year: the TASA_ANUNCIO row read
+export interface TasaAnuncio {
+  clase: ClaseAnuncio
+  tasa: number
+  parametro_id: string
+  vigencia_desde: string
+}
+
+// GET /srtm/anuncios/tasas
+export interface TasasAnuncios {
+  anio: number
+  tasas: TasaAnuncio[]
+  // the clases without one ("TASA_ANUNCIO TOLDO 2026"): they are not authorized at 0
+  faltan: string[]
+}
+
+// GET /srtm/contribuyentes/{id}/anuncios and /srtm/predios/{id}/anuncios
+export interface AnunciosDe {
+  al_dia: string
+  anuncios: (Anuncio & EstadoAnuncioAlDia)[]
+}
