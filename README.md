@@ -114,6 +114,28 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     simple del padrón.
   - **Obra complementaria:** la categoría se elige del instructivo oficial y fija la unidad de medida. Sin catálogo
     cargado, se escribe a mano.
+- **Arbitrios** (grupo _Arbitrios_ del menú):
+  - Pestaña **Arbitrios** de las fichas de predio y de contribuyente (`?tab=arbitrios`): servicio por mes, el titular
+    de cada mes y los totales del backend con su fecha; un mes sin cuota lo dice, nunca un 0. Desde ahí se determinan
+    las cuotas que falten del año, con observación y permiso de creación sobre `cuota_arbitrio`.
+  - **Consulta de cuotas** (`/arbitrios`), **Tasas del año** (`/arbitrios/tasas`: la ordenanza, sus tasas, zonas, usos
+    y vencimientos, y lo que le falta al año) y **Determinación masiva** (`/arbitrios/determinaciones`).
+  - **Emisión masiva** (`/emisiones`): la HR y el PU de todo un año, y la HLA si se pide, en segundo plano.
+- **Infracciones administrativas** (grupo del menú entre Arbitrios y Emisión; en el menú clásico, _Infracciones_ con
+  sus páginas enlazadas entre sí):
+  - **CUIS** (`/infracciones/cuis`): el cuadro único de infracciones y sanciones vigente a una fecha (hoy, por
+    omisión), por materia y por código o descripción, con la multa de cada código a la UIT de ese día (primera,
+    segunda y tercera vez). Las multas las cifra el backend; la pantalla no multiplica nada. Sin UIT, una alerta nombra
+    lo que falta y ninguna multa aparece como 0.
+  - Un código no se edita: **Nueva versión** (o **Nuevo código**) crea una versión con su observación y cierra la
+    vigente el día anterior. Pide creación sobre `codigo_infraccion`; sin ese permiso los botones se ven deshabilitados
+    y dicen por qué.
+  - Lo común a los actos está en `src/portal`: `send` de `api.ts` lanza un `RentasError` con `faltan`, `errors` y
+    `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
+    caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
+    cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
+  - Expedientes, nueva acta, notificaciones previas, escalas y plazos y la pestaña de las fichas llegan en los PR
+    siguientes.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");
@@ -151,7 +173,7 @@ Backend y datos: ver el README de `srtm-backend` (`docker compose up -d`, `./gra
 ## Comandos
 
 ```bash
-yarn test            # vitest: admin (login, módulos) y portal (login, búsqueda, pestañas, fichas, edición), con fetch simulado
+yarn test            # vitest: admin (login, módulos) y portal (fichas, edición, arbitrios, emisión, infracciones…), con fetch simulado
 yarn typecheck
 yarn lint            # prettier --check (yarn format lo corrige)
 yarn build           # dist/, luego yarn preview
@@ -159,7 +181,7 @@ yarn build           # dist/, luego yarn preview
 
 ## Notas
 
-- Versión de wasichai-ui: `@wasichai/*` 0.2.1, igual en todos los paquetes. Para actualizar, cambiar la versión de
+- Versión de wasichai-ui: `@wasichai/*` 0.4.0, igual en todos los paquetes. Para actualizar, cambiar la versión de
   todos a la vez en `package.json`, alinear las dependencias que comparten (react-query, testing-library…) y correr
   `yarn install`. Luego reiniciar el servidor con `yarn dev --force`: Vite guarda los paquetes pre-empaquetados y, si
   no, sigue sirviendo la versión anterior.

@@ -1,0 +1,138 @@
+import { useMutation } from '@tanstack/react-query'
+import { ApiError } from '@wasichai/core'
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Label, Textarea } from '@wasichai/ui'
+import { Loader2 } from 'lucide-react'
+import { useId, useState, type FormEvent, type ReactNode } from 'react'
+import { errorMessage } from '../../kit/ui/errorMessage'
+import { RentasError } from '../api'
+import { Alerta } from './Alerta'
+
+// every act asks why (srtm.Observacion): 5 to 500 characters, kept in its row
+export const OBSERVACION_MINIMA = 5
+export const OBSERVACION_MAXIMA = 500
+
+export interface DialogoDeActoProps<T> {
+  titulo: string
+  descripcion?: ReactNode
+  // what the clerk should know before writing
+  avisos?: string[]
+  // the act's own fields, above the observación
+  children?: ReactNode
+  // whether the act's own fields can be sent (the observación is checked here)
+  completo?: boolean
+  // the help under the observación, before its length: "Por qué se determina"
+  porQue?: string
+  // the submit button: "Determinar", "Crear versión"
+  accion: string
+  // what a failure says when the backend says nothing usable
+  siFalla: string
+  // writes the act with the observación, trimmed
+  enviar: (observacion: string) => Promise<T>
+  // after it is written (refresh what reads it)
+  onExito?: (resultado: T) => unknown
+  // what the dialog says once written, with a button to close it; without it the dialog closes itself
+  exito?: (resultado: T) => ReactNode
+  onCerrar: () => void
+}
+
+// a failure in the portal's words: the backend's detail, what it lacks to compute (faltan) and the fields it refused
+export function MensajeDeError({ error, siFalla }: { error: unknown; siFalla: string }) {
+  const faltan = error instanceof RentasError ? error.faltan : []
+  const campos = error instanceof ApiError ? error.violations : []
+  return (
+    <>
+      {errorMessage(error, siFalla)}
+      {faltan.length > 0 && <> Falta: {faltan.join('; ')}.</>}
+      {campos.length > 0 && (
+        <ul className="mt-1 list-disc pl-5">
+          {campos.map((c) => (
+            <li key={`${c.field}-${c.message}`}>
+              {c.field}: {c.message}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  )
+}
+
+// the confirmation of an act (a determinación, a version of the CUIS, a descargo…): its fields, the observación with
+// its length, the submit disabled until both are valid, the backend's error inside, and what was written. the opener
+// mounts it while open and unmounts it on onCerrar, so each opening starts blank
+export function DialogoDeActo<T>({
+  titulo,
+  descripcion,
+  avisos = [],
+  children,
+  completo = true,
+  porQue = 'Por qué',
+  accion,
+  siFalla,
+  enviar,
+  onExito,
+  exito,
+  onCerrar
+}: DialogoDeActoProps<T>) {
+  const [observacion, setObservacion] = useState('')
+  const campo = useId()
+  const acto = useMutation({
+    mutationFn: () => enviar(observacion.trim()),
+    onSuccess: (resultado) => {
+      onExito?.(resultado)
+      if (!exito) onCerrar()
+    }
+  })
+  const largo = observacion.trim().length
+  const valida = largo >= OBSERVACION_MINIMA && largo <= OBSERVACION_MAXIMA
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    if (valida && completo && !acto.isPending) acto.mutate()
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onCerrar()}>
+      <DialogContent className="max-w-lg">
+        <DialogTitle className="text-lg font-semibold">{titulo}</DialogTitle>
+        {descripcion && <DialogDescription className="mb-3 text-sm text-ink-muted">{descripcion}</DialogDescription>}
+        {avisos.map((aviso) => (
+          <Alerta key={aviso} tono="aviso" className="mb-2">
+            {aviso}
+          </Alerta>
+        ))}
+        {acto.isSuccess && exito ? (
+          <div className="space-y-3">
+            {exito(acto.data)}
+            <div className="flex justify-end">
+              <Button onClick={onCerrar}>Cerrar</Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-3">
+            {children}
+            <div className="space-y-1">
+              <Label htmlFor={campo}>Observación</Label>
+              <Textarea id={campo} value={observacion} rows={3} maxLength={OBSERVACION_MAXIMA + 50} onChange={(e) => setObservacion(e.target.value)} />
+              <p className="text-xs text-ink-muted">
+                {porQue}: de {OBSERVACION_MINIMA} a {OBSERVACION_MAXIMA} caracteres ({largo}).
+              </p>
+            </div>
+            {acto.isError && (
+              <Alerta tono="error">
+                <MensajeDeError error={acto.error} siFalla={siFalla} />
+              </Alerta>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={onCerrar}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!valida || !completo || acto.isPending}>
+                {acto.isPending && <Loader2 className="size-4 animate-spin" />}
+                {accion}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
