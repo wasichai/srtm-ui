@@ -130,12 +130,19 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
   - Un código no se edita: **Nueva versión** (o **Nuevo código**) crea una versión con su observación y cierra la
     vigente el día anterior. Pide creación sobre `codigo_infraccion`; sin ese permiso los botones se ven deshabilitados
     y dicen por qué.
+  - **Notificaciones previas** (`/infracciones/notificaciones`): lo que se notificó antes de un acta, por número,
+    contribuyente y fechas, con su plazo, su vencimiento y si está vencida a una fecha (hoy, por omisión; el encabezado
+    la dice). Vencimiento y vencida son del backend (una sola definición): la pantalla no suma días. Cada fila dice si
+    se subsanó y cuándo, y abre el acta que originó. **Nueva notificación** (número del formulario, fecha, contribuyente
+    y predio opcionales, dirección, motivo, plazo en días opcional y observación) pide creación sobre
+    `notificacion_administrativa`; **Subsanar** (fecha, hoy si va en blanco, y observación) pide creación sobre
+    `subsanacion_notificacion` y se ve deshabilitado, con el porqué, si la fila ya está subsanada, ya tiene acta o está
+    vencida a esa fecha.
   - Lo común a los actos está en `src/portal`: `send` de `api.ts` lanza un `RentasError` con `faltan`, `errors` y
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
     caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
     cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
-  - Expedientes, nueva acta, notificaciones previas, escalas y plazos y la pestaña de las fichas llegan en los PR
-    siguientes.
+  - Expedientes, nueva acta, escalas y plazos y la pestaña de las fichas llegan en los PR siguientes.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

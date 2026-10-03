@@ -16,6 +16,7 @@ import type {
   DeterminacionMasiva,
   DocumentoEmision,
   FiltrosCuis,
+  FiltrosNotificaciones,
   FiltrosPredio,
   Domicilio,
   Emision,
@@ -26,6 +27,9 @@ import type {
   NuevaDeclaracion,
   NuevoCondomino,
   NuevaVersionCuis,
+  NuevaNotificacion,
+  NuevaSubsanacion,
+  NotificacionPrevia,
   ObraCategoria,
   ObraComplementaria,
   OtroFrente,
@@ -41,6 +45,7 @@ import type {
   Ubigeo,
   UnidadUrbana,
   UsoPredio,
+  SubsanacionNotificacion,
   VersionCuisCreada,
   Via
 } from './types'
@@ -284,5 +289,17 @@ export const rentas = {
   catalogoCuis: (filtros: FiltrosCuis = {}) => get<CatalogoCuis>(`/srtm/infracciones/cuis${query({ ...filtros })}`),
   // a new version of a code: it closes the one in force (answered as `cerrada`). 422 when it does not start after the
   // one in force, 400 for a field or the observación, 403 without CREATE on codigo_infraccion
-  crearVersionCuis: (body: NuevaVersionCuis) => send<VersionCuisCreada>('POST', '/srtm/infracciones/cuis', body)
+  crearVersionCuis: (body: NuevaVersionCuis) => send<VersionCuisCreada>('POST', '/srtm/infracciones/cuis', body),
+
+  // the notificaciones previas, each with what the backend derives at vencidas_a (today when not given): its
+  // vencimiento, whether it is vencida, its subsanación and the acta it led to. 422 names a filter it cannot read
+  notificaciones: (filtros: FiltrosNotificaciones, page: number, size = PAGE_SIZE) =>
+    get<Pagina<NotificacionPrevia>>(`/srtm/infracciones/notificaciones${query({ ...filtros, page, size })}`),
+  // 201 with the record and its derivados. 404 for a contribuyente that does not exist, 409 for a número already
+  // written, 400 for a field or the observación, 403 without CREATE on notificacion_administrativa
+  registrarNotificacion: (body: NuevaNotificacion) => send<NotificacionPrevia>('POST', '/srtm/infracciones/notificaciones', body),
+  // fecha today when not given. 422 when vencida at that fecha, when it already has an acta or for a future fecha; 409
+  // when already subsanada; 403 without CREATE on subsanacion_notificacion
+  subsanarNotificacion: (id: string, body: NuevaSubsanacion) =>
+    send<SubsanacionNotificacion>('POST', `/srtm/infracciones/notificaciones/${id}/subsanacion`, body)
 }
