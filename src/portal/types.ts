@@ -743,7 +743,10 @@ export interface NotificacionPrevia extends NotificacionAdministrativa {
 }
 
 export interface FiltrosNotificaciones {
+  // the número exactly
   numero?: string
+  // part of the número, whatever its case (the picker of the nueva acta)
+  q?: string
   contribuyente?: string
   desde?: string
   hasta?: string
@@ -996,6 +999,21 @@ export interface AccionPermitida {
   motivo: string | null
 }
 
+// a resolución in the ficha: its notificaciones, and whether one can be added now (not once the acta is anulada or
+// dejada sin efecto: nothing is left to notify)
+export type ResolucionDelExpediente = ResolucionGerencia & {
+  notificaciones: NotificacionResolucion[]
+  acciones?: { notificacion: AccionPermitida }
+}
+
+// who and what the acta is about, as the backend reads them (the acta keeps only ids): the obligado with its
+// domicilio fiscal (null when it has none), the contribuyente and the predio when the acta names them
+export interface PartesExpediente {
+  obligado: { id: string; nombre: string; documento: string | null; domicilio_fiscal: string | null }
+  contribuyente: { id: string; nombre: string; documento: string | null } | null
+  predio: { id: string; codigo: string | null; direccion: string | null } | null
+}
+
 // GET /srtm/infracciones/actas/{id}
 export interface ExpedienteInfraccion {
   acta: Papeleta
@@ -1005,12 +1023,14 @@ export interface ExpedienteInfraccion {
   notificacion_previa: NotificacionAdministrativa | null
   actos: ActoExpediente[]
   descargos: DescargoPapeleta[]
-  resoluciones: (ResolucionGerencia & { notificaciones: NotificacionResolucion[] })[]
+  resoluciones: ResolucionDelExpediente[]
   anulacion: AnulacionPapeleta | null
   fase: FaseProcedimiento | null
   fase_al_dia: string
   estado_de_la_deuda: EstadoDeuda
   acciones: { descargo: AccionPermitida; resolucion: AccionPermitida; anulacion: AccionPermitida }
+  // absent from an older backend: the ficha then links the ids alone
+  partes?: PartesExpediente
 }
 
 // GET /srtm/infracciones/panel
@@ -1031,4 +1051,27 @@ export interface PanelInfracciones {
 export interface InfraccionesDe {
   al_dia: string
   actas: Procedimiento[]
+}
+
+// a PLAZO in force for a year (DESCARGO_PAPELETA, RG_RECURSO): the parametro_tributario row read
+export interface PlazoCargado {
+  clave: string
+  dias: number
+  // DIAS_HABILES
+  unidad: string
+  // "5 DIAS_HABILES"
+  texto: string
+  vigencia_desde: string
+  vigencia_hasta: string | null
+  parametro_id: string
+}
+
+// GET /srtm/infracciones/plazos?anio: the PLAZO in force on 1 January (or on al_dia in the current year) and the
+// year's FERIADOS; what is not loaded is named in faltan ("PLAZO RG_RECURSO 2027", "FERIADOS 2027")
+export interface PlazosInfracciones {
+  anio: number
+  al_dia: string
+  plazos: PlazoCargado[]
+  feriados: { fechas: string[]; parametro_id: string } | null
+  faltan: string[]
 }

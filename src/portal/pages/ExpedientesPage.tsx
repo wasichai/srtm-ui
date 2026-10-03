@@ -11,11 +11,13 @@ import { NUMERICA } from '../components/tabla'
 import { usePuede } from '../components/permisos'
 import { useActas } from '../queries'
 import type { FaseProcedimiento, FiltrosActas, Pagina, Procedimiento } from '../types'
+import { PanelInfracciones } from './PanelInfracciones'
 import { SubnavInfracciones } from './SubnavInfracciones'
 
 // the expedientes: every acta with its multa as frozen on fecha_calculo, where its procedure stands at fase_al_dia and
 // its estado de la deuda, both the backend's (SPEC §6): nothing here decides a fase. the fase and the estado are two
-// columns with their own names, never one in place of the other. a row opens the expediente's ficha
+// columns with their own names, never one in place of the other. a row opens the expediente's ficha. the year's panel
+// heads the page
 
 interface Borrador {
   numero: string
@@ -71,6 +73,8 @@ export function ExpedientesPage() {
           {!puede && <p className="text-xs text-ink-muted">Sin permiso: registrar un acta pide creación sobre las papeletas.</p>}
         </div>
       </div>
+
+      <PanelInfracciones />
 
       <Card>
         <CardBody>

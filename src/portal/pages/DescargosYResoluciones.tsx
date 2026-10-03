@@ -544,6 +544,28 @@ export function Descargos({ expediente: e }: { expediente: ExpedienteInfraccion 
 const fallo = (r: ResolucionGerencia) =>
   r.sentido || r.efecto ? [r.sentido && (SENTIDOS[r.sentido] ?? r.sentido), r.efecto && (EFECTOS[r.efecto] ?? r.efecto)].filter(Boolean).join(' · ') : null
 
+// why the legal order does not let a resolución be notified now (the backend's: an acta anulada or dejada sin efecto
+// leaves nothing to notify); an older backend that sends no acciones impedes nothing
+const impedimentoDeNotificar = (r: Resolucion) => {
+  const accion = r.acciones?.notificacion
+  return accion && !accion.permitida ? (accion.motivo ?? 'El estado del expediente no lo admite.') : null
+}
+
+// the PDF and «Notificar», with under them why the legal order impedes notifying (the account's reason is said once,
+// under the table)
+function AccionesDeResolucion({ resolucion: r, sinPermiso }: { resolucion: Resolucion; sinPermiso: string | null }) {
+  const impedida = impedimentoDeNotificar(r)
+  return (
+    <>
+      <div className="whitespace-nowrap">
+        <VerPdfResolucion resolucion={r} />
+        <Notificar resolucion={r} motivo={impedida ?? sinPermiso} />
+      </div>
+      {impedida && <p className="ml-auto max-w-xs text-right text-xs text-ink-muted">{impedida}</p>}
+    </>
+  )
+}
+
 export function Resoluciones({ expediente: e }: { expediente: ExpedienteInfraccion }) {
   const puedeNotificar = usePuede('notificacion_resolucion')
   const sinPermiso = puedeNotificar ? null : 'Sin permiso: notificar pide creación sobre las notificaciones de resolución.'
@@ -585,9 +607,8 @@ export function Resoluciones({ expediente: e }: { expediente: ExpedienteInfracci
                   <Td>{formatText(r.sancion_accesoria)}</Td>
                   <Td>{r.plazo_texto}</Td>
                   <Td>{r.notificaciones.length === 0 ? 'Sin notificar' : `${r.notificaciones.length} intento${r.notificaciones.length === 1 ? '' : 's'}`}</Td>
-                  <Td className="whitespace-nowrap text-right">
-                    <VerPdfResolucion resolucion={r} />
-                    <Notificar resolucion={r} motivo={sinPermiso} />
+                  <Td className="text-right">
+                    <AccionesDeResolucion resolucion={r} sinPermiso={sinPermiso} />
                   </Td>
                 </tr>
               ))}

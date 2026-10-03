@@ -55,15 +55,16 @@ export const NAV_TREE: NodoNav[] = [
     ]
   },
   // the multas administrativas (SPEC §8.2): the expedientes (an acta's ficha is Expedientes'), a new acta, the
-  // notificaciones previas with their subsanación, and the CUIS in force on a day, with each code's multa at that day's
-  // UIT. the épica's later PRs add Escalas y plazos, with its route
+  // notificaciones previas with their subsanación, the CUIS in force on a day, with each code's multa at that day's UIT,
+  // and Escalas y plazos (the padrones of the vencidas and where the plazos are loaded)
   {
     label: 'Infracciones administrativas',
     hijos: [
       { label: 'Expedientes', to: '/infracciones', tambienEn: ['/infracciones/:id'] },
       { label: 'Nueva acta', to: '/infracciones/nueva' },
       { label: 'Notificaciones previas', to: '/infracciones/notificaciones' },
-      { label: 'CUIS', to: '/infracciones/cuis' }
+      { label: 'CUIS', to: '/infracciones/cuis' },
+      { label: 'Escalas y plazos', to: '/infracciones/plazos' }
     ]
   },
   // the HR and PU of a whole year, in the background

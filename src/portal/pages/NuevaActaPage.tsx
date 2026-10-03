@@ -26,9 +26,10 @@ const describirNotificacion = (n: NotificacionPrevia): Picked => ({
   label: `${n.numero} · ${formatDate(n.fecha)} · ${n.contribuyente_nombre ?? n.direccion}`
 })
 
-// the notificaciones previas an acta may come from: not subsanadas, and without an acta of their own
-async function previasAbiertas(numero: string): Promise<Pagina<NotificacionPrevia>> {
-  const pagina = await rentas.notificaciones({ numero }, 0, 8)
+// the notificaciones previas an acta may come from: not subsanadas, and without an acta of their own. q finds them by
+// part of their número (numero would ask for it exactly)
+async function previasAbiertas(q: string): Promise<Pagina<NotificacionPrevia>> {
+  const pagina = await rentas.notificaciones({ q }, 0, 8)
   return { ...pagina, content: pagina.content.filter((n) => !n.subsanada && !n.acta) }
 }
 
@@ -261,7 +262,7 @@ export function NuevaActaPage() {
             <p className="text-xs text-ink-muted">El contribuyente o el predio: al menos uno de los dos.</p>
             <RecordPicker
               label="Notificación previa"
-              placeholder="Número de la notificación"
+              placeholder="Número o parte de él"
               value={b.notificacion_previa}
               onChange={(notificacion_previa) => setB({ ...b, notificacion_previa })}
               onQuitar={() => setB({ ...b, notificacion_previa: null })}

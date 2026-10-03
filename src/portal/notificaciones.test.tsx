@@ -165,8 +165,11 @@ describe('Notificaciones previas', () => {
       null,
       null,
       `${year}-02-15`,
-      2
+      2,
+      null
     ])
+    // the partial search of the nueva acta's picker is a key of its own
+    expect(claves.notificaciones({ q: 'np-00' }, 0).at(-1)).toBe('np-00')
   })
 
   it('registers one with its observación, the body as the backend takes it, and reads the list again', async () => {
@@ -378,7 +381,8 @@ describe('menú de las notificaciones previas', () => {
       ['Expedientes', '/infracciones'],
       ['Nueva acta', '/infracciones/nueva'],
       ['Notificaciones previas', '/infracciones/notificaciones'],
-      ['CUIS', '/infracciones/cuis']
+      ['CUIS', '/infracciones/cuis'],
+      ['Escalas y plazos', '/infracciones/plazos']
     ])
   })
 })

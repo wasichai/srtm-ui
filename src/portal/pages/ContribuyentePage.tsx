@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, FileText, Landmark, MapPinned, Receipt } from 'lucide-react'
+import { Coins, FileText, Gavel, Landmark, MapPinned, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
@@ -20,6 +20,7 @@ import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
+import { InfraccionesDe } from './InfraccionesDe'
 import { VerHla, VerHr } from './VerPdf'
 
 // the srtm's registro de contribuyente, in its order, then what rentas adds: the year's predios and every declaration
@@ -33,7 +34,17 @@ export const CONTRIBUYENTE_TABS = [
 
 // the inscription wizard's steps (pp. 4, 7, 9): Domicilios right away; once a fiscal domicilio is active, Relacionados,
 // and then each tab opens the next when it is visited. rentas' own tabs come after the srtm's last
-const PASOS: Record<string, number> = { datos: 0, domicilios: 1, relacionados: 2, contacto: 3, sustento: 4, predios: 5, declaraciones: 5, arbitrios: 5 }
+const PASOS: Record<string, number> = {
+  datos: 0,
+  domicilios: 1,
+  relacionados: 2,
+  contacto: 3,
+  sustento: 4,
+  predios: 5,
+  declaraciones: 5,
+  arbitrios: 5,
+  infracciones: 5
+}
 
 // keyed by id: another contribuyente is a fresh ficha (first tab, this year), not this one reused
 export function ContribuyenteRoute() {
@@ -183,6 +194,16 @@ function ContribuyentePage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <ArbitriosDelContribuyente id={id} anio={anio} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'infracciones',
+                  label: 'Infracciones',
+                  icon: Gavel,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <InfraccionesDe de="contribuyentes" id={id} />
                     </div>
                   )
                 }

@@ -86,7 +86,13 @@ describe('NAV_TREE', () => {
       ['Arbitrios', ['Consulta de cuotas /arbitrios', 'Tasas del año /arbitrios/tasas', 'Determinación masiva /arbitrios/determinaciones']],
       [
         'Infracciones administrativas',
-        ['Expedientes /infracciones', 'Nueva acta /infracciones/nueva', 'Notificaciones previas /infracciones/notificaciones', 'CUIS /infracciones/cuis']
+        [
+          'Expedientes /infracciones',
+          'Nueva acta /infracciones/nueva',
+          'Notificaciones previas /infracciones/notificaciones',
+          'CUIS /infracciones/cuis',
+          'Escalas y plazos /infracciones/plazos'
+        ]
       ],
       ['Emisión', ['Emisión masiva /emisiones']],
       'Administración /admin'
@@ -120,6 +126,7 @@ describe('NAV_TREE', () => {
     ['/infracciones/nueva', 'Nueva acta'],
     ['/infracciones/notificaciones', 'Notificaciones previas'],
     ['/infracciones/cuis', 'CUIS'],
+    ['/infracciones/plazos', 'Escalas y plazos'],
     ['/contribuyentesx', undefined],
     ['/admin', undefined]
   ])('on %s the current leaf is %s', (path, label) => {
@@ -200,6 +207,7 @@ describe('portal-tributario tree menu', () => {
       ['Nueva acta', '/infracciones/nueva'],
       ['Notificaciones previas', '/infracciones/notificaciones'],
       ['CUIS', '/infracciones/cuis'],
+      ['Escalas y plazos', '/infracciones/plazos'],
       ['Emisión masiva', '/emisiones'],
       ['Administración', '/admin']
     ])

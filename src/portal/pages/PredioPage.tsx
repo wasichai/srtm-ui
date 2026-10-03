@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, Landmark, MapPin, Receipt, Users } from 'lucide-react'
+import { Coins, Gavel, Landmark, MapPin, Receipt, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { rentas } from '../api'
@@ -18,6 +18,7 @@ import { camposDe } from './DeclaracionPage'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
+import { InfraccionesDe } from './InfraccionesDe'
 import { VerPu } from './VerPdf'
 
 export function PredioRoute() {
@@ -119,6 +120,16 @@ function PredioPage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <ArbitriosDelPredio id={id} anio={anio} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'infracciones',
+                  label: 'Infracciones',
+                  icon: Gavel,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <InfraccionesDe de="predios" id={id} />
                     </div>
                   )
                 }
