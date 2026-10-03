@@ -633,3 +633,402 @@ export interface DeterminacionMasiva {
   iniciado: string | null
   terminado: string | null
 }
+
+// the infracciones administrativas (SPEC §7, Multas): every amount, fase and due date is the backend's, never computed
+// here; every figure travels with its date. dates are ISO, money a number with two decimals
+export type FamiliaInfraccion = 'ADMINISTRATIVA'
+export type GradoReincidencia = 'PRIMERA' | 'SEGUNDA' | 'TERCERA_O_MAS'
+export type TipoRecurso = 'DESCARGO' | 'RECONSIDERACION' | 'APELACION' | 'NULIDAD'
+export type TipoResolucionGerencia = 'ADMINISTRATIVA' | 'RECURSO'
+export type SentidoFallo = 'FUNDADO' | 'FUNDADO_EN_PARTE' | 'INFUNDADO' | 'IMPROCEDENTE'
+export type EfectoMulta = 'SE_MANTIENE' | 'SE_DEJA_SIN_EFECTO' | 'SE_REDUCE'
+export type ModalidadNotificacion = 'PERSONAL' | 'CEDULON' | 'PUBLICACION' | 'CORREO'
+export type ResultadoNotificacion = 'NOTIFICADO' | 'NO_UBICADO' | 'RECHAZADO'
+// where an acta's procedure stands on a day (fase_al_dia): null once ANULADA or DEJADA_SIN_EFECTO
+export type FaseProcedimiento = 'PREVENTIVA' | 'CONSTATADA' | 'SANCIONADA'
+// what is left of the multa: never PAGADA nor COACTIVA, srtm has no collection
+export type EstadoDeuda = 'PENDIENTE' | 'ANULADA' | 'DEJADA_SIN_EFECTO'
+
+// a version of a CUIS code (codigo_infraccion): in force from vigencia_desde to vigencia_hasta (open when null). the
+// porcentajes are alícuotas of the UIT: the first time, the second and the third or more
+export interface CodigoInfraccion {
+  id: string
+  familia: FamiliaInfraccion
+  codigo: string
+  descripcion: string
+  materia: string | null
+  porcentaje_uit: number
+  porcentaje_uit_segunda: number | null
+  porcentaje_uit_tercera: number | null
+  medida_complementaria: string | null
+  base_legal: string
+  vigencia_desde: string
+  vigencia_hasta: string | null
+  observacion: string
+  clave: string
+  clave_vigente: string | null
+}
+
+// a code of the catalog with its multas at the UIT of vigentes_a: null without UIT, or without the grade's %
+export interface Cuis extends CodigoInfraccion {
+  multa: number | null
+  multa_segunda: number | null
+  multa_tercera: number | null
+}
+
+// the UIT a figure was computed with: the parametro_tributario row read
+export interface UitAplicada {
+  valor: number
+  anio: number
+  parametro_id: string
+}
+
+export interface FiltrosCuis {
+  vigentes_a?: string
+  materia?: string
+  // the code or the description
+  q?: string
+}
+
+// GET /srtm/infracciones/cuis
+export interface CatalogoCuis {
+  vigentes_a: string
+  uit: UitAplicada | null
+  // what keeps a multa from being computed ("UIT 2026")
+  faltan: string[]
+  codigos: Cuis[]
+}
+
+// POST /srtm/infracciones/cuis: familia ADMINISTRATIVA when not given
+export interface NuevaVersionCuis {
+  familia?: FamiliaInfraccion
+  codigo: string
+  descripcion: string
+  materia?: string | null
+  porcentaje_uit: number
+  porcentaje_uit_segunda?: number | null
+  porcentaje_uit_tercera?: number | null
+  medida_complementaria?: string | null
+  base_legal: string
+  vigencia_desde: string
+  observacion: string
+}
+
+// its 201: the new version, and the one it closed (its vigencia_hasta set) if one was in force
+export interface VersionCuisCreada extends CodigoInfraccion {
+  cerrada: CodigoInfraccion | null
+}
+
+// a notificación previa (notificacion_administrativa) as written
+export interface NotificacionAdministrativa {
+  id: string
+  numero: string
+  fecha: string
+  direccion: string
+  motivo: string
+  plazo_dias: number | null
+  observacion: string
+  contribuyente: string | null
+  predio: string | null
+}
+
+// a row of GET /srtm/infracciones/notificaciones (and por-contribuyente): with what the backend derives at vencidas_a
+export interface NotificacionPrevia extends NotificacionAdministrativa {
+  vencimiento: string | null
+  vencida: boolean
+  vencidas_a: string
+  subsanada: { fecha: string } | null
+  acta: { id: string; numero: string } | null
+  contribuyente_nombre: string | null
+}
+
+export interface FiltrosNotificaciones {
+  numero?: string
+  contribuyente?: string
+  desde?: string
+  hasta?: string
+  vencidas_a?: string
+}
+
+// a row of GET /srtm/infracciones/notificaciones/vencidas: not subsanada, without acta, overdue at corte
+export interface NotificacionVencida extends NotificacionAdministrativa {
+  vencimiento: string
+  corte: string
+  contribuyente_nombre?: string | null
+}
+
+export interface NuevaNotificacion {
+  numero: string
+  fecha: string
+  contribuyente?: string | null
+  predio?: string | null
+  direccion: string
+  motivo: string
+  plazo_dias?: number | null
+  observacion: string
+}
+
+// POST …/notificaciones/{id}/subsanacion: fecha today when not given
+export interface NuevaSubsanacion {
+  fecha?: string
+  observacion: string
+}
+
+export interface SubsanacionNotificacion {
+  id: string
+  fecha: string
+  observacion: string
+  clave: string
+  notificacion: string
+}
+
+// the multa of an acta, frozen when it was written: the UIT and the % copied from the parámetro and the CUIS
+export interface Desglose {
+  base_imponible: number
+  porcentaje_infraccion: number
+  importe_infraccion: number
+  porcentaje_a_cobrar: number
+  importe_a_pagar: number
+  importe_con_beneficio: number | null
+  fecha_calculo?: string
+}
+
+// an acta (papeleta) as written
+export interface Papeleta {
+  id: string
+  familia: FamiliaInfraccion
+  numero: string
+  clave: string
+  fecha_infraccion: string
+  hora_infraccion: string | null
+  lugar: string
+  expediente: string | null
+  inspector: string | null
+  descripcion_hecho: string | null
+  reincidencia: GradoReincidencia
+  medida_complementaria: string | null
+  base_imponible: number
+  porcentaje_infraccion: number
+  importe_infraccion: number
+  porcentaje_a_cobrar: number
+  importe_a_pagar: number
+  importe_con_beneficio: number | null
+  fecha_calculo: string
+  observacion: string
+  codigo_infraccion: string
+  uit: string
+  obligado: string
+  contribuyente: string | null
+  predio: string | null
+  notificacion_previa: string | null
+}
+
+// POST /srtm/infracciones/actas: codigo is the CUIS code's text
+export interface NuevaActa {
+  numero: string
+  fecha_infraccion: string
+  hora_infraccion?: string | null
+  lugar: string
+  codigo: string
+  reincidencia: GradoReincidencia
+  obligado: string
+  contribuyente?: string | null
+  predio?: string | null
+  notificacion_previa?: string | null
+  expediente?: string | null
+  inspector?: string | null
+  descripcion_hecho?: string | null
+  observacion: string
+}
+
+// its 201: the acta, its stable reference (PAPELETA-<id>) and its multa
+export interface ActaCreada extends Papeleta {
+  referencia: string
+  desglose: Desglose
+}
+
+// a row of GET /srtm/infracciones/actas (and of a contribuyente's or predio's infracciones)
+export interface Procedimiento {
+  id: string
+  numero: string
+  fecha_infraccion: string
+  administrado: string | null
+  documento: string | null
+  codigo: string
+  descripcion_infraccion: string | null
+  porcentaje_infraccion: number
+  importe_a_pagar: number
+  fecha_calculo: string
+  medida_complementaria: string | null
+  fase: FaseProcedimiento | null
+  fase_al_dia: string
+  estado_de_la_deuda: EstadoDeuda
+}
+
+export interface FiltrosActas {
+  numero?: string
+  // documento or nombre (contains)
+  administrado?: string
+  codigo?: string
+  fase?: FaseProcedimiento
+  desde?: string
+  hasta?: string
+}
+
+export interface AnulacionPapeleta {
+  id: string
+  fecha: string
+  motivo: string
+  observacion: string
+  clave: string
+  papeleta: string
+}
+
+export interface NuevaAnulacion {
+  motivo: string
+  fecha?: string
+  observacion: string
+}
+
+export interface DescargoPapeleta {
+  id: string
+  numero_expediente: string
+  tipo_recurso: TipoRecurso
+  fecha: string
+  presentado_hasta: string
+  en_plazo: boolean
+  // the plazo copied: "5 DIAS_HABILES"
+  plazo_texto: string
+  sustento: string
+  observacion: string
+  papeleta: string
+  plazo: string
+}
+
+export interface NuevoDescargo {
+  numero_expediente: string
+  tipo_recurso: TipoRecurso
+  fecha: string
+  sustento: string
+  observacion: string
+}
+
+// a resolución: RIS-AAAA-NNNNNN (ADMINISTRATIVA, one per acta) or RGR-AAAA-NNNNNN (RECURSO, resolving a descargo)
+export interface ResolucionGerencia {
+  id: string
+  tipo: TipoResolucionGerencia
+  anio: number
+  correlativo: number
+  numero: string
+  fecha: string
+  sentido: SentidoFallo | null
+  efecto: EfectoMulta | null
+  sancion_accesoria: string | null
+  sustento: string
+  plazo_texto: string
+  clave_ris: string | null
+  clave_descargo: string | null
+  observacion: string
+  papeleta: string
+  descargo: string | null
+  plazo: string
+}
+
+export interface NuevaResolucion {
+  tipo: TipoResolucionGerencia
+  descargo?: string | null
+  sentido?: SentidoFallo | null
+  efecto?: EfectoMulta | null
+  fecha?: string
+  sustento: string
+  sancion_accesoria?: string | null
+  observacion: string
+}
+
+export interface NotificacionResolucion {
+  id: string
+  intento: number
+  clave: string
+  fecha_diligencia: string
+  modalidad: ModalidadNotificacion
+  resultado: ResultadoNotificacion
+  notificador: string
+  direccion: string
+  receptor: string | null
+  documento_receptor: string | null
+  vinculo: string | null
+  acuse: string | null
+  // only when it takes effect (NOTIFICADO or RECHAZADO)
+  exigible_desde: string | null
+  plazo_texto: string | null
+  observacion: string
+  resolucion: string
+  plazo: string | null
+}
+
+// without direccion, the obligado's domicilio fiscal in force at the diligencia
+export interface NuevaNotificacionResolucion {
+  fecha_diligencia?: string
+  modalidad: ModalidadNotificacion
+  resultado: ResultadoNotificacion
+  notificador: string
+  direccion?: string | null
+  receptor?: string | null
+  documento_receptor?: string | null
+  vinculo?: string | null
+  acuse?: string | null
+  observacion: string
+}
+
+// one act of an expediente, in legal order: notificación previa, acta, descargos, resoluciones, notificaciones, anulación
+export interface ActoExpediente {
+  orden: number
+  acto: string
+  fecha: string
+  documento: string | null
+  id: string
+  detalle: string | null
+}
+
+// whether the legal order and the account allow an action now, and why not
+export interface AccionPermitida {
+  permitida: boolean
+  motivo: string | null
+}
+
+// GET /srtm/infracciones/actas/{id}
+export interface ExpedienteInfraccion {
+  acta: Papeleta
+  referencia: string
+  // the version used on the day of the infracción
+  codigo_infraccion: CodigoInfraccion
+  notificacion_previa: NotificacionAdministrativa | null
+  actos: ActoExpediente[]
+  descargos: DescargoPapeleta[]
+  resoluciones: (ResolucionGerencia & { notificaciones: NotificacionResolucion[] })[]
+  anulacion: AnulacionPapeleta | null
+  fase: FaseProcedimiento | null
+  fase_al_dia: string
+  estado_de_la_deuda: EstadoDeuda
+  acciones: { descargo: AccionPermitida; resolucion: AccionPermitida; anulacion: AccionPermitida }
+}
+
+// GET /srtm/infracciones/panel
+export interface PanelInfracciones {
+  anio: number
+  al_dia: string
+  actas: number
+  resoluciones: number
+  notificadas: number
+  vencen_esta_semana: number
+  semana: { desde: string; hasta: string }
+  // there is no collection in srtm: always null, and nota says so
+  coactiva: null
+  nota: string
+}
+
+// GET /srtm/contribuyentes/{id}/infracciones and /srtm/predios/{id}/infracciones
+export interface InfraccionesDe {
+  al_dia: string
+  actas: Procedimiento[]
+}

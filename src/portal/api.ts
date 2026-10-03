@@ -2,6 +2,7 @@ import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
   ArbitriosContribuyente,
+  CatalogoCuis,
   CatastroFiscal,
   Catalogos,
   CategoriaValor,
@@ -14,6 +15,7 @@ import type {
   DeclaracionJurada,
   DeterminacionMasiva,
   DocumentoEmision,
+  FiltrosCuis,
   FiltrosPredio,
   Domicilio,
   Emision,
@@ -23,6 +25,7 @@ import type {
   NivelConstruccion,
   NuevaDeclaracion,
   NuevoCondomino,
+  NuevaVersionCuis,
   ObraCategoria,
   ObraComplementaria,
   OtroFrente,
@@ -38,6 +41,7 @@ import type {
   Ubigeo,
   UnidadUrbana,
   UsoPredio,
+  VersionCuisCreada,
   Via
 } from './types'
 
@@ -62,18 +66,58 @@ export interface TitularPu {
   documento: string | null
 }
 
-// srtm-backend's problem+json, with what the PDFs add: the titulares to pick from (409 of the PU) and the year's
-// parámetros that are missing (422 of the HR)
+// srtm-backend's problem+json, with what core's client drops: the titulares to pick from (409 of the PU) and the
+// parámetros that are missing (`faltan`, any 422 that cannot compute a figure). `errors` are core's violations by
+// their problem+json name, `detail` the problem's own (null when it sent only a title)
 export class RentasError extends ApiError {
   constructor(
     status: number,
     message: string,
     violations: FieldViolation[] = [],
     readonly titulares: TitularPu[] = [],
-    readonly faltan: string[] = []
+    readonly faltan: string[] = [],
+    readonly detail: string | null = null
   ) {
     super(status, message, violations)
   }
+
+  get errors(): FieldViolation[] {
+    return this.violations
+  }
+}
+
+// a failed answer as a RentasError (signing out on a 401, as core's client does): what blob and send throw. its message
+// is the detail, else the title, else the status text, else `sinTexto` (core's client leaves it blank: errorMessage's
+// fallback then speaks)
+async function problema(response: Response, sinTexto = ''): Promise<RentasError> {
+  if (response.status === 401) {
+    client.setToken(null)
+    onUnauthorized?.()
+  }
+  const text = await response.text().catch(() => '')
+  let problem: Record<string, unknown> = {}
+  try {
+    problem = text ? ((JSON.parse(text) as Record<string, unknown> | null) ?? {}) : {}
+  } catch {
+    problem = {}
+  }
+  const texto = (valor: unknown) => (typeof valor === 'string' && valor ? valor : null)
+  const lista = <T>(valor: unknown) => (Array.isArray(valor) ? (valor as T[]) : [])
+  return new RentasError(
+    response.status,
+    texto(problem.detail) ?? texto(problem.title) ?? (response.statusText || sinTexto),
+    lista<FieldViolation>(problem.errors),
+    lista<TitularPu>(problem.titulares),
+    lista<unknown>(problem.faltan).map(String),
+    texto(problem.detail)
+  )
+}
+
+const autorizado = (extra?: HeadersInit) => {
+  const headers = new Headers(extra)
+  const token = client.getToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  return headers
 }
 
 // the file name of a Content-Disposition: filename*=UTF-8''… (RFC 5987) before filename="…"
@@ -94,38 +138,25 @@ function nombreDeArchivo(disposition: string | null): string | null {
 // a file (the PU, the HR, a mass emission's): client.request only reads JSON, so it is fetched here, with the same
 // token, the same sign-out on a 401 and the same problem+json errors
 async function blob(path: string): Promise<{ blob: Blob; filename: string }> {
-  const headers = new Headers()
-  const token = client.getToken()
-  if (token) headers.set('Authorization', `Bearer ${token}`)
-  const response = await fetch(`${client.baseUrl}${path}`, { headers })
-  if (!response.ok) {
-    if (response.status === 401) {
-      client.setToken(null)
-      onUnauthorized?.()
-    }
-    const text = await response.text().catch(() => '')
-    let problem: Record<string, unknown> = {}
-    try {
-      problem = text ? ((JSON.parse(text) as Record<string, unknown> | null) ?? {}) : {}
-    } catch {
-      problem = {}
-    }
-    const texto = (valor: unknown) => (typeof valor === 'string' && valor ? valor : null)
-    const lista = <T>(valor: unknown) => (Array.isArray(valor) ? (valor as T[]) : [])
-    throw new RentasError(
-      response.status,
-      texto(problem.detail) ?? texto(problem.title) ?? (response.statusText || `Error ${response.status}`),
-      lista<FieldViolation>(problem.errors),
-      lista<TitularPu>(problem.titulares),
-      lista<unknown>(problem.faltan).map(String)
-    )
-  }
+  const response = await fetch(`${client.baseUrl}${path}`, { headers: autorizado() })
+  if (!response.ok) throw await problema(response, `Error ${response.status}`)
   const archivo = nombreDeArchivo(response.headers.get('Content-Disposition')) ?? path.split('?')[0].split('/').filter(Boolean).join('-')
   return { blob: await response.blob(), filename: archivo }
 }
 
 const get = <T>(path: string) => client.request<T>(path)
-const send = <T>(method: 'POST' | 'PUT', path: string, body: unknown) => client.request<T>(path, { method, body: JSON.stringify(body) })
+
+// a write with a JSON body: like client.request, but a failure is a RentasError that keeps the problem's `faltan`
+// (core's drops it), and it takes headers of its own (an Idempotency-Key). 204 or an empty body answer undefined
+export async function send<T>(method: 'POST' | 'PUT', path: string, body: unknown, headers?: HeadersInit): Promise<T> {
+  const cabeceras = autorizado(headers)
+  cabeceras.set('Content-Type', 'application/json')
+  const response = await fetch(`${client.baseUrl}${path}`, { method, headers: cabeceras, body: JSON.stringify(body) })
+  if (!response.ok) throw await problema(response)
+  const text = response.status === 204 ? '' : await response.text()
+  return (text ? JSON.parse(text) : undefined) as T
+}
+
 const remove = (path: string) => client.request<void>(path, { method: 'DELETE' })
 
 function query(params: Record<string, string | number | null | undefined>): string {
@@ -245,5 +276,13 @@ export const rentas = {
   emitir: (anio: number, formato: FormatoEmision, documentos?: DocumentoEmision[]) =>
     send<Emision>('POST', '/srtm/emisiones', documentos ? { anio, formato, documentos } : { anio, formato }),
   // the record and its file; refused (409) while it runs
-  borrarEmision: (id: string) => remove(`/srtm/emisiones/${id}`)
+  borrarEmision: (id: string) => remove(`/srtm/emisiones/${id}`),
+
+  // the infracciones administrativas (SPEC §7, Multas). the CUIS in force on a day (today when not given), with each
+  // code's multa at that day's UIT: without one, uit and the multas are null and `faltan` names it (200, never a 0).
+  // 422 names a filter it cannot read
+  catalogoCuis: (filtros: FiltrosCuis = {}) => get<CatalogoCuis>(`/srtm/infracciones/cuis${query({ ...filtros })}`),
+  // a new version of a code: it closes the one in force (answered as `cerrada`). 422 when it does not start after the
+  // one in force, 400 for a field or the observación, 403 without CREATE on codigo_infraccion
+  crearVersionCuis: (body: NuevaVersionCuis) => send<VersionCuisCreada>('POST', '/srtm/infracciones/cuis', body)
 }
