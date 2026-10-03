@@ -60,7 +60,10 @@ import type {
   NuevaNotificacionResolucion,
   NuevaResolucion,
   NuevoDescargo,
-  ResolucionGerencia
+  ResolucionGerencia,
+  InfraccionesDe,
+  NotificacionVencida,
+  PanelInfracciones
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -342,5 +345,16 @@ export const rentas = {
   // domicilio fiscal in force at the diligencia. 422 with `faltan` (PLAZO RG_RECURSO, FERIADOS), 403 without CREATE on
   // notificacion_resolucion
   notificarResolucion: (id: string, body: NuevaNotificacionResolucion) =>
-    send<NotificacionResolucion>('POST', `/srtm/infracciones/resoluciones/${id}/notificacion`, body)
+    send<NotificacionResolucion>('POST', `/srtm/infracciones/resoluciones/${id}/notificacion`, body),
+
+  // the padrones of the notificaciones previas: the ones not subsanadas and without an acta that are vencidas at corte
+  // (each row with its vencimiento and that corte), and a contribuyente's (its id), with their derivados
+  notificacionesVencidas: (corte: string, page: number, size = PAGE_SIZE) =>
+    get<Pagina<NotificacionVencida>>(`/srtm/infracciones/notificaciones/vencidas${query({ corte, page, size })}`),
+  notificacionesDe: (contribuyente: string, page: number, size = PAGE_SIZE) =>
+    get<Pagina<NotificacionPrevia>>(`/srtm/infracciones/notificaciones/por-contribuyente${query({ contribuyente, page, size })}`),
+  // a year's figures at al_dia, all the backend's. coactiva is null with its nota: srtm does not collect
+  panelInfracciones: (anio: number) => get<PanelInfracciones>(`/srtm/infracciones/panel${query({ anio })}`),
+  // every acta of a contribuyente (as obligado or contribuyente) or of a predio, with its fase and estado at al_dia
+  infraccionesDe: (de: 'contribuyentes' | 'predios', id: string) => get<InfraccionesDe>(`/srtm/${de}/${id}/infracciones`)
 }

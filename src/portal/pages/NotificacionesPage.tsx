@@ -25,12 +25,12 @@ import { SubnavInfracciones } from './SubnavInfracciones'
 const describirPredio = (p: Predio): Picked => ({ id: p.id!, label: `${p.codigo ?? 's/c'} · ${p.direccion ?? ''}` })
 
 // whether it is vencida at vencidas_a, as the backend says. without a plazo nothing makes it vencida
-const VENCIDA: Record<string, EtiquetaDeMapa> = {
+export const VENCIDA: Record<string, EtiquetaDeMapa> = {
   VENCIDA: { texto: 'Vencida', tono: 'rojo' },
   EN_PLAZO: { texto: 'No vencida', tono: 'verde' },
   SIN_PLAZO: { texto: 'Sin plazo', tono: '' }
 }
-const vencida = (n: NotificacionPrevia) => (n.vencida ? 'VENCIDA' : n.plazo_dias === null ? 'SIN_PLAZO' : 'EN_PLAZO')
+export const vencida = (n: NotificacionPrevia) => (n.vencida ? 'VENCIDA' : n.plazo_dias === null ? 'SIN_PLAZO' : 'EN_PLAZO')
 
 // why a notificación cannot be subsanada, from what the backend answered for its row (null: it can)
 function motivoSinSubsanar(n: NotificacionPrevia, puede: boolean): string | null {

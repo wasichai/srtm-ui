@@ -127,6 +127,10 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     fechas, con su importe a pagar y la fecha en que se cifró. La **fase** del procedimiento (a la fecha que encabeza su
     columna) y el **estado de la deuda** (pendiente, anulada, dejada sin efecto) son dos columnas con sus nombres, y los
     dos los dice el backend; un acta anulada o dejada sin efecto no tiene fase («—»). Cada fila abre su expediente.
+    - Encabeza la página el **panel** del ejercicio (selector de año; `/srtm/infracciones/panel?anio`): actas
+      levantadas, resoluciones dictadas, notificadas y notificaciones previas que vencen esta semana (con la semana,
+      de lunes a domingo), cada cifra del backend y con su fecha (`al_dia`). _En coactiva_ dice «No aplica» con la nota
+      del backend: srtm no cobra, y no se muestra un 0.
   - **Nueva acta** (`/infracciones/nueva`): número del formulario, fecha y hora, lugar, el código del CUIS vigente el día
     de la infracción (la lista cambia con la fecha), la reincidencia que declara el inspector, el **obligado** (se elige
     siempre: no se deduce del contribuyente), el contribuyente o el predio (al menos uno), la notificación previa si la
@@ -175,11 +179,26 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     `notificacion_administrativa`; **Subsanar** (fecha, hoy si va en blanco, y observación) pide creación sobre
     `subsanacion_notificacion` y se ve deshabilitado, con el porqué, si la fila ya está subsanada, ya tiene acta o está
     vencida a esa fecha.
+  - **Escalas y plazos** (`/infracciones/plazos`):
+    - **Vencidas sin acta**: las notificaciones previas no subsanadas y sin acta vencidas a una fecha de corte (hoy, por
+      omisión; el título de la tabla dice la que aplicó el backend), con su plazo y su vencimiento.
+    - **Por contribuyente**: las notificaciones previas del contribuyente elegido, con vencimiento, vencida o no,
+      subsanación y el acta que originaron.
+    - **Plazos cargados**: no hay consulta de los plazos cargados de un año, así que la página explica cómo se
+      configuran: parámetros tributarios (`parametro_tributario`) `PLAZO` `DESCARGO_PAPELETA` y `PLAZO` `RG_RECURSO`
+      (días hábiles, texto `DIAS_HABILES`) y `FERIADOS` `<año>` (los no nacionales, del 1 de enero al 31 de diciembre),
+      cargados con `import_parametros.py` de srtm-backend o desde la lista de la administración (enlace solo para el
+      rol `ADMIN`). Si al año le falta uno, el acto que lo necesita lo nombra en una alerta. Las escalas de las multas
+      (% de la UIT por grado) están en el CUIS.
+  - Pestaña **Infracciones** de las fichas de contribuyente y de predio (`?tab=infracciones`, después de Arbitrios;
+    también durante la inscripción del contribuyente): sus actas (las del contribuyente como obligado o como
+    contribuyente; las que nombran el predio) con número (abre el expediente), fecha, código, importe a pagar con su
+    fecha de cálculo, y la fase y el estado de la deuda en dos columnas, a la fecha que da el backend (`al_dia`).
   - Lo común a los actos está en `src/portal`: `send` de `api.ts` lanza un `RentasError` con `faltan`, `errors` y
     `detail` y acepta cabeceras (`Idempotency-Key`); `DialogoDeActo` es el diálogo de un acto con observación de 5 a 500
     caracteres; `FaseBadge` / `BadgeDeMapa` muestran una fase o un estado con un mapa explícito; `usePuede` dice si la
-    cuenta puede hacer una acción. Las consultas cuelgan de la clave `['infracciones', …]`.
-  - Escalas y plazos, el panel y la pestaña de las fichas llegan en el PR siguiente.
+    cuenta puede hacer una acción; `StatCard` acepta la fecha de su cifra (`fecha`) y una `nota`. Las consultas cuelgan
+    de la clave `['infracciones', …]`.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

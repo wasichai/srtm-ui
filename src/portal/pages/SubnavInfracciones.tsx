@@ -7,7 +7,8 @@ const PAGINAS = [
   { to: '/infracciones', label: 'Expedientes' },
   { to: '/infracciones/nueva', label: 'Nueva acta' },
   { to: '/infracciones/notificaciones', label: 'Notificaciones previas' },
-  { to: '/infracciones/cuis', label: 'CUIS' }
+  { to: '/infracciones/cuis', label: 'CUIS' },
+  { to: '/infracciones/plazos', label: 'Escalas y plazos' }
 ]
 
 export function SubnavInfracciones() {

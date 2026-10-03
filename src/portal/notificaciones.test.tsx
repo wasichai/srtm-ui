@@ -378,7 +378,8 @@ describe('menú de las notificaciones previas', () => {
       ['Expedientes', '/infracciones'],
       ['Nueva acta', '/infracciones/nueva'],
       ['Notificaciones previas', '/infracciones/notificaciones'],
-      ['CUIS', '/infracciones/cuis']
+      ['CUIS', '/infracciones/cuis'],
+      ['Escalas y plazos', '/infracciones/plazos']
     ])
   })
 })

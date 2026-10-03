@@ -751,6 +751,6 @@ describe('menú de los expedientes', () => {
       within(subnav)
         .getAllByRole('link')
         .map((l) => l.getAttribute('href'))
-    ).toEqual(['/infracciones', '/infracciones/nueva', '/infracciones/notificaciones', '/infracciones/cuis'])
+    ).toEqual(['/infracciones', '/infracciones/nueva', '/infracciones/notificaciones', '/infracciones/cuis', '/infracciones/plazos'])
   })
 })
