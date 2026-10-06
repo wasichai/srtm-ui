@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
@@ -201,7 +202,7 @@ describe('desglose de la cuota, por secuencia de uso', () => {
     ])
     const t = await tabla()
     expect(within(t).queryByText('0.0514 S/ por m² × 100.00 m² = 5.14')).not.toBeInTheDocument()
-    fireEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
     expect(screen.getByText('0.0514 S/ por m² × 100.00 m² = 5.14')).toBeInTheDocument()
     expect(screen.getByText('0.0514 S/ por m² × 65.00 m² = 3.34')).toBeInTheDocument()
   })
@@ -251,7 +252,7 @@ describe('consulta de cuotas de arbitrios, igual de accesible', () => {
     ])
     const t = await screen.findByRole('table', { name: `Cuotas de arbitrios ${year}` })
     expect(within(t).queryByText('TASA_ARBITRIO:X')).not.toBeInTheDocument()
-    fireEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
     expect(screen.getByText('TASA_ARBITRIO:X')).toBeInTheDocument()
   })
 })
