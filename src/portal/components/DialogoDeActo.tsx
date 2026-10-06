@@ -39,7 +39,8 @@ export const SIN_RESPUESTA = 'No hubo respuesta del servidor. Vuelva a intentarl
 
 // fetch rejects with a TypeError when no answer came (Chrome «Failed to fetch», Firefox «NetworkError…», Safari «Load
 // failed»): any other TypeError is a bug of its own and says what it says
-const sinRespuesta = (error: unknown) => error instanceof TypeError && /failed to fetch|networkerror|load failed|network request failed/i.test(error.message)
+export const sinRespuesta = (error: unknown) =>
+  error instanceof TypeError && /failed to fetch|networkerror|load failed|network request failed/i.test(error.message)
 
 // a failure in the portal's words: the backend's detail, what it lacks to compute (faltan) and the fields it refused;
 // no answer at all, in words a clerk can act on
