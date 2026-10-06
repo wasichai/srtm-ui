@@ -180,31 +180,53 @@ describe('desglose de la cuota, por secuencia de uso', () => {
     formula
   })
 
-  it('shows the formula of each secuencia on tap, over a cell with two of them', async () => {
-    const conDesglose = matriz({
+  // the first month of limpieza, with its desglose
+  const conEnero = (items: DesgloseCuota[]) =>
+    matriz({
       filas: [
         {
           ...fila('limpieza', 'Limpieza pública', 8.5, 12, 102),
-          meses: fila('limpieza', 'Limpieza pública', 8.5, 12, 102).meses.map((c, i) =>
-            i === 0 && c
-              ? {
-                  ...c,
-                  desglose: [desglose('01', '0.0514 S/ por m² × 100.00 m² = 5.14'), desglose('02', '0.0514 S/ por m² × 65.00 m² = 3.34')]
-                }
-              : c
-          )
+          meses: fila('limpieza', 'Limpieza pública', 8.5, 12, 102).meses.map((c, i) => (i === 0 && c ? { ...c, desglose: items } : c))
         }
       ]
     })
+
+  it('shows the formula of each secuencia on tap, over a cell with two of them, each with its uso', async () => {
     start('/predios/p1?tab=arbitrios', [
-      { path: '/srtm/predios/p1/arbitrios', body: conDesglose },
+      {
+        path: '/srtm/predios/p1/arbitrios',
+        body: conEnero([desglose('01', '0.0514 S/ por m² × 100.00 m² = 5.14'), desglose('02', '0.0514 S/ por m² × 65.00 m² = 3.34')])
+      },
       { path: '/srtm/predios/p1', body: predioFicha }
     ])
     const t = await tabla()
-    expect(within(t).queryByText('0.0514 S/ por m² × 100.00 m² = 5.14')).not.toBeInTheDocument()
+    expect(within(t).queryByText(/0\.0514 S\/ por m² × 100\.00 m²/)).not.toBeInTheDocument()
+    await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    expect(screen.getByText('Uso 01: 0.0514 S/ por m² × 100.00 m² = 5.14')).toBeInTheDocument()
+    expect(screen.getByText('Uso 02: 0.0514 S/ por m² × 65.00 m² = 3.34')).toBeInTheDocument()
+  })
+
+  it('shows the formula alone when the cell has one secuencia', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: conEnero([desglose('01', '0.0514 S/ por m² × 100.00 m² = 5.14')]) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
     await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
     expect(screen.getByText('0.0514 S/ por m² × 100.00 m² = 5.14')).toBeInTheDocument()
-    expect(screen.getByText('0.0514 S/ por m² × 65.00 m² = 3.34')).toBeInTheDocument()
+  })
+
+  // the real backend always sends desglose: for a cuota written before it, one item per secuencia with base null and
+  // just its monto as formula
+  it('shows only the monto, like before, on a cuota from before the desglose that comes with one', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: conEnero([{ ...desglose('01', 'S/ 8.50'), base: null }]) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    const [, limpieza] = within(t).getAllByRole('row')
+    expect(within(limpieza).queryAllByRole('button')).toHaveLength(0)
+    expect(within(limpieza).getAllByTitle('TASA_ARBITRIO:X')).toHaveLength(12)
   })
 
   it('shows only the monto, like before, on a cuota from before the desglose', async () => {

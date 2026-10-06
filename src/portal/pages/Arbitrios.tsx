@@ -134,17 +134,21 @@ const SinCuota = () => (
   </span>
 )
 
-// a cuota's monto: with its desglose (one secuencia de uso per item), a popover with each one's formula; without it
-// (a cuota from before the épica de arbitrios), the plain monto with its parámetro, as before
+// a cuota's monto: with its desglose (one secuencia de uso per item), a popover with each one's formula, each line
+// with its uso when there are several; without one (an older backend), or with one that has nothing to break down
+// (a cuota from before the épica de arbitrios: the backend sends it with base null and its monto as formula), the
+// plain monto with its parámetro, as before
 function Monto({ cuota }: { cuota: CuotaMes }) {
-  if (!cuota.desglose || cuota.desglose.length === 0) {
+  const desglose = cuota.desglose ?? []
+  if (desglose.every((d) => d.base == null)) {
     return <span title={cuota.parametro_aplicado ?? undefined}>{formatMoney(cuota.monto)}</span>
   }
+  const varios = desglose.length > 1
   return (
     <Popover trigger={formatMoney(cuota.monto)}>
       <ul className="space-y-1">
-        {cuota.desglose.map((d, i) => (
-          <li key={d.id ?? `${d.secuencia_uso ?? ''}-${i}`}>{d.formula}</li>
+        {desglose.map((d, i) => (
+          <li key={d.id ?? `${d.secuencia_uso ?? ''}-${i}`}>{varios && d.secuencia_uso ? `Uso ${d.secuencia_uso}: ${d.formula}` : d.formula}</li>
         ))}
       </ul>
     </Popover>
