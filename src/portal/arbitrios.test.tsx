@@ -1,8 +1,8 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
-import type { FilaServicio, MatrizArbitrios } from './types'
+import type { DesgloseCuota, FilaServicio, MatrizArbitrios } from './types'
 
 // los arbitrios de un año en las fichas de predio y de contribuyente (wasichai/srtm-backend#62): servicio por mes, el
 // titular de cada mes y los totales, tal como los determinó el backend. los totales son los suyos, nunca una suma de la
@@ -124,6 +124,102 @@ describe('arbitrios del predio', () => {
     ])
     await tabla()
     expect(screen.getByText('No se pueden determinar:').parentElement).toHaveTextContent(`ARBITRIO_ZONA S-09 ${year}`)
+  })
+})
+
+describe('desglose de la cuota, por secuencia de uso', () => {
+  const desglose = (secuencia: string, formula: string): DesgloseCuota => ({
+    id: `d-${secuencia}`,
+    secuencia_uso: secuencia,
+    monto: null,
+    base: 'AREA_CONSTRUIDA_M2',
+    cantidad_base: null,
+    tasa_unitaria: null,
+    habitantes: null,
+    promedio_habitantes: null,
+    variacion_habitante: null,
+    habitantes_presuntos: null,
+    zona: null,
+    uso_arbitrio: null,
+    influencia: null,
+    afluencia: null,
+    formula
+  })
+
+  it('shows the formula of each secuencia on tap, over a cell with two of them', async () => {
+    const conDesglose = matriz({
+      filas: [
+        {
+          ...fila('limpieza', 'Limpieza pública', 8.5, 12, 102),
+          meses: fila('limpieza', 'Limpieza pública', 8.5, 12, 102).meses.map((c, i) =>
+            i === 0 && c
+              ? {
+                  ...c,
+                  desglose: [desglose('01', '0.0514 S/ por m² × 100.00 m² = 5.14'), desglose('02', '0.0514 S/ por m² × 65.00 m² = 3.34')]
+                }
+              : c
+          )
+        }
+      ]
+    })
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: conDesglose },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    expect(within(t).queryByText('0.0514 S/ por m² × 100.00 m² = 5.14')).not.toBeInTheDocument()
+    fireEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    expect(screen.getByText('0.0514 S/ por m² × 100.00 m² = 5.14')).toBeInTheDocument()
+    expect(screen.getByText('0.0514 S/ por m² × 65.00 m² = 3.34')).toBeInTheDocument()
+  })
+
+  it('shows only the monto, like before, on a cuota from before the desglose', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: matriz({}) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    const [, limpieza] = within(t).getAllByRole('row')
+    expect(within(limpieza).queryAllByRole('button')).toHaveLength(0)
+    expect(within(limpieza).getAllByTitle('TASA_ARBITRIO:X').length).toBeGreaterThan(0)
+  })
+})
+
+describe('consulta de cuotas de arbitrios, igual de accesible', () => {
+  it('shows the parámetro aplicado on tap, not just on hover (title does not work on touch)', async () => {
+    start('/arbitrios', [
+      {
+        path: '/srtm/arbitrios/servicios',
+        body: [{ id: 'limpieza', codigo: 'LIMPIEZA', nombre: 'Limpieza pública', orden: 1, vigencia_desde: `${year}-01-01`, vigencia_hasta: null }]
+      },
+      {
+        path: '/srtm/arbitrios',
+        body: {
+          content: [
+            {
+              id: 'q1',
+              predio: 'p1',
+              contribuyente: 'c1',
+              servicio: 'limpieza',
+              anio: year,
+              periodo: 1,
+              monto: 8.5,
+              parametro_aplicado: 'TASA_ARBITRIO:X',
+              fecha_calculo: `${year}-03-15`,
+              observacion: ''
+            }
+          ],
+          page: 0,
+          size: 25,
+          totalElements: 1,
+          totalPages: 1
+        }
+      }
+    ])
+    const t = await screen.findByRole('table', { name: `Cuotas de arbitrios ${year}` })
+    expect(within(t).queryByText('TASA_ARBITRIO:X')).not.toBeInTheDocument()
+    fireEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    expect(screen.getByText('TASA_ARBITRIO:X')).toBeInTheDocument()
   })
 })
 

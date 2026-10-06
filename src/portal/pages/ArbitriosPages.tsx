@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { currentYear, formatDate, formatMoney, formatText, MESES } from '../components/format'
+import { Popover } from '../components/Popover'
 import { NUMERICA } from '../components/tabla'
 import { YearSelect } from '../components/YearSelect'
 import type { ParametroTributario, ServicioArbitrio } from '../types'
@@ -93,7 +94,7 @@ export function ConsultaArbitriosPage() {
                         <Td>{MESES[c.periodo - 1]}</Td>
                         <Td>{nombreDe(servicios.data, c.servicio)}</Td>
                         <Td {...NUMERICA}>
-                          <span title={c.parametro_aplicado}>{formatMoney(c.monto)}</span>
+                          {c.parametro_aplicado ? <Popover trigger={formatMoney(c.monto)}>{c.parametro_aplicado}</Popover> : formatMoney(c.monto)}
                         </Td>
                         <Td>{formatDate(c.fecha_calculo)}</Td>
                         <Td>
