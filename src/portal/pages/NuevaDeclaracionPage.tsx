@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { QueryState } from '@wasichai/core'
 import { Alert, Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { FieldGrid } from '../../kit/forms/FieldGrid'
 import { useFormGroup, useSharedFields } from '../../kit/forms/group'
@@ -19,7 +19,7 @@ import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, 
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
-import { basesDeArbitrio, parametrosArbitrioQuery, useCatalogos, useRefresh } from '../queries'
+import { basesDeArbitrio, dimensionesDeArbitrio, parametrosArbitrioQuery, useCatalogos, useParametrosArbitrio, useRefresh } from '../queries'
 import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
@@ -78,17 +78,21 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   // what was typed in either step is lost by leaving: asked first
   const grupo = useFormGroup(['datos', 'ubicacion'] as const)
   const salida = useUnsavedChanges(grupo.pending.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
-  const [sections] = useState(() =>
-    ubicacionSections((elegido: Elegido) => {
-      const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
-      if (!predio) return false
-      setBuscado(predio)
-      // the declaration is on that predio: its tipo is the predio's
-      if (predio.tipo_predio) comun.change('tipo_predio', predio.tipo_predio)
-      setError(null)
-      return true
-    })
-  )
+  const [alElegir] = useState(() => (elegido: Elegido) => {
+    const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
+    if (!predio) return false
+    setBuscado(predio)
+    // the declaration is on that predio: its tipo is the predio's
+    if (predio.tipo_predio) comun.change('tipo_predio', predio.tipo_predio)
+    setError(null)
+    return true
+  })
+  // the ubicación step comes after datos del predio, which says the año: when a servicio of that año reads its tasa
+  // by INFLUENCIA, a new predio is asked for its ubicación respecto a áreas verdes, as in the DJ (wasichai/srtm-ui#94).
+  // while the query loads or fails, optional, as before
+  const parametrosArbitrio = useParametrosArbitrio(anio ?? undefined)
+  const conInfluencia = useMemo(() => dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA'), [parametrosArbitrio.data])
+  const sections = useMemo(() => ubicacionSections(alElegir, conInfluencia), [alElegir, conInfluencia])
   const tipoPredio = comun.values.tipo_predio ?? (datos as DatosDelPredio | null)?.tipo_predio ?? 'PREDIO URBANO'
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice

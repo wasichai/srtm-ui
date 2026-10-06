@@ -133,8 +133,9 @@ const predioNuevo = (v: FormValues) => !v.direccion
 // datos de la ubicación: the predio's. onPredio: what "buscar predios" does with a predio of the padrón (by default
 // its ubicación is copied into the form). conInfluencia: the year's arbitrios read some servicio's tasa by
 // INFLUENCIA (Dimension, srtm-backend's Servicios.dimensiones): then ubicación respecto a áreas verdes is
-// required, since it is where ARBITRIO_INFLUENCIA reads it from (wasichai/srtm-ui#94). false by default: every
-// other caller (PredioPage, Nuevos, NuevaDeclaracionPage, UBICACION_SECTIONS) keeps it optional, as before
+// required, since it is where ARBITRIO_INFLUENCIA reads it from (wasichai/srtm-ui#94): DeclaracionPage and
+// NuevaDeclaracionPage pass it by the DJ's año. false by default: every other caller (PredioPage, Nuevos,
+// UBICACION_SECTIONS) keeps it optional, as before
 export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean, conInfluencia = false): SectionSpec[] {
   return [
     {

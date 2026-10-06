@@ -422,6 +422,65 @@ describe('la ubicación respecto a áreas verdes (wasichai/srtm-ui#94)', () => {
     await waitFor(() => expect(screen.getByText(/^Ubicación respecto a áreas verdes/).textContent).toContain('*'))
   })
 
+  // the wizard's ubicación step comes after datos del predio, which says the año: a new predio is asked for it there
+  it('requires it in the wizard of a new predio too, by the año of its datos del predio', async () => {
+    const otroAnio = year + 2
+    const conInfluencia = (anio: number) => ({
+      path: new RegExp(`^/srtm/arbitrios/parametros\\?anio=${anio}$`),
+      body: {
+        anio,
+        ordenanza: null,
+        servicios: [],
+        parametros: [
+          {
+            id: null,
+            tipo: 'DIMENSIONES_ARBITRIO',
+            clave: 'PARQUES',
+            texto: 'ZONA, INFLUENCIA',
+            vigencia_desde: null,
+            vigencia_hasta: null,
+            valor_numerico: null,
+            norma: null,
+            fuente: null,
+            transcribio: null,
+            verifico: null
+          }
+        ],
+        faltan: []
+      }
+    })
+    start('/contribuyentes/c1/declaraciones/nueva', [
+      // the año the form starts with: no INFLUENCIA. the one the clerk types: INFLUENCIA
+      { path: new RegExp(`^/srtm/arbitrios/parametros\\?anio=${year}$`), body: { anio: year, ordenanza: null, servicios: [], parametros: [], faltan: [] } },
+      conInfluencia(otroAnio)
+    ])
+    await screen.findByRole('option', { name: 'COMPRA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'COMPRA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2024-09-04')
+    await userEvent.type(screen.getByLabelText(/Folios/), '2')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'MINUTA' }))
+    await userEvent.clear(screen.getByLabelText(/^Año/))
+    await userEvent.type(screen.getByLabelText(/^Año/), String(otroAnio))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByRole('tab', { name: 'Datos de la ubicación' })).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(screen.getByText(/^Ubicación respecto a áreas verdes/).textContent).toContain('*'))
+  })
+
+  it('leaves it optional in the wizard of a new predio when no servicio of its año uses INFLUENCIA', async () => {
+    start('/contribuyentes/c1/declaraciones/nueva', [
+      { path: '/srtm/arbitrios/parametros', body: { anio: year, ordenanza: null, servicios: [], parametros: [], faltan: [] } }
+    ])
+    await screen.findByRole('option', { name: 'COMPRA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'COMPRA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2024-09-04')
+    await userEvent.type(screen.getByLabelText(/Folios/), '2')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'MINUTA' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByRole('tab', { name: 'Datos de la ubicación' })).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(fetch!.calls.some((c) => c.path.startsWith('/srtm/arbitrios/parametros'))).toBe(true))
+    expect(screen.getByText(/^Ubicación respecto a áreas verdes/).textContent).not.toContain('*')
+  })
+
   it('leaves it optional when no servicio del año uses INFLUENCIA, as today', async () => {
     // no se mockea /srtm/arbitrios/parametros: el 404 del mock deja la query en error, como si el backend aún no
     // tuviera esas filas
