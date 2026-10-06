@@ -2,7 +2,7 @@
 export interface KitTexts {
   required: string // 'Este dato es obligatorio'
   integer: string // 'Debe ser un número entero'
-  number: string // 'Debe ser un número'
+  number: string // 'Debe ser un número, con punto decimal (1,250.50)'
   saving: string // 'Guardando…'
   saveFailed: string // 'No se pudo guardar'
   cancel: string // 'Cancelar'
@@ -35,7 +35,7 @@ export interface KitTexts {
 export const DEFAULT_TEXTS: KitTexts = {
   required: 'Este dato es obligatorio',
   integer: 'Debe ser un número entero',
-  number: 'Debe ser un número',
+  number: 'Debe ser un número, con punto decimal (1,250.50)',
   saving: 'Guardando…',
   saveFailed: 'No se pudo guardar',
   cancel: 'Cancelar',
