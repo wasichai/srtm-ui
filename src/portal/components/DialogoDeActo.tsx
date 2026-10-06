@@ -67,10 +67,11 @@ export function MensajeDeError({ error, siFalla }: { error: unknown; siFalla: st
   )
 }
 
-// each Falta of an arbitrios' faltan_detalle, mensaje by mensaje: with a declaración to fix, an enlace to its
-// características; else, with a predio, to its ubicación; with neither, plain text, as faltan always showed. the
-// portal's generic FaltanArbitrios carries detalle only from arbitrios (ArbitriosController.problemaFaltan); any other
-// 422's faltan has no detalle, and falls back to it above
+// each Falta of an arbitrios' faltan_detalle, mensaje by mensaje, linked by its enlace (where it gets fixed, not whose
+// it is): DECLARACION, to its declaración's características; PREDIO, to its predio's ubicación; anything else (a row
+// of the ordinance, which names the predio too), or without the id to link to, plain text, as faltan always showed.
+// the portal's generic FaltanArbitrios carries detalle only from arbitrios (ArbitriosController.problemaFaltan); any
+// other 422's faltan has no detalle, and falls back to it above
 export function FaltanDetalle({ faltan }: { faltan: Falta[] }) {
   return (
     <>
@@ -85,14 +86,14 @@ export function FaltanDetalle({ faltan }: { faltan: Falta[] }) {
 }
 
 function FaltaEnlace({ falta }: { falta: Falta }) {
-  if (falta.declaracion) {
+  if (falta.enlace === 'DECLARACION' && falta.declaracion) {
     return (
       <Link to={`/declaraciones/${falta.declaracion}?tab=caracteristicas`} className="text-link hover:underline">
         {falta.mensaje}
       </Link>
     )
   }
-  if (falta.predio) {
+  if (falta.enlace === 'PREDIO' && falta.predio) {
     return (
       <Link to={`/predios/${falta.predio}?tab=ubicacion`} className="text-link hover:underline">
         {falta.mensaje}

@@ -117,7 +117,7 @@ describe('determinar desde la ficha del predio', () => {
   })
 
   it('links what is missing to the declaración that fixes it, when the backend says which one', async () => {
-    const detalle = `No se pueden determinar los arbitrios de ${year}: Frontis del predio 01-01-0001`
+    const detalle = `No se pueden determinar los arbitrios de ${year}: Frontis del predio 01-01-0001; TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`
     start(
       '/predios/p1?tab=arbitrios',
       delPredio({
@@ -125,8 +125,11 @@ describe('determinar desde la ficha del predio', () => {
         body: {
           title: 'Unprocessable Content',
           detail: detalle,
-          faltan: ['Frontis del predio 01-01-0001'],
-          faltan_detalle: [{ mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1' }]
+          faltan: ['Frontis del predio 01-01-0001', `TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`],
+          faltan_detalle: [
+            { mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1', enlace: 'DECLARACION' },
+            { mensaje: `TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`, predio: 'p1', declaracion: null, enlace: null }
+          ]
         }
       })
     )
@@ -134,6 +137,9 @@ describe('determinar desde la ficha del predio', () => {
     await userEvent.click(boton)
     const alerta = await within(dialogo).findByRole('alert')
     expect(within(alerta).getByRole('link', { name: 'Frontis del predio 01-01-0001' })).toHaveAttribute('href', '/declaraciones/d1?tab=caracteristicas')
+    // a row of the ordinance: plain text, though it names the predio
+    expect(within(alerta).getAllByRole('link')).toHaveLength(1)
+    expect(alerta).toHaveTextContent(`TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`)
   })
 
   it('without CREATE on the cuotas the action is disabled, and says why', async () => {

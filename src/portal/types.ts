@@ -583,12 +583,15 @@ export interface MatrizArbitrios {
   faltan_detalle?: Falta[]
 }
 
-// one thing a determination lacks: its mensaje (what faltan lists), and where to fix it when it is a predio's or a
-// declaración's own (frontis, área construida, ubicación, uso)
+// one thing a determination lacks: its mensaje (what faltan lists), the predio and the declaración it is about, and
+// where it gets fixed (srtm-backend's Falta.enlace, wasichai/srtm-backend#99): the declaración's características
+// (its uso, frontis, área construida), the predio's ubicación (its sector, its zona by ubicación, its ubicación
+// respecto del área verde), or neither (null: a row of the ordinance, though it names the predio)
 export interface Falta {
   mensaje: string
   predio?: string | null
   declaracion?: string | null
+  enlace?: 'DECLARACION' | 'PREDIO' | null
 }
 
 export interface ArbitriosContribuyente {

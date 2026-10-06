@@ -127,10 +127,15 @@ describe('arbitrios del predio', () => {
     expect(screen.getByText('No se pueden determinar:').parentElement).toHaveTextContent(`ARBITRIO_ZONA S-09 ${year}`)
   })
 
+  // by its enlace, where it gets fixed: predio and declaracion only say whose it is. a row of the ordinance names the
+  // predio too, and nothing in the predio fixes it
   it('links a falta to the declaración, or to the predio, that fixes it; the rest, as plain text', async () => {
     const faltanDetalle = [
-      { mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1' },
-      { mensaje: 'Ubicación respecto del área verde del predio 01-01-0001', predio: 'p1', declaracion: null },
+      { mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1', enlace: 'DECLARACION' as const },
+      { mensaje: 'Ubicación respecto del área verde del predio 01-01-0001', predio: 'p1', declaracion: null, enlace: 'PREDIO' as const },
+      { mensaje: `TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`, predio: 'p1', declaracion: null, enlace: null },
+      { mensaje: `Factor de habitantes negativo en 01-01-0001`, predio: 'p1', declaracion: 'd1', enlace: null },
+      { mensaje: `ARBITRIO_USO 010101 ${year}`, predio: 'p1', declaracion: 'd1' },
       { mensaje: `Servicios de arbitrio vigentes en ${year}` }
     ]
     start('/predios/p1?tab=arbitrios', [
@@ -147,6 +152,10 @@ describe('arbitrios del predio', () => {
       'href',
       '/predios/p1?tab=ubicacion'
     )
+    expect(within(alerta).getAllByRole('link')).toHaveLength(2)
+    expect(alerta).toHaveTextContent(`TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`)
+    expect(alerta).toHaveTextContent('Factor de habitantes negativo en 01-01-0001')
+    expect(alerta).toHaveTextContent(`ARBITRIO_USO 010101 ${year}`)
     expect(alerta).toHaveTextContent(`Servicios de arbitrio vigentes en ${year}`)
   })
 
