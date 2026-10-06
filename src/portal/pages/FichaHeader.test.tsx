@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { renderWithProviders } from '@wasichai/testing'
-import type { ReactElement } from 'react'
+import { cloneElement, type ReactElement } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SRTM_THEMES } from '../../themes'
 import { FichaHeader } from './FichaHeader'
@@ -42,10 +42,29 @@ const CLASICO =
   '<button type="button" data-testid="aside">Eliminar</button>' +
   '</div>'
 
+const resumen = [
+  { label: 'Predios 2026', value: '1' },
+  { label: 'Autoavalúo 2026', value: 'S/ 10,080.45' }
+]
+
 describe('FichaHeader', () => {
   it.each(['light', 'dark'])('keeps its markup with %s', (theme) => {
     const { container } = renderIn(theme, ficha)
     expect(container.innerHTML).toBe(CLASICO)
+  })
+
+  // the classic page draws the figures as stat cards, under the header
+  it.each(['light', 'dark'])('leaves the summary out with %s', (theme) => {
+    const { container } = renderIn(theme, cloneElement(ficha, { resumen }))
+    expect(container.innerHTML).toBe(CLASICO)
+  })
+
+  it('puts the summary in the title band with portal-tributario', () => {
+    renderIn('portal-tributario', cloneElement(ficha, { resumen }))
+    const banda = screen.getByRole('heading', { level: 1 }).closest('[data-ui="banda-titulo"]') as HTMLElement
+    const lista = banda.querySelector('[data-ui="banda-resumen"]') as HTMLElement
+    expect(within(lista).getByText('Predios 2026').nextElementSibling).toHaveTextContent('1')
+    expect(within(lista).getByText('Autoavalúo 2026').nextElementSibling).toHaveTextContent('S/ 10,080.45')
   })
 
   it('keeps its markup without badges nor aside with light', () => {

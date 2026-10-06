@@ -4,6 +4,7 @@ import { Badge, Card } from '@wasichai/ui'
 import { Coins, FileText, Gavel, Landmark, MapPinned, Megaphone, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
+import { useVarianteTema } from '../../themes'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, formatMoney } from '../components/format'
@@ -14,6 +15,7 @@ import { INSTRUCCIONES_INSCRIPCION } from '../forms/instrucciones'
 import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
+import type { Totales } from '../types'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { AnunciosDe } from './AnunciosPages'
 import { ArbitriosDelContribuyente } from './Arbitrios'
@@ -78,6 +80,13 @@ function ContribuyentePage({ id }: { id: string }) {
   const paso = inscripcion ? CONTRIBUYENTE_TABS.find((tab) => tab.id === activa && habilitada(tab.id))?.id : undefined
   const c = ficha.data?.contribuyente
   useWorkspaceTab(c ? { path: `/contribuyentes/${id}`, label: `${c.numero_documento ?? ''} ${c.nombre_completo ?? ''}`.trim(), kind: 'contribuyente' } : null)
+  // the year's figures: in the title band (portal), as stat cards under the header (classic)
+  const variante = useVarianteTema()
+  const cifras = (predios: number, totales: Totales) => [
+    { icon: MapPinned, label: `Predios ${anio}`, value: String(predios) },
+    { icon: Receipt, label: `Autoavalúo ${anio}`, value: formatMoney(totales.autoavaluo) },
+    { icon: Coins, label: `Valor afecto ${anio}`, value: formatMoney(totales.valor_afecto) }
+  ]
 
   return (
     <QueryState query={ficha}>
@@ -105,12 +114,15 @@ function ContribuyentePage({ id }: { id: string }) {
                 <EliminarFicha path={`/contribuyentes/${id}`} singular="contribuyente" borrar={() => rentas.borrarContribuyente(id)} />
               </div>
             }
+            resumen={cifras(predios, totales)}
           />
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard icon={MapPinned} label={`Predios ${anio}`} value={String(predios)} />
-            <StatCard icon={Receipt} label={`Autoavalúo ${anio}`} value={formatMoney(totales.autoavaluo)} />
-            <StatCard icon={Coins} label={`Valor afecto ${anio}`} value={formatMoney(totales.valor_afecto)} />
-          </div>
+          {variante === 'clasico' && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {cifras(predios, totales).map((cifra) => (
+                <StatCard key={cifra.label} {...cifra} />
+              ))}
+            </div>
+          )}
           {/* the inscription goes on here after Nuevo contribuyente: its steps, as there */}
           {paso && <PasosAsistente pasos={CONTRIBUYENTE_TABS} actual={paso} onIr={abrir} puedeIr={habilitada} instruccion={INSTRUCCIONES_INSCRIPCION[paso]} />}
           <Card className="pb-4">

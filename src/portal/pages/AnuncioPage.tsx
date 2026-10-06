@@ -4,6 +4,7 @@ import { Alert, Badge, Button, Card, CardBody, Input, Table, Td, Textarea, Th } 
 import { Ban, CalendarClock, Coins, RefreshCw, Trash2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
+import { useVarianteTema } from '../../themes'
 import { rentas } from '../api'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { EstadoAnuncioBadge } from '../components/EstadoAnuncioBadge'
@@ -69,6 +70,17 @@ function Ficha({ ficha }: { ficha: FichaAnuncio }) {
   const puede = usePuede('movimiento_anuncio')
   const [dialogo, setDialogo] = useState<Acto | null>(null)
   const al = formatDate(al_dia)
+  // the vigencia and the devengado: in the title band (portal), as stat cards under the header (classic)
+  const variante = useVarianteTema()
+  const cifras = [
+    {
+      icon: CalendarClock,
+      label: `Vigente hasta (al ${al})`,
+      value: vigenciaAlDia(ficha),
+      nota: terminoDeVigencia(ficha.estado, ficha.movimientos) ?? undefined
+    },
+    { icon: Coins, label: `Devengado al ${formatDate(devengado.al_dia)}`, value: formatMoney(devengado.importe) }
+  ]
 
   return (
     <div className="space-y-5">
@@ -87,16 +99,15 @@ function Ficha({ ficha }: { ficha: FichaAnuncio }) {
             Al {al}: <EstadoAnuncioBadge estado={ficha.estado} />
           </span>
         }
+        resumen={cifras}
       />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard
-          icon={CalendarClock}
-          label={`Vigente hasta (al ${al})`}
-          value={vigenciaAlDia(ficha)}
-          nota={terminoDeVigencia(ficha.estado, ficha.movimientos) ?? undefined}
-        />
-        <StatCard icon={Coins} label={`Devengado al ${formatDate(devengado.al_dia)}`} value={formatMoney(devengado.importe)} />
-      </div>
+      {variante === 'clasico' && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {cifras.map((cifra) => (
+            <StatCard key={cifra.label} {...cifra} />
+          ))}
+        </div>
+      )}
 
       <Card>
         <CardBody className="space-y-3">
