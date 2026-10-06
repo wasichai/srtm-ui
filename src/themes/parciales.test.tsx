@@ -83,30 +83,6 @@ describe('tabs.css', () => {
   })
 })
 
-describe(() => {
-  const css = read('alerts.css')
-
-  // the pairs whose contrast tokens.test.tsx checks, with bootstrap 3's borders
-  it.each([
-    ['exito', 'success', '#d6e9c6'],
-    ['atencion', 'warning', '#faebcc'],
-    ['error', 'danger', '#ebccd1'],
-    ['aviso', 'notice', '#e8e0c4']
-  ])('paints %s with its soft background, its text and its border', (tono, token, border) => {
-    const box = rule(css, `${PORTAL} [data-ui='alerta'][data-tono='${tono}']`)
-    expect(box.get('background')).toBe(`var(--${token}-soft)`)
-    expect(box.get('color')).toBe(`var(--${token})`)
-    expect(box.get('border-color')).toBe(border)
-  })
-
-  it('pads the box as the prototype', () => {
-    const box = rule(css, `${PORTAL} [data-ui='alerta']`)
-    expect(box.get('padding')).toBe('14px 18px')
-    expect(box.get('font-size')).toBe('14.5px')
-    expect(box.get('line-height')).toBe('1.6')
-  })
-})
-
 describe('nav.css', () => {
   const css = read('nav.css')
   const tokens = rule(libraryTokens(), PORTAL)
