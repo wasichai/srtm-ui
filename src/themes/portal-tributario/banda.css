@@ -1,17 +1,7 @@
 /* the title band and the form's actions footer (wasichai/srtm-ui#55). unlayered, so they win over tailwind's
    utilities. the band is a component drawn with tokens (src/portal/components/BandaTitulo.tsx, only under this
-   theme); this adds how it meets the folder tabs and what a page puts in it. the footer is RecordForm's, the same
-   markup in every theme: this spreads it */
-
-/* the folder tabs hang from the header: the box that holds them (the card tabs.css steps aside) follows it without
-   the page's gap. the row of badges and actions, when there is one, keeps a little room above the tabs */
-[data-theme='portal-tributario'] [data-ui='cabecera-banda']:has(+ * > [data-slot='tabs']) {
-    margin-block-end: 0;
-}
-
-[data-theme='portal-tributario'] [data-ui='cabecera-banda']:has(+ * > [data-slot='tabs']) > [data-ui='cabecera-fila'] {
-    padding-block-end: 10px;
-}
+   theme); this adds what a page puts in it. the ficha in two columns follows it with the page's gap. the footer is
+   RecordForm's, the same markup in every theme: this spreads it */
 
 /* a link in the band (the declaración's contribuyente) stays in the band's white, underlined on hover */
 [data-theme='portal-tributario'] [data-ui='banda-titulo'] a:hover {
