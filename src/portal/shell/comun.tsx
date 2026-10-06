@@ -37,6 +37,8 @@ export interface PiezasShell {
   cuerpo?: string
   // the workspace tabs as the header's second row (the portal's), not over the content
   pestanasEnCabecera?: boolean
+  // the trail in the page's title band (CabeceraBanda, the portal's), not in a strip over the content
+  rutaEnBanda?: boolean
   // the search input and the theme button, over their classic look
   busqueda?: string
   tema?: string

@@ -73,7 +73,7 @@ describe('portal-tributario shell', () => {
     expect(within(lateral()).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Municipalidad Distrital de Perené — Sistema de Gestión Tributaria Municipal')
-    // the open fichas are the bar's second row, like a browser's tabs: not over the content
+    // the open fichas are the bar's second row, like a browser's tabs: not over the content, and no trail there
     const fichas = within(bar).getByRole('navigation', { name: 'Fichas abiertas' })
     expect(fichas).toHaveAttribute('data-ubicacion', 'cabecera')
     expect(fichas).toHaveClass('basis-full')
@@ -81,6 +81,12 @@ describe('portal-tributario shell', () => {
     expect(bar.lastElementChild).toBe(fichas)
     expect(within(screen.getByRole('main')).queryByRole('navigation', { name: 'Fichas abiertas' })).not.toBeInTheDocument()
     expect(within(fichas).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('has no trail strip over the content: a ficha shows its trail in its band', async () => {
+    start('portal-tributario', { path: '/contribuyentes' })
+    expect(await screen.findByLabelText('Buscar contribuyentes')).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
   })
 
   it.each(['light', 'dark', 'system'])('keeps the classic shell with %s', async (theme) => {
@@ -96,6 +102,13 @@ describe('portal-tributario shell', () => {
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /menú de sesión/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
+  })
+
+  it('keeps the trail strip over the content with light', async () => {
+    start('light', { path: '/contribuyentes' })
+    expect(await screen.findByLabelText('Buscar contribuyentes')).toBeInTheDocument()
+    const ruta = within(screen.getByRole('main')).getByRole('navigation', { name: 'Ruta' })
+    expect(ruta).toHaveTextContent('Registro tributario y determinaciónRegistro tributarioContribuyentes')
   })
 
   it('opens the session menu, walks it with the arrows and closes it with escape, focus back on the button', async () => {

@@ -13,6 +13,8 @@ export const PortalShell: PiezasShell = {
   // on a phone the rail spans the row, over the content
   cuerpo: 'max-sm:flex-col',
   pestanasEnCabecera: true,
+  // a ficha shows its trail in its title band; a screen without one, none
+  rutaEnBanda: true,
   // white on the bar, its text in ink (not the bar's white), the focus ring white: the theme's focus blue is lost
   // on the shell blue
   busqueda: 'border-transparent bg-surface text-ink focus-visible:outline-shell-ink',
