@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
-import { Badge, Button, Card } from '@wasichai/ui'
+import { Alert, Badge, Button, Card } from '@wasichai/ui'
 import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
@@ -11,7 +11,6 @@ import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '.
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { ConfirmDiscard, useUnsavedChanges } from '../../kit/ui/UnsavedChanges'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
@@ -245,9 +244,9 @@ function DeclaracionPage({ id }: { id: string }) {
                         ))}
                     </div>
                     {error && (
-                      <Alerta tono="error" className="max-w-md text-right">
+                      <Alert tone="danger" className="max-w-md text-right">
                         {error}
-                      </Alerta>
+                      </Alert>
                     )}
                     {guardado && !hayCambios && (
                       <p role="status" className="text-sm text-ink-muted">

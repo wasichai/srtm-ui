@@ -1,10 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState, QueryState } from '@wasichai/core'
-import { Card, CardBody, Pagination, Table, Td, Th } from '@wasichai/ui'
+import { Alert, Card, CardBody, Pagination, Table, Td, Th } from '@wasichai/ui'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { currentYear, formatDate, formatMoney, formatText, MESES } from '../components/format'
 import { NUMERICA } from '../components/tabla'
 import { YearSelect } from '../components/YearSelect'
@@ -144,9 +143,9 @@ export function TasasArbitriosPage() {
           <div className="space-y-5">
             <SubnavArbitrios />
             {p.faltan.length > 0 && (
-              <Alerta tono="atencion" titulo={`Al año ${anio} le falta:`}>
+              <Alert tone="warning" title={`Al año ${anio} le falta:`}>
                 {p.faltan.join('; ')}. Sin eso no se determinan sus arbitrios.
-              </Alerta>
+              </Alert>
             )}
             <Card>
               <CardBody>

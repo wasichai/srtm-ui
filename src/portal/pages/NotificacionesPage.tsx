@@ -1,11 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { EmptyState, QueryState } from '@wasichai/core'
-import { Button, Card, CardBody, Input, Label, Pagination, Table, Td, Textarea, Th } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, Input, Label, Pagination, Table, Td, Textarea, Th } from '@wasichai/ui'
 import { FilePlus, Search } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { BadgeDeMapa, type EtiquetaDeMapa } from '../components/BadgeDeMapa'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { formatDate, formatText, today } from '../components/format'
@@ -294,10 +293,10 @@ function DialogoNueva({ onCerrar }: { onCerrar: () => void }) {
       enviar={(observacion) => rentas.registrarNotificacion(cuerpo(observacion))}
       onExito={() => queryClient.invalidateQueries({ queryKey: claves.infracciones })}
       exito={(n) => (
-        <Alerta tono="exito">
+        <Alert tone="success">
           Notificación {n.numero} del {formatDate(n.fecha)} registrada.
           {n.vencimiento ? ` Vence el ${formatDate(n.vencimiento)}.` : ' Sin plazo: no vence.'}
-        </Alerta>
+        </Alert>
       )}
       onCerrar={onCerrar}
     >

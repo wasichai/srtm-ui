@@ -14,7 +14,7 @@ const libraryTokens = () =>
   readFileSync(join(__dirname, '..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', 'tokens.css'), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css', 'pasos.css', 'banda.css']
+const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'pasos.css', 'banda.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -80,64 +80,6 @@ describe('tabs.css', () => {
     expect(legend.get('color')).toBe('var(--shell)')
     expect(legend.get('text-transform')).toBe('none')
     expect(legend.get('letter-spacing')).toBe('normal')
-  })
-})
-
-describe('alerts.css', () => {
-  const css = read('alerts.css')
-
-  // the pairs whose contrast tokens.test.tsx checks, with bootstrap 3's borders
-  it.each([
-    ['exito', 'success', '#d6e9c6'],
-    ['atencion', 'warning', '#faebcc'],
-    ['error', 'danger', '#ebccd1'],
-    ['aviso', 'notice', '#e8e0c4']
-  ])('paints %s with its soft background, its text and its border', (tono, token, border) => {
-    const box = rule(css, `${PORTAL} [data-ui='alerta'][data-tono='${tono}']`)
-    expect(box.get('background')).toBe(`var(--${token}-soft)`)
-    expect(box.get('color')).toBe(`var(--${token})`)
-    expect(box.get('border-color')).toBe(border)
-  })
-
-  it('pads the box as the prototype', () => {
-    const box = rule(css, `${PORTAL} [data-ui='alerta']`)
-    expect(box.get('padding')).toBe('14px 18px')
-    expect(box.get('font-size')).toBe('14.5px')
-    expect(box.get('line-height')).toBe('1.6')
-  })
-})
-
-describe('nav.css', () => {
-  const css = read('nav.css')
-  const tokens = rule(libraryTokens(), PORTAL)
-  const ARBOL = `${PORTAL} [data-ui='arbol-nav']`
-  const arbol = (part: string) => rule(css, `${ARBOL} ${part}`)
-  const actual = arbol("[data-ui='arbol-hoja'][aria-current='page']")
-  const hover = arbol("[data-ui='arbol-hoja']:hover")
-  const grupo = arbol("[data-ui='arbol-grupo']:hover")
-  const caret = arbol("[data-ui='arbol-caret']")
-
-  it('only styles the tree', () => {
-    const selectors = rules(css).flatMap((r) => r.selectors)
-    expect(selectors.filter((selector) => !selector.startsWith(`${ARBOL} `))).toEqual([])
-  })
-
-  it("pins the prototype's current leaf, hovers and carets", () => {
-    expect(actual.get('color')).toBe('#0d4d80')
-    expect(actual.get('background-color')).toBe('#e6e6e6')
-    expect(hover.get('background-color')).toBe('#e9e9e9')
-    expect(grupo.get('color')).toBe('#0d4d80')
-    expect(caret.get('color')).toBe('#555555')
-  })
-
-  // over the lateral (table-head): a hovered leaf, the current one and a hovered group at 4.5:1; the caret, a graphic
-  // next to its group's name, at 3:1
-  it('keeps AA over the backgrounds it paints', () => {
-    const head = tokens.get('--table-head')!
-    expect(contrast(tokens.get('--link')!, hover.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
-    expect(contrast(actual.get('color')!, actual.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
-    expect(contrast(grupo.get('color')!, head)).toBeGreaterThanOrEqual(4.5)
-    expect(contrast(caret.get('color')!, head)).toBeGreaterThanOrEqual(3)
   })
 })
 

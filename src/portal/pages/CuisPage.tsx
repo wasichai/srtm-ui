@@ -1,10 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { EmptyState, QueryState } from '@wasichai/core'
-import { Button, Card, CardBody, Input, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, Input, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
 import { FilePlus, Search } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { formatDate, formatMoney, formatNumber, formatText, today } from '../components/format'
 import { NUMERICA } from '../components/tabla'
@@ -115,9 +114,9 @@ function Catalogo({ catalogo, puede, onVersion }: { catalogo: CatalogoCuis; pued
         </p>
       )}
       {catalogo.faltan.length > 0 && (
-        <Alerta tono="atencion" titulo={`Al ${al} falta:`}>
+        <Alert tone="warning" title={`Al ${al} falta:`}>
           {catalogo.faltan.join('; ')}. Sin eso no se cifran las multas.
-        </Alerta>
+        </Alert>
       )}
       <Card>
         {catalogo.codigos.length === 0 ? (
@@ -245,12 +244,12 @@ function DialogoVersion({ base, onCerrar }: { base: CodigoInfraccion | null; onC
       enviar={(observacion) => rentas.crearVersionCuis(cuerpo(observacion))}
       onExito={() => queryClient.invalidateQueries({ queryKey: claves.infracciones })}
       exito={(creada) => (
-        <Alerta tono="exito">
+        <Alert tone="success">
           Versión de {creada.codigo} vigente desde el {formatDate(creada.vigencia_desde)}.
           {creada.cerrada
             ? ` Se cerró la anterior (desde el ${formatDate(creada.cerrada.vigencia_desde)}): vigente hasta el ${formatDate(creada.cerrada.vigencia_hasta)}.`
             : ' No había otra vigente.'}
-        </Alerta>
+        </Alert>
       )}
       onCerrar={onCerrar}
     >

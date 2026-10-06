@@ -1,11 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
 import { ApiError } from '@wasichai/core'
-import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Label, Textarea } from '@wasichai/ui'
+import { Alert, Button, Dialog, DialogContent, DialogDescription, DialogTitle, Label, Textarea } from '@wasichai/ui'
 import { Loader2 } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { RentasError } from '../api'
-import { Alerta } from './Alerta'
 
 // every act asks why (srtm.Observacion): 5 to 500 characters, kept in its row
 export const OBSERVACION_MINIMA = 5
@@ -104,9 +103,9 @@ export function DialogoDeActo<T>({
         <DialogTitle className="text-lg font-semibold">{titulo}</DialogTitle>
         {descripcion && <DialogDescription className="mb-3 text-sm text-ink-muted">{descripcion}</DialogDescription>}
         {avisos.map((aviso) => (
-          <Alerta key={aviso} tono="aviso" className="mb-2">
+          <Alert key={aviso} tone="notice" className="mb-2">
             {aviso}
-          </Alerta>
+          </Alert>
         ))}
         {acto.isSuccess && exito ? (
           <div className="space-y-3">
@@ -126,9 +125,9 @@ export function DialogoDeActo<T>({
               </p>
             </div>
             {acto.isError && (
-              <Alerta tono="error">
+              <Alert tone="danger">
                 <MensajeDeError error={acto.error} siFalla={siFalla} />
-              </Alerta>
+              </Alert>
             )}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={onCerrar}>

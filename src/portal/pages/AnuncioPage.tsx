@@ -1,11 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
-import { Badge, Button, Card, CardBody, Input, Table, Td, Textarea, Th } from '@wasichai/ui'
+import { Alert, Badge, Button, Card, CardBody, Input, Table, Td, Textarea, Th } from '@wasichai/ui'
 import { Ban, CalendarClock, Coins, RefreshCw, Trash2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { EstadoAnuncioBadge } from '../components/EstadoAnuncioBadge'
 import { formatDate, formatMoney, formatNumber, formatText } from '../components/format'
@@ -281,11 +280,11 @@ function DialogoAnuncio({ acto, ficha, onCerrar }: { acto: Acto; ficha: FichaAnu
       enviar={enviar}
       onExito={() => queryClient.invalidateQueries({ queryKey: claves.anuncios })}
       exito={(m) => (
-        <Alerta tono="exito">
+        <Alert tone="success">
           {textos.hecho}
           {m.fecha ? ` el ${formatDate(m.fecha)}` : ''}.
           {m.tasa !== null && m.tasa !== undefined && ` Devenga ${formatMoney(m.tasa)} del ejercicio ${m.anio ?? '—'}.`}
-        </Alerta>
+        </Alert>
       )}
       onCerrar={onCerrar}
     >

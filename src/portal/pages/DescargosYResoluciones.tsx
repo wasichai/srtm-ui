@@ -1,9 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Button, Card, CardHeader, CardTitle, Input, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
+import { Alert, Button, Card, CardHeader, CardTitle, Input, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
 import { FileText, Gavel, MailCheck, MessageSquareText } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { formatDate, formatText, today } from '../components/format'
 import { PdfDialog } from '../components/PdfDialog'
@@ -164,9 +163,9 @@ function DialogoDescargo({ expediente: e, onCerrar }: { expediente: ExpedienteIn
       }
       onExito={invalidar}
       exito={(d) => (
-        <Alerta tono={d.en_plazo ? 'exito' : 'atencion'} titulo={`Descargo ${d.numero_expediente} registrado.`}>
+        <Alert tone={d.en_plazo ? 'success' : 'warning'} title={`Descargo ${d.numero_expediente} registrado.`}>
           Presentado el {formatDate(d.fecha)}; plazo {d.plazo_texto}, hasta el {formatDate(d.presentado_hasta)}. <PlazoDelDescargo descargo={d} />
-        </Alerta>
+        </Alert>
       )}
       onCerrar={onCerrar}
     >
@@ -256,9 +255,9 @@ function DialogoResolucion({ expediente: e, onCerrar }: { expediente: Expediente
       onExito={invalidar}
       exito={(r) => (
         <div className="space-y-3">
-          <Alerta tono="exito">
+          <Alert tone="success">
             Resolución {r.numero} dictada el {formatDate(r.fecha)}.
-          </Alerta>
+          </Alert>
           <VerPdfResolucion resolucion={r} etiqueta="Ver PDF" />
         </div>
       )}
@@ -277,7 +276,7 @@ function DialogoResolucion({ expediente: e, onCerrar }: { expediente: Expediente
       </Campo>
       {recurso && (
         <>
-          {e.descargos.length === 0 && <Alerta tono="atencion">El acta no tiene descargos: una resolución de recurso resuelve un descargo.</Alerta>}
+          {e.descargos.length === 0 && <Alert tone="warning">El acta no tiene descargos: una resolución de recurso resuelve un descargo.</Alert>}
           <Campo etiqueta="Descargo que resuelve" requerido>
             {(id) => (
               <select id={id} className={SELECT} value={descargo} onChange={(ev) => setDescargo(ev.target.value)}>
@@ -445,10 +444,10 @@ function DialogoNotificacion({ resolucion: r, onCerrar }: { resolucion: Resoluci
       enviar={(observacion) => rentas.notificarResolucion(r.id, cuerpo(observacion))}
       onExito={invalidar}
       exito={(n) => (
-        <Alerta tono={n.exigible_desde ? 'exito' : 'atencion'} titulo={`Intento ${n.intento} registrado.`}>
+        <Alert tone={n.exigible_desde ? 'success' : 'warning'} title={`Intento ${n.intento} registrado.`}>
           Diligencia del {formatDate(n.fecha_diligencia)} en {n.direccion}: {(RESULTADOS[n.resultado] ?? n.resultado).toLowerCase()}.{' '}
           <EfectoDeLaNotificacion notificacion={n} />
-        </Alerta>
+        </Alert>
       )}
       onCerrar={onCerrar}
     >

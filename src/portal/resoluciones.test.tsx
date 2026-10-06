@@ -9,7 +9,7 @@ import type { CodigoInfraccion, DescargoPapeleta, ExpedienteInfraccion, Notifica
 // se registra un descargo y se ve su plazo y si se presentó en él tal como lo dice el backend (nunca contado aquí); se
 // dicta la RIS o la resolución de un recurso (que exige el descargo que resuelve, su sentido y su efecto; SE_REDUCE se
 // ofrece impedido y dice por qué); el PDF de cada resolución; cada intento de notificación con su exigible_desde del
-// backend o «no surte efecto». lo que falta para computar un plazo, en una Alerta; cada acción impedida dice por qué
+// backend o «no surte efecto». lo que falta para computar un plazo, en una Alert; cada acción impedida dice por qué
 // (el orden legal del backend o el permiso). números, nombres y fechas FICTICIOS
 
 // jsdom has no webgl
@@ -282,7 +282,7 @@ describe('Descargos', () => {
     expect(await within(dialogo).findByRole('status')).toHaveTextContent('Presentado dentro del plazo.')
   })
 
-  it('names in an Alerta what the backend lacks to compute the plazo (422 faltan)', async () => {
+  it('names in an Alert what the backend lacks to compute the plazo (422 faltan)', async () => {
     start([
       {
         method: 'POST',
@@ -616,7 +616,7 @@ describe('Notificación de una resolución', () => {
     expect((await posted(NOTIFICACION)).body).toMatchObject({ fecha_diligencia: `${year}-03-05`, resultado: 'RECHAZADO', direccion: 'Jr. Ficticio 123' })
   })
 
-  it('names in an Alerta what the backend lacks to compute exigible_desde (422 faltan)', async () => {
+  it('names in an Alert what the backend lacks to compute exigible_desde (422 faltan)', async () => {
     start([
       {
         method: 'POST',
