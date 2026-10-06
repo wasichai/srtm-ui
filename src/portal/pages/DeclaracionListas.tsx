@@ -91,6 +91,7 @@ export function ObrasPanel({ declaracion, readOnly }: { declaracion: string; rea
       queryKey="obras"
       plural="obras complementarias"
       singular="obra complementaria"
+      femenino
       sections={OBRA_SECTIONS}
       catalog="obra_complementaria"
       wide
