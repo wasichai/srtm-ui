@@ -1,17 +1,23 @@
-import { isNavTreeGroup, type NavTreeGroup, type NavTreeLeaf, type NavTreeNode } from '@wasichai/core'
+import { isNavTreeGroup, type NavTreeGroup, type NavTreeLeaf } from '@wasichai/core'
 import { Settings } from 'lucide-react'
 
-// the tree menu of the portal (portal-tributario theme): what a clerk does, grouped by what it is done on. the home
-// page is not a leaf, the panel's header takes there. the tree's shape, its drawing and its current leaf are
-// @wasichai/core's (NavTree); the trámites and who sees them are srtm's
+// the menu of the portal (portal-tributario theme, MenuPortal): what a clerk does, grouped by what it is done on. the
+// home page is not a leaf, the bar starts with it. the tree's shape and its current leaf are @wasichai/core's; the
+// trámites and who sees them are srtm's
 
 export interface HojaNav extends NavTreeLeaf {
   // for admins only: the administration. no group has it
   soloAdmin?: boolean
 }
 
-export type GrupoNav = NavTreeGroup<HojaNav>
-export type NodoNav = NavTreeNode<HojaNav>
+// still a core group (NodoNav is a NavTreeNode<HojaNav>), with its own subgroups
+export interface GrupoNav extends NavTreeGroup<HojaNav> {
+  // the bar's label, when the group's does not fit on its one line: its panel keeps the full one
+  corto?: string
+  children: NodoNav[]
+}
+
+export type NodoNav = GrupoNav | HojaNav
 
 export const NAV_TREE: NodoNav[] = [
   {
@@ -46,6 +52,7 @@ export const NAV_TREE: NodoNav[] = [
   // and Escalas y plazos (the padrones of the vencidas and where the plazos are loaded)
   {
     label: 'Infracciones administrativas',
+    corto: 'Infracciones',
     children: [
       { label: 'Expedientes', to: '/infracciones', alsoAt: ['/infracciones/:id'] },
       { label: 'Nueva acta', to: '/infracciones/nueva' },
@@ -58,6 +65,7 @@ export const NAV_TREE: NodoNav[] = [
   // anuncio with its autorización, and the tasas of a year by clase
   {
     label: 'Anuncios y propaganda',
+    corto: 'Anuncios',
     children: [
       { label: 'Padrón de anuncios', to: '/anuncios' },
       { label: 'Nuevo anuncio', to: '/anuncios/nuevo' },

@@ -14,7 +14,7 @@ const libraryTokens = () =>
   readFileSync(join(__dirname, '..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', 'tokens.css'), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'pasos.css', 'banda.css']
+const PARCIALES = ['tables.css', 'shell.css', 'menu.css', 'controls.css', 'tabs.css', 'pasos.css', 'banda.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -38,6 +38,46 @@ describe('portal-tributario partials', () => {
     it('stays outside any layer', () => {
       expect(css).not.toMatch(/@layer/)
     })
+  })
+})
+
+describe('menu.css', () => {
+  const css = read('menu.css')
+  const tokens = rule(libraryTokens(), PORTAL)
+  const MENU = `${PORTAL} [data-ui='menu-portal']`
+
+  // the tree's greys (the library's nav.css), with AA on the bar, on an open group and on the current leaf
+  it('marks the current group and the hovered one in the dark link blue', () => {
+    const grupo = rule(css, `${MENU} [data-ui='menu-grupo']:is(:hover, [aria-current])`)
+    expect(grupo.get('color')).toBe('#0d4d80')
+    expect(contrast('#0d4d80', tokens.get('--table-head')!)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast('#0d4d80', tokens.get('--surface')!)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('draws the carets and the icons in #555, 3:1 on the bar', () => {
+    expect(rule(css, `${MENU} [data-ui='menu-caret']`).get('color')).toBe('#555')
+    expect(contrast('#555', tokens.get('--table-head')!)).toBeGreaterThanOrEqual(3)
+  })
+
+  it("shades its panel as the session menu's", () => {
+    expect(rule(css, `${MENU} [data-ui='menu-panel']`).get('box-shadow')).toBe('0 6px 22px rgb(13 95 168 / 22%)')
+    expect(rule(read('shell.css'), `${PORTAL} [data-ui='menu-sesion-panel']`).get('box-shadow')).toBe('0 6px 22px rgb(13 95 168 / 22%)')
+  })
+
+  it("marks the panel's leaves as the tree's: grey under the pointer, the current one darker, with AA", () => {
+    const hover = rule(css, `${MENU} [data-ui='menu-hoja']:hover`)
+    expect(hover.get('background-color')).toBe('#e9e9e9')
+    expect(contrast(tokens.get('--link')!, '#e9e9e9')).toBeGreaterThanOrEqual(4.5)
+    const actual = rule(css, `${MENU} [data-ui='menu-hoja'][aria-current='page']`)
+    expect(actual.get('color')).toBe('#0d4d80')
+    expect(actual.get('background-color')).toBe('#e6e6e6')
+    expect(contrast(actual.get('color')!, actual.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  // after the hover: the current leaf keeps its grey under the pointer
+  it('keeps the current leaf grey under the pointer', () => {
+    const selectores = rules(css).flatMap((r) => r.selectors)
+    expect(selectores.indexOf(`${MENU} [data-ui='menu-hoja'][aria-current='page']`)).toBeGreaterThan(selectores.indexOf(`${MENU} [data-ui='menu-hoja']:hover`))
   })
 })
 

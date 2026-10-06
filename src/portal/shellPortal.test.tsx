@@ -4,8 +4,8 @@ import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
 
-// the shell of the portal-tributario theme (issue #52): brand bar with the search and a session menu, a light
-// lateral and the institutional footer. light, dark and system keep the classic shell
+// the shell of the portal-tributario theme (issue #52): brand bar with the search and a session menu, the menu bar
+// under it (menuPortal.test.tsx) and the institutional footer. light, dark and system keep the classic shell
 
 // jsdom has no webgl: the map is not what these tests look at
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
@@ -40,17 +40,18 @@ function start(theme: string, { path = '/', admin = true } = {}) {
 }
 
 // the home page drawn, and the permissions in: an admin gets the way to the administration in the bar (the portal's
-// tree has one too)
+// menu bar has one too)
 async function listo() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
   expect(await within(screen.getByRole('banner')).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
 }
 
 const sesion = () => screen.getByRole('button', { name: /menú de sesión/ })
-const lateral = () => screen.getByRole('navigation', { name: 'Secciones' })
+// the classic lateral, or the portal's menu bar
+const secciones = () => screen.getByRole('navigation', { name: 'Secciones' })
 
 describe('portal-tributario shell', () => {
-  it('draws the brand bar, a light lateral and the institutional footer', async () => {
+  it('draws the brand bar, the menu bar under it and the institutional footer', async () => {
     start('portal-tributario')
     await listo()
 
@@ -66,12 +67,14 @@ describe('portal-tributario shell', () => {
     expect(within(bar).getByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' })).toHaveTextContent('ARAdmin RentasAdministrador')
     expect(within(bar).queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
 
-    // not the dark sidebar: the lateral is light, its links in the link colour, the current one marked (the tree
-    // itself: arbolNav.test.tsx)
-    expect(lateral()).not.toHaveClass('bg-shell')
-    expect(lateral()).toHaveClass('bg-table-head')
-    expect(within(lateral()).getByRole('link', { name: 'Ir al inicio' })).toHaveAttribute('aria-current', 'page')
-    expect(within(lateral()).getByRole('link', { name: 'Buscar contribuyentes' })).toHaveClass('text-link')
+    // not the dark sidebar: a light bar right under the brand bar, home current in the link colour, a button per
+    // group (the bar itself: menuPortal.test.tsx)
+    expect(secciones()).not.toHaveClass('bg-shell')
+    expect(secciones()).toHaveClass('bg-table-head')
+    expect(bar.nextElementSibling).toBe(secciones())
+    expect(within(secciones()).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
+    expect(within(secciones()).getByRole('link', { name: 'Inicio' })).toHaveClass('text-link')
+    expect(within(secciones()).getByRole('button', { name: 'Contribuyentes' })).toHaveAttribute('aria-expanded', 'false')
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Municipalidad Distrital de Perené — Sistema de Gestión Tributaria Municipal')
     // the workspace tabs over the content, as in the classic shell
@@ -82,7 +85,7 @@ describe('portal-tributario shell', () => {
     start(theme)
     await listo()
     expect(screen.getByRole('banner')).not.toHaveClass('bg-shell')
-    expect(lateral()).toHaveClass('bg-shell')
+    expect(secciones()).toHaveClass('bg-shell')
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /menú de sesión/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
@@ -163,7 +166,7 @@ describe('portal-tributario shell', () => {
     expect(window.location.pathname + window.location.search).toBe('/buscar?q=quispe')
   })
 
-  // one frame for both shells: a theme switch changes the bar, the lateral and the footer, not the page or the menu
+  // one frame for both shells: a theme switch changes the bar, the sections and the footer, not the page or the menu
   it('switches to the portal shell keeping the page and the theme menu', async () => {
     start('light', { path: '/contribuyentes' })
     await userEvent.type(await screen.findByLabelText('Buscar contribuyentes'), 'quispe')
@@ -172,6 +175,9 @@ describe('portal-tributario shell', () => {
 
     await waitFor(() => expect(screen.getByRole('banner')).toHaveClass('bg-shell'))
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
+    // the lateral gone, the menu bar under the brand bar
+    expect(secciones()).toHaveAttribute('data-ui', 'menu-portal')
+    expect(document.getElementById('sidebar')).toBeNull()
     expect(screen.getByLabelText('Buscar contribuyentes')).toHaveValue('quispe')
     expect(screen.getByRole('button', { name: /^Tema: Portal tributario/ })).toHaveFocus()
   })

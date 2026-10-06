@@ -20,29 +20,27 @@ export const NAV = [
   { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false }
 ]
 
-// the lateral gets whether it is open (the header's menu button, usePanelLateral) and tells a pick, which may close
-// it; a foldable one (the portal's tree) has its own button to fold it
+// the classic lateral: open on a phone from the header's menu button, which a pick closes
 export interface LateralProps {
   abierto: boolean
   onNavegar: () => void
-  onPlegar: () => void
 }
 
 // what a variant of the shell draws inside AppShell's frame: class names of the frame's own elements (over their
 // classic look where the name says so) and its pieces
 export interface PiezasShell {
   cabecera: string
-  botonMenu: string
-  // the lateral folds on any screen, remembered for the browser tab, and the header's menu button shows only while
-  // it is folded (the portal's tree). otherwise it is the classic phone menu
-  plegable?: boolean
   // the search input and the theme button, over their classic look
   busqueda?: string
   tema?: string
   admin: string
   Marca: ComponentType
   Sesion: ComponentType
-  Lateral: ComponentType<LateralProps>
+  // the sections: a bar right under the header (the portal's), or a lateral with the header's menu button for a phone
+  // (the classic), styled by botonMenu
+  Menu?: ComponentType
+  Lateral?: ComponentType<LateralProps>
+  botonMenu?: string
   Pie?: ComponentType
 }
 

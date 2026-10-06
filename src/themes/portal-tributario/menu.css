@@ -1,0 +1,29 @@
+/* portal-tributario: the menu bar under the brand bar, with what the prototype's tree gives it and no token has. the
+   component (src/portal/shell/MenuPortal.tsx, only under this theme) draws it with tokens (bg-table-head, text-link,
+   bg-ink/6 and /4 for the current leaf and the hover, shadow-lg) and marks its parts with data-ui; this pins the greys
+   the library's nav.css gives the tree it replaces. unlayered, so it beats the utilities */
+
+/* the group of the page and the one under the pointer: the darker link blue */
+[data-theme='portal-tributario'] [data-ui='menu-portal'] [data-ui='menu-grupo']:is(:hover, [aria-current]) {
+    color: #0d4d80;
+}
+
+/* the groups' carets and the icon of a leaf in their place */
+[data-theme='portal-tributario'] [data-ui='menu-portal'] [data-ui='menu-caret'] {
+    color: #555;
+}
+
+/* the dropdown: shaded as the session menu's panel (shell.css) */
+[data-theme='portal-tributario'] [data-ui='menu-portal'] [data-ui='menu-panel'] {
+    box-shadow: 0 6px 22px rgb(13 95 168 / 22%);
+}
+
+[data-theme='portal-tributario'] [data-ui='menu-portal'] [data-ui='menu-hoja']:hover {
+    background-color: #e9e9e9;
+}
+
+/* after the hover: the current leaf keeps its background under the pointer */
+[data-theme='portal-tributario'] [data-ui='menu-portal'] [data-ui='menu-hoja'][aria-current='page'] {
+    color: #0d4d80;
+    background-color: #e6e6e6;
+}

@@ -1,17 +1,14 @@
 import { Landmark } from 'lucide-react'
 import { ENTIDAD, type PiezasShell } from './comun'
-import { LateralPortal } from './LateralPortal'
+import { MenuPortal } from './MenuPortal'
 import { MenuSesion } from './MenuSesion'
 
 // the shell of the portal-tributario theme (useVarianteTema() === 'portal'), drawn in AppShell's frame: a brand bar in
-// the shell colours with the search, the administration, the theme menu and the session menu; a light lateral with
-// the tree of trámites, which folds; and the institutional footer. the bar, the lateral and the footer do not print
+// the shell colours with the search, the administration, the theme menu and the session menu; the menu bar of
+// trámites right under it, the page taking the whole width; and the institutional footer. no lateral, so no menu
+// button in the bar. the bars and the footer do not print
 export const PortalShell: PiezasShell = {
   cabecera: 'flex h-14 shrink-0 items-center gap-2 bg-shell px-4 text-shell-ink sm:gap-4 print:hidden',
-  // the prototype's 30px hamburger, on the bar's colours: it brings back the folded tree (the tree folds itself)
-  botonMenu:
-    'grid size-[30px] shrink-0 place-items-center rounded border border-shell-ink/50 text-shell-ink hover:bg-shell-ink/10 focus-visible:outline-shell-ink [&>svg]:size-4',
-  plegable: true,
   // white on the bar, its text in ink (not the bar's white), the focus ring white: the theme's focus blue is lost
   // on the shell blue
   busqueda: 'border-transparent bg-surface text-ink focus-visible:outline-shell-ink',
@@ -22,7 +19,7 @@ export const PortalShell: PiezasShell = {
   // the prototype's bar also shows the contributor's condition and a notices tray (a button with a badge) here,
   // before the session. the staff portal has no data for either, so neither is drawn: no empty button
   Sesion: MenuSesion,
-  Lateral: LateralPortal,
+  Menu: MenuPortal,
   Pie
 }
 

@@ -241,15 +241,20 @@ describe('menú de infracciones administrativas', () => {
     expect(within(subnav).getByRole('link', { name: 'CUIS' })).toHaveAttribute('href', '/infracciones/cuis')
   })
 
-  it('the tree menu has the group between Arbitrios and Emisión, its CUIS leaf current', async () => {
+  // the bar shows the group short: Infracciones
+  it('the menu bar has the group between Arbitrios and Emisión, marked with its CUIS leaf', async () => {
     start([{ path: '/srtm/infracciones/cuis', body: catalogo() }], { theme: 'portal-tributario' })
     await tabla()
-    const lateral = screen.getByRole('navigation', { name: 'Secciones' })
-    const grupos = within(lateral)
+    const menu = screen.getByRole('navigation', { name: 'Secciones' })
+    const grupos = within(menu)
       .getAllByRole('button')
       .map((b) => b.textContent)
-      .filter((t) => ['Arbitrios', 'Infracciones administrativas', 'Emisión'].includes(t ?? ''))
-    expect(grupos).toEqual(['Arbitrios', 'Infracciones administrativas', 'Emisión'])
-    expect(within(lateral).getByRole('link', { name: 'CUIS' })).toHaveAttribute('aria-current', 'page')
+      .filter((t) => ['Arbitrios', 'Infracciones', 'Emisión'].includes(t ?? ''))
+    expect(grupos).toEqual(['Arbitrios', 'Infracciones', 'Emisión'])
+    const grupo = within(menu).getByRole('button', { name: 'Infracciones administrativas' })
+    expect(grupo).toHaveAttribute('aria-current', 'true')
+    await userEvent.click(grupo)
+    const panel = document.getElementById(grupo.getAttribute('aria-controls')!)!
+    expect(within(panel).getByRole('link', { name: 'CUIS' })).toHaveAttribute('aria-current', 'page')
   })
 })
