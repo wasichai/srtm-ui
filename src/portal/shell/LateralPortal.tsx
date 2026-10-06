@@ -1,12 +1,12 @@
+import { NavTree } from '@wasichai/core'
 import { useMemo, useState } from 'react'
 import { useSession } from '../auth/session'
-import { ArbolNav } from './ArbolNav'
 import type { LateralProps } from './comun'
 import { arbolPara, NAV_TREE } from './navTree'
 import { guardarNav, leerNav } from './panelLateral'
 
-// the portal's lateral: the tree of trámites (NAV_TREE, the administration for admins only), its groups remembered
-// for the browser tab like the panel (usePanelLateral)
+// the portal's lateral: the tree of trámites (NAV_TREE, the administration for admins only) in core's NavTree, its
+// groups remembered for the browser tab like the panel (usePanelLateral)
 export function LateralPortal({ abierto, onNavegar, onPlegar }: LateralProps) {
   const { isAdmin } = useSession()
   const nodos = useMemo(() => arbolPara(NAV_TREE, { isAdmin }), [isAdmin])
@@ -19,16 +19,17 @@ export function LateralPortal({ abierto, onNavegar, onPlegar }: LateralProps) {
   }
 
   return (
-    <ArbolNav
+    <NavTree
       id="sidebar"
-      etiqueta="Secciones"
-      titulo="Mis trámites"
-      nodos={nodos}
-      abierto={abierto}
-      grupos={grupos}
-      onGrupo={alternar}
-      onNavegar={onNavegar}
-      onPlegar={onPlegar}
+      label="Secciones"
+      title="Mis trámites"
+      nodes={nodos}
+      homeTo="/"
+      open={abierto}
+      groups={grupos}
+      onToggleGroup={alternar}
+      onNavigate={onNavegar}
+      onFold={onPlegar}
     />
   )
 }
