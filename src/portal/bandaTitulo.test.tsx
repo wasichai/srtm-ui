@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
 
 // the title band of the portal-tributario theme (#55): the fichas and the wizards open with their h1 on the brand and
-// what goes with it (badges, the ficha's actions, the wizard's buttons) in a row under it; the folder tabs hang from
-// it where they come right after. light keeps the header of always
+// what goes with it (badges, the ficha's actions, the wizard's buttons) in a row under it; the ficha in two columns
+// comes after, the page's gap between. light keeps the header of always
 
 // jsdom has no webgl: the map is not what these tests look at
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
@@ -57,7 +57,7 @@ const h1 = (name: string | RegExp) => screen.findByRole('heading', { level: 1, n
 const bandaDe = (heading: HTMLElement) => heading.closest<HTMLElement>('[data-ui="banda-titulo"]')
 // the row under the band
 const filaDe = (heading: HTMLElement) => bandaDe(heading)!.nextElementSibling as HTMLElement
-// what follows the header: the box of the folder tabs, which banda.css joins to it
+// what follows the header: the box of the ficha's tabs
 const siguienteA = (heading: HTMLElement) => bandaDe(heading)!.parentElement!.nextElementSibling as HTMLElement
 
 describe('title band: fichas', () => {
@@ -99,10 +99,11 @@ describe('title band: fichas', () => {
     ).toEqual(['Anular declaración', 'Cancelar', 'Guardar', 'Siguiente'])
   })
 
-  it("hangs the declaración's folder tabs from its header", async () => {
+  it("puts the declaración's two-column ficha right after its header", async () => {
     start('portal-tributario', '/declaraciones/d1')
     const titulo = await h1('Declaración jurada predial - 39147')
     expect(siguienteA(titulo).firstElementChild).toHaveAttribute('data-slot', 'tabs')
+    expect(siguienteA(titulo).firstElementChild).toHaveAttribute('data-orientation', 'vertical')
   })
 })
 

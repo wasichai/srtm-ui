@@ -4,16 +4,18 @@ import { Badge, Card } from '@wasichai/ui'
 import { Coins, FileText, Gavel, Landmark, MapPinned, Megaphone, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
+import { useVarianteTema } from '../../themes'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, formatMoney } from '../components/format'
 import { PasosAsistente } from '../components/PasosAsistente'
-import { StatCard } from '../components/StatCard'
+import { ResumenCifras, StatCard } from '../components/StatCard'
 import { YearSelect } from '../components/YearSelect'
 import { INSTRUCCIONES_INSCRIPCION } from '../forms/instrucciones'
 import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
+import type { Totales } from '../types'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { AnunciosDe } from './AnunciosPages'
 import { ArbitriosDelContribuyente } from './Arbitrios'
@@ -48,6 +50,13 @@ const PASOS: Record<string, number> = {
   anuncios: 5
 }
 
+// the year's figures: a StatCard each over the tabs in light and dark, one card under them in the portal's two columns
+const cifrasDelAnio = (predios: number, totales: Totales) => [
+  { icon: MapPinned, label: 'Predios', value: String(predios) },
+  { icon: Receipt, label: 'Autoavalúo', value: formatMoney(totales.autoavaluo) },
+  { icon: Coins, label: 'Valor afecto', value: formatMoney(totales.valor_afecto) }
+]
+
 // keyed by id: another contribuyente is a fresh ficha (first tab, this year), not this one reused
 export function ContribuyenteRoute() {
   const { id = '' } = useParams()
@@ -78,6 +87,7 @@ function ContribuyentePage({ id }: { id: string }) {
   const paso = inscripcion ? CONTRIBUYENTE_TABS.find((tab) => tab.id === activa && habilitada(tab.id))?.id : undefined
   const c = ficha.data?.contribuyente
   useWorkspaceTab(c ? { path: `/contribuyentes/${id}`, label: `${c.numero_documento ?? ''} ${c.nombre_completo ?? ''}`.trim(), kind: 'contribuyente' } : null)
+  const portal = useVarianteTema() === 'portal'
 
   return (
     <QueryState query={ficha}>
@@ -106,11 +116,13 @@ function ContribuyentePage({ id }: { id: string }) {
               </div>
             }
           />
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard icon={MapPinned} label={`Predios ${anio}`} value={String(predios)} />
-            <StatCard icon={Receipt} label={`Autoavalúo ${anio}`} value={formatMoney(totales.autoavaluo)} />
-            <StatCard icon={Coins} label={`Valor afecto ${anio}`} value={formatMoney(totales.valor_afecto)} />
-          </div>
+          {!portal && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {cifrasDelAnio(predios, totales).map((cifra) => (
+                <StatCard key={cifra.label} icon={cifra.icon} label={`${cifra.label} ${anio}`} value={cifra.value} />
+              ))}
+            </div>
+          )}
           {/* the inscription goes on here after Nuevo contribuyente: its steps, as there */}
           {paso && <PasosAsistente pasos={CONTRIBUYENTE_TABS} actual={paso} onIr={abrir} puedeIr={habilitada} instruccion={INSTRUCCIONES_INSCRIPCION[paso]} />}
           <Card className="pb-4">
@@ -118,6 +130,7 @@ function ContribuyentePage({ id }: { id: string }) {
               label="Secciones del contribuyente"
               active={activa}
               onChange={abrir}
+              aside={portal && <ResumenCifras titulo={`Resumen ${anio}`} cifras={cifrasDelAnio(predios, totales)} />}
               tabs={[
                 {
                   ...CONTRIBUYENTE_TABS[0],
@@ -219,7 +232,12 @@ function ContribuyentePage({ id }: { id: string }) {
                     </div>
                   )
                 }
-              ].map((tab) => ({ ...tab, disabled: !habilitada(tab.id) }))}
+              ].map((tab) => ({
+                ...tab,
+                // the portal's two columns head the srtm's registro and rentas' own tabs apart
+                grupo: CONTRIBUYENTE_TABS.some((srtm) => srtm.id === tab.id) ? 'Registro tributario' : 'Rentas',
+                disabled: !habilitada(tab.id)
+              }))}
             />
           </Card>
         </div>

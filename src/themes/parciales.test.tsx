@@ -172,9 +172,62 @@ describe('tabs.css', () => {
     expect(tabs.filter((selector) => !selector.startsWith(CABECERA))).toEqual([])
   })
 
-  // the ficha's tabs are the library sheet's, on FichaTabs' data-slot
-  it("leaves the ficha's tabs to the library", () => {
-    expect(css).not.toMatch(/ficha-tab|ficha-panel|tabs-trigger/)
+  // the ficha in two columns (FichaTabs' vertical variant, the portal's): srtm's. the horizontal tabs stay the
+  // library sheet's, on FichaTabs' data-slot
+  const VERTICAL = `${PORTAL} [data-slot='tabs'][data-orientation='vertical']`
+
+  it('paints only the vertical variant of the ficha tabs, more specific than every rule of the library sheet', () => {
+    const fichas = rules(css)
+      .flatMap((r) => r.selectors)
+      .filter((selector) => /tabs/.test(selector.replace('workspace-tabs', '')))
+    expect(fichas.length).toBeGreaterThan(0)
+    // the theme, the root and its orientation: three attributes before the part, against the library's one or two
+    // (and a pseudo-class)
+    expect(fichas.filter((selector) => !selector.startsWith(VERTICAL))).toEqual([])
+    expect(css).not.toMatch(/ficha-tab|ficha-panel/)
+  })
+
+  it("keeps the library's horizontal rules out: no container sizes, no strip line, no bottom borders", () => {
+    expect(rule(css, VERTICAL).get('container-type')).toBe('normal')
+    const lista = rule(css, `${VERTICAL} [data-slot='tabs-list']`)
+    expect(lista.get('background')).toBe('none')
+    expect(lista.get('padding')).toBe('0')
+    expect(lista.get('border')).toBe('0')
+    expect(rule(css, `${VERTICAL} [data-slot='tabs-trigger']`).get('border')).toBe('1px solid transparent')
+    expect(rule(css, `${VERTICAL} [data-slot='tabs-content']`).get('border')).toBe('1px solid var(--brand)')
+  })
+
+  it('draws the vertical tabs as grey folders, 16px, square on the right, with AA', () => {
+    const tab = rule(css, `${VERTICAL} [data-slot='tabs-trigger']`)
+    expect(tab.get('padding')).toBe('10px 16px')
+    expect(tab.get('border-radius')).toBe('3px 0 0 3px')
+    expect(tab.get('background')).toBe('#f0f0f0')
+    expect(tab.get('color')).toBe('#666666')
+    expect(tab.get('font-size')).toBe('16px')
+    expect(tab.get('font-weight')).toBe('normal')
+    expect(tab.get('text-align')).toBe('left')
+    expect(contrast('#666666', '#f0f0f0')).toBeGreaterThanOrEqual(4.5)
+    expect(rule(css, `${VERTICAL} [data-slot='tabs-trigger']:hover:not(:disabled)`).get('color')).toBe('var(--ink)')
+  })
+
+  // the open one: white, bold ink, steel on three sides; its white right border 1px over the panel's left one, above it
+  it('joins the open tab to the panel on its right', () => {
+    const abierta = rule(css, `${VERTICAL} [data-slot='tabs-trigger'][aria-selected='true']`)
+    expect(abierta.get('border-color')).toBe('var(--brand)')
+    expect(abierta.get('border-right-color')).toBe('var(--surface)')
+    expect(abierta.get('background')).toBe('var(--surface)')
+    expect(abierta.get('color')).toBe('var(--ink)')
+    expect(abierta.get('font-weight')).toBe('bold')
+    expect(abierta.get('margin-right')).toBe('-1px')
+    expect(abierta.get('position')).toBe('relative')
+    expect(abierta.get('z-index')).toBe('1')
+  })
+
+  it('boxes the panel in steel, square where the tabs meet it', () => {
+    const panel = rule(css, `${VERTICAL} [data-slot='tabs-content']`)
+    expect(panel.get('border-radius')).toBe('0 3px 3px 3px')
+    expect(panel.get('background')).toBe('var(--surface)')
+    expect(panel.get('padding-bottom')).toBe('24px')
   })
 
   it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {
@@ -276,11 +329,10 @@ describe('banda.css', () => {
   const css = read('banda.css')
   const cabecera = `${PORTAL} [data-ui='cabecera-banda']`
 
-  // the header, then the box whose child is FichaTabs' strip (the card tabs.css steps aside): one relative selector,
-  // since a :has() cannot hold another
-  it('hangs the folder tabs from the header, without the page gap', () => {
-    expect(rule(css, `${cabecera}:has(+ * > [data-slot='tabs'])`).get('margin-block-end')).toBe('0')
-    expect(rule(css, `${cabecera}:has(+ * > [data-slot='tabs']) > [data-ui='cabecera-fila']`).get('padding-block-end')).toBe('10px')
+  // the portal's ficha is in two columns: its tabs no longer hang from the header, the page's gap stays
+  it('leaves the gap between the header and the ficha to the page', () => {
+    expect(css).not.toMatch(/data-slot='tabs'/)
+    expect(rules(css).flatMap((r) => r.selectors)).not.toContain(`${cabecera}:has(+ * > [data-slot='tabs'])`)
   })
 
   it("keeps a link of the band in the band's white, and its focus ring white", () => {

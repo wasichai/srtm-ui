@@ -1,6 +1,7 @@
-/* workspace tabs and fieldsets with the legend on the border (wasichai/srtm-ui#48). the ficha's tabs are the library's
-   sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs' data-slot, #66). unlayered, so these win over
-   tailwind's utilities; hooked on the data-ui of TabBar and RecordForm. the aria and the behaviour do not change */
+/* workspace tabs, the ficha in two columns and fieldsets with the legend on the border (wasichai/srtm-ui#48). the
+   ficha's horizontal tabs are the library's sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs'
+   data-slot, #66); the vertical ones, srtm's. unlayered, so these win over tailwind's utilities; hooked on the data-ui
+   of TabBar and RecordForm and on FichaTabs' data-orientation. the aria and the behaviour do not change */
 
 /* the workspace tabs as the brand bar's second row (TabBar in the header, data-ubicacion='cabecera'), like a
    browser's: outlined in white on the bar, open at the bottom. under the theme they are always there */
@@ -38,6 +39,59 @@
 [data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] :focus-visible {
     outline-color: currentcolor;
     outline-offset: -2px;
+}
+
+/* the ficha in two columns (FichaTabs under the theme, data-orientation='vertical'): grey folders down the left, the
+   open one joined to the panel on its right. the library's sheet paints the horizontal strip on the same data-slot,
+   with one or two attributes and a pseudo-class: three attributes here win, and undo what is only the strip's (its
+   container sizes, its line, the bottom borders) */
+[data-theme='portal-tributario'] [data-slot='tabs'][data-orientation='vertical'] {
+    container-type: normal;
+}
+
+[data-theme='portal-tributario'] [data-slot='tabs'][data-orientation='vertical'] [data-slot='tabs-list'] {
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+/* 16px, square on the right, where the panel is */
+[data-theme='portal-tributario'] [data-slot='tabs'][data-orientation='vertical'] [data-slot='tabs-trigger'] {
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 3px 0 0 3px;
+    background: #f0f0f0;
+    color: #666666;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1.45;
+    text-align: left;
+}
+
+[data-theme='portal-tributario'] [data-slot='tabs'][data-orientation='vertical'] [data-slot='tabs-trigger']:hover:not(:disabled) {
+    color: var(--ink);
+}
+
+/* the open one: white and bold, steel on three sides. 1px wider, over the panel: its white right border hides the
+   panel's left one there */
+[data-theme='portal-tributario'] [data-slot='tabs'][data-orientation='vertical'] [data-slot='tabs-trigger'][aria-selected='true'] {
+    position: relative;
+    z-index: 1;
+    margin-right: -1px;
+    border-color: var(--brand);
+    border-right-color: var(--surface);
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: bold;
+}
+
+/* the panel: steel all round, square where the tabs meet it, white, with room at the bottom */
+[data-theme='portal-tributario'] [data-slot='tabs'][data-orientation='vertical'] [data-slot='tabs-content'] {
+    padding-bottom: 24px;
+    border: 1px solid var(--brand);
+    border-radius: 0 3px 3px 3px;
+    background: var(--surface);
 }
 
 /* a record form's sections: a steel fieldset with its legend on the border, 18px apart */
