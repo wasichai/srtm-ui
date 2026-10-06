@@ -10,17 +10,17 @@ import { PortalShell } from './PortalShell'
 import { TabBar } from './TabBar'
 import { ThemeMenu } from './ThemeMenu'
 
-// gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs over the content.
-// under the portal-tributario theme it delegates to PortalShell (brand bar, the menu bar of trámites, footer). one
-// frame for both, each variant bringing its pieces: a theme switch redraws the bar, the menu and the footer but keeps
-// the page (and whatever is not saved in it) and the theme menu, with its focus and its error, mounted. a piece a
-// variant does not have leaves its place empty, so what follows keeps its place too
+// gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs and the trail over the
+// content. under the portal-tributario theme it delegates to PortalShell (brand bar, the menu bar of trámites, footer;
+// the trail goes in the title band). one frame for both, each variant bringing its pieces: a theme switch redraws the
+// bar, the menu and the footer but keeps the page (and whatever is not saved in it) and the theme menu, with its focus
+// and its error, mounted. a piece a variant does not have leaves its place empty, so what follows keeps its place too
 export function AppShell() {
   const { isAdmin } = useSession()
   // the classic lateral opens only on a phone, from the header, and closes on a pick
   const [lateralAbierto, setLateralAbierto] = useState(false)
   const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
-  const { Marca, Sesion, Menu, Lateral, Pie } = piezas
+  const { Marca, Sesion, Menu, Lateral, Ruta, Pie } = piezas
 
   return (
     <div className="flex h-full flex-col">
@@ -57,7 +57,7 @@ export function AppShell() {
         {Lateral && <Lateral abierto={lateralAbierto} onNavegar={() => setLateralAbierto(false)} />}
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
-          <Breadcrumbs />
+          {Ruta && <Ruta />}
           <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
             <Outlet />
           </div>
@@ -74,7 +74,8 @@ const CLASICO: PiezasShell = {
   admin: 'hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink sm:flex',
   Marca: MarcaClasica,
   Sesion: SesionClasica,
-  Lateral: LateralClasico
+  Lateral: LateralClasico,
+  Ruta: Breadcrumbs
 }
 
 function MarcaClasica() {

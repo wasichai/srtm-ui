@@ -158,6 +158,26 @@ describe('portal-tributario shell', () => {
     ).toEqual(['Cerrar sesión'])
   })
 
+  // the portal marks the group in its menu bar; the trail of a ficha goes in its title band (bandaTitulo.test.tsx)
+  it('draws no trail strip over a page', async () => {
+    start('portal-tributario', { path: '/contribuyentes' })
+    expect(await screen.findByLabelText('Buscar contribuyentes')).toBeInTheDocument()
+    expect(within(secciones()).getByRole('button', { name: 'Contribuyentes' })).toHaveAttribute('aria-current', 'true')
+    expect(screen.queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
+  })
+
+  it.each(['light', 'dark'])('keeps the trail strip over the page with %s', async (theme) => {
+    start(theme, { path: '/contribuyentes' })
+    expect(await screen.findByLabelText('Buscar contribuyentes')).toBeInTheDocument()
+    const ruta = screen.getByRole('navigation', { name: 'Ruta' })
+    expect(screen.getByRole('navigation', { name: 'Fichas abiertas' }).nextElementSibling).toBe(ruta)
+    expect(
+      within(ruta)
+        .getAllByRole('listitem')
+        .map((paso) => paso.textContent)
+    ).toEqual(['Registro tributario y determinación', 'Registro tributario', 'Contribuyentes'])
+  })
+
   it.each(['portal-tributario', 'light'])('searches both padrones from the header with %s', async (theme) => {
     start(theme)
     await listo()

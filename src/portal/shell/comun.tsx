@@ -41,6 +41,8 @@ export interface PiezasShell {
   Menu?: ComponentType
   Lateral?: ComponentType<LateralProps>
   botonMenu?: string
+  // the trail over the page: the classic's strip. the portal's is in the title band
+  Ruta?: ComponentType
   Pie?: ComponentType
 }
 
