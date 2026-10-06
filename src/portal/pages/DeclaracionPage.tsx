@@ -63,9 +63,9 @@ const propios = (cambios: Record<string, unknown> | undefined, sections: Section
 const CON_TRANSFERENTE = ['COMPRA', 'DONACION', 'HERENCIA', 'ANTICIPO DE LEGITIMA', 'ADJUDICACION', 'PERMUTA', 'DACION EN PAGO', 'APORTE']
 
 // where the wizard goes once the declaration is presented: its transferente, when it came from someone and none is
-// there yet; else its características, while they lack what they require. bases: as caracteristicasSections (empty
-// right after presenting, since this runs before the predio's año has a parámetros query of its own: the DJ's own
-// tab, once open, asks for them live)
+// there yet; else its características, while they lack what they require. bases: as caracteristicasSections, the
+// BASE_ARBITRIO of the presented año, which NuevaDeclaracionPage asks for right after presenting (empty when the año
+// has none or the query fails: then only what is always required counts)
 export function siguientePendiente(declaracion: Declaracion, transferentes: number, bases: Set<string> = new Set()): string {
   if (transferentes === 0 && CON_TRANSFERENTE.includes(declaracion.tipo_adquisicion ?? '')) return 'transferentes'
   const valores = declaracion as unknown as FormValues
