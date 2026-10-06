@@ -437,6 +437,17 @@ describe('portal', () => {
     expect(JSON.parse(sessionStorage.getItem('srtm.tabs')!)).toHaveLength(1)
   })
 
+  it("brings back the clerk's own workspace tabs, never those of a session that ended here without signing out", async () => {
+    const otra = { path: '/contribuyentes/c9', label: '11111111 OTRA PERSONA', kind: 'contribuyente' }
+    sessionStorage.setItem('srtm.tabs', JSON.stringify([otra]))
+    sessionStorage.setItem('srtm.tabs.usuario', 'u9')
+    start('/')
+    expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
+    expect(within(tabBar()).queryByRole('link', { name: /OTRA PERSONA/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/OTRA PERSONA/)).not.toBeInTheDocument()
+    expect(sessionStorage.getItem('srtm.tabs.usuario')).toBe('u1')
+  })
+
   it('loads a ficha tab only when it is opened: the year for Predios, every year for Declaraciones', async () => {
     start('/contribuyentes/c1')
     expect(await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })).toBeInTheDocument()

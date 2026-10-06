@@ -32,7 +32,7 @@ import { NuevoPredioPage } from './pages/Nuevos'
 import { PredioRoute } from './pages/PredioPage'
 import { AppShell } from './shell/AppShell'
 import { ErrorDeRuta, PaginaNoEncontrada } from './shell/ErroresDeRuta'
-import { WorkspaceTabsProvider } from './shell/WorkspaceTabs'
+import { PestanasDeLaSesion } from './shell/WorkspaceTabs'
 
 // a 4xx will not change by asking again; a network blip or a 5xx might
 const retry = (count: number, error: unknown) => !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 2
@@ -46,9 +46,9 @@ const rutas = createRoutesFromElements(
     <Route
       element={
         <RequireSession>
-          <WorkspaceTabsProvider>
+          <PestanasDeLaSesion>
             <AppShell />
-          </WorkspaceTabsProvider>
+          </PestanasDeLaSesion>
         </RequireSession>
       }
       errorElement={<ErrorDeRuta completa />}
