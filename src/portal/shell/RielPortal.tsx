@@ -149,7 +149,7 @@ export function RielPortal() {
 }
 
 function Icono({ icon: Icon }: { icon: LucideIcon }) {
-  return <Icon aria-hidden className="size-5 shrink-0 text-ink-muted" strokeWidth={1.9} />
+  return <Icon aria-hidden className="size-5 shrink-0 text-ink-muted" />
 }
 
 // beside the rail, from the top of the row to its bottom, over the content (the tree scrolls in it); on a phone,

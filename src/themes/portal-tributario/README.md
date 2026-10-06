@@ -435,8 +435,9 @@ dark conservan las pestañas horizontales con íconos.
   la página pase en `aside`; a la derecha (`flex: 999 1 480px; min-width: 0`) el panel abierto. Van una al lado de
   otra mientras caben las dos (720px) y, si no, una sobre otra. La raíz lleva `data-orientation="vertical"`.
 - **Grupos**: un `FichaTab` puede llevar `grupo`. Las pestañas seguidas con el mismo grupo forman un
-  `role="tablist"` con `aria-orientation="vertical"`, encabezado y nombrado por el grupo (12px en negrita, mayúsculas,
-  `ink-muted`); las que no tienen grupo, un `tablist` sin encabezado con el nombre de la ficha. El contribuyente
+  `role="tablist"` con `aria-orientation="vertical"` y `aria-label` el grupo, bajo un encabezado con él (12px en
+  negrita, mayúsculas, `ink-muted`; `aria-hidden`, porque el nombre ya lo dice); las que no tienen grupo, un `tablist`
+  sin encabezado con el nombre de la ficha. El contribuyente
   separa "Registro tributario" (las cinco del SRTM, `CONTRIBUYENTE_TABS`) y "Rentas" (Predios, Declaraciones,
   Arbitrios, Infracciones, Anuncios); las demás fichas y los asistentes tienen un solo grupo sin nombre.
 - **Teclado**: flecha abajo y arriba, inicio y fin recorren todas las pestañas de la ficha, de un grupo al siguiente

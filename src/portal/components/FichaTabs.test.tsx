@@ -131,10 +131,12 @@ describe('FichaTabs with portal-tributario', () => {
       ['vertical', ['Datos', 'Domicilios', 'Sustento']],
       ['vertical', ['Predios', 'Arbitrios']]
     ])
-    expect(screen.getByRole('tablist', { name: 'Registro tributario' })).toBe(listas[0])
-    expect(screen.getByRole('tablist', { name: 'Rentas' })).toBe(listas[1])
+    expect(listas[0]).toHaveAttribute('aria-label', 'Registro tributario')
+    expect(listas[1]).toHaveAttribute('aria-label', 'Rentas')
+    // the heading shows the name: read once, as the tablist's
     const encabezado = screen.getByText('Rentas')
     expect(encabezado).toHaveClass('text-xs', 'font-bold', 'uppercase', 'text-ink-muted')
+    expect(encabezado).toHaveAttribute('aria-hidden', 'true')
     expect(encabezado.nextElementSibling).toBe(listas[1])
   })
 

@@ -1,6 +1,6 @@
 import { cn } from '@wasichai/ui'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useId, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useVarianteTema } from '../../themes'
 
 export interface FichaTab {
@@ -92,11 +92,11 @@ export function FichaTabs({ tabs, label, active, onChange, aside }: FichaTabsPro
 }
 
 // the left column of the portal's ficha: the folder tabs, one under another, then the aside. tabs in a row with the
-// same grupo make one tablist, headed by it; the ungrouped ones, one named by the ficha. the arrows, home and end walk
-// every tab of the ficha, across the groups, opening it as a click does: the open tab stays the only one in the tab
-// order. the folders are the theme's tabs.css, hooked on data-orientation
+// same grupo make one tablist named by it, under it as a heading (hidden from screen readers: the name says it); the
+// ungrouped ones, one named by the ficha. the arrows, home and end walk every tab of the ficha, across the groups,
+// opening it as a click does: the open tab stays the only one in the tab order. the folders are the theme's tabs.css,
+// hooked on data-orientation
 function ColumnaPestanas({ tabs, label, current, onChange, aside }: Omit<FichaTabsProps, 'active'> & { current: FichaTab }) {
-  const id = useId()
   const grupos = tabs.reduce<{ grupo?: string; tabs: FichaTab[] }[]>((acc, tab) => {
     const ultimo = acc.at(-1)
     if (ultimo && ultimo.grupo === tab.grupo) ultimo.tabs.push(tab)
@@ -121,18 +121,11 @@ function ColumnaPestanas({ tabs, label, current, onChange, aside }: Omit<FichaTa
       {grupos.map(({ grupo, tabs }, i) => (
         <div key={i}>
           {grupo && (
-            <p id={`${id}-${i}`} className="pb-1.5 pl-0.5 text-xs font-bold tracking-wide text-ink-muted uppercase">
+            <p aria-hidden className="pb-1.5 pl-0.5 text-xs font-bold tracking-wide text-ink-muted uppercase">
               {grupo}
             </p>
           )}
-          <div
-            role="tablist"
-            data-slot="tabs-list"
-            aria-orientation="vertical"
-            aria-label={grupo ? undefined : label}
-            aria-labelledby={grupo ? `${id}-${i}` : undefined}
-            className="flex flex-col"
-          >
+          <div role="tablist" data-slot="tabs-list" aria-orientation="vertical" aria-label={grupo ?? label} className="flex flex-col">
             {tabs.map((tab) => {
               const selected = tab.id === current.id
               return (
