@@ -25,16 +25,19 @@ export function useEmisiones() {
   return useQuery({ queryKey: ['emisiones'], queryFn: () => rentas.emisiones(), refetchInterval: (query) => (hayActivos(query.state.data) ? 2000 : false) })
 }
 
-// the ordenanza's rows in force of a year (Llaves.BASE_ARBITRIO, DIMENSIONES_ARBITRIO, etc.): what the DJ predial
-// reads to exigir frontis, área construida or la ubicación respecto a áreas verdes (wasichai/srtm-ui#94). undefined
-// (no anio yet, the query carga, or falló): never asked, same cache key TasasArbitriosPage uses
+// la query key y el queryFn de los parámetros de arbitrios de un año (Llaves.BASE_ARBITRIO, DIMENSIONES_ARBITRIO,
+// etc.), compartidos entre el hook reactivo (useParametrosArbitrio) y cualquier fetch imperativo
+// (NuevaDeclaracionPage, justo al presentar: wasichai/srtm-ui#94, fix round 2) para que nunca diverjan. anio
+// undefined solo tiene sentido para deshabilitar el hook: nadie debe pedir el fetch imperativo sin año
+export function parametrosArbitrioQuery(anio: number | undefined) {
+  return { queryKey: ['arbitrios', 'parametros', anio ?? null] as const, queryFn: () => rentas.parametrosArbitrio(anio!) }
+}
+
+// las filas en vigor de un año: lo que la DJ predial lee para exigir frontis, área construida o la ubicación
+// respecto a áreas verdes. undefined (no anio yet, the query carga, or falló): never asked, same cache key
+// TasasArbitriosPage uses
 export function useParametrosArbitrio(anio: number | undefined) {
-  return useQuery({
-    queryKey: ['arbitrios', 'parametros', anio ?? null],
-    queryFn: () => rentas.parametrosArbitrio(anio!),
-    enabled: anio !== undefined,
-    placeholderData: keepPreviousData
-  })
+  return useQuery({ ...parametrosArbitrioQuery(anio), enabled: anio !== undefined, placeholderData: keepPreviousData })
 }
 
 // las bases (BASE_ARBITRIO) de las filas en vigor: el texto de cada servicio (PREDIO, FRONTIS_ML o

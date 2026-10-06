@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Alert, Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
@@ -19,7 +19,7 @@ import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, 
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
-import { basesDeArbitrio, useCatalogos, useParametrosArbitrio, useRefresh } from '../queries'
+import { basesDeArbitrio, parametrosArbitrioQuery, useCatalogos, useRefresh } from '../queries'
 import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
@@ -48,6 +48,7 @@ export function NuevaDeclaracionRoute() {
 // with its contribuyente, or with its predio (then the contribuyente is looked up in step one)
 function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: string; predio?: string }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const catalogos = useCatalogos()
   const refresh = useRefresh()
   const ficha = useQuery({
@@ -72,13 +73,6 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   // one that already has a titular that year is not presented on: a condómino joins from that declaración
   const anio = comun.values.anio === undefined ? datos?.anio : Number(comun.values.anio) || null
   const titulares = useTitularesDelPredio(existente?.id, anio, comun.values.secuencia_uso ?? datos?.secuencia_uso)
-  // el año de la DJ: qué base cobra cada servicio (BASE_ARBITRIO), para que el asistente salte a "Características"
-  // tras presentar cuando longitud_frente o area_construida sean obligatorios y falten (siguientePendiente,
-  // wasichai/srtm-ui#94). un ref, para esperar a que se asiente (basesAsentadas) sin recrear la función en cada
-  // render
-  const parametrosArbitrio = useParametrosArbitrio(anio ?? undefined)
-  const parametrosArbitrioRef = useRef(parametrosArbitrio)
-  parametrosArbitrioRef.current = parametrosArbitrio
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
@@ -96,15 +90,6 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
     })
   )
   const tipoPredio = comun.values.tipo_predio ?? (datos as DatosDelPredio | null)?.tipo_predio ?? 'PREDIO URBANO'
-
-  // espera a que la consulta de parámetros se asiente (datos o error), antes de decidir el salto del asistente:
-  // nunca bloquea para siempre, ya que una consulta deshabilitada (sin año) o que ya falló deja de "cargar"
-  const basesAsentadas = async (): Promise<Set<string>> => {
-    while (parametrosArbitrioRef.current.isLoading) {
-      await new Promise((r) => setTimeout(r, 25))
-    }
-    return basesDeArbitrio(parametrosArbitrioRef.current.data?.parametros)
-  }
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice
   const enviando = useRef(false)
@@ -132,8 +117,19 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
       await refresh()
       salida.allow()
-      // just presented: no transferentes yet
-      const bases = await basesAsentadas()
+      // just presented: no transferentes yet. las bases del año recién presentado, pedidas de nuevo justo aquí -
+      // no las de un año que el clerk haya cambiado a tiempo en el formulario mientras esto corría, ni las de un
+      // año distinto que haya quedado en caché (wasichai/srtm-ui#94, fix round 2). sin año, o si la consulta
+      // falla, bases queda vacío: como hoy
+      let bases = new Set<string>()
+      if (dj.declaracion.anio != null) {
+        try {
+          const parametros = await queryClient.fetchQuery(parametrosArbitrioQuery(dj.declaracion.anio))
+          bases = basesDeArbitrio(parametros.parametros)
+        } catch {
+          // sin datos: bases queda vacío, como hoy
+        }
+      }
       navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0, bases)}&asistente=1`, {
         replace: true
       })

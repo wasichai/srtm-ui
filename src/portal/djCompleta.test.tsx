@@ -312,4 +312,69 @@ describe('the full declaración jurada', () => {
     expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 50000' })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Características' })).toHaveAttribute('aria-selected', 'true'))
   })
+
+  // wasichai/srtm-ui#94, fix round 2: si el clerk cambia el año antes de presentar, las bases que cuentan son las
+  // del año presentado - no las del año por defecto con el que arrancó el formulario (año A, sin bases) ni
+  // ninguna que haya quedado en caché de él
+  it("uses the presented año's bases, not the default año's, when the clerk changes it before presenting", async () => {
+    const anioB = year + 3
+    const djAnioB = {
+      declaracion: {
+        id: 'd10',
+        contribuyente: 'c1',
+        predio: 'p1',
+        anio: anioB,
+        numero_declaracion: 50010,
+        secuencia_uso: '1',
+        condicion_propiedad: 'PROPIETARIO UNICO',
+        porcentaje_condominio: 100,
+        tipo_adquisicion: 'OTROS',
+        fecha_adquisicion: '2024-09-04',
+        folios: 2,
+        documentos_sustento: 'OTROS',
+        medio_presentacion: 'FISICO',
+        fecha_presentacion: '2026-09-24',
+        clase_uso: 'RESIDENCIAL',
+        sub_clase_uso: 'UNIFAMILIAR',
+        uso: 'CASA HABITACION',
+        area_terreno: 120
+      },
+      predio,
+      contribuyente,
+      actualizado: null
+    }
+    start('/predios/p1?tab=declaraciones', [
+      { path: '/srtm/predios/p1/declaraciones', body: [] },
+      { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: djAnioB },
+      { path: '/srtm/declaraciones/d10', body: djAnioB },
+      { path: '/srtm/declaraciones/d10/transferentes', body: [] },
+      { path: '/srtm/declaraciones/d10/niveles', body: [] },
+      { path: '/srtm/declaraciones/d10/obras', body: [] },
+      { path: '/srtm/declaraciones/d10/frentes', body: [] },
+      // año A, el que trae el formulario por defecto: sin bases (si el bug volviera, el salto iría a Transferentes)
+      { path: new RegExp(`^/srtm/arbitrios/parametros\\?anio=${year}$`), body: { anio: year, ordenanza: null, servicios: [], parametros: [], faltan: [] } },
+      // año B, el que se presenta: cobra por FRONTIS_ML
+      {
+        path: new RegExp(`^/srtm/arbitrios/parametros\\?anio=${anioB}$`),
+        body: { anio: anioB, ordenanza: null, servicios: [], parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML')], faltan: [] }
+      }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva declaración' }))
+    await screen.findByRole('option', { name: 'HERENCIA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'HERENCIA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2020-01-15')
+    await userEvent.type(screen.getByLabelText(/Folios/), '4')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'DECLARATORIA DE HEREDEROS' }))
+    // cambia el año antes de seguir: lo presentado será el año B, no el A con el que arrancó el formulario
+    await userEvent.clear(screen.getByLabelText(/^Año/))
+    await userEvent.type(screen.getByLabelText(/^Año/), String(anioB))
+    await userEvent.type(screen.getByLabelText(/Contribuyente/), 'quispe')
+    await userEvent.click(await screen.findByRole('button', { name: '20529936 · QUISPE MAMANI JUAN' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await screen.findByRole('tab', { name: 'Datos de la ubicación' })
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 50010' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Características' })).toHaveAttribute('aria-selected', 'true'))
+  })
 })
