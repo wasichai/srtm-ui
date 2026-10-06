@@ -56,7 +56,7 @@ export function AppShell() {
         <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} />
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {!piezas.pestanasEnCabecera && <TabBar />}
-          <Breadcrumbs />
+          {!piezas.rutaEnBanda && <Breadcrumbs />}
           <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
             <Outlet />
           </div>

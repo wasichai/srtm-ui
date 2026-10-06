@@ -73,6 +73,9 @@ describe('title band: fichas', () => {
     expect(within(fila).getByRole('combobox', { name: 'Año' })).toBeVisible()
     expect(within(fila).getByRole('button', { name: /Eliminar/ })).toBeVisible()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    // the trail is the band's, on its right: no strip over the content
+    expect(within(banda).getByRole('navigation', { name: 'Ruta' })).toHaveTextContent(/^Registro tributario › Registro de contribuyente$/)
+    expect(screen.getAllByRole('navigation', { name: 'Ruta' })).toHaveLength(1)
   })
 
   it('keeps the FichaHeader of always with light', async () => {
@@ -82,6 +85,12 @@ describe('title band: fichas', () => {
     expect(document.querySelector('[data-ui="banda-titulo"]')).toBeNull()
     expect(titulo).toHaveClass('mt-0.5', 'text-xl', 'font-semibold', 'break-words', 'text-ink')
     expect(titulo.previousElementSibling).toHaveTextContent('Contribuyente Nº 000012')
+    // and the trail over the content
+    expect(
+      within(screen.getByRole('navigation', { name: 'Ruta' }))
+        .getAllByRole('listitem')
+        .map((paso) => paso.textContent)
+    ).toEqual(['Registro tributario y determinación', 'Registro tributario', 'Registro de contribuyente'])
   })
 
   // the srtm's Cancelar / Guardar and the wizard's Siguiente (#11): under the band, in their order
@@ -121,6 +130,8 @@ describe('title band: wizards', () => {
     const titulo = await h1(title)
     const banda = bandaDe(titulo)!
     expect(banda).toHaveTextContent(subtitulo)
+    // the form's name takes the trail's place
+    expect(screen.queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
     if (kind) expect(await within(banda).findByText(kind)).toBeInTheDocument()
     expect(within(banda).queryByRole('button')).not.toBeInTheDocument()
 

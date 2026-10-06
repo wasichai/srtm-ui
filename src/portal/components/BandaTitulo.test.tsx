@@ -1,12 +1,17 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { ReactElement } from 'react'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { BandaTitulo, CabeceraBanda } from './BandaTitulo'
 
 // the title band of the portal-tributario theme (#55): the form's h1 on the brand, its kind before it on the same
-// line, and an optional help button. no favourites: there is no backend for them
+// line, and an optional help button. no favourites: there is no backend for them. on the right, the srtm's name of
+// the form, or else the screen's trail
 
 const banda = () => screen.getByRole('heading', { level: 1 }).closest('[data-ui="banda-titulo"]') as HTMLElement
+// CabeceraBanda reads the trail of the route it is on
+const enRuta = (ui: ReactElement, path = '/') => render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>)
 
 describe('BandaTitulo', () => {
   it('draws the kind and the h1 on one line, on-brand over brand, the title in 18px bold', () => {
@@ -23,6 +28,21 @@ describe('BandaTitulo', () => {
 
   it('shows a detail after the title', () => {
     render(<BandaTitulo title="Nuevo contribuyente" detalle="Insertar contribuyente" />)
+    expect(banda()).toHaveTextContent(/^Nuevo contribuyenteInsertar contribuyente$/)
+  })
+
+  it('shows a trail in the place of the detail, as a navigation joined by ›', () => {
+    render(<BandaTitulo kind="Predio" title="01-01-0001" ruta={['Registro tributario', 'Registro de predio']} />)
+    const ruta = within(banda()).getByRole('navigation', { name: 'Ruta' })
+    expect(ruta).toHaveTextContent(/^Registro tributario › Registro de predio$/)
+    // the detail's slot: on the right, 12px bold capitals in italics
+    expect(ruta).toHaveClass('ml-auto', 'text-xs', 'font-semibold', 'uppercase', 'italic')
+    expect(ruta.previousElementSibling).toBe(screen.getByRole('heading', { level: 1 }))
+  })
+
+  it('keeps the detail over a trail', () => {
+    render(<BandaTitulo title="Nuevo contribuyente" detalle="Insertar contribuyente" ruta={['Registro tributario', 'Registro de contribuyente']} />)
+    expect(within(banda()).queryByRole('navigation')).not.toBeInTheDocument()
     expect(banda()).toHaveTextContent(/^Nuevo contribuyenteInsertar contribuyente$/)
   })
 
@@ -45,7 +65,7 @@ describe('BandaTitulo', () => {
 
 describe('CabeceraBanda', () => {
   it('puts the badges on the left and the actions on the right, in a row under the band', () => {
-    render(<CabeceraBanda kind="Predio" title="01-01-0001" badges={<span>URBANO</span>} aside={<button type="button">Eliminar</button>} />)
+    enRuta(<CabeceraBanda kind="Predio" title="01-01-0001" badges={<span>URBANO</span>} aside={<button type="button">Eliminar</button>} />)
     const cabecera = banda().parentElement!
     expect(cabecera).toHaveAttribute('data-ui', 'cabecera-banda')
     const fila = banda().nextElementSibling as HTMLElement
@@ -56,14 +76,35 @@ describe('CabeceraBanda', () => {
   })
 
   it('keeps the actions on the right without badges', () => {
-    render(<CabeceraBanda title="Nuevo contribuyente" aside={<button type="button">Siguiente</button>} />)
+    enRuta(<CabeceraBanda title="Nuevo contribuyente" aside={<button type="button">Siguiente</button>} />)
     const fila = banda().nextElementSibling as HTMLElement
     expect(fila.lastElementChild).toHaveClass('ml-auto')
     expect(fila.lastElementChild).toContainElement(screen.getByRole('button', { name: 'Siguiente' }))
   })
 
   it('draws the band alone when it has neither', () => {
-    render(<CabeceraBanda kind="Catastro fiscal" title="Nuevo lote" />)
+    enRuta(<CabeceraBanda kind="Catastro fiscal" title="Nuevo lote" />)
     expect(banda().nextElementSibling).toBeNull()
+  })
+
+  // the srtm's trail (Breadcrumbs' useRuta): its last two steps, the menu group and the screen
+  it.each([
+    ['/contribuyentes/c1', 'Registro tributario › Registro de contribuyente'],
+    ['/predios/p1', 'Registro tributario › Registro de predio'],
+    ['/declaraciones/d1', 'Registro tributario › Declaración jurada predial'],
+    ['/catastro/l1', 'Registro tributario › Lote de catastro fiscal']
+  ])("on %s shows the trail's last two steps on the right of the band", (path, texto) => {
+    enRuta(<CabeceraBanda kind="Ficha" title="Título" />, path)
+    expect(within(banda()).getByRole('navigation', { name: 'Ruta' })).toHaveTextContent(texto)
+  })
+
+  it('shows no trail where the screen has none, nor over the detail a page gives', () => {
+    const { unmount } = enRuta(<CabeceraBanda title="Resultados" />, '/buscar')
+    expect(within(banda()).queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
+    expect(banda()).toHaveTextContent(/^Resultados$/)
+    unmount()
+    enRuta(<CabeceraBanda title="Nuevo contribuyente" detalle="Insertar contribuyente" />, '/contribuyentes/nuevo')
+    expect(within(banda()).queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
+    expect(within(banda()).getByText('Insertar contribuyente')).toBeInTheDocument()
   })
 })
