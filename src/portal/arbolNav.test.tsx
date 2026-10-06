@@ -46,10 +46,15 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   return render(<PortalApp />)
 }
 
-// the shell drawn, and the permissions in: an admin gets the way to the administration in the bar
+// the shell drawn, and the permissions in: the bar says so, by the session menu (portal) or by the way to the
+// administration (classic)
 async function listo() {
   const bar = await screen.findByRole('banner')
-  expect(await within(bar).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  await waitFor(() =>
+    expect(
+      within(bar).queryByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' }) ?? within(bar).queryByRole('link', { name: /Administración/ })
+    ).toBeInTheDocument()
+  )
 }
 
 const lateral = () => screen.getByRole('navigation', { name: 'Secciones' })

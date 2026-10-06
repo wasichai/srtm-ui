@@ -36,10 +36,15 @@ export interface PiezasShell {
   // the lateral folds on any screen, remembered for the browser tab, and the header's menu button shows only while
   // it is folded (the portal's tree). otherwise it is the classic phone menu
   plegable?: boolean
-  // the search input and the theme button, over their classic look
+  // the search's form and input and the theme button, over their classic look
+  buscador?: string
   busqueda?: string
   tema?: string
-  admin: string
+  // the way to the administration in the bar, for admins. a variant without it has it elsewhere (the portal: the
+  // session menu and the tree)
+  admin?: string
+  // the trail as a plain line atop the scrolling content, not a strip under the workspace tabs
+  rutaEnContenido?: boolean
   Marca: ComponentType
   Sesion: ComponentType
   Lateral: ComponentType<LateralProps>
@@ -47,7 +52,7 @@ export interface PiezasShell {
 }
 
 // the header search: both padrones at once, on /buscar
-export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
+export function GlobalSearch({ className, inputClassName }: { className?: string; inputClassName?: string }) {
   const navigate = useNavigate()
   const [text, setText] = useState('')
   const submit = (event: FormEvent) => {
@@ -56,7 +61,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
     if (q) navigate(`/buscar?q=${encodeURIComponent(q)}`)
   }
   return (
-    <form role="search" onSubmit={submit} className="relative w-full max-w-md">
+    <form role="search" onSubmit={submit} className={cn('relative w-full max-w-md', className)}>
       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
       <input
         type="search"

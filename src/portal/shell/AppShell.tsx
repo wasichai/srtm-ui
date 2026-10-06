@@ -38,10 +38,10 @@ export function AppShell() {
         </button>
         <Marca />
         <div className="flex flex-1 justify-center">
-          <GlobalSearch inputClassName={piezas.busqueda} />
+          <GlobalSearch className={piezas.buscador} inputClassName={piezas.busqueda} />
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {isAdmin && piezas.admin && (
             <a href="/admin" className={piezas.admin}>
               <Settings className="size-4" />
               Administración
@@ -55,8 +55,10 @@ export function AppShell() {
         <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} onPlegar={lateral.plegar} />
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
-          <Breadcrumbs />
+          {!piezas.rutaEnContenido && <Breadcrumbs />}
           <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+            {/* the trail's slot before the page in both variants: a theme switch keeps the page mounted */}
+            {piezas.rutaEnContenido && <Breadcrumbs linea />}
             <Outlet />
           </div>
         </main>

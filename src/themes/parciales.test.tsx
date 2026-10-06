@@ -67,10 +67,12 @@ describe('tabs.css', () => {
     expect(css).not.toMatch(/ficha-tab|ficha-panel|tabs-trigger/)
   })
 
-  it('joins the active workspace tab to what is under it', () => {
+  // no trail strip under the tabs any more (the trail is a line in the content): the active tab joins the page
+  it('joins the active workspace tab to the page under it', () => {
     const active = rule(css, `${PORTAL} [data-ui='workspace-tab']:has(> [aria-current='page'])`)
-    expect(active.get('background')).toBe('var(--surface)')
-    expect(active.get('border-bottom-color')).toBe('var(--surface)')
+    expect(active.get('background')).toBe('var(--surface-muted)')
+    expect(active.get('border-bottom-color')).toBe('var(--surface-muted)')
+    expect(active.get('color')).toBe('var(--ink)')
   })
 
   it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {
