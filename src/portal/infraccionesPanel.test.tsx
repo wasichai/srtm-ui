@@ -9,7 +9,7 @@ import type { InfraccionesDe, NotificacionPrevia, NotificacionVencida, Pagina, P
 // el panel muestra las cifras del backend, cada una con su fecha, y «En coactiva» como «no aplica» con la nota del
 // backend (nunca un 0); las vencidas sin acta a una fecha de corte que se ve; las notificaciones de un contribuyente;
 // los plazos y feriados cargados de un año tal como los lee el backend (también el siguiente), con lo que falta en una
-// Alerta, y cómo se cargan; la pestaña de las dos fichas con la fase y
+// Alert, y cómo se cargan; la pestaña de las dos fichas con la fase y
 // el estado de la deuda en dos columnas con sus nombres, también durante la inscripción; las dos estructuras de tema y
 // los menús. números, nombres, fechas e importes FICTICIOS
 
@@ -313,10 +313,10 @@ describe('Escalas y plazos', () => {
     expect(params(lecturas('/srtm/infracciones/plazos')[0].path)).toEqual({ anio: String(year) })
   })
 
-  it('names in an Alerta what the year lacks, never a 0', async () => {
+  it('names in an Alert what the year lacks, never a 0', async () => {
     start('/infracciones/plazos', rutas([vencidaSinActa()], plazos({ plazos: [], feriados: null, faltan: [`PLAZO RG_RECURSO ${year}`, `FERIADOS ${year}`] })))
     const seccion = await cargados()
-    // the Alerta, not the loading status
+    // the Alert, not the loading status
     expect((await within(seccion).findByText(`Faltan para ${year}:`)).closest('[role="status"]')).toHaveTextContent(
       `Faltan para ${year}: PLAZO RG_RECURSO ${year}; FERIADOS ${year}. Un acto que los necesite no se registra hasta que se carguen.`
     )

@@ -1,10 +1,9 @@
 import { EmptyState, QueryState } from '@wasichai/core'
-import { Button, Card, CardBody, Input, Label, Pagination, Table, Td, Th } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, Input, Label, Pagination, Table, Td, Th } from '@wasichai/ui'
 import { Search } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { EstadoAnuncioBadge, ESTADOS_ANUNCIO } from '../components/EstadoAnuncioBadge'
 import { currentYear, formatDate, formatMoney, formatNumber, formatText, today } from '../components/format'
 import { NUMERICA } from '../components/tabla'
@@ -206,9 +205,9 @@ export function TasasAnunciosPage() {
         {(t) => (
           <div className="space-y-4">
             {t.faltan.length > 0 && (
-              <Alerta tono="atencion" titulo={`Al año ${t.anio} le falta:`}>
+              <Alert tone="warning" title={`Al año ${t.anio} le falta:`}>
                 {t.faltan.join('; ')}. Sin eso esas clases no se autorizan: nunca a 0.
-              </Alerta>
+              </Alert>
             )}
             <Card>
               {t.tasas.length === 0 ? (

@@ -7,7 +7,7 @@ import { claves } from './queries'
 import type { CatalogoCuis, Cuis } from './types'
 
 // el CUIS vigente a una fecha (épica de infracciones administrativas, PR U1): la multa de cada código a la UIT de ese
-// día tal como la cifra el backend (nunca base × % en la pantalla), con la UIT y su fecha; sin UIT, una Alerta nombra
+// día tal como la cifra el backend (nunca base × % en la pantalla), con la UIT y su fecha; sin UIT, una Alert nombra
 // lo que falta y ninguna multa es un 0. un código no se edita: una versión nueva, con observación y permiso de
 // creación, cierra la vigente. el grupo Infracciones administrativas del menú. códigos, UIT y multas FICTICIOS
 
@@ -112,7 +112,7 @@ describe('CUIS', () => {
     expect(new URLSearchParams(lecturas()[0].path.split('?')[1]).get('vigentes_a')).toBe(hoy())
   })
 
-  it('names the missing UIT with an Alerta and shows no 0', async () => {
+  it('names the missing UIT with an Alert and shows no 0', async () => {
     const sinUit = catalogo({ uit: null, faltan: [`UIT ${year}`], codigos: [codigo({ multa: null, multa_segunda: null, multa_tercera: null })] })
     start([{ path: '/srtm/infracciones/cuis', body: sinUit }])
     const t = await tabla()

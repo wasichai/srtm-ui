@@ -1,11 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
-import { Button, Card, CardBody, CardHeader, CardTitle, Input, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, CardHeader, CardTitle, Input, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
 import { Ban } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { DesgloseMulta, porcentaje, REINCIDENCIAS } from '../components/DesgloseMulta'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { EstadoDeudaBadge } from '../components/EstadoDeudaBadge'
@@ -65,9 +64,9 @@ function ExpedientePage({ id }: { id: string }) {
             }
           />
           {e.anulacion && (
-            <Alerta tono="aviso" titulo="Acta anulada.">
+            <Alert tone="notice" title="Acta anulada.">
               El {formatDate(e.anulacion.fecha)}: {e.anulacion.motivo}
-            </Alerta>
+            </Alert>
           )}
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>

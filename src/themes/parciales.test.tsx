@@ -14,7 +14,7 @@ const libraryTokens = () =>
   readFileSync(join(__dirname, '..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', 'tokens.css'), 'utf8')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'alerts.css', 'nav.css', 'pasos.css', 'banda.css']
+const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'nav.css', 'pasos.css', 'banda.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -83,7 +83,7 @@ describe('tabs.css', () => {
   })
 })
 
-describe('alerts.css', () => {
+describe(() => {
   const css = read('alerts.css')
 
   // the pairs whose contrast tokens.test.tsx checks, with bootstrap 3's borders

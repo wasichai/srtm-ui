@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError, EmptyState, QueryState } from '@wasichai/core'
-import { Badge, Button, Card, CardBody, cn, ConfirmDialog, Table, Td, Th } from '@wasichai/ui'
+import { Alert, Badge, Button, Card, CardBody, cn, ConfirmDialog, Table, Td, Th } from '@wasichai/ui'
 import { Download, Loader2, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { guardarArchivo } from '../components/descarga'
 import { currentYear, formatDate, formatText } from '../components/format'
 import type { Tono } from '../components/tono'
@@ -124,9 +123,9 @@ export function EmisionesPage() {
             </Button>
           </form>
           {emitir.isError && (
-            <Alerta tono="error" className="mt-3">
+            <Alert tone="danger" className="mt-3">
               {errorAlEmitir(emitir.error)}
-            </Alerta>
+            </Alert>
           )}
         </CardBody>
       </Card>
@@ -201,8 +200,8 @@ function FilaEmision({ emision }: { emision: Emision }) {
             Descargar{emision.tamano ? ` (${formatTamano(emision.tamano)})` : ''}
           </Button>
         )}
-        {depurado && <Alerta tono="aviso">Archivo depurado</Alerta>}
-        {descargar.isError && !depurado && <Alerta tono="error">{mensajeDe(descargar.error)}</Alerta>}
+        {depurado && <Alert tone="notice">Archivo depurado</Alert>}
+        {descargar.isError && !depurado && <Alert tone="danger">{mensajeDe(descargar.error)}</Alert>}
         {emision.estado === 'FALLIDA' && <p className="text-sm text-danger">{formatText(emision.mensaje)}</p>}
         {errores.length > 0 && (
           <div>

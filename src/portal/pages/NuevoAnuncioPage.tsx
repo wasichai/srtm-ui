@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Card, CardBody, Input, Textarea } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, Input, Textarea } from '@wasichai/ui'
 import { FilePlus, Loader2 } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { rentas, RentasError } from '../api'
-import { Alerta } from '../components/Alerta'
 import { MensajeDeError, OBSERVACION_MAXIMA, OBSERVACION_MINIMA } from '../components/DialogoDeActo'
 import { formatDate, formatMoney, today } from '../components/format'
 import { usePuede } from '../components/permisos'
@@ -236,15 +235,15 @@ export function NuevoAnuncioPage() {
 function ErrorDeRegistro({ error }: { error: unknown }) {
   if (error instanceof RentasError && error.faltan.length > 0) {
     return (
-      <Alerta tono="atencion" titulo="No se puede autorizar: falta">
+      <Alert tone="warning" title="No se puede autorizar: falta">
         {error.faltan.join('; ')}. Sin la tasa de la clase el anuncio no se autoriza, y nunca a 0.
-      </Alerta>
+      </Alert>
     )
   }
   return (
-    <Alerta tono="error">
+    <Alert tone="danger">
       <MensajeDeError error={error} siFalla="No se pudo registrar el anuncio" />
-    </Alerta>
+    </Alert>
   )
 }
 
@@ -253,15 +252,15 @@ function Registrado({ registrado: { anuncio, movimiento, ya_existia }, onOtro }:
     <Card>
       <CardBody className="space-y-3">
         {ya_existia ? (
-          <Alerta tono="aviso" titulo={`El anuncio ${anuncio.numero} ya estaba registrado.`}>
+          <Alert tone="notice" title={`El anuncio ${anuncio.numero} ya estaba registrado.`}>
             Este envío repetía uno anterior: no se registró otro ni se devengó otra vez.
-          </Alerta>
+          </Alert>
         ) : (
-          <Alerta tono="exito" titulo={`Anuncio ${anuncio.numero} registrado.`}>
+          <Alert tone="success" title={`Anuncio ${anuncio.numero} registrado.`}>
             {movimiento.tasa !== null
               ? `Autorizado el ${formatDate(movimiento.fecha)}: devenga ${formatMoney(movimiento.tasa)} del ejercicio ${movimiento.anio ?? '—'} (tasa al ${formatDate(movimiento.fecha)}).`
               : `Autorizado el ${formatDate(movimiento.fecha)}.`}
-          </Alerta>
+          </Alert>
         )}
         <div className="flex flex-wrap gap-3">
           <Link to={`/anuncios/${anuncio.id}`} className="text-sm text-link hover:underline">

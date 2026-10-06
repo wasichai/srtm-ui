@@ -11,7 +11,7 @@ import type { Anuncio, AnuncioEnPadron, FichaAnuncio, MovimientoAnuncio } from '
 // la tasa de anuncios y propaganda (épica de infracciones y anuncios, PR U6): el padrón con el estado a una fecha, el
 // alta con su autorización, la ficha con sus movimientos y los tres actos (renovar, cesar, retirar), las tasas del año
 // y la pestaña Anuncios de las fichas. el estado, la vigencia y la tasa son del backend, nunca de la pantalla; el
-// reenvío del alta manda el mismo Idempotency-Key; lo que falta lo nombra una Alerta, nunca un 0. cifras FICTICIAS
+// reenvío del alta manda el mismo Idempotency-Key; lo que falta lo nombra una Alert, nunca un 0. cifras FICTICIAS
 
 // jsdom has no webgl
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => <div data-testid="lotes-map" /> }))
@@ -335,16 +335,16 @@ describe('nuevo anuncio', () => {
     expect(screen.queryByText(/devenga S\//)).not.toBeInTheDocument()
   })
 
-  it('names the missing tasa with an Alerta, never a 0', async () => {
+  it('names the missing tasa with an Alert, never a 0', async () => {
     start('/anuncios/nuevo', [])
     altas([json({ title: 'Unprocessable Content', detail: 'No hay tasa para la clase', faltan: [`TASA_ANUNCIO PANEL ${year}`] }, 422)])
     await llenarAlta()
     await userEvent.click(registrar())
     const alerta = await screen.findByText('No se puede autorizar: falta')
-    expect(alerta.closest('[data-ui="alerta"]')).toHaveTextContent(
+    expect(alerta.closest('[data-slot="alert"]')).toHaveTextContent(
       `TASA_ANUNCIO PANEL ${year}. Sin la tasa de la clase el anuncio no se autoriza, y nunca a 0.`
     )
-    expect(alerta.closest('[data-ui="alerta"]')).toHaveAttribute('data-tono', 'atencion')
+    expect(alerta.closest('[data-slot="alert"]')).toHaveAttribute('data-tone', 'warning')
     expect(document.body.textContent).not.toMatch(/S\/\s?0[.,]00/)
     // the form is still there, to retry
     expect(registrar()).toBeEnabled()

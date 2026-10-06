@@ -1,13 +1,12 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@wasichai/core'
-import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, PageSizePagination, Table, Td, Th } from '@wasichai/ui'
+import { Alert, Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, Input, Label, PageSizePagination, Table, Td, Th } from '@wasichai/ui'
 import { Camera, FileText, Pencil, Plus, RotateCcw, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { NativeSelect } from '../../kit/forms/NativeSelect'
 import { SuggestInput } from '../../kit/forms/SuggestInput'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
 import { recordIdOf } from '../components/geo'
@@ -225,9 +224,9 @@ function Busqueda({
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {aviso && (
-          <Alerta tono="error" className="mr-auto">
+          <Alert tone="danger" className="mr-auto">
             {aviso}
-          </Alerta>
+          </Alert>
         )}
         <Button variant="secondary" onClick={limpiar}>
           <RotateCcw className="size-4" />
