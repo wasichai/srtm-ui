@@ -141,7 +141,6 @@ export function TasasArbitriosPage() {
       <QueryState query={query}>
         {(p) => (
           <div className="space-y-5">
-            <SubnavArbitrios />
             {p.faltan.length > 0 && (
               <Alert tone="warning" title={`Al año ${anio} le falta:`}>
                 {p.faltan.join('; ')}. Sin eso no se determinan sus arbitrios.
