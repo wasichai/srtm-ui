@@ -121,14 +121,15 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
       await refresh()
       salida.allow()
-      // just presented: no transferentes yet. las bases del año recién presentado, pedidas de nuevo justo aquí -
-      // no las de un año que el clerk haya cambiado a tiempo en el formulario mientras esto corría, ni las de un
-      // año distinto que haya quedado en caché (wasichai/srtm-ui#94, fix round 2). sin año, o si la consulta
-      // falla, bases queda vacío: como hoy
+      // just presented: no transferentes yet. las bases del año recién presentado, pedidas justo aquí por ese año
+      // exacto - no las de un año que el clerk haya cambiado en el formulario mientras esto corría, ni las de un
+      // año distinto que haya quedado en caché (wasichai/srtm-ui#94). queryClient.query, no fetchQuery (obsoleto en
+      // query-core 5.103): igual que él, usa la caché mientras está fresca y lanza si la consulta falla. sin año, o
+      // si falla, bases queda vacío: como hoy
       let bases = new Set<string>()
       if (dj.declaracion.anio != null) {
         try {
-          const parametros = await queryClient.fetchQuery(parametrosArbitrioQuery(dj.declaracion.anio))
+          const parametros = await queryClient.query(parametrosArbitrioQuery(dj.declaracion.anio))
           bases = basesDeArbitrio(parametros.parametros)
         } catch {
           // sin datos: bases queda vacío, como hoy

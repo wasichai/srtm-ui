@@ -8,6 +8,7 @@ import { currentYear, formatDate, formatMoney, formatText, MESES } from '../comp
 import { Popover } from '../components/Popover'
 import { NUMERICA } from '../components/tabla'
 import { YearSelect } from '../components/YearSelect'
+import { parametrosArbitrioQuery } from '../queries'
 import type { ParametroTributario, ServicioArbitrio } from '../types'
 import { SubnavArbitrios } from './SubnavArbitrios'
 
@@ -127,7 +128,7 @@ const vigencia = (p: ParametroTributario) => `${formatDate(p.vigencia_desde)} â€
 
 export function TasasArbitriosPage() {
   const [anio, setAnio] = useState(currentYear)
-  const query = useQuery({ queryKey: ['arbitrios', 'parametros', anio], queryFn: () => rentas.parametrosArbitrio(anio), placeholderData: keepPreviousData })
+  const query = useQuery({ ...parametrosArbitrioQuery(anio), placeholderData: keepPreviousData })
 
   return (
     <div className="space-y-5">
