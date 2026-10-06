@@ -20,6 +20,7 @@ import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
 import { useCatalogos, useRefresh } from '../queries'
+import { useVolver } from '../shell/useVolver'
 import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
@@ -48,6 +49,7 @@ export function NuevaDeclaracionRoute() {
 // with its contribuyente, or with its predio (then the contribuyente is looked up in step one)
 function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: string; predio?: string }) {
   const navigate = useNavigate()
+  const volver = useVolver(contribuyente ? `/contribuyentes/${contribuyente}?tab=declaraciones` : '/')
   const catalogos = useCatalogos()
   const refresh = useRefresh()
   const ficha = useQuery({
@@ -147,7 +149,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
         title="Nueva declaración jurada predial"
         detalle="Declaración jurada y registro de predio"
       >
-        <Button variant="secondary" onClick={() => navigate(-1)}>
+        <Button variant="secondary" onClick={volver}>
           <X className="size-4" />
           Cancelar
         </Button>
