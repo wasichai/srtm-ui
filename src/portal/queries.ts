@@ -26,9 +26,9 @@ export function useEmisiones() {
 }
 
 // la query key y el queryFn de los parámetros de arbitrios de un año (Llaves.BASE_ARBITRIO, DIMENSIONES_ARBITRIO,
-// etc.), compartidos entre el hook reactivo (useParametrosArbitrio) y cualquier fetch imperativo
-// (NuevaDeclaracionPage, justo al presentar: wasichai/srtm-ui#94, fix round 2) para que nunca diverjan. anio
-// undefined solo tiene sentido para deshabilitar el hook: nadie debe pedir el fetch imperativo sin año
+// etc.), compartidos entre el hook reactivo (useParametrosArbitrio), TasasArbitriosPage y el fetch imperativo de
+// NuevaDeclaracionPage justo al presentar (wasichai/srtm-ui#94), para que nunca diverjan. anio undefined solo tiene
+// sentido para deshabilitar el hook: nadie debe pedir el fetch imperativo sin año
 export function parametrosArbitrioQuery(anio: number | undefined) {
   return { queryKey: ['arbitrios', 'parametros', anio ?? null] as const, queryFn: () => rentas.parametrosArbitrio(anio!) }
 }
@@ -41,10 +41,16 @@ export function useParametrosArbitrio(anio: number | undefined) {
 }
 
 // las bases (BASE_ARBITRIO) de las filas en vigor: el texto de cada servicio (PREDIO, FRONTIS_ML o
-// AREA_CONSTRUIDA_M2 - srtm-backend's Base), lo que haya. undefined (sin query o aún sin datos) cuenta como
-// ninguna: la DJ no exige nada por ellas, como hoy
+// AREA_CONSTRUIDA_M2 - srtm-backend's Base), sin espacios alrededor, como lo lee el backend (Servicios.baseLeida);
+// uno en blanco no cuenta. undefined (sin query o aún sin datos) cuenta como ninguna: la DJ no exige nada por ellas,
+// como hoy
 export function basesDeArbitrio(parametros: ParametroTributario[] | undefined): Set<string> {
-  return new Set((parametros ?? []).filter((p) => p.tipo === 'BASE_ARBITRIO' && p.texto).map((p) => p.texto as string))
+  const bases = new Set<string>()
+  for (const p of parametros ?? []) {
+    const base = p.tipo === 'BASE_ARBITRIO' ? p.texto?.trim() : undefined
+    if (base) bases.add(base)
+  }
+  return bases
 }
 
 // las dimensiones (DIMENSIONES_ARBITRIO) de las filas en vigor, por servicio: ZONA, USO, INFLUENCIA o AFLUENCIA
