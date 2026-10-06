@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Alert, Badge, Button, Card } from '@wasichai/ui'
 import { ArrowRight, Building2, Check, FileText, MapPin, Save, Signpost, Users, X } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { FieldGrid } from '../../kit/forms/FieldGrid'
 import { useFormGroup, useSharedFields } from '../../kit/forms/group'
@@ -92,10 +92,12 @@ function DeclaracionPage({ id }: { id: string }) {
   // exigir frontis, área construida o la ubicación respecto a áreas verdes (wasichai/srtm-ui#94). mientras la query
   // carga o falla, ambos conjuntos quedan vacíos: los campos siguen opcionales, como hoy
   const parametrosArbitrio = useParametrosArbitrio(dj?.declaracion.anio ?? undefined)
-  const bases = basesDeArbitrio(parametrosArbitrio.data?.parametros)
-  const conInfluencia = dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA')
-  const seccionesCaracteristicas = caracteristicasSections(bases)
-  const seccionesUbicacion = ubicacionSections(undefined, conInfluencia)
+  // parametrosArbitrio.data mantiene su referencia entre renders mientras la consulta no traiga datos distintos:
+  // así bases, conInfluencia y las secciones no se recalculan en cada render, solo cuando la query cambia de veras
+  const bases = useMemo(() => basesDeArbitrio(parametrosArbitrio.data?.parametros), [parametrosArbitrio.data])
+  const conInfluencia = useMemo(() => dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA'), [parametrosArbitrio.data])
+  const seccionesCaracteristicas = useMemo(() => caracteristicasSections(bases), [bases])
+  const seccionesUbicacion = useMemo(() => ubicacionSections(undefined, conInfluencia), [conInfluencia])
   // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
   const asistente = params.has('asistente')
   const activa = DECLARACION_TABS.find((t) => t.id === params.get('tab'))?.id ?? 'datos'
