@@ -1,7 +1,7 @@
 import { AlertTriangle, MapPinCheck } from 'lucide-react'
+import { Alert } from '@wasichai/ui'
 import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { formatText } from '../components/format'
 import { PERENE_UBIGEO } from '../forms/bloques'
 import { celda, etiqueta } from '../forms/etiquetas'
@@ -45,7 +45,7 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
       }
       aviso={(rows) =>
         rows.some(esFiscalActivo) ? null : (
-          <Alerta tono="error" className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3">
+          <Alert tone="danger" className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3">
             <span className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               <span>
@@ -55,7 +55,7 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
                 )}
               </span>
             </span>
-          </Alerta>
+          </Alert>
         )
       }
       footer={(values: FormValues, form) => (

@@ -1,9 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState, QueryState } from '@wasichai/core'
-import { Table, Td, Th } from '@wasichai/ui'
+import { Alert, Table, Td, Th } from '@wasichai/ui'
 import { Link } from 'react-router'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { formatDate, formatMoney, MESES } from '../components/format'
 import { NUMERICA } from '../components/tabla'
 import type { ArbitriosContribuyente, MatrizArbitrios, PersonaArbitrio } from '../types'
@@ -139,15 +138,15 @@ function Situacion({ matriz: m, determinadas }: { matriz: MatrizArbitrios; deter
     <div className="space-y-1 text-sm">
       {m.fecha_calculo && <p className="text-ink-muted">Determinados al {formatDate(m.fecha_calculo)}.</p>}
       {m.faltan.length > 0 ? (
-        <Alerta tono="atencion" titulo="No se pueden determinar:">
+        <Alert tone="warning" title="No se pueden determinar:">
           {m.faltan.join('; ')}.
-        </Alerta>
+        </Alert>
       ) : m.pendientes > 0 ? (
-        <Alerta tono="aviso">
+        <Alert tone="notice">
           {determinadas
             ? `Faltan determinar ${m.pendientes} ${m.pendientes === 1 ? 'cuota' : 'cuotas'} de ${m.anio}.`
             : `Aún no se determinan los arbitrios de ${m.anio}: ${m.pendientes} ${m.pendientes === 1 ? 'cuota' : 'cuotas'} por determinar.`}
-        </Alerta>
+        </Alert>
       ) : null}
     </div>
   )

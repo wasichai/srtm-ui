@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
-import { Button, Card } from '@wasichai/ui'
+import { Alert, Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
@@ -11,7 +11,6 @@ import { emptyOf } from '../../kit/forms/spec'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { useUnsavedChanges } from '../../kit/ui/UnsavedChanges'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { PasosAsistente } from '../components/PasosAsistente'
@@ -266,7 +265,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       onSubmit={(predio) => presentar({ predio })}
                     />
                   )}
-                  {error && <Alerta tono="error">{error}</Alerta>}
+                  {error && <Alert tone="danger">{error}</Alert>}
                 </div>
               )
           }))}

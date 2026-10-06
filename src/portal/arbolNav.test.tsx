@@ -1,11 +1,10 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { currentNavTreeLeaf } from '@wasichai/core'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
-import { ArbolNav } from './shell/ArbolNav'
-import { arbolPara, hojaActiva, NAV_TREE, type NodoNav } from './shell/navTree'
+import { arbolPara, NAV_TREE, type NodoNav } from './shell/navTree'
 
 // the tree menu of the portal-tributario theme (issue #53): the portal's lateral becomes a foldable tree of what a
 // clerk does, remembered per browser tab. light, dark and system keep the classic sidebar
@@ -76,8 +75,13 @@ function pantalla(ancho: number) {
 }
 
 describe('NAV_TREE', () => {
+  it('has no group with soloAdmin: arbolPara reads it on leaves only', () => {
+    const grupos = (nodos: NodoNav[]): NodoNav[] => nodos.flatMap((nodo) => ('children' in nodo ? [nodo, ...grupos(nodo.children)] : []))
+    expect(grupos(NAV_TREE).filter((nodo) => 'soloAdmin' in nodo)).toEqual([])
+  })
+
   it('groups what a clerk does, the administration for admins only', () => {
-    const ver = (nodos: NodoNav[]): unknown => nodos.map((nodo) => ('hijos' in nodo ? [nodo.label, ver(nodo.hijos)] : `${nodo.label} ${nodo.to}`))
+    const ver = (nodos: NodoNav[]): unknown => nodos.map((nodo) => ('children' in nodo ? [nodo.label, ver(nodo.children)] : `${nodo.label} ${nodo.to}`))
     expect(ver(arbolPara(NAV_TREE, { isAdmin: true }))).toEqual([
       ['Contribuyentes', ['Buscar contribuyentes /contribuyentes', 'Nuevo contribuyente /contribuyentes/nuevo']],
       ['Predios', ['Buscar predios /predios', 'Nuevo predio /predios/nuevo']],
@@ -135,38 +139,7 @@ describe('NAV_TREE', () => {
     ['/contribuyentesx', undefined],
     ['/admin', undefined]
   ])('on %s the current leaf is %s', (path, label) => {
-    expect(hojaActiva(NAV_TREE, path)?.label).toBe(label)
-  })
-})
-
-describe('ArbolNav', () => {
-  // generic: groups hold leaves or subgroups (16px, indented), whose leaves go deeper
-  it('draws subgroups with their own caret and deeper leaves', async () => {
-    const nodos: NodoNav[] = [
-      {
-        label: 'Tributos',
-        hijos: [
-          { label: 'Impuesto predial', hijos: [{ label: 'Cuenta corriente', to: '/cuenta' }] },
-          { label: 'Arbitrios', to: '/arbitrios' }
-        ]
-      }
-    ]
-    const onGrupo = vi.fn()
-    render(
-      <MemoryRouter initialEntries={['/cuenta/2026']}>
-        <ArbolNav etiqueta="Trámites" titulo="Mis trámites" nodos={nodos} abierto grupos={{}} onGrupo={onGrupo} onNavegar={() => {}} onPlegar={() => {}} />
-      </MemoryRouter>
-    )
-    const nav = screen.getByRole('navigation', { name: 'Trámites' })
-    const sub = within(nav).getByRole('button', { name: 'Impuesto predial' })
-    expect(sub).toHaveAttribute('aria-expanded', 'true')
-    expect(sub).toHaveClass('text-base', 'pl-[26px]')
-    const hoja = within(nav).getByRole('link', { name: 'Cuenta corriente' })
-    expect(hoja).toHaveAttribute('aria-current', 'page')
-    expect(hoja).toHaveClass('pl-[48px]')
-    expect(within(nav).getByRole('link', { name: 'Arbitrios' })).toHaveClass('pl-[34px]')
-    await userEvent.click(sub)
-    expect(onGrupo).toHaveBeenCalledWith('Tributos/Impuesto predial')
+    expect(currentNavTreeLeaf(NAV_TREE, path)?.label).toBe(label)
   })
 })
 
@@ -177,7 +150,7 @@ describe('portal-tributario tree menu', () => {
     const nav = lateral()
     // what the header's menu button controls, drawn like the prototype's panel
     expect(nav).toHaveAttribute('id', 'sidebar')
-    expect(nav).toHaveAttribute('data-ui', 'arbol-nav')
+    expect(nav).toHaveAttribute('data-slot', 'nav-tree')
     expect(nav).toHaveClass('w-73', 'bg-table-head', 'border-r', 'border-border')
     expect(within(nav).getByText('Mis trámites')).toHaveClass('text-lg', 'font-bold', 'text-link')
 
@@ -237,7 +210,7 @@ describe('portal-tributario tree menu', () => {
     start('portal-tributario')
     await listo()
     const grupo = within(lateral()).getByRole('button', { name: 'Contribuyentes' })
-    const caret = grupo.querySelector('[data-ui="arbol-caret"]')!
+    const caret = grupo.querySelector('[data-slot="nav-tree-caret"]')!
     expect(grupo).toHaveAttribute('aria-controls')
     expect(document.getElementById(grupo.getAttribute('aria-controls')!)).toContainElement(
       within(lateral()).getByRole('link', { name: 'Buscar contribuyentes' })

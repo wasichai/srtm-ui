@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError, EmptyState, QueryState, useAuth } from '@wasichai/core'
-import { Badge, Button, Card, CardBody, ConfirmDialog, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
+import { Alert, Badge, Button, Card, CardBody, ConfirmDialog, Label, Table, Td, Textarea, Th } from '@wasichai/ui'
 import { Loader2, Trash2 } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { currentYear, formatText } from '../components/format'
 import { YearSelect } from '../components/YearSelect'
 import { useDeterminaciones } from '../queries'
@@ -94,9 +93,9 @@ export function DeterminacionesPage() {
             </p>
           )}
           {lanzar.isError && (
-            <Alerta tono="error" className="mt-3">
+            <Alert tone="danger" className="mt-3">
               {errorAlLanzar(lanzar.error)}
-            </Alerta>
+            </Alert>
           )}
         </CardBody>
       </Card>

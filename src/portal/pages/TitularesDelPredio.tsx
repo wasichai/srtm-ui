@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router'
+import { Alert } from '@wasichai/ui'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { anulada } from '../components/EstadoBadge'
 import type { DeclaracionDetalle } from '../types'
 
@@ -37,7 +37,7 @@ export function AvisoTitulares({ titulares, contribuyente, anio }: { titulares: 
   const propia = titulares.find((t) => t.declaracion.contribuyente === contribuyente)
   const primera = titulares[0]
   return (
-    <Alerta tono="error" className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3">
+    <Alert tone="danger" className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3">
       <span className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" />
         {propia ? (
@@ -62,6 +62,6 @@ export function AvisoTitulares({ titulares, contribuyente, anio }: { titulares: 
           </span>
         )}
       </span>
-    </Alerta>
+    </Alert>
   )
 }

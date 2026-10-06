@@ -1,9 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Button } from '@wasichai/ui'
+import { Alert, Button } from '@wasichai/ui'
 import { Calculator } from 'lucide-react'
 import { useState } from 'react'
 import { rentas } from '../api'
-import { Alerta } from '../components/Alerta'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { usePuede } from '../components/permisos'
 
@@ -45,11 +44,11 @@ export function DeterminarArbitrios({ alcance, id, anio, avisos = [] }: { alcanc
           // every ficha and list of arbitrios reads the same cuotas
           onExito={() => queryClient.invalidateQueries({ queryKey: ['arbitrios'] })}
           exito={(cuotas) => (
-            <Alerta tono="exito">
+            <Alert tone="success">
               {cuotas.length === 0
                 ? 'No había cuotas pendientes: nada que determinar.'
                 : `Se determinaron ${cuotas.length} ${cuotas.length === 1 ? 'cuota' : 'cuotas'}.`}
-            </Alerta>
+            </Alert>
           )}
           onCerrar={() => setAbierto(false)}
         />

@@ -10,7 +10,7 @@ import type { ActaCreada, CatalogoCuis, Cuis, ExpedienteInfraccion, Notificacion
 // las actas y sus expedientes (épica de infracciones administrativas, PR U3): la grilla de expedientes con la fase y el
 // estado de la deuda en dos columnas con sus nombres (y la fase a su fecha); la nueva acta con el CUIS vigente el día de
 // la infracción, el obligado elegido (nunca deducido), el contribuyente o el predio, y el desglose que cifra el backend
-// con su fecha (nunca base × % en la pantalla); lo que falta para cifrar, en una Alerta; la ficha con su acta, el CUIS
+// con su fecha (nunca base × % en la pantalla); lo que falta para cifrar, en una Alert; la ficha con su acta, el CUIS
 // aplicado y los actos en el orden legal que manda el backend; la anulación impedida con el motivo del backend o por
 // permiso. los menús. números, nombres, UIT y multas FICTICIOS
 
@@ -490,7 +490,7 @@ describe('Nueva acta', () => {
     expect(window.location.pathname).toBe('/infracciones/a9')
   })
 
-  it('names in an Alerta what the backend lacks to compute the multa (422 faltan)', async () => {
+  it('names in an Alert what the backend lacks to compute the multa (422 faltan)', async () => {
     start('/infracciones/nueva', [
       {
         method: 'POST',

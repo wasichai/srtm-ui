@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button, Card, CardBody, CardHeader, CardTitle, Input, Label, Textarea } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, CardHeader, CardTitle, Input, Label, Textarea } from '@wasichai/ui'
 import { Loader2 } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { rentas, RentasError } from '../api'
-import { Alerta } from '../components/Alerta'
 import { DesgloseMulta, REINCIDENCIAS } from '../components/DesgloseMulta'
 import { MensajeDeError, OBSERVACION_MAXIMA, OBSERVACION_MINIMA } from '../components/DialogoDeActo'
 import { formatDate, today } from '../components/format'
@@ -204,17 +203,17 @@ export function NuevaActaPage() {
               </Campo>
             </div>
             {cuis.isSuccess && codigos.length === 0 && (
-              <Alerta tono="atencion">Ningún código del CUIS está vigente al {fechaDicha}: cargue el CUIS o revise la fecha.</Alerta>
+              <Alert tone="warning">Ningún código del CUIS está vigente al {fechaDicha}: cargue el CUIS o revise la fecha.</Alert>
             )}
             {cuis.isError && (
-              <Alerta tono="error">
+              <Alert tone="danger">
                 <MensajeDeError error={cuis.error} siFalla="No se pudo leer el CUIS" />
-              </Alerta>
+              </Alert>
             )}
             {cuis.data && cuis.data.faltan.length > 0 && (
-              <Alerta tono="atencion" titulo={`Al ${formatDate(cuis.data.vigentes_a)} falta:`}>
+              <Alert tone="warning" title={`Al ${formatDate(cuis.data.vigentes_a)} falta:`}>
                 {cuis.data.faltan.join('; ')}. Sin eso no se cifra la multa del acta.
-              </Alerta>
+              </Alert>
             )}
             {elegido && (
               <p className="text-sm text-ink-muted" data-testid="codigo-elegido">
@@ -298,13 +297,13 @@ export function NuevaActaPage() {
 
         {registro.isError &&
           (faltan.length > 0 ? (
-            <Alerta tono="atencion" titulo="No se registró el acta. Falta:">
+            <Alert tone="warning" title="No se registró el acta. Falta:">
               {faltan.join('; ')}. Sin eso no se cifra la multa: cárguelo y vuelva a intentarlo.
-            </Alerta>
+            </Alert>
           ) : (
-            <Alerta tono="error">
+            <Alert tone="danger">
               <MensajeDeError error={registro.error} siFalla="No se pudo registrar el acta" />
-            </Alerta>
+            </Alert>
           ))}
 
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -342,9 +341,9 @@ function Registrada({ acta, onOtra }: { acta: ActaCreada; onOtra: () => void }) 
   return (
     <div className="space-y-5">
       <SubnavInfracciones />
-      <Alerta tono="exito">
+      <Alert tone="success">
         Acta {acta.numero} del {formatDate(acta.fecha_infraccion)} registrada, con la referencia {acta.referencia}.
-      </Alerta>
+      </Alert>
       <Card>
         <CardHeader>
           <CardTitle>Multa del acta {acta.numero}</CardTitle>

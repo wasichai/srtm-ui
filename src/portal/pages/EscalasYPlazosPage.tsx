@@ -1,11 +1,10 @@
 import { EmptyState, QueryState } from '@wasichai/core'
-import { Button, Card, CardBody, Input, Label, Pagination, Table, Td, Th } from '@wasichai/ui'
+import { Alert, Button, Card, CardBody, Input, Label, Pagination, Table, Td, Th } from '@wasichai/ui'
 import { Search } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { useSession } from '../auth/session'
-import { Alerta } from '../components/Alerta'
 import { BadgeDeMapa } from '../components/BadgeDeMapa'
 import { currentYear, formatDate, formatText, today } from '../components/format'
 import { NUMERICA } from '../components/tabla'
@@ -216,7 +215,7 @@ function ListadoDe({ resultado, nombre, onPage }: { resultado: Pagina<Notificaci
 }
 
 // the plazos and feriados loaded for a year, as the backend reads them (GET /infracciones/plazos), what is missing
-// named in an Alerta (never a 0), and how they are configured
+// named in an Alert (never a 0), and how they are configured
 function PlazosCargados() {
   const { isAdmin } = useSession()
   const titulo = useId()
@@ -288,9 +287,9 @@ function Cargados({ plazos: p }: { plazos: PlazosInfracciones }) {
   return (
     <div className="space-y-3">
       {p.faltan.length > 0 && (
-        <Alerta tono="atencion" titulo={`Faltan para ${p.anio}:`}>
+        <Alert tone="warning" title={`Faltan para ${p.anio}:`}>
           {p.faltan.join('; ')}. Un acto que los necesite no se registra hasta que se carguen.
-        </Alerta>
+        </Alert>
       )}
       {p.plazos.length > 0 && (
         <Table aria-label={`Plazos de ${p.anio}, vigentes al ${al}`}>
