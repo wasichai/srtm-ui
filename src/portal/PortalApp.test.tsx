@@ -316,6 +316,20 @@ describe('portal', () => {
     expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
   })
 
+  it('skips the header, the menu and the workspace tabs to the screen, from the first tab stop', async () => {
+    start('/')
+    expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
+    await userEvent.tab()
+    expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    const contenido = document.getElementById('contenido')!
+    expect(contenido).toHaveFocus()
+    expect(contenido).toContainElement(screen.getByRole('heading', { name: 'Inicio' }))
+    // the focus moves, the url stays
+    expect(window.location.pathname).toBe('/')
+    expect(window.location.hash).toBe('')
+  })
+
   it('switches the theme from a menu and stores it for the user, as the admin does', async () => {
     start('/', [{ method: 'PUT', path: '/auth/me/preferences', body: { theme: 'portal-tributario', locale: null } }])
     const button = await screen.findByRole('button', { name: /^Tema: Sistema/ })

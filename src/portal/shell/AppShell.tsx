@@ -22,6 +22,7 @@ export function AppShell() {
 
   return (
     <div className="flex h-full flex-col">
+      <SaltarAlContenido />
       <header className={piezas.cabecera}>
         <button
           ref={lateral.boton}
@@ -56,13 +57,30 @@ export function AppShell() {
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
           <Breadcrumbs />
-          <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+          <div id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
             <Outlet />
           </div>
         </main>
       </div>
       {Pie && <Pie />}
     </div>
+  )
+}
+
+// the keyboard's first stop, shown only while it has the focus: past the header, the menu, the workspace tabs and the
+// trail, to the screen itself (wcag 2.4.1). it moves the focus, not the url: a #hash is a navigation to the router
+function SaltarAlContenido() {
+  return (
+    <a
+      href="#contenido"
+      onClick={(event) => {
+        event.preventDefault()
+        document.getElementById('contenido')?.focus()
+      }}
+      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-ink focus:shadow-lg"
+    >
+      Saltar al contenido
+    </a>
   )
 }
 
