@@ -391,6 +391,86 @@ tenía aquí.
 Tests: `src/portal/arbolNav.test.tsx` (`NAV_TREE`, hoja activa, plegado, memoria, pantalla estrecha, clásico intacto); el
 componente y su parcial los prueba wasichai-ui.
 
+### Pasos en galón y barra de instrucción (`pasos.css`, #54)
+
+Componentes (en `src/portal/components/`):
+
+- `PasosGalon`: `pasos` (`{ id, label }[]`), `actual`, `onIr?(id)`, `puedeIr?(id)` y `label` (por defecto "Pasos del
+  trámite"). Es un `<ol>` (`data-ui="pasos-galon"`) con un `<li>` por paso (`data-ui="paso"`) y `aria-current="step"`
+  en el actual, que va en `bg-brand text-on-brand`; los demás, en `bg-surface-muted text-ink-muted`. Solo son botones
+  los pasos a los que se puede ir (hay `onIr` y `puedeIr` lo permite); los demás, y el actual, son texto: no se
+  enfocan. El recorte también cortaría el contorno de foco, así que el botón dibuja el anillo alrededor de su texto,
+  dentro del galón, en el color del texto.
+- `BarraInstruccion`: `paso?` (en negrita), `children` (la instrucción, con `aria-live="polite"`) y `herramientas?`
+  (`{ label, icon, onClick }[]`), que son `Button` primarios de `@wasichai/ui`. Hoy nadie pasa herramientas: el
+  portal no tiene Recuperar, Importar ni Limpiar.
+- `PasosAsistente` junta los dos sobre una tarjeta, solo con la variante `portal`; en la clásica no pinta nada. Lo
+  usan Nuevo contribuyente, la ficha del contribuyente mientras sigue la inscripción (`?inscripcion=1`, sobre sus
+  pestañas), Nueva declaración y la declaración con `?asistente=1`, justo debajo de su cabecera. Los
+  pasos son las pestañas de cada asistente, con su mismo estado: el paso actual es la pestaña abierta y un paso va
+  adonde va su pestaña, cuando se puede abrir. Las instrucciones, una por paso, están en
+  `src/portal/forms/instrucciones.ts`.
+
+Bajo el tema, `pasos.css` da la forma y las medidas del prototipo:
+
+| Pieza                    | Bajo el tema                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Paso                     | 15.5px, `padding: 11px 30px 11px 34px` (el primero 22px a la izquierda, el último 26px a la derecha)               |
+| Recorte                  | `clip-path` con punta y muesca de 14px; el primero sin muesca, el último sin punta, uno solo sin recorte           |
+| Paso no actual           | `#EDEDED` con texto `#555` (6.37:1)                                                                                |
+| Barra de instrucción     | `padding-left: 18px`; el texto a 15px con `padding: 11px 0`, sobre `surface-muted` y con la línea `line` debajo    |
+| Herramientas de la barra | el botón primario, plano: `padding: 12px 18px`, 14.5px, ícono de 15px y una línea de blanco al 30 % a su izquierda |
+
+- **Separación entre pasos.** El prototipo mete cada paso 14px bajo la punta del anterior (`margin-left: -14px`) y
+  su recorte encaja justo: dos pasos grises seguidos se funden en una sola banda. Aquí se meten 12px: queda una
+  línea de 2px del fondo entre paso y paso. El recorte no deja solapes, así que no hace falta el `z-index`
+  decreciente del prototipo.
+- **Muchos pasos.** Los seis de la declaración necesitan unos 1090px con las medidas del prototipo, más de lo que
+  queda junto al lateral en una pantalla de 1440px. Como las pestañas (`tabs.css`), la lista es un contenedor: por
+  debajo de 1100px los pasos se estrechan (`11px 24px 11px 28px`) y por debajo de 1000px pasan a 14.5px
+  (`10px 20px 10px 24px`). Lo que aún no cabe se desplaza en horizontal, con una barra fina.
+- **Sobre una tarjeta.** El prototipo pone galón y barra sobre su columna blanca, y la barra es gris (`#F6F6F6`).
+  Aquí el fondo de la página ya es `surface-muted` (ese mismo gris), así que `PasosAsistente` los pone sobre una
+  tarjeta blanca: el galón con `padding: 10px 18px` y la barra debajo, cuya línea inferior es el borde de la tarjeta.
+
+### Banda de título y pie de acciones (`banda.css`, #55)
+
+`src/portal/components/BandaTitulo.tsx` es estructura, así que es un componente con tokens y utilidades que solo se
+dibuja con la variante `portal`:
+
+- `BandaTitulo`: `kind?` (pequeño, en mayúsculas, antes del título y en la misma línea), `title` (el `h1`, 18px en
+  negrita), `detalle?` (el nombre del formulario del SRTM, a la derecha) y `ayuda?` (el botón "?" circular blanco de
+  22px, `aria-label` "Ayuda de este formulario"; ninguna pantalla lo pasa todavía). Fondo `brand`, texto
+  `on-brand` (4.7:1), `padding: 11px 16px`. Sin la estrella de favoritos: no hay backend. Pone
+  `data-ui="banda-titulo"`.
+- `CabeceraBanda`: la banda y, justo debajo, una fila (`data-ui="cabecera-fila"`) con los `badges` a la izquierda y
+  el `aside` (acciones) a la derecha. Envuelve todo en `data-ui="cabecera-banda"`.
+- `FichaHeader` la usa con la variante `portal` (Contribuyente, Predio, Declaración, Lote de catastro); en light y
+  dark su marcado no cambia. Los asistentes (Nuevo contribuyente, Nueva declaración) usan `CabeceraAsistente`
+  (`src/portal/pages/`): la banda con el título y sus subtítulos, y Cancelar/Siguiente en la fila, en su orden de
+  foco; en light y dark, su cabecera de siempre.
+- El pie de `RecordForm` tiene el mismo marcado en todos los temas: `data-ui="record-acciones"` con Cancelar, la
+  nota opcional (`nota?`, `data-ui="record-nota"`, `text-ink-muted`) y la acción primaria, en ese orden. En light y
+  dark sigue todo a la derecha.
+
+`banda.css` añade lo que las utilidades no dicen:
+
+| Regla                                                          | Qué hace                                                                   |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `[data-ui='cabecera-banda']:has(+ * > [data-ui='ficha-tabs'])` | sin el margen de la página: las pestañas carpeta cuelgan de ella           |
+| … `> [data-ui='cabecera-fila']`                                | 10px bajo la fila de badges y acciones, antes de las pestañas              |
+| `[data-ui='banda-titulo'] a:hover`                             | un enlace de la banda (el contribuyente de la DJ) sigue en blanco          |
+| `[data-ui='banda-titulo'] :focus-visible`                      | anillo de foco blanco: el azul de foco se pierde sobre `brand`             |
+| `[data-ui='record-acciones']` y `> [type='button']`            | Cancelar a la izquierda (`margin-inline-end: auto`), el resto a la derecha |
+| `[data-ui='record-nota']`                                      | la nota a 13.5px                                                           |
+
+- **Un solo `:has()`.** Un `:has()` no puede llevar otro dentro, así que la cabecera seguida de la tarjeta de las
+  pestañas se reconoce con un selector relativo: `:has(+ * > [data-ui='ficha-tabs'])`.
+- **Lo que va entre la cabecera y las pestañas.** Las pestañas cuelgan de la banda solo donde vienen justo después
+  (la Declaración fuera del asistente). En Contribuyente y Predio las tres tarjetas de resumen (predios o titulares,
+  autoavalúo, valor afecto) y en los asistentes los pasos en galón con su barra de instrucción (#54) siguen entre la
+  cabecera y las pestañas, con el espacio de la página: banda → fila → (tarjetas) → (pasos) → pestañas.
+
 ## Ganchos `data-slot` y `data-ui`
 
 Los atributos que ponen los componentes para que un tema los pinte desde CSS. En light y dark no hacen nada. Los
