@@ -14,9 +14,9 @@ import { rentas } from '../api'
 import { anulada, EstadoBadge } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
-import { CARACTERISTICAS_SECTIONS, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
+import { caracteristicasSections, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
-import { useCatalogos, useRefresh } from '../queries'
+import { basesDeArbitrio, dimensionesDeArbitrio, useCatalogos, useParametrosArbitrio, useRefresh } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion } from '../types'
 import { AnularDeclaracion, AvisoAnulada } from './AnularDeclaracion'
@@ -63,12 +63,14 @@ const propios = (cambios: Record<string, unknown> | undefined, sections: Section
 const CON_TRANSFERENTE = ['COMPRA', 'DONACION', 'HERENCIA', 'ANTICIPO DE LEGITIMA', 'ADJUDICACION', 'PERMUTA', 'DACION EN PAGO', 'APORTE']
 
 // where the wizard goes once the declaration is presented: its transferente, when it came from someone and none is
-// there yet; else its características, while they lack what they require
-export function siguientePendiente(declaracion: Declaracion, transferentes: number): string {
+// there yet; else its características, while they lack what they require. bases: as caracteristicasSections (empty
+// right after presenting, since this runs before the predio's año has a parámetros query of its own: the DJ's own
+// tab, once open, asks for them live)
+export function siguientePendiente(declaracion: Declaracion, transferentes: number, bases: Set<string> = new Set()): string {
   if (transferentes === 0 && CON_TRANSFERENTE.includes(declaracion.tipo_adquisicion ?? '')) return 'transferentes'
   const valores = declaracion as unknown as FormValues
   const requerido = (f: FieldSpec) => (typeof f.required === 'function' ? f.required(valores) : f.required === true)
-  const faltan = dataFields(CARACTERISTICAS_SECTIONS).some((f) => requerido(f) && (valores[f.name] ?? '') === '')
+  const faltan = dataFields(caracteristicasSections(bases)).some((f) => requerido(f) && (valores[f.name] ?? '') === '')
   return faltan ? 'caracteristicas' : 'transferentes'
 }
 
@@ -86,6 +88,14 @@ function DeclaracionPage({ id }: { id: string }) {
   useWorkspaceTab(
     dj ? { path: `/declaraciones/${id}`, label: `DJ ${dj.declaracion.numero_declaracion ?? ''} ${dj.predio.codigo ?? ''}`.trim(), kind: 'declaracion' } : null
   )
+  // the DJ's año's arbitrios: what its ordenanza cobra por (BASE_ARBITRIO) and lee de (DIMENSIONES_ARBITRIO), to
+  // exigir frontis, área construida o la ubicación respecto a áreas verdes (wasichai/srtm-ui#94). mientras la query
+  // carga o falla, ambos conjuntos quedan vacíos: los campos siguen opcionales, como hoy
+  const parametrosArbitrio = useParametrosArbitrio(dj?.declaracion.anio ?? undefined)
+  const bases = basesDeArbitrio(parametrosArbitrio.data?.parametros)
+  const conInfluencia = dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA')
+  const seccionesCaracteristicas = caracteristicasSections(bases)
+  const seccionesUbicacion = ubicacionSections(undefined, conInfluencia)
   // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
   const asistente = params.has('asistente')
   const activa = DECLARACION_TABS.find((t) => t.id === params.get('tab'))?.id ?? 'datos'
@@ -125,8 +135,8 @@ function DeclaracionPage({ id }: { id: string }) {
       }
       const latest = await rentas.declaracionJurada(id)
       const deDatos = propios(valores.datos, DJ_DATOS_SECTIONS, DATOS_DEL_PREDIO)
-      const deCaracteristicas = propios(valores.caracteristicas, CARACTERISTICAS_SECTIONS)
-      const deUbicacion = propios(valores.ubicacion, UBICACION_SECTIONS)
+      const deCaracteristicas = propios(valores.caracteristicas, seccionesCaracteristicas)
+      const deUbicacion = propios(valores.ubicacion, seccionesUbicacion)
       // the tipo de predio shown in datos del predio is the predio's
       const tipoPredio = valores.datos?.tipo_predio as string | null | undefined
       const otroTipo = tipoPredio !== undefined && tipoPredio !== latest.predio.tipo_predio
@@ -276,7 +286,7 @@ function DeclaracionPage({ id }: { id: string }) {
                   {
                     ...DECLARACION_TABS[1],
                     icon: MapPin,
-                    render: () => <div className="px-6 pt-5">{formulario('ubicacion', UBICACION_SECTIONS, predio, catalogos.data?.predio)}</div>
+                    render: () => <div className="px-6 pt-5">{formulario('ubicacion', seccionesUbicacion, predio, catalogos.data?.predio)}</div>
                   },
                   {
                     ...DECLARACION_TABS[2],
@@ -292,7 +302,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     icon: Building2,
                     render: () => (
                       <div className="space-y-8 px-6 pt-5">
-                        {formulario('caracteristicas', CARACTERISTICAS_SECTIONS, declaracion, catalogos.data?.declaracion_predial)}
+                        {formulario('caracteristicas', seccionesCaracteristicas, declaracion, catalogos.data?.declaracion_predial)}
                         <NivelesPanel declaracion={id} readOnly={soloLectura} />
                         <ObrasPanel declaracion={id} readOnly={soloLectura} />
                       </div>

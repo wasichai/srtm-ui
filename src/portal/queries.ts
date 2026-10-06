@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
-import type { DeterminacionMasiva, Emision, FiltrosActas, FiltrosAnuncios, FiltrosCuis, FiltrosNotificaciones } from './types'
+import type { DeterminacionMasiva, Emision, FiltrosActas, FiltrosAnuncios, FiltrosCuis, FiltrosNotificaciones, ParametroTributario } from './types'
 
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
@@ -23,6 +23,39 @@ export const hayActivos = (emisiones: Emision[] | undefined) =>
 // the emisiones masivas, newest first: asked every 2 s while one of them runs, not at all otherwise
 export function useEmisiones() {
   return useQuery({ queryKey: ['emisiones'], queryFn: () => rentas.emisiones(), refetchInterval: (query) => (hayActivos(query.state.data) ? 2000 : false) })
+}
+
+// the ordenanza's rows in force of a year (Llaves.BASE_ARBITRIO, DIMENSIONES_ARBITRIO, etc.): what the DJ predial
+// reads to exigir frontis, área construida or la ubicación respecto a áreas verdes (wasichai/srtm-ui#94). undefined
+// (no anio yet, the query carga, or falló): never asked, same cache key TasasArbitriosPage uses
+export function useParametrosArbitrio(anio: number | undefined) {
+  return useQuery({
+    queryKey: ['arbitrios', 'parametros', anio ?? null],
+    queryFn: () => rentas.parametrosArbitrio(anio!),
+    enabled: anio !== undefined,
+    placeholderData: keepPreviousData
+  })
+}
+
+// las bases (BASE_ARBITRIO) de las filas en vigor: el texto de cada servicio (PREDIO, FRONTIS_ML o
+// AREA_CONSTRUIDA_M2 - srtm-backend's Base), lo que haya. undefined (sin query o aún sin datos) cuenta como
+// ninguna: la DJ no exige nada por ellas, como hoy
+export function basesDeArbitrio(parametros: ParametroTributario[] | undefined): Set<string> {
+  return new Set((parametros ?? []).filter((p) => p.tipo === 'BASE_ARBITRIO' && p.texto).map((p) => p.texto as string))
+}
+
+// las dimensiones (DIMENSIONES_ARBITRIO) de las filas en vigor, por servicio: ZONA, USO, INFLUENCIA o AFLUENCIA
+// (srtm-backend's Dimension), separadas de su texto por comas. undefined cuenta como ninguna
+export function dimensionesDeArbitrio(parametros: ParametroTributario[] | undefined): Set<string> {
+  const dimensiones = new Set<string>()
+  for (const p of parametros ?? []) {
+    if (p.tipo !== 'DIMENSIONES_ARBITRIO' || !p.texto) continue
+    for (const dimension of p.texto.split(',')) {
+      const nombre = dimension.trim()
+      if (nombre) dimensiones.add(nombre)
+    }
+  }
+  return dimensiones
 }
 
 // after any write: fichas, lists and totals all read from the same records, so all of them go stale

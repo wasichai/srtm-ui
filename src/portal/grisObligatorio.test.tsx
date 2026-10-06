@@ -389,6 +389,49 @@ describe('the wizard on a predio of the padrón', () => {
   })
 })
 
+describe('la ubicación respecto a áreas verdes (wasichai/srtm-ui#94)', () => {
+  it("requires it once the year's servicio uses INFLUENCIA, optional until then", async () => {
+    start('/declaraciones/d1?tab=ubicacion', [
+      {
+        path: '/srtm/arbitrios/parametros',
+        body: {
+          anio: year,
+          ordenanza: null,
+          servicios: [],
+          parametros: [
+            {
+              id: null,
+              tipo: 'DIMENSIONES_ARBITRIO',
+              clave: 'LIMPIEZA',
+              texto: 'ZONA,USO,INFLUENCIA',
+              vigencia_desde: null,
+              vigencia_hasta: null,
+              valor_numerico: null,
+              norma: null,
+              fuente: null,
+              transcribio: null,
+              verifico: null
+            }
+          ],
+          faltan: []
+        }
+      }
+    ])
+    await screen.findByRole('tab', { name: 'Datos de la ubicación' })
+    // a servicio del año usa INFLUENCIA: se vuelve obligatoria
+    await waitFor(() => expect(screen.getByText(/^Ubicación respecto a áreas verdes/).textContent).toContain('*'))
+  })
+
+  it('leaves it optional when no servicio del año uses INFLUENCIA, as today', async () => {
+    // no se mockea /srtm/arbitrios/parametros: el 404 del mock deja la query en error, como si el backend aún no
+    // tuviera esas filas
+    start('/declaraciones/d1?tab=ubicacion')
+    await screen.findByRole('tab', { name: 'Datos de la ubicación' })
+    await waitFor(() => expect(fetch!.calls.some((c) => c.path.startsWith('/srtm/arbitrios/parametros'))).toBe(true))
+    expect(screen.getByText(/^Ubicación respecto a áreas verdes/).textContent).not.toContain('*')
+  })
+})
+
 describe('the lists, as the srtm draws them', () => {
   const nivel = {
     id: 'n1',

@@ -218,4 +218,40 @@ describe('the full declaración jurada', () => {
       folios: 2
     })
   })
+
+  // wasichai/srtm-ui#94: the DJ exige frontis y área construida solo cuando la ordenanza vigente cobra por esa base
+  it('asks for frontis and área construida once the year charges arbitrios by that base, optional until then', async () => {
+    const filaBase = (clave: string, texto: string) => ({
+      id: null,
+      tipo: 'BASE_ARBITRIO',
+      clave,
+      texto,
+      vigencia_desde: null,
+      vigencia_hasta: null,
+      valor_numerico: null,
+      norma: null,
+      fuente: null,
+      transcribio: null,
+      verifico: null
+    })
+    start('/declaraciones/d1?tab=caracteristicas', [
+      {
+        path: '/srtm/arbitrios/parametros',
+        body: {
+          anio: year,
+          ordenanza: null,
+          servicios: [],
+          parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML'), filaBase('PARQUES', 'AREA_CONSTRUIDA_M2')],
+          faltan: []
+        }
+      }
+    ])
+    const panel = within(await screen.findByRole('tabpanel'))
+    await panel.findByRole('group', { name: 'Valores' })
+    // the year's ordenanza cobra por FRONTIS_ML and AREA_CONSTRUIDA_M2: both become required (compatibility with a
+    // year that lacks those filas, or a parámetros query that fails, stays optional: the unmodified test above,
+    // which mocks no /srtm/arbitrios/parametros route at all, still saves área construida without it)
+    await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
+    expect(screen.getByText(/^Área construida/).textContent).toContain('*')
+  })
 })
