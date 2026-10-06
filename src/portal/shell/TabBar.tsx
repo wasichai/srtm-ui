@@ -3,8 +3,11 @@ import { FileText, Gavel, Home, LandPlot, MapPinned, User, X } from 'lucide-reac
 import { Link, useLocation } from 'react-router'
 import { useWorkspaceTabs } from './WorkspaceTabs'
 
-// folder tabs over the content: Inicio always first and never closes, then one per open ficha
-export function TabBar() {
+// folder tabs over the content: Inicio always first and never closes, then one per open ficha. in the portal's brand
+// bar (ubicacion 'cabecera') they are its second row, from the content's edge on a wide screen; the theme's tabs.css
+// paints them there
+export function TabBar({ ubicacion }: { ubicacion?: 'cabecera' }) {
+  const cabecera = ubicacion === 'cabecera'
   const { tabs, close } = useWorkspaceTabs()
   const { pathname } = useLocation()
   const tabClass = (active: boolean) =>
@@ -14,8 +17,14 @@ export function TabBar() {
     )
 
   return (
-    <nav aria-label="Fichas abiertas" data-ui="workspace-tabs" className="border-b border-border bg-surface px-4">
-      <ul className="flex gap-1 overflow-x-auto pt-2">
+    <nav
+      aria-label="Fichas abiertas"
+      data-ui="workspace-tabs"
+      data-ubicacion={ubicacion}
+      // the rail's 104px and the content's 24px, less the bar's own 16px
+      className={cabecera ? 'mt-2 basis-full pt-0.5 sm:pl-28' : 'border-b border-border bg-surface px-4'}
+    >
+      <ul className={cn('flex gap-1 overflow-x-auto', !cabecera && 'pt-2')}>
         <li data-ui="workspace-tab" className={tabClass(pathname === '/')}>
           <Link to="/" aria-current={pathname === '/' ? 'page' : undefined} className="flex items-center gap-1.5 px-3 py-1.5">
             <Home className="size-3.5" />
