@@ -4,8 +4,8 @@ import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
 
-// the shell of the portal-tributario theme (issue #52): brand bar with the search and a session menu, a light
-// lateral and the institutional footer. light, dark and system keep the classic shell
+// the shell of the portal-tributario theme (issue #52): brand bar with the search and a session menu, the open fichas
+// as its second row, a light rail of modules and the institutional footer. light, dark and system keep the classic shell
 
 // jsdom has no webgl: the map is not what these tests look at
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
@@ -39,11 +39,11 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   render(<PortalApp />)
 }
 
-// the home page drawn, and the permissions in: an admin gets the way to the administration in the bar (the portal's
-// tree has one too)
+// the home page drawn, and the permissions in: an admin gets the way to the administration (in the classic bar; in the
+// portal's rail and its session menu)
 async function listo() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
-  expect(await within(screen.getByRole('banner')).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
 }
 
 const sesion = () => screen.getByRole('button', { name: /menú de sesión/ })
@@ -60,29 +60,39 @@ describe('portal-tributario shell', () => {
     expect(within(bar).getByText('Municipalidad Distrital de Perené')).toBeInTheDocument()
     // white on the bar, with its own dark text: the bar's white would not show on it
     expect(within(bar).getByRole('searchbox', { name: 'Buscar' })).toHaveClass('bg-surface', 'text-ink')
-    expect(within(bar).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    // the administration is in the rail and the session menu, not in the bar
+    expect(within(bar).queryByRole('link', { name: /Administración/ })).not.toBeInTheDocument()
     expect(within(bar).getByRole('button', { name: /^Tema: Portal tributario/ })).toBeInTheDocument()
     // the session: initials, name and role on the button, sign-out inside its menu
     expect(within(bar).getByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' })).toHaveTextContent('ARAdmin RentasAdministrador')
     expect(within(bar).queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
 
-    // not the dark sidebar: the lateral is light, its links in the link colour, the current one marked (the tree
-    // itself: arbolNav.test.tsx)
+    // not the dark sidebar: a light rail, the current section marked (the rail itself: rielNav.test.tsx)
     expect(lateral()).not.toHaveClass('bg-shell')
     expect(lateral()).toHaveClass('bg-table-head')
-    expect(within(lateral()).getByRole('link', { name: 'Ir al inicio' })).toHaveAttribute('aria-current', 'page')
-    expect(within(lateral()).getByRole('link', { name: 'Buscar contribuyentes' })).toHaveClass('text-link')
+    expect(within(lateral()).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Municipalidad Distrital de Perené — Sistema de Gestión Tributaria Municipal')
-    // the workspace tabs over the content, as in the classic shell
-    expect(screen.getByRole('navigation', { name: 'Fichas abiertas' })).toBeInTheDocument()
+    // the open fichas are the bar's second row, like a browser's tabs: not over the content
+    const fichas = within(bar).getByRole('navigation', { name: 'Fichas abiertas' })
+    expect(fichas).toHaveAttribute('data-ubicacion', 'cabecera')
+    expect(fichas).toHaveClass('basis-full')
+    expect(bar).toHaveClass('flex-wrap')
+    expect(bar.lastElementChild).toBe(fichas)
+    expect(within(screen.getByRole('main')).queryByRole('navigation', { name: 'Fichas abiertas' })).not.toBeInTheDocument()
+    expect(within(fichas).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
   })
 
   it.each(['light', 'dark', 'system'])('keeps the classic shell with %s', async (theme) => {
     start(theme)
     await listo()
     expect(screen.getByRole('banner')).not.toHaveClass('bg-shell')
+    expect(within(screen.getByRole('banner')).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
     expect(lateral()).toHaveClass('bg-shell')
+    // the workspace tabs over the content
+    const fichas = within(screen.getByRole('main')).getByRole('navigation', { name: 'Fichas abiertas' })
+    expect(fichas).not.toHaveAttribute('data-ubicacion')
+    expect(fichas).toHaveClass('border-b', 'border-border', 'bg-surface', 'px-4')
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /menú de sesión/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()

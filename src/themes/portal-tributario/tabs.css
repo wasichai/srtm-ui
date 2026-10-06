@@ -2,32 +2,42 @@
    sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs' data-slot, #66). unlayered, so these win over
    tailwind's utilities; hooked on the data-ui of TabBar and RecordForm. the aria and the behaviour do not change */
 
-/* the workspace tabs over the content: the same folders, 14px. the active tab joins what is under it */
-[data-theme='portal-tributario'] [data-ui='workspace-tabs'] {
+/* the workspace tabs as the brand bar's second row (TabBar in the header, data-ubicacion='cabecera'), like a
+   browser's: outlined in white on the bar, open at the bottom. under the theme they are always there */
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab'] {
+    border: 1px solid rgb(255 255 255 / 35%);
     border-bottom: 0;
-    background: var(--surface) linear-gradient(var(--brand), var(--brand)) bottom / 100% 1px no-repeat;
-}
-
-[data-theme='portal-tributario'] [data-ui='workspace-tab'] {
-    border: 1px solid transparent;
-    border-bottom-color: var(--brand);
     border-radius: 3px 3px 0 0;
-    background: #f0f0f0;
-    color: #666666;
+    background: transparent;
+    color: var(--shell-ink);
     font-size: 14px;
 }
 
-[data-theme='portal-tributario'] [data-ui='workspace-tab']:hover {
-    background: #e9e9e9;
-    color: var(--ink);
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab']:hover {
+    background: color-mix(in srgb, var(--shell-ink) 10%, transparent);
 }
 
-[data-theme='portal-tributario'] [data-ui='workspace-tab']:has(> [aria-current='page']) {
-    border-color: var(--brand);
-    border-bottom-color: var(--surface);
-    background: var(--surface);
+/* the open one in the page's background, so it and the page are one. after the hover, as specific */
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab']:has(> [aria-current='page']) {
+    border-color: var(--surface-muted);
+    background: var(--surface-muted);
     color: var(--ink);
     font-weight: bold;
+}
+
+/* the close buttons and the focus ring in their tab's colour: white on the bar, ink on the open tab. the ring inside,
+   on the tab's own background */
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab'] > button {
+    color: inherit;
+}
+
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab'] > button:hover {
+    background: color-mix(in srgb, currentcolor 15%, transparent);
+}
+
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] :focus-visible {
+    outline-color: currentcolor;
+    outline-offset: -2px;
 }
 
 /* a record form's sections: a steel fieldset with its legend on the border, 18px apart */

@@ -358,15 +358,16 @@ describe('Notificaciones previas en los dos temas', () => {
 })
 
 describe('menú de las notificaciones previas', () => {
-  it('the tree menu has the leaf before the CUIS, current on its page', async () => {
+  it("the rail's Infracciones panel has the leaf before the CUIS, current on its page", async () => {
     start([{ path: '/srtm/infracciones/notificaciones', body: pagina([notificacion()]) }], { theme: 'portal-tributario' })
     await tabla()
-    const lateral = screen.getByRole('navigation', { name: 'Secciones' })
-    const hojas = within(lateral)
+    await userEvent.click(within(screen.getByRole('navigation', { name: 'Secciones' })).getByRole('button', { name: 'Infracciones' }))
+    const panel = screen.getByRole('navigation', { name: 'Trámites: Infracciones administrativas' })
+    const hojas = within(panel)
       .getAllByRole('link')
       .map((l) => l.textContent)
     expect(hojas.indexOf('Notificaciones previas')).toBe(hojas.indexOf('CUIS') - 1)
-    expect(within(lateral).getByRole('link', { name: 'Notificaciones previas' })).toHaveAttribute('aria-current', 'page')
+    expect(within(panel).getByRole('link', { name: 'Notificaciones previas' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('the subnav links the notificaciones before the CUIS', async () => {
