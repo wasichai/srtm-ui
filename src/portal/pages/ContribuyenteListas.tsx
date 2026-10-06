@@ -1,7 +1,7 @@
 import { AlertTriangle, MapPinCheck } from 'lucide-react'
+import { Alert } from '@wasichai/ui'
 import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { Alert } from '@wasichai/ui'
 import { formatText } from '../components/format'
 import { PERENE_UBIGEO } from '../forms/bloques'
 import { celda, etiqueta } from '../forms/etiquetas'

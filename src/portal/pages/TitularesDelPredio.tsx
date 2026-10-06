@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router'
-import { rentas } from '../api'
 import { Alert } from '@wasichai/ui'
+import { rentas } from '../api'
 import { anulada } from '../components/EstadoBadge'
 import type { DeclaracionDetalle } from '../types'
 

@@ -75,6 +75,11 @@ function pantalla(ancho: number) {
 }
 
 describe('NAV_TREE', () => {
+  it('has no group with soloAdmin: arbolPara reads it on leaves only', () => {
+    const grupos = (nodos: NodoNav[]): NodoNav[] => nodos.flatMap((nodo) => ('children' in nodo ? [nodo, ...grupos(nodo.children)] : []))
+    expect(grupos(NAV_TREE).filter((nodo) => 'soloAdmin' in nodo)).toEqual([])
+  })
+
   it('groups what a clerk does, the administration for admins only', () => {
     const ver = (nodos: NodoNav[]): unknown => nodos.map((nodo) => ('children' in nodo ? [nodo.label, ver(nodo.children)] : `${nodo.label} ${nodo.to}`))
     expect(ver(arbolPara(NAV_TREE, { isAdmin: true }))).toEqual([

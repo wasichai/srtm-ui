@@ -16,8 +16,9 @@ Tiene tres capas, de la más genérica a la más propia:
    `@wasichai/ui/themes/portal-tributario.css` el bloque del tema. Solo con esto, todo lo que dibujan `@wasichai/*` y el
    portal ya toma los colores y la forma del tema.
 2. **Parciales de componentes**: la forma exacta del prototipo. Los controles, las tablas, las pestañas, las alertas y el
-   menú en árbol de la librería los pinta la hoja de `@wasichai/ui`, enganchada en sus `data-slot`. Aquí quedan los parciales de lo propio de
-   srtm (`tables.css`, `tabs.css`, `pasos.css`…), enganchados en atributos `data-ui`. Light y dark no cambian.
+   menú en árbol de la librería los pinta la hoja de `@wasichai/ui`, enganchada en sus `data-slot`. Aquí quedan los
+   parciales de lo propio de srtm (`tables.css`, `tabs.css`, `pasos.css`…), enganchados en atributos `data-ui`. Light y
+   dark no cambian.
 3. **Estructura de portal**: componentes React que solo se dibujan con la variante `portal` (barra de marca, árbol,
    pasos en galón, banda de título), con tokens y un parcial para lo que no tiene token.
 
@@ -368,8 +369,8 @@ Con la variante `portal`, el lateral (`LateralPortal`) es el árbol de trámites
 - **Hojas**: 15px en `link`, sangría de 34px (48px bajo un subgrupo). La activa lleva `aria-current="page"`, borde
   izquierdo de 4px `link`, negrita y un chevron. Una ruta hija marca su hoja: gana la más específica
   (`/contribuyentes/123` → Buscar contribuyentes, `/contribuyentes/nuevo` → Nuevo contribuyente) y una hoja puede
-  declarar otras rutas de su pantalla (`alsoAt`: el asistente abierto desde la ficha marca Nueva declaración). La hoja activa es la de `currentNavTreeLeaf`
-  de core: su ruta, luego `alsoAt`, luego el inicio más largo.
+  declarar otras rutas de su pantalla (`alsoAt`: el asistente abierto desde la ficha marca Nueva declaración). La hoja
+  activa es la de `currentNavTreeLeaf` de core: su ruta, luego `alsoAt`, luego el inicio más largo.
   Las fichas sin hoja propia (una declaración, un lote) no marcan ninguna. Las hojas son `Link` con el
   `aria-current` calculado, no `NavLink`: su coincidencia por prefijo marcaría a la vez Buscar y Nuevo contribuyente.
 - **Administración** va al final, solo para administradores, como un enlace normal (`<a href="/admin">`, otra app)
@@ -474,9 +475,9 @@ dibuja con la variante `portal`:
 ## Ganchos `data-slot` y `data-ui`
 
 Los atributos que ponen los componentes para que un tema los pinte desde CSS. En light y dark no hacen nada. Los
-`data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn; `pagination`, desde 0.4.0-dev.0; `alert*` y `nav-tree*`, desde 0.5) y los pinta la hoja
-del tema de la librería, salvo `pagination`, que pinta `tables.css`; los `data-ui` son de srtm y los pintan sus
-parciales.
+`data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn; `pagination`, desde 0.4.0-dev.0; `alert*` de
+`@wasichai/ui` y `nav-tree*` de `NavTree` (`@wasichai/core`), desde 0.5) y los pinta la hoja del tema de la librería,
+salvo `pagination`, que pinta `tables.css`; los `data-ui` son de srtm y los pintan sus parciales.
 
 | Grupo             | Ganchos                                                                                                                                                                                                                  | Componente                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
