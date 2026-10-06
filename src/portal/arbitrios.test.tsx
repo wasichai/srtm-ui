@@ -125,6 +125,39 @@ describe('arbitrios del predio', () => {
     await tabla()
     expect(screen.getByText('No se pueden determinar:').parentElement).toHaveTextContent(`ARBITRIO_ZONA S-09 ${year}`)
   })
+
+  it('links a falta to the declaración, or to the predio, that fixes it; the rest, as plain text', async () => {
+    const faltanDetalle = [
+      { mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1' },
+      { mensaje: 'Ubicación respecto del área verde del predio 01-01-0001', predio: 'p1', declaracion: null },
+      { mensaje: `Servicios de arbitrio vigentes en ${year}` }
+    ]
+    start('/predios/p1?tab=arbitrios', [
+      {
+        path: '/srtm/predios/p1/arbitrios',
+        body: matriz({ faltan: faltanDetalle.map((f) => f.mensaje), faltan_detalle: faltanDetalle })
+      },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    await tabla()
+    const alerta = screen.getByText('No se pueden determinar:').parentElement!
+    expect(within(alerta).getByRole('link', { name: 'Frontis del predio 01-01-0001' })).toHaveAttribute('href', '/declaraciones/d1?tab=caracteristicas')
+    expect(within(alerta).getByRole('link', { name: 'Ubicación respecto del área verde del predio 01-01-0001' })).toHaveAttribute(
+      'href',
+      '/predios/p1?tab=ubicacion'
+    )
+    expect(alerta).toHaveTextContent(`Servicios de arbitrio vigentes en ${year}`)
+  })
+
+  it('shows the faltan as plain text, like before, when the backend sends no detalle', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: matriz({ faltan: [`ARBITRIO_ZONA S-09 ${year}`] }) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    await tabla()
+    const alerta = screen.getByText('No se pueden determinar:').parentElement!
+    expect(within(alerta).queryByRole('link')).not.toBeInTheDocument()
+  })
 })
 
 describe('desglose de la cuota, por secuencia de uso', () => {

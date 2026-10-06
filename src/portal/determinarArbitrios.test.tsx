@@ -116,6 +116,26 @@ describe('determinar desde la ficha del predio', () => {
     expect(await within(dialogo).findByRole('alert')).toHaveTextContent(`TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`)
   })
 
+  it('links what is missing to the declaración that fixes it, when the backend says which one', async () => {
+    const detalle = `No se pueden determinar los arbitrios de ${year}: Frontis del predio 01-01-0001`
+    start(
+      '/predios/p1?tab=arbitrios',
+      delPredio({
+        status: 422,
+        body: {
+          title: 'Unprocessable Content',
+          detail: detalle,
+          faltan: ['Frontis del predio 01-01-0001'],
+          faltan_detalle: [{ mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1' }]
+        }
+      })
+    )
+    const { dialogo, boton } = await determinar('Ordenanza del año')
+    await userEvent.click(boton)
+    const alerta = await within(dialogo).findByRole('alert')
+    expect(within(alerta).getByRole('link', { name: 'Frontis del predio 01-01-0001' })).toHaveAttribute('href', '/declaraciones/d1?tab=caracteristicas')
+  })
+
   it('without CREATE on the cuotas the action is disabled, and says why', async () => {
     start('/predios/p1?tab=arbitrios', delPredio({ status: 403, body: {} }), { admin: false, objects: { cuota_arbitrio: ['READ'], predio: ['READ'] } })
     expect(await screen.findByRole('button', { name: `Determinar arbitrios ${year}` })).toBeDisabled()

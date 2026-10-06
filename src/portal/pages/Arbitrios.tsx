@@ -3,6 +3,7 @@ import { EmptyState, QueryState } from '@wasichai/core'
 import { Alert, Table, Td, Th } from '@wasichai/ui'
 import { Link } from 'react-router'
 import { rentas } from '../api'
+import { FaltanDetalle } from '../components/DialogoDeActo'
 import { formatDate, formatMoney, MESES } from '../components/format'
 import { Popover } from '../components/Popover'
 import { NUMERICA } from '../components/tabla'
@@ -157,7 +158,7 @@ function Situacion({ matriz: m, determinadas }: { matriz: MatrizArbitrios; deter
       {m.fecha_calculo && <p className="text-ink-muted">Determinados al {formatDate(m.fecha_calculo)}.</p>}
       {m.faltan.length > 0 ? (
         <Alert tone="warning" title="No se pueden determinar:">
-          {m.faltan.join('; ')}.
+          {m.faltan_detalle && m.faltan_detalle.length > 0 ? <FaltanDetalle faltan={m.faltan_detalle} /> : <>{m.faltan.join('; ')}</>}.
         </Alert>
       ) : m.pendientes > 0 ? (
         <Alert tone="notice">
