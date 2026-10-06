@@ -257,8 +257,31 @@ describe('the full declaración jurada', () => {
     expect(screen.getByText(/^Área construida/).textContent).toContain('*')
   })
 
-  // wasichai/srtm-ui#94, fix round 1: el asistente, tras presentar, debe saltar a «Características» cuando le
-  // falta frontis y el año cobra por FRONTIS_ML - no a «Transferentes», como si nada faltara
+  // wasichai/srtm-ui#94: once required, an empty frontis keeps the DJ from being saved, and nothing is sent; typed,
+  // it goes with the rest. a form not touched is not validated (the kit's way): the clerk changes a value first
+  it('does not save a DJ whose frontis the year requires and is empty, and saves it once typed', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [
+      { method: 'PUT', path: '/srtm/declaraciones/d1', body: declaracion },
+      { path: '/srtm/arbitrios/parametros', body: { anio: year, ordenanza: null, servicios: [], parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML')], faltan: [] } }
+    ])
+    const panel = within(await screen.findByRole('tabpanel'))
+    await panel.findByRole('group', { name: 'Valores' })
+    await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
+    await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
+    await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await panel.findByText('Este dato es obligatorio')).toBeInTheDocument()
+    expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+
+    await userEvent.type(panel.getByLabelText(/^Frontis \(m\)/), '10.5')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
+    expect(put.body).toMatchObject({ longitud_frente: 10.5, valor_autoavaluo: 25000.5 })
+  })
+
+  // wasichai/srtm-ui#94: el asistente, tras presentar, debe saltar a «Características» cuando le falta frontis y
+  // el año cobra por FRONTIS_ML - no a «Transferentes», como si nada faltara
   it('sends a freshly presented DJ to «Características» when the year charges by FRONTIS_ML and it is empty', async () => {
     const djNueva = {
       declaracion: {
@@ -313,7 +336,7 @@ describe('the full declaración jurada', () => {
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Características' })).toHaveAttribute('aria-selected', 'true'))
   })
 
-  // wasichai/srtm-ui#94, fix round 2: si el clerk cambia el año antes de presentar, las bases que cuentan son las
+  // wasichai/srtm-ui#94: si el clerk cambia el año antes de presentar, las bases que cuentan son las
   // del año presentado - no las del año por defecto con el que arrancó el formulario (año A, sin bases) ni
   // ninguna que haya quedado en caché de él
   it("uses the presented año's bases, not the default año's, when the clerk changes it before presenting", async () => {
