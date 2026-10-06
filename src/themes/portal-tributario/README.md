@@ -501,7 +501,7 @@ Lo que srtm construyó para el tema subió a la librería con wasichai/wasichai-
   `PORTAL_TRIBUTARIO_THEME` en `@wasichai/core`, con su etiqueta `theme.portalTributario` en el i18n de core;
 - el verde de light con AA (wasichai/wasichai-ui#15, 0.3.1);
 - `Alert` en `@wasichai/ui` y `NavTree` en `@wasichai/core`, con sus parciales en la hoja del tema
-  (wasichai/wasichai-ui#14, 0.5.0-dev.0): caja-ui fue el segundo usuario.
+  (wasichai/wasichai-ui#14, 0.5.0): caja-ui fue el segundo usuario.
 
 Pendiente, en wasichai/wasichai-ui#14: `PasosGalon`, `BarraInstruccion`, `BandaTitulo` y la idea de `useVarianteTema`. Solo suben
 con un segundo usuario concreto (regla 6 del `CLAUDE.md` de wasichai-ui). Hasta entonces siguen aquí, con sus parciales.
