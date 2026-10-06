@@ -1,8 +1,9 @@
 # Tema `portal-tributario`
 
 Tema claro basado en el prototipo "Sistema de Rentas y Tributos" (épica wasichai/srtm-ui#44), un portal tributario
-en línea: barra de marca azul, menú de trámites en árbol, pasos en galón, formularios en grupos con la leyenda sobre
-el borde, tablas cebra y alertas estilo Bootstrap 3, en Arial 14px con radios de 3px. Solo tiene modo claro.
+en línea: barra de marca azul con las fichas abiertas, riel de módulos con los trámites en árbol, ficha en dos
+columnas, pasos en galón, formularios en grupos con la leyenda sobre el borde, tablas cebra y alertas estilo
+Bootstrap 3, en Arial 14px con radios de 3px. Solo tiene modo claro.
 
 Se elige en el menú de tema de la cabecera ("Portal tributario"), en el portal o en el admin: la preferencia es la
 misma para los dos. A diferencia de light y dark, **cambia también la estructura** del portal: con este tema,
@@ -19,8 +20,8 @@ Tiene tres capas, de la más genérica a la más propia:
    menú en árbol de la librería los pinta la hoja de `@wasichai/ui`, enganchada en sus `data-slot`. Aquí quedan los
    parciales de lo propio de srtm (`tables.css`, `tabs.css`, `pasos.css`…), enganchados en atributos `data-ui`. Light y
    dark no cambian.
-3. **Estructura de portal**: componentes React que solo se dibujan con la variante `portal` (barra de marca, árbol,
-   pasos en galón, banda de título), con tokens y un parcial para lo que no tiene token.
+3. **Estructura de portal**: componentes React que solo se dibujan con la variante `portal` (barra de marca, riel,
+   ficha en dos columnas, pasos en galón, banda de título), con tokens y un parcial para lo que no tiene token.
 
 ## Archivos
 
@@ -30,16 +31,16 @@ Tiene tres capas, de la más genérica a la más propia:
 | `@wasichai/ui/themes/portal-tributario.css` | La hoja del tema en la librería (#66): tokens, fuente y radios, y los controles, tablas, pestañas, alertas y menú en árbol de la librería sobre sus `data-slot`. |
 | `src/themes/portal-tributario/index.css`    | Los parciales de srtm. Cada issue añade aquí el `@import` de su parcial.                                                                                         |
 | `src/themes/portal-tributario/tables.css`   | Códigos sin cortar en las tablas, ficha clave-valor y paginadores ([#49](#tablas-ficha-clave-valor-y-estados-tablescss-49)).                                     |
-| `src/themes/portal-tributario/shell.css`    | El panel del menú de sesión de la barra de marca: borde, sombra y cabecera del prototipo (ver [Shell](#shell-52)).                                               |
+| `src/themes/portal-tributario/shell.css`    | El panel del menú de sesión y los grises del riel y de su panel (ver [Shell](#shell-52) y [Riel](#riel-de-módulos)).                                             |
 | `src/themes/tokens.test.tsx`                | Lo que srtm espera de los tokens de la librería (completitud y contraste WCAG) y el orden de los `@import` de `src/index.css`.                                   |
 | `src/themes/tablas.test.tsx`                | Tests de `tables.css` y de lo que srtm espera de las tablas de la hoja de la librería.                                                                           |
 | `src/themes/portal-tributario/controls.css` | Lo que la hoja de la librería deja a la app: `ghost` como enlace en el contenido, radios y checkboxes (#47, #66).                                                |
 | `src/themes/parciales.test.tsx`             | Cada parcial va bajo el tema, fuera de capas e importado; y los contrastes de sus colores propios.                                                               |
 | `src/themes/css.ts`                         | Ayudas de los tests: leer una regla CSS y medir un contraste.                                                                                                    |
 | `src/kit/forms/NativeSelect.tsx`            | `NativeSelect`, el `<select>` nativo con `data-slot="select-trigger"`. Botones y campos vienen de `@wasichai/ui` (#66).                                          |
-| `src/themes/portal-tributario/tabs.css`     | Pestañas de trabajo y fieldsets de `RecordForm` con la leyenda sobre el borde (#48). Las de la ficha son de la librería.                                         |
+| `src/themes/portal-tributario/tabs.css`     | Pestañas de trabajo en la barra, la ficha en dos columnas y fieldsets de `RecordForm` con la leyenda sobre el borde (#48).                                       |
 | `src/themes/portal-tributario/pasos.css`    | Pasos en galón y barra de instrucción de los asistentes (#54).                                                                                                   |
-| `src/themes/portal-tributario/banda.css`    | La banda de título unida a las pestañas carpeta y el pie de acciones de `RecordForm` (#55).                                                                      |
+| `src/themes/portal-tributario/banda.css`    | Lo que una página pone en la banda de título y el pie de acciones de `RecordForm` (#55).                                                                         |
 | `src/portal/components/BandaTitulo.tsx`     | La banda de título de fichas y asistentes, y la fila de badges y acciones bajo ella (#55).                                                                       |
 
 La hoja de la librería va antes que los parciales de srtm. Sus reglas van dentro de `@scope ([data-theme='portal-tributario'])`,
@@ -232,38 +233,42 @@ hover `#F0F0F0`) con CSS propio, acotado a `[data-slot='pagination']`. Los pagin
 
 ### Pestañas y fieldsets (`tabs.css`, #48, #66)
 
-Las pestañas de la ficha las pinta la hoja de la librería: `FichaTabs` no usa `Tabs` de `@wasichai/ui` (es controlada,
-tiene pestañas en gris e íconos), pero lleva sus mismos ganchos, `data-slot="tabs"`, `"tabs-list"`, `"tabs-trigger"`
-(con `aria-selected`) y `"tabs-content"`, y su tarjeta es un `Card` (`data-slot="card"`). `tabs.css` guarda lo propio:
-`"workspace-tabs"` y `"workspace-tab"` en `TabBar`, y `"record-fieldset"`, `"record-legend"`, `"record-number"`,
-`"record-title"` y `"record-action"` en las secciones de `RecordForm`. El ARIA y el comportamiento de las pestañas
-(montaje perezoso, panel oculto) no cambian: solo se pintan.
+`FichaTabs` no usa `Tabs` de `@wasichai/ui` (es controlada, tiene pestañas en gris e íconos), pero lleva sus mismos
+ganchos, `data-slot="tabs"`, `"tabs-list"`, `"tabs-trigger"` (con `aria-selected`) y `"tabs-content"`, y su tarjeta
+es un `Card` (`data-slot="card"`). Las pestañas horizontales las pinta la hoja de la librería; con este tema
+`FichaTabs` dibuja la ficha en dos columnas (`data-orientation="vertical"` en su raíz, ver
+[Ficha en dos columnas](#ficha-en-dos-columnas)) y la pinta `tabs.css`. `tabs.css` guarda además `"workspace-tabs"`
+(con `data-ubicacion="cabecera"`) y `"workspace-tab"` en `TabBar`, y `"record-fieldset"`, `"record-legend"`,
+`"record-number"`, `"record-title"` y `"record-action"` en las secciones de `RecordForm`. El ARIA y el comportamiento
+de las pestañas (montaje perezoso, panel oculto) no cambian: solo se pintan.
 
-| Pieza                          | Bajo el tema                                                                                                        |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| Pestaña de la ficha (librería) | carpeta de 16px, `padding: 13px 22px`, radio `3px 3px 0 0`; inactiva `#F0F0F0` con texto `#666`                     |
-| Pestaña activa (librería)      | blanca, en negrita `ink`, borde `brand` y borde inferior blanco: se funde con el panel                              |
-| Tira de pestañas (librería)    | la línea `brand` de debajo es su fondo (un degradado de 1px), no un borde                                           |
-| Panel (librería)               | borde `brand` sin borde superior, blanco, radio abajo y 24px abajo                                                  |
-| Tarjeta de la ficha (librería) | se aparta (sin borde, sombra, fondo ni relleno inferior): las pestañas quedan sobre la página y el panel es la caja |
-| Pestañas de trabajo (`TabBar`) | el mismo lenguaje a 14px; la activa, blanca y en negrita, se funde con la ruta de debajo                            |
-| Fieldset de `RecordForm`       | borde de 1px `brand`, radio 3px, `padding: 6px 18px 20px`, 18px entre fieldsets                                     |
-| Leyenda                        | sobre el borde, 15px en negrita, color `shell`, sin mayúsculas ni tracking; el número sigue en su círculo `brand`   |
-| Acción de la sección           | sigue a la derecha, también sobre el borde, con fondo blanco que tapa la línea                                      |
+| Pieza                                       | Bajo el tema                                                                                                                 |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Pestañas de trabajo (`TabBar`, en la barra) | como las de un navegador: borde de 1px blanco al 35 %, sin borde inferior, texto `shell-ink`; hover `shell-ink` al 10 %      |
+| Pestaña de trabajo abierta                  | fondo `surface-muted`, el de la página, así se funde con ella; texto `ink` en negrita                                        |
+| Cerrar y foco de las pestañas de trabajo    | la ✕ y el anillo de foco (por dentro) en el color del texto: blancos en la barra, `ink` en la abierta                        |
+| Pestaña de la ficha (vertical)              | carpeta de 16px, `padding: 10px 16px`, radio `3px 0 0 3px`; inactiva `#F0F0F0` con texto `#666` (5.0:1)                      |
+| Pestaña abierta (vertical)                  | blanca, en negrita `ink`, borde `brand` arriba, a la izquierda y abajo; su borde derecho blanco tapa 1px del borde del panel |
+| Panel (vertical)                            | borde de 1px `brand` en los cuatro lados, radio `0 3px 3px 3px`, blanco y 24px abajo                                         |
+| Tarjeta de la ficha (librería)              | se aparta (sin borde, sombra, fondo ni relleno inferior): las pestañas quedan sobre la página y el panel es la caja          |
+| Pestañas horizontales (librería)            | las de `Tabs` de `@wasichai/*`: carpeta de 16px sobre una línea `brand`, la activa blanca y unida al panel de debajo         |
+| Fieldset de `RecordForm`                    | borde de 1px `brand`, radio 3px, `padding: 6px 18px 20px`, 18px entre fieldsets                                              |
+| Leyenda                                     | sobre el borde, 15px en negrita, color `shell`, sin mayúsculas ni tracking; el número sigue en su círculo `brand`            |
+| Acción de la sección                        | sigue a la derecha, también sobre el borde, con fondo blanco que tapa la línea                                               |
 
-- **Por qué la línea es un fondo.** Para que la pestaña activa tape la línea de la tira, con un borde tendría que
-  bajar 1px por encima de él. La tira se desplaza en horizontal (`overflow-x-auto`), así que ese píxel también la
-  haría desplazable en vertical. Con la línea como fondo, cada pestaña inactiva lleva su borde inferior `brand` y la
-  activa lo lleva blanco.
-- **Muchas pestañas.** La ficha del contribuyente tiene siete y la declaración seis, con nombres largos. Con las
-  medidas del prototipo necesitan unos 1240px de tira. La tira es un contenedor (`container-type: inline-size`):
-  por debajo de 1240px las pestañas pasan a 15px con 12px a los lados, y por debajo de 1000px a 14px con 10px. Por
-  debajo de eso se desplazan, como en light.
+- **La hoja de la librería y la variante vertical.** La hoja pinta `tabs-list`, `tabs-trigger` y `tabs-content` con
+  uno o dos atributos y alguna pseudoclase (hasta `(0,3,0)`, el hover). Las reglas de la variante vertical empiezan
+  por el tema, la raíz y su orientación (`[data-theme] [data-slot='tabs'][data-orientation='vertical'] …`), así que
+  ganan siempre, y deshacen lo que es solo de la tira horizontal: el tamaño por contenedor (`container-type: normal`),
+  la línea de fondo de la tira y los bordes inferiores. `parciales.test.tsx` comprueba que `tabs.css` solo pinta la
+  variante vertical.
+- **Las pestañas de trabajo, siempre en la barra.** Con este tema `TabBar` va siempre en la cabecera; `tabs.css` ya no
+  pinta una tira sobre el contenido.
 - **La leyenda y su acción.** La leyenda mide lo que su texto, así el borde del fieldset corre a ambos lados sin
   trucos. La acción (el "Buscar predios" de la ubicación) sale del flujo con `position: absolute` a la derecha. Como
   hija de la leyenda, que es flex, conserva su centro vertical: queda sobre el borde, como la leyenda.
-- **Selectores `:has()`.** La tarjeta que envuelve la ficha se reconoce por `[data-slot='card']:has(> [data-slot='tabs'])` (librería), la
-  pestaña de trabajo activa por `:has(> [aria-current='page'])` y el espacio entre fieldsets por
+- **Selectores `:has()`.** La tarjeta que envuelve la ficha se reconoce por `[data-slot='card']:has(> [data-slot='tabs'])`
+  (librería), la pestaña de trabajo abierta por `:has(> [aria-current='page'])` y el espacio entre fieldsets por
   `:has(+ [data-ui='record-fieldset'])`.
 
 ### Alertas (#50, de la librería desde `@wasichai/*` 0.5)
@@ -321,13 +326,14 @@ Comprobado en el CSS de `yarn build`:
 `'portal'`; con `'clasico'` el DOM es el de siempre. Son componentes con tokens y utilidades, y cada uno tiene su
 parcial para los valores sin token.
 
-| Pieza                        | Componente                                                      | Dónde                                                                        |
-| ---------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Barra de marca, sesión y pie | `PortalShell.tsx`, `MenuSesion.tsx` (`src/portal/shell/`)       | el marco de `AppShell`, en todas las pantallas                               |
-| Menú de trámites en árbol    | `NavTree` (`@wasichai/core`), `navTree.ts`, `LateralPortal.tsx` | el lateral de `AppShell`                                                     |
-| Pasos en galón e instrucción | `PasosAsistente`, `PasosGalon`, `BarraInstruccion`              | Nuevo contribuyente, ficha con `?inscripcion=1`, Nueva DJ, DJ `?asistente=1` |
-| Banda de título              | `BandaTitulo`, `CabeceraBanda`, `CabeceraAsistente`             | `FichaHeader` (fichas) y los asistentes                                      |
-| Estado como texto con tono   | `EstadoBadge` + `tonoDeEstado`                                  | listas y fichas                                                              |
+| Pieza                                 | Componente                                                              | Dónde                                                                        |
+| ------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Barra de marca, fichas abiertas y pie | `PortalShell.tsx`, `TabBar.tsx`, `MenuSesion.tsx` (`src/portal/shell/`) | el marco de `AppShell`, en todas las pantallas                               |
+| Riel de módulos y sus trámites        | `RielPortal.tsx`, `navTree.ts`, `NavTree` (`@wasichai/core`)            | el lateral de `AppShell`                                                     |
+| Ficha en dos columnas                 | `FichaTabs` (vertical), `ResumenCifras` (`StatCard.tsx`)                | Contribuyente, Predio, Declaración, Nuevo contribuyente, Nueva DJ            |
+| Pasos en galón e instrucción          | `PasosAsistente`, `PasosGalon`, `BarraInstruccion`                      | Nuevo contribuyente, ficha con `?inscripcion=1`, Nueva DJ, DJ `?asistente=1` |
+| Banda de título y ruta                | `BandaTitulo`, `CabeceraBanda`, `CabeceraAsistente`, `useRuta`          | `FichaHeader` (fichas) y los asistentes                                      |
+| Estado como texto con tono            | `EstadoBadge` + `tonoDeEstado`                                          | listas y fichas                                                              |
 
 El marco (`AppShell`) es el mismo para todos los temas: al cambiar de tema no se desmonta la página abierta ni se
 pierde lo escrito en un formulario.
@@ -335,62 +341,118 @@ pierde lo escrito en un formulario.
 ### Shell (#52)
 
 Con este tema, `useVarianteTema()` vale `'portal'` y `AppShell` (`src/portal/shell/`) dibuja en su marco las piezas
-de `PortalShell`: la barra de marca (escudo, título, búsqueda, Administración, tema y `MenuSesion`), un lateral claro
-con el árbol de trámites (`LateralPortal`, ver [Menú en árbol](#menú-en-árbol-53)) y el pie institucional. Son componentes con tokens y
-utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`, `text-link`, `bg-table-stripe`, `border-line`…). El
-marco es el mismo para todos los temas: al cambiar de tema, la página abierta y el menú de tema no se desmontan.
+de `PortalShell`: la barra de marca, el riel de módulos (`RielPortal`, ver [Riel de módulos](#riel-de-módulos)) y el
+pie institucional. Son componentes con tokens y utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`,
+`text-link`, `bg-table-stripe`, `border-line`…).
+
+- **La barra tiene dos filas.** La primera, de 56px, como siempre: escudo, título, búsqueda, tema y `MenuSesion`. La
+  segunda son las fichas abiertas, como las pestañas de un navegador: `TabBar` con `ubicacion="cabecera"`
+  (`data-ubicacion="cabecera"`), que `tabs.css` pinta sobre la barra (ver [Pestañas](#pestañas-y-fieldsets-tabscss-48-66)).
+  En una pantalla ancha empieza donde empieza el contenido: el riel (104px) y el margen del contenido (24px). La
+  barra es `flex-wrap` y las pestañas, `basis-full`, toman su propia fila.
+- **Administración sale de la barra.** Está en el riel y, para los administradores, en `MenuSesion`.
+- **Sin ruta sobre el contenido.** La ruta de una ficha va en su banda de título (ver
+  [Banda](#banda-de-título-y-pie-de-acciones-bandacss-55)).
+- **Sin hamburguesa.** El riel no se pliega.
+
+`PiezasShell` (`comun.tsx`) dice qué trae cada variante: `pestanasEnCabecera` (las pestañas en la cabecera, no sobre
+el contenido), `rutaEnBanda` (sin la tira de `Breadcrumbs`), `cuerpo` (las clases de la fila del lateral y el
+contenido: en un teléfono, una columna), y `botonMenu` y `admin`, opcionales (el portal no los tiene). El marco es el
+mismo para todos los temas: una pieza que una variante no trae deja su sitio vacío y las pestañas van al final de la
+cabecera, así que al cambiar de tema la página abierta y el menú de tema no se desmontan.
 
 `shell.css` solo añade lo que no tiene token:
 
-| Regla                              | Valor                                                     | Origen en el prototipo   |
-| ---------------------------------- | --------------------------------------------------------- | ------------------------ |
-| `[data-ui='menu-sesion-panel']`    | borde `#C8D4DE`, sombra `0 6px 22px rgb(13 95 168 / 22%)` | panel del menú de sesión |
-| `[data-ui='menu-sesion-cabecera']` | fondo `#F6F9FC`, borde `#C8D4DE`                          | cabecera del panel       |
+| Regla                                                  | Valor                                                                                                   | Origen en el prototipo   |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `[data-ui='menu-sesion-panel']`                        | borde `#C8D4DE`, sombra `0 6px 22px rgb(13 95 168 / 22%)`                                               | panel del menú de sesión |
+| `[data-ui='menu-sesion-cabecera']`                     | fondo `#F6F9FC`, borde `#C8D4DE`                                                                        | cabecera del panel       |
+| `[data-ui='riel-item']` (`> svg`, `:hover`)            | ícono `#555555` (6.66:1 sobre `table-head`); hover `#E9E9E9`                                            | riel                     |
+| `[data-ui='riel-item'][aria-current]`                  | fondo `#E6E6E6`, texto e ícono `#0D4D80` (7.04:1)                                                       | sección actual           |
+| `[data-ui='riel-item'][aria-expanded='true']`          | fondo `surface`: el grupo cuyo panel está abierto                                                       | grupo abierto            |
+| `[data-ui='riel-panel']`                               | sombra `6px 0 22px rgb(13 95 168 / 22%)`, hacia el contenido                                            | panel del grupo          |
+| `[data-ui='riel-panel'] a[data-slot='nav-tree-group']` | las hojas del prototipo: 15px `link`, `padding: 9px 14px 9px 20px`, la actual `#0D4D80` sobre `#E6E6E6` | hojas del panel          |
+| `[data-ui='riel'] :focus-visible`                      | contorno `link`                                                                                         | (ver desvíos)            |
 
 Desvíos del prototipo, por contraste:
 
 - El círculo de las iniciales lleva un 15 % de blanco sobre `shell`, no un 22 %: el texto blanco da 4.73:1 (con el
   22 %, 4.08:1).
 - El foco de los controles de la barra es blanco (`shell-ink`, 6.52:1). El azul de foco (`#1BA0D7`) sobre `shell` da
-  2.19:1.
-- La hoja activa del lateral: ver [Menú en árbol](#menú-en-árbol-53).
+  2.19:1. En las pestañas de la barra, el anillo va por dentro y en el color del texto: blanco sobre la barra, `ink`
+  sobre la pestaña abierta.
+- El foco del riel y de su panel es `link` (5.10:1 sobre `table-head`, 4.57:1 sobre `#E6E6E6`): el cian del tema da
+  2.77:1 sobre `table-head`.
 
-### Menú en árbol (#53)
+### Riel de módulos
 
-Con la variante `portal`, el lateral (`LateralPortal`) es el árbol de trámites del prototipo: `NavTree` de
-`@wasichai/core` (desde `@wasichai/*` 0.5), un componente genérico que recibe el árbol, con el contenido declarado en
-`NAV_TREE` (`src/portal/shell/navTree.ts`). El shell clásico de light y dark conserva `NAV` y su menú de móvil.
+Con la variante `portal`, el lateral es `RielPortal` (`src/portal/shell/RielPortal.tsx`): un riel de módulos, uno por
+grupo del árbol de trámites declarado en `NAV_TREE` (`src/portal/shell/navTree.ts`), que abre los trámites de cada
+grupo en un panel a su lado con `NavTree` de `@wasichai/core`. El shell clásico de light y dark conserva `NAV` y su
+menú de móvil.
 
-- **Panel** de 292px (`w-73`) sobre `table-head` con borde `border`. Arriba, "Ir al inicio" (16px, `link`, con
-  `aria-current` en `/`) y el botón "Ocultar el menú"; debajo, el título "Mis trámites" (18px, negrita, `link`).
-- **Grupos**: `<button aria-expanded aria-controls>` de 17px en negrita `ink`, con un caret que gira 90° en 0.13s
-  (`transition-transform duration-130`, quieto con `prefers-reduced-motion`). Plegado, su lista lleva `hidden`.
-  **Subgrupos** (opcionales, ninguno hoy): 16px con sangría de 26px.
-- **Hojas**: 15px en `link`, sangría de 34px (48px bajo un subgrupo). La activa lleva `aria-current="page"`, borde
-  izquierdo de 4px `link`, negrita y un chevron. Una ruta hija marca su hoja: gana la más específica
-  (`/contribuyentes/123` → Buscar contribuyentes, `/contribuyentes/nuevo` → Nuevo contribuyente) y una hoja puede
-  declarar otras rutas de su pantalla (`alsoAt`: el asistente abierto desde la ficha marca Nueva declaración). La hoja
-  activa es la de `currentNavTreeLeaf` de core: su ruta, luego `alsoAt`, luego el inicio más largo.
-  Las fichas sin hoja propia (una declaración, un lote) no marcan ninguna. Las hojas son `Link` con el
-  `aria-current` calculado, no `NavLink`: su coincidencia por prefijo marcaría a la vez Buscar y Nuevo contribuyente.
-- **Administración** va al final, solo para administradores, como un enlace normal (`<a href="/admin">`, otra app)
-  con la letra de los grupos y un ícono en el sitio del caret.
-- **Plegado**: el botón del panel lo oculta en cualquier ancho y aparece la hamburguesa de la barra de marca (30px,
-  borde `shell-ink` al 50 %), que lo reabre; es el mismo botón `aria-controls="sidebar"` del menú de móvil clásico
-  y el foco pasa de uno a otro. Con 1080px o menos, el panel empieza plegado y se pliega al elegir una hoja; en un
-  teléfono ocupa todo el ancho. En el prototipo el panel solo se oculta en pantallas estrechas (en las anchas la
-  hamburguesa aparecía sin ocultarlo); aquí se oculta siempre. Estos botones no son el `Button` de #47: los del
-  árbol son controles sin caja del prototipo y la hamburguesa es el botón del marco común (el clásico no cambia).
-- **Memoria**: el estado del panel y de los grupos se guarda en `sessionStorage['srtm.nav']` (con try/catch), como
-  las pestañas de trabajo. En una pantalla estrecha el panel empieza plegado aunque se guardara abierto, y el
-  plegado automático al navegar no se guarda.
+- **Riel**: `<nav id="sidebar" aria-label="Secciones">` de 104px (`w-26`) sobre `table-head`, con borde derecho
+  `border`. Ítems de 100px apilados y centrados: un ícono de 20px sobre la etiqueta de 11.5px en `ink`. Primero
+  "Inicio" (`/`); luego un botón por grupo de `arbolPara(NAV_TREE, { isAdmin })`; al final, tras una línea de 1px,
+  las hojas de la raíz: Administración, solo para administradores, como enlace normal (`<a href="/admin">`, otra
+  app).
+- **Íconos y etiquetas**: son datos de srtm. `GrupoNav` extiende el `NavTreeGroup` de core con `icon` (de lucide) y
+  `corto` (la etiqueta del riel cuando la completa no cabe en 104px), y sus `children` son nodos de srtm:
+  Contribuyentes (`Users`), Predios (`MapPinned`), Declaraciones (`FileText`), Catastro (`LandPlot`), Arbitrios
+  (`Landmark`), Infracciones (`Gavel`, de "Infracciones administrativas"), Anuncios (`Megaphone`, de "Anuncios y
+  propaganda") y Emisión (`Printer`).
+- **Sección actual**: el grupo que tiene la hoja actual (`currentNavTreeLeaf` de core: su ruta, luego `alsoAt`, luego
+  el inicio más largo) lleva `aria-current="true"`, borde izquierdo de 4px `link`, fondo `#E6E6E6`, texto e ícono
+  `#0D4D80` y negrita; "Inicio", lo mismo en `/` (`aria-current="page"`). Una ruta hija marca su grupo
+  (`/contribuyentes/123` → Contribuyentes, el asistente abierto desde la ficha → Declaraciones); las fichas sin hoja
+  propia (una declaración, un lote) no marcan ninguno.
+- **Panel del grupo**: el botón (`aria-expanded`, `aria-controls="sidebar-tramites"`) abre a su lado un panel absoluto
+  (`left: 100%`, de arriba abajo de la fila, 292px, sobre el contenido) con el `NavTree` de core: los hijos del grupo
+  como nodos, su etiqueta completa como título y "Trámites: {grupo}" como nombre de la navegación. Va en el DOM justo
+  tras su botón, así el teclado entra en él con Tab. Un panel a la vez, y el grupo abierto se pinta blanco. Lo
+  cierran su botón "Ocultar el menú" y Escape (el foco vuelve al botón del grupo), un clic fuera del riel, elegir una
+  hoja o cambiar de ruta.
+- **Las hojas del panel**: core dibuja las hojas de la raíz de su árbol como grupos (17px en negrita, con el hueco
+  del caret). `shell.css` las pone como las hojas del prototipo, solo los enlaces (un subgrupo conservaría su
+  aspecto): 15px en `link`, la actual con borde izquierdo `link`, `#0D4D80` sobre `#E6E6E6` y en negrita. Sin el
+  chevron de la hoja actual, que core solo dibuja en las hojas anidadas.
+- **No se pliega**: no hay hamburguesa ni memoria en `sessionStorage` (`srtm.nav` ya no existe). En un teléfono
+  (menos de 640px, `max-sm`) la fila del lateral y el contenido es una columna: el riel ocupa todo el ancho, encima, y
+  sus ítems se reparten en filas; el panel cae bajo el riel a todo el ancho (hasta el 70 % del alto, con scroll).
 
-Los grises del prototipo (hoja activa `#0D4D80` sobre `#E6E6E6`, hover `#E9E9E9`, grupo `#0D4D80`, caret `#555555`)
-los fija el `nav.css` de la hoja de la librería sobre `data-slot="nav-tree*"`, con los mismos valores y contrastes que
-tenía aquí.
+Los grises del prototipo los fija `shell.css` (ver [Shell](#shell-52)); los del árbol del panel, el `nav.css` de la
+hoja de la librería sobre `data-slot="nav-tree*"`.
 
-Tests: `src/portal/arbolNav.test.tsx` (`NAV_TREE`, hoja activa, plegado, memoria, pantalla estrecha, clásico intacto); el
-componente y su parcial los prueba wasichai-ui.
+Tests: `src/portal/rielNav.test.tsx` (`NAV_TREE`, sección actual, panel, teclado, cierre, administración, sin plegado,
+clásico intacto); el árbol y su parcial los prueba wasichai-ui.
+
+### Ficha en dos columnas
+
+Con la variante `portal`, `FichaTabs` (`src/portal/components/FichaTabs.tsx`) dibuja la ficha en dos columnas; light y
+dark conservan las pestañas horizontales con íconos.
+
+- **Columnas**: a la izquierda (`flex: 1 1 240px`) las pestañas carpeta, una bajo otra y sin íconos, y después lo que
+  la página pase en `aside`; a la derecha (`flex: 999 1 480px; min-width: 0`) el panel abierto. Van una al lado de
+  otra mientras caben las dos (720px) y, si no, una sobre otra. La raíz lleva `data-orientation="vertical"`.
+- **Grupos**: un `FichaTab` puede llevar `grupo`. Las pestañas seguidas con el mismo grupo forman un
+  `role="tablist"` con `aria-orientation="vertical"`, encabezado y nombrado por el grupo (12px en negrita, mayúsculas,
+  `ink-muted`); las que no tienen grupo, un `tablist` sin encabezado con el nombre de la ficha. El contribuyente
+  separa "Registro tributario" (las cinco del SRTM, `CONTRIBUYENTE_TABS`) y "Rentas" (Predios, Declaraciones,
+  Arbitrios, Infracciones, Anuncios); las demás fichas y los asistentes tienen un solo grupo sin nombre.
+- **Teclado**: flecha abajo y arriba, inicio y fin recorren todas las pestañas de la ficha, de un grupo al siguiente
+  y saltando las deshabilitadas, y abren la pestaña como un clic (activación automática): la abierta sigue siendo la
+  única en el orden de tabulación.
+- **Paneles**: el montaje perezoso y el panel oculto no cambian. Los paneles conservan su sitio en el árbol de React
+  con las dos variantes, así que cambiar de tema no pierde lo escrito en ellos.
+- **Las cifras del año**: Contribuyente (predios, autoavalúo, valor afecto) y Predio (titulares, autoavalúo, valor
+  afecto) las pasan como `aside`: una tarjeta "Resumen {año}" (`ResumenCifras`) con las cifras apiladas (ícono en un
+  círculo de 40px, etiqueta de 12px en negrita y mayúsculas, valor de 18px en negrita). La rejilla de tres `StatCard`
+  de encima de las pestañas queda para light y dark.
+- **Pasos**: los asistentes conservan los pasos en galón donde estaban, entre la cabecera y la ficha.
+
+La forma la pone `tabs.css` (ver [Pestañas](#pestañas-y-fieldsets-tabscss-48-66)). Tests:
+`src/portal/components/FichaTabs.test.tsx` (columnas, grupos, teclado, cambio de tema, light intacto) y
+`src/portal/fichaDosColumnas.test.tsx` (las fichas y sus cifras).
 
 ### Pasos en galón y barra de instrucción (`pasos.css`, #54)
 
@@ -440,12 +502,18 @@ Bajo el tema, `pasos.css` da la forma y las medidas del prototipo:
 dibuja con la variante `portal`:
 
 - `BandaTitulo`: `kind?` (pequeño, en mayúsculas, antes del título y en la misma línea), `title` (el `h1`, 18px en
-  negrita), `detalle?` (el nombre del formulario del SRTM, a la derecha) y `ayuda?` (el botón "?" circular blanco de
-  22px, `aria-label` "Ayuda de este formulario"; ninguna pantalla lo pasa todavía). Fondo `brand`, texto
-  `on-brand` (4.7:1), `padding: 11px 16px`. Sin la estrella de favoritos: no hay backend. Pone
-  `data-ui="banda-titulo"`.
+  negrita), `detalle?` (el nombre del formulario del SRTM, a la derecha), `ruta?` (pasos de la ruta, en el sitio del
+  detalle cuando no lo hay) y `ayuda?` (el botón "?" circular blanco de 22px, `aria-label` "Ayuda de este
+  formulario"; ninguna pantalla lo pasa todavía). Fondo `brand`, texto `on-brand` (4.7:1), `padding: 11px 16px`. Sin
+  la estrella de favoritos: no hay backend. Pone `data-ui="banda-titulo"`.
 - `CabeceraBanda`: la banda y, justo debajo, una fila (`data-ui="cabecera-fila"`) con los `badges` a la izquierda y
   el `aside` (acciones) a la derecha. Envuelve todo en `data-ui="cabecera-banda"`.
+- **La ruta va en la banda.** Con este tema no hay tira de ruta sobre el contenido. `Breadcrumbs.tsx` expone
+  `useRuta()`, los pasos de la ruta de la pantalla actual (ninguno si no la nombra), y `CabeceraBanda`, cuando la
+  página no pasa `detalle`, muestra los dos últimos unidos por " › " en el sitio del detalle (12px en negrita,
+  mayúsculas y cursiva, a la derecha) dentro de `<nav aria-label="Ruta">`: "Registro tributario › Registro de
+  contribuyente". Los asistentes conservan el nombre de su formulario; las pantallas sin banda no muestran ruta.
+  Light y dark conservan la tira (`Breadcrumbs`) sobre el contenido.
 - `FichaHeader` la usa con la variante `portal` (Contribuyente, Predio, Declaración, Lote de catastro); en light y
   dark su marcado no cambia. Los asistentes (Nuevo contribuyente, Nueva declaración) usan `CabeceraAsistente`
   (`src/portal/pages/`): la banda con el título y sus subtítulos, y Cancelar/Siguiente en la fila, en su orden de
@@ -456,38 +524,35 @@ dibuja con la variante `portal`:
 
 `banda.css` añade lo que las utilidades no dicen:
 
-| Regla                                                          | Qué hace                                                                   |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `[data-ui='cabecera-banda']:has(+ * > [data-ui='ficha-tabs'])` | sin el margen de la página: las pestañas carpeta cuelgan de ella           |
-| … `> [data-ui='cabecera-fila']`                                | 10px bajo la fila de badges y acciones, antes de las pestañas              |
-| `[data-ui='banda-titulo'] a:hover`                             | un enlace de la banda (el contribuyente de la DJ) sigue en blanco          |
-| `[data-ui='banda-titulo'] :focus-visible`                      | anillo de foco blanco: el azul de foco se pierde sobre `brand`             |
-| `[data-ui='record-acciones']` y `> [type='button']`            | Cancelar a la izquierda (`margin-inline-end: auto`), el resto a la derecha |
-| `[data-ui='record-nota']`                                      | la nota a 13.5px                                                           |
+| Regla                                               | Qué hace                                                                   |
+| --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `[data-ui='banda-titulo'] a:hover`                  | un enlace de la banda (el contribuyente de la DJ) sigue en blanco          |
+| `[data-ui='banda-titulo'] :focus-visible`           | anillo de foco blanco: el azul de foco se pierde sobre `brand`             |
+| `[data-ui='record-acciones']` y `> [type='button']` | Cancelar a la izquierda (`margin-inline-end: auto`), el resto a la derecha |
+| `[data-ui='record-nota']`                           | la nota a 13.5px                                                           |
 
-- **Un solo `:has()`.** Un `:has()` no puede llevar otro dentro, así que la cabecera seguida de la tarjeta de las
-  pestañas se reconoce con un selector relativo: `:has(+ * > [data-ui='ficha-tabs'])`.
-- **Lo que va entre la cabecera y las pestañas.** Las pestañas cuelgan de la banda solo donde vienen justo después
-  (la Declaración fuera del asistente). En Contribuyente y Predio las tres tarjetas de resumen (predios o titulares,
-  autoavalúo, valor afecto) y en los asistentes los pasos en galón con su barra de instrucción (#54) siguen entre la
-  cabecera y las pestañas, con el espacio de la página: banda → fila → (tarjetas) → (pasos) → pestañas.
+- **Lo que va entre la cabecera y la ficha.** La ficha en dos columnas ya no cuelga de la banda: la sigue con el
+  espacio de la página. Las cifras del año de Contribuyente y Predio van en la tarjeta "Resumen" bajo las pestañas
+  (ver [Ficha en dos columnas](#ficha-en-dos-columnas)); en los asistentes, los pasos en galón con su barra de
+  instrucción (#54) siguen entre la cabecera y la ficha: banda → fila → (pasos) → ficha.
 
 ## Ganchos `data-slot` y `data-ui`
 
 Los atributos que ponen los componentes para que un tema los pinte desde CSS. En light y dark no hacen nada. Los
 `data-slot` son de `@wasichai/ui` (0.3, con los nombres de shadcn; `pagination`, desde 0.4.0-dev.0; `alert*` de
 `@wasichai/ui` y `nav-tree*` de `NavTree` (`@wasichai/core`), desde 0.5) y los pinta la hoja del tema de la librería,
-salvo `pagination`, que pinta `tables.css`; los `data-ui` son de srtm y los pintan sus parciales.
+salvo `pagination`, que pinta `tables.css`, y la variante vertical de las pestañas, que pinta `tabs.css`; los `data-ui`
+son de srtm y los pintan sus parciales.
 
-| Grupo             | Ganchos                                                                                                                                                                                                                  | Componente                                                                                  |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Controles         | `data-slot`: `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select-trigger`                                                                                                                             | `@wasichai/ui`; `NativeSelect` (`NativeSelect.tsx`) usa `select-trigger`                    |
-| Formularios       | `record-fieldset`, `record-legend`, `record-number`, `record-title`, `record-action`, `record-acciones`, `record-nota`                                                                                                   | `RecordForm`                                                                                |
-| Fichas            | `ficha-seccion`, `ficha-titulo`, `ficha-kv` (+ `data-tono` por fila)                                                                                                                                                     | `FieldGrid`                                                                                 |
-| Pestañas          | `data-slot`: `card`, `tabs`, `tabs-list`, `tabs-trigger`, `tabs-content`; `data-ui`: `workspace-tabs`, `workspace-tab`                                                                                                   | `Card`, `FichaTabs`, `TabBar`                                                               |
-| Tablas            | `data-slot`: `table`, `table-head`, `table-cell`, `badge`, `pagination`; `data-ui`: `estado` (+ `data-tono`); `data-numeric` en las celdas de cifras                                                                     | `Table`/`Th`/`Td`, `Pagination`, `PageSizePagination`, `EstadoBadge`                        |
-| Alertas           | `data-slot`: `alert` (+ `data-tone`), `alert-text`, `alert-dismiss`                                                                                                                                                      | `Alert` (`@wasichai/ui`)                                                                    |
-| Estructura portal | `menu-sesion-panel`, `menu-sesion-cabecera`, `pasos-galon`, `paso`, `barra-instruccion`, `banda-titulo`, `cabecera-banda`, `cabecera-fila`; `data-slot`: `nav-tree`, `nav-tree-group`, `nav-tree-leaf`, `nav-tree-caret` | `MenuSesion`, `PasosGalon`, `BarraInstruccion`, `BandaTitulo`, `NavTree` (`@wasichai/core`) |
+| Grupo             | Ganchos                                                                                                                                                                                                                                                     | Componente                                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Controles         | `data-slot`: `button` (+ `data-variant`, `data-size`), `input`, `textarea`, `select-trigger`                                                                                                                                                                | `@wasichai/ui`; `NativeSelect` (`NativeSelect.tsx`) usa `select-trigger`                                  |
+| Formularios       | `record-fieldset`, `record-legend`, `record-number`, `record-title`, `record-action`, `record-acciones`, `record-nota`                                                                                                                                      | `RecordForm`                                                                                              |
+| Fichas            | `ficha-seccion`, `ficha-titulo`, `ficha-kv` (+ `data-tono` por fila)                                                                                                                                                                                        | `FieldGrid`                                                                                               |
+| Pestañas          | `data-slot`: `card`, `tabs` (+ `data-orientation="vertical"` en la ficha en dos columnas), `tabs-list`, `tabs-trigger`, `tabs-content`; `data-ui`: `workspace-tabs` (+ `data-ubicacion="cabecera"` en la barra), `workspace-tab`                            | `Card`, `FichaTabs`, `TabBar`                                                                             |
+| Tablas            | `data-slot`: `table`, `table-head`, `table-cell`, `badge`, `pagination`; `data-ui`: `estado` (+ `data-tono`); `data-numeric` en las celdas de cifras                                                                                                        | `Table`/`Th`/`Td`, `Pagination`, `PageSizePagination`, `EstadoBadge`                                      |
+| Alertas           | `data-slot`: `alert` (+ `data-tone`), `alert-text`, `alert-dismiss`                                                                                                                                                                                         | `Alert` (`@wasichai/ui`)                                                                                  |
+| Estructura portal | `menu-sesion-panel`, `menu-sesion-cabecera`, `riel`, `riel-item`, `riel-panel`, `pasos-galon`, `paso`, `barra-instruccion`, `banda-titulo`, `cabecera-banda`, `cabecera-fila`; `data-slot`: `nav-tree`, `nav-tree-group`, `nav-tree-leaf`, `nav-tree-caret` | `MenuSesion`, `RielPortal`, `PasosGalon`, `BarraInstruccion`, `BandaTitulo`, `NavTree` (`@wasichai/core`) |
 
 ## wasichai-ui
 
@@ -504,7 +569,8 @@ Lo que srtm construyó para el tema subió a la librería con wasichai/wasichai-
   (wasichai/wasichai-ui#14, 0.5.0): caja-ui fue el segundo usuario.
 
 Pendiente, en wasichai/wasichai-ui#14: `PasosGalon`, `BarraInstruccion`, `BandaTitulo` y la idea de `useVarianteTema`. Solo suben
-con un segundo usuario concreto (regla 6 del `CLAUDE.md` de wasichai-ui). Hasta entonces siguen aquí, con sus parciales.
+con un segundo usuario concreto (regla 6 del `CLAUDE.md` de wasichai-ui). Hasta entonces siguen aquí, con sus parciales. Lo
+mismo el riel (`RielPortal`) y la ficha en dos columnas (la variante vertical de `FichaTabs`).
 
 Lo que se queda en srtm-ui en cualquier caso: `navTree.ts` (los trámites), `instrucciones.ts` (los textos de cada paso),
 `tonoDeEstado` (los estados del SRTM) y la marca de la barra.
