@@ -1,8 +1,19 @@
 /* workspace tabs and fieldsets with the legend on the border (wasichai/srtm-ui#48). the ficha's tabs are the library's
-   sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs' data-slot, #66). unlayered, so these win over
-   tailwind's utilities; hooked on the data-ui of TabBar and RecordForm. the aria and the behaviour do not change */
+   sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs' data-slot, #66), but for their sides. unlayered,
+   so these win over tailwind's utilities; hooked on the data-ui of TabBar and RecordForm. the aria and the behaviour
+   do not change */
 
-/* the workspace tabs over the content: the same folders, 14px. the active tab joins what is under it */
+/* the ficha's tabs have the page's whole width (no lateral): with 18px a side, not the library's 22px, the
+   contribuyente's ten fit in some 1320px. only above the library's 1240px: below it, its own container queries
+   tighten them further (this rule, more specific, would beat them). what still does not fit scrolls */
+@container (width > 1240px) {
+    [data-theme='portal-tributario'] [data-slot='tabs-trigger'] {
+        padding-inline: 18px;
+    }
+}
+
+/* the workspace tabs over the content: the same folders, 14px. the active tab joins the page under it (no strip in
+   between) */
 [data-theme='portal-tributario'] [data-ui='workspace-tabs'] {
     border-bottom: 0;
     background: var(--surface) linear-gradient(var(--brand), var(--brand)) bottom / 100% 1px no-repeat;
@@ -24,8 +35,8 @@
 
 [data-theme='portal-tributario'] [data-ui='workspace-tab']:has(> [aria-current='page']) {
     border-color: var(--brand);
-    border-bottom-color: var(--surface);
-    background: var(--surface);
+    border-bottom-color: var(--surface-muted);
+    background: var(--surface-muted);
     color: var(--ink);
     font-weight: bold;
 }
