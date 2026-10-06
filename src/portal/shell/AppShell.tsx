@@ -39,10 +39,10 @@ export function AppShell() {
         )}
         <Marca />
         <div className="flex flex-1 justify-center">
-          <GlobalSearch inputClassName={piezas.busqueda} />
+          <GlobalSearch className={piezas.buscador} inputClassName={piezas.busqueda} />
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {isAdmin && piezas.admin && (
             <a href="/admin" className={piezas.admin}>
               <Settings className="size-4" />
               Administración

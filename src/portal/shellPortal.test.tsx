@@ -39,11 +39,11 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   render(<PortalApp />)
 }
 
-// the home page drawn, and the permissions in: an admin gets the way to the administration in the bar (the portal's
-// menu bar has one too)
+// the home page drawn, and the permissions in: an admin gets the way to the administration, in the classic bar or at
+// the end of the portal's menu bar
 async function listo() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
-  expect(await within(screen.getByRole('banner')).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
 }
 
 const sesion = () => screen.getByRole('button', { name: /menú de sesión/ })
@@ -61,7 +61,9 @@ describe('portal-tributario shell', () => {
     expect(within(bar).getByText('Municipalidad Distrital de Perené')).toBeInTheDocument()
     // white on the bar, with its own dark text: the bar's white would not show on it
     expect(within(bar).getByRole('searchbox', { name: 'Buscar' })).toHaveClass('bg-surface', 'text-ink')
-    expect(within(bar).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    // the administration is at the end of the menu bar (and in the session menu), not here: the search takes its room
+    expect(within(bar).queryByRole('link', { name: /Administración/ })).not.toBeInTheDocument()
+    expect(within(bar).getByRole('search')).toHaveClass('max-w-xl')
     expect(within(bar).getByRole('button', { name: /^Tema: Portal tributario/ })).toBeInTheDocument()
     // the session: initials, name and role on the button, sign-out inside its menu
     expect(within(bar).getByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' })).toHaveTextContent('ARAdmin RentasAdministrador')
@@ -85,6 +87,8 @@ describe('portal-tributario shell', () => {
     start(theme)
     await listo()
     expect(screen.getByRole('banner')).not.toHaveClass('bg-shell')
+    expect(within(screen.getByRole('banner')).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    expect(within(screen.getByRole('banner')).getByRole('search')).toHaveClass('max-w-md')
     expect(secciones()).toHaveClass('bg-shell')
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /menú de sesión/ })).not.toBeInTheDocument()

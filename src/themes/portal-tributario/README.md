@@ -345,8 +345,10 @@ pierde lo escrito en un formulario.
 ### Shell (#52)
 
 Con este tema, `useVarianteTema()` vale `'portal'` y `AppShell` (`src/portal/shell/`) dibuja en su marco las piezas
-de `PortalShell`: la barra de marca (escudo, título, búsqueda, Administración, tema y `MenuSesion`), justo debajo la
-barra de menú de trámites (`MenuPortal`, ver [Menú superior](#menú-superior)) y el pie institucional. No hay lateral:
+de `PortalShell`: la barra de marca (escudo, título, búsqueda, tema y `MenuSesion`), justo debajo la barra de menú de
+trámites (`MenuPortal`, ver [Menú superior](#menú-superior)) y el pie institucional. Administración no está en la barra
+de marca (`admin` de `PiezasShell` es opcional): un administrador la tiene al final de la barra de menú y en
+`MenuSesion`, y la búsqueda ocupa su sitio (`buscador`: `max-w-xl`, la clásica sigue en `max-w-md`). No hay lateral:
 las pestañas de trabajo y la página toman todo el ancho, y la barra de marca no tiene hamburguesa (no hay nada que
 plegar). Son componentes con tokens y utilidades (`bg-shell`, `text-shell-muted`, `bg-table-head`, `text-link`,
 `bg-table-stripe`, `border-line`…).
@@ -421,8 +423,7 @@ Desvíos de la maqueta de la alternativa B:
 
 - **Inicio** lleva la línea de 3px en el inicio, como el grupo de la página en las demás: la maqueta no muestra ese
   estado.
-- **La barra de marca no cambia**: conserva su enlace a Administración y el ancho de su búsqueda. La maqueta los quita
-  y la ensancha, pero el cambio es solo del menú.
+- La búsqueda usa `max-w-xl` (576px), no los 560px exactos de la maqueta.
 - El cierre al salir el foco de la barra no está en la maqueta: es el patrón de divulgación para navegación del APG.
 
 Tests: `src/portal/menuPortal.test.tsx` (`NAV_TREE`, la barra, los paneles, el teclado, el cierre, la hoja actual, la

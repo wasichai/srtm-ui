@@ -30,10 +30,13 @@ export interface LateralProps {
 // classic look where the name says so) and its pieces
 export interface PiezasShell {
   cabecera: string
-  // the search input and the theme button, over their classic look
+  // the search's form and input and the theme button, over their classic look
+  buscador?: string
   busqueda?: string
   tema?: string
-  admin: string
+  // the way to the administration in the bar, for admins. a variant without it has it elsewhere (the portal: the end
+  // of its menu bar and the session menu)
+  admin?: string
   Marca: ComponentType
   Sesion: ComponentType
   // the sections: a bar right under the header (the portal's), or a lateral with the header's menu button for a phone
@@ -47,7 +50,7 @@ export interface PiezasShell {
 }
 
 // the header search: both padrones at once, on /buscar
-export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
+export function GlobalSearch({ className, inputClassName }: { className?: string; inputClassName?: string }) {
   const navigate = useNavigate()
   const [text, setText] = useState('')
   const submit = (event: FormEvent) => {
@@ -56,7 +59,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
     if (q) navigate(`/buscar?q=${encodeURIComponent(q)}`)
   }
   return (
-    <form role="search" onSubmit={submit} className="relative w-full max-w-md">
+    <form role="search" onSubmit={submit} className={cn('relative w-full max-w-md', className)}>
       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
       <input
         type="search"

@@ -45,10 +45,10 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   return render(<PortalApp />)
 }
 
-// the shell drawn, and the permissions in: an admin gets the way to the administration in the bar
+// the shell drawn, and the permissions in: an admin gets the way to the administration, at the end of the portal's
+// menu bar or in the classic bar
 async function listo() {
-  const bar = await screen.findByRole('banner')
-  expect(await within(bar).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
 }
 
 const menu = () => screen.getByRole('navigation', { name: 'Secciones' })
