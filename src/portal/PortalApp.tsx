@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { ApiError, createRegistry, createWasichaiI18n, EmptyState, resolveConfig, WasichaiProviders } from '@wasichai/core'
+import { ApiError, createRegistry, createWasichaiI18n, resolveConfig, WasichaiProviders } from '@wasichai/core'
 import { useState } from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router'
 import { SRTM_THEMES } from '../themes'
@@ -31,15 +31,18 @@ import { NuevoContribuyentePage } from './pages/NuevoContribuyentePage'
 import { NuevoPredioPage } from './pages/Nuevos'
 import { PredioRoute } from './pages/PredioPage'
 import { AppShell } from './shell/AppShell'
+import { ErrorDeRuta, PaginaNoEncontrada } from './shell/ErroresDeRuta'
 import { WorkspaceTabsProvider } from './shell/WorkspaceTabs'
 
 // a 4xx will not change by asking again; a network blip or a 5xx might
 const retry = (count: number, error: unknown) => !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 2
 
-// a data router: a page with changes not saved can hold a navigation (useBlocker)
+// a data router: a page with changes not saved can hold a navigation (useBlocker). a screen that fails while it
+// renders shows ErrorDeRuta in the shell's content (the pathless route around the screens); the shell's or the
+// login's own failure, on the whole page
 const rutas = createRoutesFromElements(
   <>
-    <Route path="/login" element={<LoginPage />} />
+    <Route path="/login" element={<LoginPage />} errorElement={<ErrorDeRuta completa />} />
     <Route
       element={
         <RequireSession>
@@ -48,35 +51,38 @@ const rutas = createRoutesFromElements(
           </WorkspaceTabsProvider>
         </RequireSession>
       }
+      errorElement={<ErrorDeRuta completa />}
     >
-      <Route index element={<InicioPage />} />
-      <Route path="buscar" element={<BuscarPage />} />
-      <Route path="contribuyentes" element={<ContribuyentesPage />} />
-      <Route path="contribuyentes/nuevo" element={<NuevoContribuyentePage />} />
-      <Route path="contribuyentes/:id" element={<ContribuyenteRoute />} />
-      <Route path="contribuyentes/:id/declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
-      <Route path="declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
-      <Route path="declaraciones/:id" element={<DeclaracionRoute />} />
-      <Route path="predios" element={<PrediosPage />} />
-      <Route path="predios/nuevo" element={<NuevoPredioPage />} />
-      <Route path="predios/:id" element={<PredioRoute />} />
-      <Route path="catastro/nuevo" element={<NuevoLotePage />} />
-      <Route path="catastro/:id" element={<LoteCatastroRoute />} />
-      <Route path="emisiones" element={<EmisionesPage />} />
-      <Route path="arbitrios" element={<ConsultaArbitriosPage />} />
-      <Route path="arbitrios/tasas" element={<TasasArbitriosPage />} />
-      <Route path="arbitrios/determinaciones" element={<DeterminacionesPage />} />
-      <Route path="infracciones" element={<ExpedientesPage />} />
-      <Route path="infracciones/nueva" element={<NuevaActaPage />} />
-      <Route path="infracciones/notificaciones" element={<NotificacionesPage />} />
-      <Route path="infracciones/cuis" element={<CuisPage />} />
-      <Route path="anuncios" element={<PadronAnunciosPage />} />
-      <Route path="anuncios/nuevo" element={<NuevoAnuncioPage />} />
-      <Route path="anuncios/tasas" element={<TasasAnunciosPage />} />
-      <Route path="anuncios/:id" element={<AnuncioRoute />} />
-      <Route path="infracciones/plazos" element={<EscalasYPlazosPage />} />
-      <Route path="infracciones/:id" element={<ExpedienteRoute />} />
-      <Route path="*" element={<EmptyState title="Esta página no existe" />} />
+      <Route errorElement={<ErrorDeRuta />}>
+        <Route index element={<InicioPage />} />
+        <Route path="buscar" element={<BuscarPage />} />
+        <Route path="contribuyentes" element={<ContribuyentesPage />} />
+        <Route path="contribuyentes/nuevo" element={<NuevoContribuyentePage />} />
+        <Route path="contribuyentes/:id" element={<ContribuyenteRoute />} />
+        <Route path="contribuyentes/:id/declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
+        <Route path="declaraciones/nueva" element={<NuevaDeclaracionRoute />} />
+        <Route path="declaraciones/:id" element={<DeclaracionRoute />} />
+        <Route path="predios" element={<PrediosPage />} />
+        <Route path="predios/nuevo" element={<NuevoPredioPage />} />
+        <Route path="predios/:id" element={<PredioRoute />} />
+        <Route path="catastro/nuevo" element={<NuevoLotePage />} />
+        <Route path="catastro/:id" element={<LoteCatastroRoute />} />
+        <Route path="emisiones" element={<EmisionesPage />} />
+        <Route path="arbitrios" element={<ConsultaArbitriosPage />} />
+        <Route path="arbitrios/tasas" element={<TasasArbitriosPage />} />
+        <Route path="arbitrios/determinaciones" element={<DeterminacionesPage />} />
+        <Route path="infracciones" element={<ExpedientesPage />} />
+        <Route path="infracciones/nueva" element={<NuevaActaPage />} />
+        <Route path="infracciones/notificaciones" element={<NotificacionesPage />} />
+        <Route path="infracciones/cuis" element={<CuisPage />} />
+        <Route path="anuncios" element={<PadronAnunciosPage />} />
+        <Route path="anuncios/nuevo" element={<NuevoAnuncioPage />} />
+        <Route path="anuncios/tasas" element={<TasasAnunciosPage />} />
+        <Route path="anuncios/:id" element={<AnuncioRoute />} />
+        <Route path="infracciones/plazos" element={<EscalasYPlazosPage />} />
+        <Route path="infracciones/:id" element={<ExpedienteRoute />} />
+        <Route path="*" element={<PaginaNoEncontrada />} />
+      </Route>
     </Route>
   </>
 )
