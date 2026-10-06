@@ -1,6 +1,7 @@
 import { cn } from '@wasichai/ui'
 import { Landmark, LogOut, Menu, Settings } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router'
+import { useLayoutEffect, useRef } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
@@ -19,6 +20,13 @@ export function AppShell() {
   const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
   const { Marca, Sesion, Lateral, Pie } = piezas
   const lateral = usePanelLateral(piezas.plegable === true)
+  const contenido = useRef<HTMLDivElement>(null)
+  const { pathname } = useLocation()
+  // the screens scroll in their own box, which the router does not reset: another screen starts at its top. another
+  // tab of the same ficha (?tab=) keeps its place
+  useLayoutEffect(() => {
+    if (contenido.current) contenido.current.scrollTop = 0
+  }, [pathname])
 
   return (
     <div className="flex h-full flex-col">
@@ -57,7 +65,7 @@ export function AppShell() {
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
           <Breadcrumbs />
-          <div id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
+          <div ref={contenido} id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
             <Outlet />
           </div>
         </main>

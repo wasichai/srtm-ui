@@ -437,6 +437,20 @@ describe('portal', () => {
     expect(JSON.parse(sessionStorage.getItem('srtm.tabs')!)).toHaveLength(1)
   })
 
+  it('opens another screen at its top, and keeps the place on another tab of the same ficha', async () => {
+    start('/contribuyentes')
+    const contenido = document.getElementById('contenido')!
+    await userEvent.click(await screen.findByRole('link', { name: '20529936' }))
+    expect(await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })).toBeInTheDocument()
+    contenido.scrollTop = 400
+    await userEvent.click(screen.getByRole('tab', { name: 'Relacionados' }))
+    expect(contenido.scrollTop).toBe(400)
+    await userEvent.click(screen.getByRole('tab', { name: 'Predios' }))
+    await userEvent.click(await screen.findByRole('link', { name: '01-01-0001' }))
+    expect(await screen.findByRole('heading', { name: '01-01-0001 · JR. LIMA 123' })).toBeInTheDocument()
+    expect(contenido.scrollTop).toBe(0)
+  })
+
   it("brings back the clerk's own workspace tabs, never those of a session that ended here without signing out", async () => {
     const otra = { path: '/contribuyentes/c9', label: '11111111 OTRA PERSONA', kind: 'contribuyente' }
     sessionStorage.setItem('srtm.tabs', JSON.stringify([otra]))
