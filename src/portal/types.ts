@@ -620,6 +620,8 @@ export interface CuotaArbitrio {
   habitantes_presuntos?: boolean | null
   promedio_habitantes?: number | null
   variacion_habitante?: number | null
+  zona?: string | null
+  uso_arbitrio?: string | null
   influencia?: string | null
   afluencia?: string | null
   redondeo?: string | null
