@@ -3,8 +3,10 @@ import { ApiError } from '@wasichai/core'
 import { Alert, Button, Dialog, DialogContent, DialogDescription, DialogTitle, Label, Textarea } from '@wasichai/ui'
 import { Loader2 } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { RentasError } from '../api'
+import type { Falta } from '../types'
 
 // every act asks why (srtm.Observacion): 5 to 500 characters, kept in its row
 export const OBSERVACION_MINIMA = 5
@@ -46,11 +48,12 @@ const sinRespuesta = (error: unknown) => error instanceof TypeError && /failed t
 export function MensajeDeError({ error, siFalla }: { error: unknown; siFalla: string }) {
   if (sinRespuesta(error)) return <>{SIN_RESPUESTA}</>
   const faltan = error instanceof RentasError ? error.faltan : []
+  const faltanDetalle = error instanceof RentasError ? error.faltanDetalle : []
   const campos = error instanceof ApiError ? error.violations : []
   return (
     <>
       {errorMessage(error, siFalla)}
-      {faltan.length > 0 && <> Falta: {faltan.join('; ')}.</>}
+      {faltan.length > 0 && <> Falta: {faltanDetalle.length > 0 ? <FaltanDetalle faltan={faltanDetalle} /> : <>{faltan.join('; ')}</>}.</>}
       {campos.length > 0 && (
         <ul className="mt-1 list-disc pl-5">
           {campos.map((c) => (
@@ -62,6 +65,42 @@ export function MensajeDeError({ error, siFalla }: { error: unknown; siFalla: st
       )}
     </>
   )
+}
+
+// each Falta of an arbitrios' faltan_detalle, mensaje by mensaje, linked by its enlace (where it gets fixed, not whose
+// it is): DECLARACION, to its declaración's características; PREDIO, to its predio's ubicación; anything else (a row
+// of the ordinance, which names the predio too), or without the id to link to, plain text, as faltan always showed.
+// the portal's generic FaltanArbitrios carries detalle only from arbitrios (ArbitriosController.problemaFaltan); any
+// other 422's faltan has no detalle, and falls back to it above
+export function FaltanDetalle({ faltan }: { faltan: Falta[] }) {
+  return (
+    <>
+      {faltan.map((f, i) => (
+        <span key={f.mensaje}>
+          {i > 0 && '; '}
+          <FaltaEnlace falta={f} />
+        </span>
+      ))}
+    </>
+  )
+}
+
+function FaltaEnlace({ falta }: { falta: Falta }) {
+  if (falta.enlace === 'DECLARACION' && falta.declaracion) {
+    return (
+      <Link to={`/declaraciones/${falta.declaracion}?tab=caracteristicas`} className="text-link hover:underline">
+        {falta.mensaje}
+      </Link>
+    )
+  }
+  if (falta.enlace === 'PREDIO' && falta.predio) {
+    return (
+      <Link to={`/predios/${falta.predio}?tab=ubicacion`} className="text-link hover:underline">
+        {falta.mensaje}
+      </Link>
+    )
+  }
+  return <>{falta.mensaje}</>
 }
 
 // the confirmation of an act (a determinación, a version of the CUIS, a descargo…): its fields, the observación with
