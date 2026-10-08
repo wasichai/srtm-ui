@@ -67,10 +67,15 @@ export function dimensionesDeArbitrio(parametros: ParametroTributario[] | undefi
   return dimensiones
 }
 
-// after any write: fichas, lists and totals all read from the same records, so all of them go stale
+// the reference data, read once (staleTime: Infinity): the model's catalogs, the INEI ubigeos and the valuation
+// tables. no write of the portal changes them. a new one of the kind joins this list
+const REFERENCIA = new Set<unknown>(['catalogos', 'ubigeos', 'categorias-valor', 'usos-predio', 'obras-categorias'])
+
+// after any write: fichas, lists and totals all read from the same records, so all of them go stale. the reference
+// data does not, and a save (which awaits this) does not wait for the whole INEI list again
 export function useRefresh() {
   const queryClient = useQueryClient()
-  return useCallback(() => queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'catalogos' }), [queryClient])
+  return useCallback(() => queryClient.invalidateQueries({ predicate: (query) => !REFERENCIA.has(query.queryKey[0]) }), [queryClient])
 }
 
 // the determinaciones masivas de arbitrios, newest first: asked every 2 s while one of them runs

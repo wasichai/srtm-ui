@@ -8,6 +8,7 @@ import { PERENE_PREDIO } from '../forms/bloques'
 import { UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { camposDelLote, ubicacionDeLote } from '../forms/ubicacion'
 import { useCatalogos, useRefresh } from '../queries'
+import { useVolver } from '../shell/useVolver'
 import type { CatastroFiscal, Predio } from '../types'
 
 const sinVacios = (values: Partial<Predio>) => Object.fromEntries(Object.entries(values).filter(([, v]) => v !== null && v !== undefined))
@@ -16,6 +17,7 @@ const sinVacios = (values: Partial<Predio>) => Object.fromEntries(Object.entries
 // backend's (from a lote's CPU, the lote's municipal code)
 export function NuevoPredioPage() {
   const navigate = useNavigate()
+  const volver = useVolver('/predios')
   const catalogos = useCatalogos()
   const refresh = useRefresh()
   // from "buscar predios" on the list: a lote of the catastro that is no predio yet
@@ -41,7 +43,7 @@ export function NuevoPredioPage() {
             // what the lote brought stays greyed until "desbloquear"
             locked={camposDelLote(delLote)}
             submitLabel="Registrar predio"
-            onCancel={() => navigate(-1)}
+            onCancel={volver}
             onSubmit={async (values) => {
               // the lote's municipal code is only shown: the backend finds the lote by its CPU
               const created = await rentas.crearPredio({ ...values, codigo: null })

@@ -28,6 +28,8 @@ export interface EditableListProps<T extends { id?: string }> {
   // "domicilios": the list's heading. "domicilio": the dialogs'
   plural: string
   singular: string
+  // the singular is a feminine noun: "Nueva obra", "¿Eliminar esta obra?" (texts that agree with it)
+  feminine?: boolean
   // the dialog's form; a function when it depends on the rows
   sections: SectionSpec[] | ((rows: T[], editing: T | null) => SectionSpec[])
   // enum options of the form, by field
@@ -59,6 +61,7 @@ export function EditableList<T extends { id?: string }>({
   onChanged,
   plural,
   singular,
+  feminine,
   sections,
   options,
   columns,
@@ -234,8 +237,8 @@ export function EditableList<T extends { id?: string }>({
       {open && (
         <Dialog open onOpenChange={(o) => !o && close()}>
           <DialogContent className={wide ? 'max-h-[90vh] max-w-5xl overflow-y-auto' : 'max-h-[90vh] overflow-y-auto'}>
-            <DialogTitle className="text-lg font-semibold uppercase">{editing ? texts.editOne(singular) : texts.newOne(singular)}</DialogTitle>
-            <DialogDescription className="sr-only">{texts.dataOf(singular)}</DialogDescription>
+            <DialogTitle className="text-lg font-semibold uppercase">{editing ? texts.editOne(singular) : texts.newOne(singular, feminine)}</DialogTitle>
+            <DialogDescription className="sr-only">{texts.dataOf(singular, feminine)}</DialogDescription>
             <div className="mt-4">
               <RecordForm
                 sections={typeof sections === 'function' ? sections(rows, editing) : sections}
@@ -253,7 +256,7 @@ export function EditableList<T extends { id?: string }>({
 
       {removing && (
         <ConfirmDialog
-          title={texts.removeTitle(singular)}
+          title={texts.removeTitle(singular, feminine)}
           description={texts.removeBody}
           busy={removeBusy}
           error={removeError}

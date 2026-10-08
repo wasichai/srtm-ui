@@ -194,6 +194,17 @@ export async function send<T>(method: 'POST' | 'PUT', path: string, body: unknow
   return (text ? JSON.parse(text) : undefined) as T
 }
 
+// an Idempotency-Key: a random v4 uuid. crypto.randomUUID exists only in a secure context (https, localhost): served
+// over plain http in the intranet, the same uuid is built from getRandomValues, which exists everywhere
+export function claveDeIdempotencia(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
 const remove = (path: string) => client.request<void>(path, { method: 'DELETE' })
 
 function query(params: Record<string, string | number | null | undefined>): string {
