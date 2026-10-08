@@ -5,8 +5,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { rentas } from '../api'
 import { currentYear, formatDate, formatMoney, formatText, MESES } from '../components/format'
+import { Popover } from '../components/Popover'
 import { NUMERICA } from '../components/tabla'
 import { YearSelect } from '../components/YearSelect'
+import { parametrosArbitrioQuery } from '../queries'
 import type { ParametroTributario, ServicioArbitrio } from '../types'
 import { SubnavArbitrios } from './SubnavArbitrios'
 
@@ -93,7 +95,7 @@ export function ConsultaArbitriosPage() {
                         <Td>{MESES[c.periodo - 1]}</Td>
                         <Td>{nombreDe(servicios.data, c.servicio)}</Td>
                         <Td {...NUMERICA}>
-                          <span title={c.parametro_aplicado}>{formatMoney(c.monto)}</span>
+                          {c.parametro_aplicado ? <Popover trigger={formatMoney(c.monto)}>{c.parametro_aplicado}</Popover> : formatMoney(c.monto)}
                         </Td>
                         <Td>{formatDate(c.fecha_calculo)}</Td>
                         <Td>
@@ -126,7 +128,7 @@ const vigencia = (p: ParametroTributario) => `${formatDate(p.vigencia_desde)} â€
 
 export function TasasArbitriosPage() {
   const [anio, setAnio] = useState(currentYear)
-  const query = useQuery({ queryKey: ['arbitrios', 'parametros', anio], queryFn: () => rentas.parametrosArbitrio(anio), placeholderData: keepPreviousData })
+  const query = useQuery({ ...parametrosArbitrioQuery(anio), placeholderData: keepPreviousData })
 
   return (
     <div className="space-y-5">

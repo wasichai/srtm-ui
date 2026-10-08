@@ -22,6 +22,7 @@ import type {
   DeterminacionMasiva,
   DocumentoEmision,
   ExpedienteInfraccion,
+  Falta,
   FichaAnuncio,
   FiltrosActas,
   FiltrosAnuncios,
@@ -100,7 +101,9 @@ export interface TitularPu {
 
 // srtm-backend's problem+json, with what core's client drops: the titulares to pick from (409 of the PU) and the
 // parámetros that are missing (`faltan`, any 422 that cannot compute a figure). `errors` are core's violations by
-// their problem+json name, `detail` the problem's own (null when it sent only a title)
+// their problem+json name, `detail` the problem's own (null when it sent only a title). `faltanDetalle` is the same
+// as `faltan`, each with where to fix it (absent from a 422 that does not come from arbitrios, or an older backend):
+// the portal links to it, same as MatrizArbitrios.faltan_detalle
 export class RentasError extends ApiError {
   constructor(
     status: number,
@@ -108,7 +111,8 @@ export class RentasError extends ApiError {
     violations: FieldViolation[] = [],
     readonly titulares: TitularPu[] = [],
     readonly faltan: string[] = [],
-    readonly detail: string | null = null
+    readonly detail: string | null = null,
+    readonly faltanDetalle: Falta[] = []
   ) {
     super(status, message, violations)
   }
@@ -141,7 +145,8 @@ async function problema(response: Response, sinTexto = ''): Promise<RentasError>
     lista<FieldViolation>(problem.errors),
     lista<TitularPu>(problem.titulares),
     lista<unknown>(problem.faltan).map(String),
-    texto(problem.detail)
+    texto(problem.detail),
+    lista<Falta>(problem.faltan_detalle)
   )
 }
 

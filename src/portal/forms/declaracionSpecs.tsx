@@ -131,8 +131,12 @@ export const DATOS_DEL_PREDIO = ['codigo_predio', 'numero_registro', 'tipo_predi
 const predioNuevo = (v: FormValues) => !v.direccion
 
 // datos de la ubicación: the predio's. onPredio: what "buscar predios" does with a predio of the padrón (by default
-// its ubicación is copied into the form)
-export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): SectionSpec[] {
+// its ubicación is copied into the form). conInfluencia: the year's arbitrios read some servicio's tasa by
+// INFLUENCIA (Dimension, srtm-backend's Servicios.dimensiones): then ubicación respecto a áreas verdes is
+// required, since it is where ARBITRIO_INFLUENCIA reads it from (wasichai/srtm-ui#94): DeclaracionPage and
+// NuevaDeclaracionPage pass it by the DJ's año. false by default: every other caller (PredioPage, Nuevos,
+// UBICACION_SECTIONS) keeps it optional, as before
+export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean, conInfluencia = false): SectionSpec[] {
   return [
     {
       id: 'identificacion-del-predio',
@@ -190,7 +194,7 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
         { name: 'sub_zona', label: 'Sub zona', kind: 'enum', span: 1 },
         { name: 'descripcion_sub_zona', label: 'Descripción de la sub zona', span: 1 },
         { name: 'partida_registral', label: 'Partida registral', span: 1 },
-        { name: 'ubicacion_area_verde', label: 'Ubicación respecto a áreas verdes', kind: 'enum', span: 3 },
+        { name: 'ubicacion_area_verde', label: 'Ubicación respecto a áreas verdes', kind: 'enum', required: conInfluencia, span: 3 },
         { name: 'referencia', label: 'Referencia', span: 3 },
         // built by the backend from the fields above (a predio of the padrón keeps its text until it has a tipo de vía):
         // what is stored, then what saving will write
@@ -214,37 +218,41 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean): Sec
 
 export const UBICACION_SECTIONS: SectionSpec[] = ubicacionSections()
 
-// características: the declaration's uso and areas; niveles and obras are lists of their own
-export const CARACTERISTICAS_SECTIONS: SectionSpec[] = [
-  {
-    id: 'caracteristicas-de-predio',
-    title: 'Características de predio',
-    fields: [
-      // chained over the srtm's catalog of usos; the ficha still lists the three
-      { name: 'uso_cascada', label: 'Uso del predio', kind: 'custom', span: 6, render: (form) => <UsoFields form={form} /> },
-      { name: 'clase_uso', label: 'Clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
-      { name: 'sub_clase_uso', label: 'Sub clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
-      { name: 'uso', label: 'Uso del predio', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
-      // clasificacion and estado_construccion are the padrón's, not the srtm DJ's (srtm-backend README): kept, not shown
-      { name: 'area_terreno', label: 'Área del terreno (m2)', kind: 'decimal', required: true, span: 2 },
-      { name: 'area_comun_terreno', label: 'Área común del terreno (m2)', kind: 'decimal', span: 2 },
-      { name: 'longitud_frente', label: 'Frontis (m)', kind: 'decimal', span: 1 },
-      { name: 'numero_habitantes', label: 'Cant. de habitantes / Aforo', kind: 'integer', span: 1 }
-    ]
-  },
-  {
-    // not on the srtm's screens (pages 17 and 20): what the fichas' totals add up
-    id: 'valores',
-    title: 'Valores',
-    fields: [
-      { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 },
-      { name: 'valor_condominio', label: 'Valor de condominio (S/)', kind: 'money', span: 2 },
-      { name: 'deduccion', label: 'Deducción (S/)', kind: 'money', span: 2 },
-      { name: 'valor_afecto', label: 'Valor afecto (S/)', kind: 'money', span: 2 },
-      { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', span: 2 }
-    ]
-  }
-]
+// características: the declaration's uso and areas; niveles and obras are lists of their own. bases: las
+// BASE_ARBITRIO del año en vigor (srtm-backend's Base) - FRONTIS_ML pide longitud_frente, AREA_CONSTRUIDA_M2 pide
+// area_construida (wasichai/srtm-ui#94). vacío por defecto: sin esas filas, como siempre, opcionales
+export function caracteristicasSections(bases: Set<string> = new Set()): SectionSpec[] {
+  return [
+    {
+      id: 'caracteristicas-de-predio',
+      title: 'Características de predio',
+      fields: [
+        // chained over the srtm's catalog of usos; the ficha still lists the three
+        { name: 'uso_cascada', label: 'Uso del predio', kind: 'custom', span: 6, render: (form) => <UsoFields form={form} /> },
+        { name: 'clase_uso', label: 'Clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
+        { name: 'sub_clase_uso', label: 'Sub clase de uso', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
+        { name: 'uso', label: 'Uso del predio', kind: 'hidden', required: true, shownInFicha: true, span: 2 },
+        // clasificacion and estado_construccion are the padrón's, not the srtm DJ's (srtm-backend README): kept, not shown
+        { name: 'area_terreno', label: 'Área del terreno (m2)', kind: 'decimal', required: true, span: 2 },
+        { name: 'area_comun_terreno', label: 'Área común del terreno (m2)', kind: 'decimal', span: 2 },
+        { name: 'longitud_frente', label: 'Frontis (m)', kind: 'decimal', required: bases.has('FRONTIS_ML'), span: 1 },
+        { name: 'numero_habitantes', label: 'Cant. de habitantes / Aforo', kind: 'integer', span: 1 }
+      ]
+    },
+    {
+      // not on the srtm's screens (pages 17 and 20): what the fichas' totals add up
+      id: 'valores',
+      title: 'Valores',
+      fields: [
+        { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 },
+        { name: 'valor_condominio', label: 'Valor de condominio (S/)', kind: 'money', span: 2 },
+        { name: 'deduccion', label: 'Deducción (S/)', kind: 'money', span: 2 },
+        { name: 'valor_afecto', label: 'Valor afecto (S/)', kind: 'money', span: 2 },
+        { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', required: bases.has('AREA_CONSTRUIDA_M2'), span: 2 }
+      ]
+    }
+  ]
+}
 
 export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   {
