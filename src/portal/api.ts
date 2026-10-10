@@ -22,6 +22,7 @@ import type {
   DeterminacionMasiva,
   DocumentoEmision,
   ExpedienteInfraccion,
+  Falta,
   FichaAnuncio,
   FiltrosActas,
   FiltrosAnuncios,
@@ -100,7 +101,9 @@ export interface TitularPu {
 
 // srtm-backend's problem+json, with what core's client drops: the titulares to pick from (409 of the PU) and the
 // parámetros that are missing (`faltan`, any 422 that cannot compute a figure). `errors` are core's violations by
-// their problem+json name, `detail` the problem's own (null when it sent only a title)
+// their problem+json name, `detail` the problem's own (null when it sent only a title). `faltanDetalle` is the same
+// as `faltan`, each with where to fix it (absent from a 422 that does not come from arbitrios, or an older backend):
+// the portal links to it, same as MatrizArbitrios.faltan_detalle
 export class RentasError extends ApiError {
   constructor(
     status: number,
@@ -108,7 +111,8 @@ export class RentasError extends ApiError {
     violations: FieldViolation[] = [],
     readonly titulares: TitularPu[] = [],
     readonly faltan: string[] = [],
-    readonly detail: string | null = null
+    readonly detail: string | null = null,
+    readonly faltanDetalle: Falta[] = []
   ) {
     super(status, message, violations)
   }
@@ -141,7 +145,8 @@ async function problema(response: Response, sinTexto = ''): Promise<RentasError>
     lista<FieldViolation>(problem.errors),
     lista<TitularPu>(problem.titulares),
     lista<unknown>(problem.faltan).map(String),
-    texto(problem.detail)
+    texto(problem.detail),
+    lista<Falta>(problem.faltan_detalle)
   )
 }
 
@@ -187,6 +192,17 @@ export async function send<T>(method: 'POST' | 'PUT', path: string, body: unknow
   if (!response.ok) throw await problema(response)
   const text = response.status === 204 ? '' : await response.text()
   return (text ? JSON.parse(text) : undefined) as T
+}
+
+// an Idempotency-Key: a random v4 uuid. crypto.randomUUID exists only in a secure context (https, localhost): served
+// over plain http in the intranet, the same uuid is built from getRandomValues, which exists everywhere
+export function claveDeIdempotencia(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
 const remove = (path: string) => client.request<void>(path, { method: 'DELETE' })

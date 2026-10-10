@@ -26,23 +26,28 @@ export function FichaTabs({ tabs, label, active, onChange }: PestanasProps) {
   const variante = useVarianteTema()
   const current = tabs.find((t) => t.id === active && !t.disabled) ?? tabs[0]
   const [opened, setOpened] = useState<string[]>([current.id])
-  useEffect(() => setOpened((ids) => (ids.includes(current.id) ? ids : [...ids, current.id])), [current.id])
-  // the tab just picked shows in this render, before the effect records it
-  const mounted = opened.includes(current.id) ? opened : [...opened, current.id]
+  // recorded while rendering, not in an effect: the tab just picked mounts in this same render
+  if (!opened.includes(current.id)) setOpened([...opened, current.id])
 
   return (
     <div data-slot="tabs">
       {variante === 'portal' ? (
         <TiraPortal tabs={tabs} label={label} active={current.id} onChange={onChange} />
       ) : (
-        <div role="tablist" data-slot="tabs-list" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-border px-4">
+        <div
+          role="tablist"
+          data-slot="tabs-list"
+          aria-label={label}
+          onKeyDown={onPestanasKey}
+          className="flex gap-1 overflow-x-auto border-b border-border px-4"
+        >
           {tabs.map((tab) => (
             <Pestana key={tab.id} tab={tab} selected={tab.id === current.id} onChange={onChange} icono />
           ))}
         </div>
       )}
       {tabs
-        .filter((tab) => mounted.includes(tab.id))
+        .filter((tab) => opened.includes(tab.id))
         .map((tab) => (
           <div key={tab.id} role="tabpanel" data-slot="tabs-content" id={`panel-${tab.id}`} aria-labelledby={`tab-${tab.id}`} hidden={tab.id !== current.id}>
             {tab.render()}
@@ -50,6 +55,24 @@ export function FichaTabs({ tabs, label, active, onChange }: PestanasProps) {
         ))}
     </div>
   )
+}
+
+// the wai-aria tabs pattern, activated by hand: the arrows walk the enabled tabs round, home and end jump to the
+// ends, enter or space opens the focused one. opening on focus would mount every panel on the way (and, in the
+// inscription, count each tab passed over as visited). under the portal only the tabs the strip shows are walked: the
+// ones in "Más" are still in the tablist, hidden, and a hidden button takes no focus
+function onPestanasKey(event: KeyboardEvent<HTMLDivElement>) {
+  const list = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled):not([hidden])'))
+  const at = list.indexOf(document.activeElement as HTMLButtonElement)
+  if (at < 0) return
+  const focus = (index: number) => {
+    event.preventDefault()
+    list[(index + list.length) % list.length].focus()
+  }
+  if (event.key === 'ArrowRight') focus(at + 1)
+  else if (event.key === 'ArrowLeft') focus(at - 1)
+  else if (event.key === 'Home') focus(0)
+  else if (event.key === 'End') focus(-1)
 }
 
 interface PestanaProps {
@@ -239,7 +262,13 @@ function TiraPortal({ tabs, label, active, onChange }: PestanasProps) {
 
   return (
     <div ref={tira} data-ui="pestanas-tira" className="flex items-end gap-0.5">
-      <div role="tablist" data-slot="tabs-list" aria-label={label} className="flex min-w-0 flex-1 gap-1 overflow-x-auto border-b border-border px-4">
+      <div
+        role="tablist"
+        data-slot="tabs-list"
+        aria-label={label}
+        onKeyDown={onPestanasKey}
+        className="flex min-w-0 flex-1 gap-1 overflow-x-auto border-b border-border px-4"
+      >
         {tabs.map((tab) => (
           <Pestana
             key={tab.id}

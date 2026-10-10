@@ -110,6 +110,21 @@ const called = (match: (c: RecordedCall) => boolean) =>
 
 const djHeading = () => screen.findByRole('heading', { name: 'Declaración jurada predial - 39147' })
 
+// wasichai/srtm-ui#94: una fila BASE_ARBITRIO en vigor
+const filaBase = (clave: string, texto: string) => ({
+  id: null,
+  tipo: 'BASE_ARBITRIO',
+  clave,
+  texto,
+  vigencia_desde: null,
+  vigencia_hasta: null,
+  valor_numerico: null,
+  norma: null,
+  fuente: null,
+  transcribio: null,
+  verifico: null
+})
+
 describe('the full declaración jurada', () => {
   it("edits a declaration from the contribuyente's ficha in the full dj", async () => {
     start('/contribuyentes/c1?tab=declaraciones')
@@ -217,5 +232,172 @@ describe('the full declaración jurada', () => {
       tipo_adquisicion: 'COMPRA',
       folios: 2
     })
+  })
+
+  // wasichai/srtm-ui#94: the DJ exige frontis y área construida solo cuando la ordenanza vigente cobra por esa base
+  it('asks for frontis and área construida once the year charges arbitrios by that base, optional until then', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [
+      {
+        path: '/srtm/arbitrios/parametros',
+        body: {
+          anio: year,
+          ordenanza: null,
+          servicios: [],
+          parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML'), filaBase('PARQUES', 'AREA_CONSTRUIDA_M2')],
+          faltan: []
+        }
+      }
+    ])
+    const panel = within(await screen.findByRole('tabpanel'))
+    await panel.findByRole('group', { name: 'Valores' })
+    // the year's ordenanza cobra por FRONTIS_ML and AREA_CONSTRUIDA_M2: both become required (compatibility with a
+    // year that lacks those filas, or a parámetros query that fails, stays optional: the unmodified test above,
+    // which mocks no /srtm/arbitrios/parametros route at all, still saves área construida without it)
+    await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
+    expect(screen.getByText(/^Área construida/).textContent).toContain('*')
+  })
+
+  // wasichai/srtm-ui#94: once required, an empty frontis keeps the DJ from being saved, and nothing is sent; typed,
+  // it goes with the rest. a form not touched is not validated (the kit's way): the clerk changes a value first
+  it('does not save a DJ whose frontis the year requires and is empty, and saves it once typed', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [
+      { method: 'PUT', path: '/srtm/declaraciones/d1', body: declaracion },
+      { path: '/srtm/arbitrios/parametros', body: { anio: year, ordenanza: null, servicios: [], parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML')], faltan: [] } }
+    ])
+    const panel = within(await screen.findByRole('tabpanel'))
+    await panel.findByRole('group', { name: 'Valores' })
+    await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
+    await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
+    await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await panel.findByText('Este dato es obligatorio')).toBeInTheDocument()
+    expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+
+    await userEvent.type(panel.getByLabelText(/^Frontis \(m\)/), '10.5')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
+    expect(put.body).toMatchObject({ longitud_frente: 10.5, valor_autoavaluo: 25000.5 })
+  })
+
+  // wasichai/srtm-ui#94: el asistente, tras presentar, debe saltar a «Características» cuando le falta frontis y
+  // el año cobra por FRONTIS_ML - no a «Transferentes», como si nada faltara
+  it('sends a freshly presented DJ to «Características» when the year charges by FRONTIS_ML and it is empty', async () => {
+    const djNueva = {
+      declaracion: {
+        id: 'd9',
+        contribuyente: 'c1',
+        predio: 'p1',
+        anio: year,
+        numero_declaracion: 50000,
+        secuencia_uso: '1',
+        condicion_propiedad: 'PROPIETARIO UNICO',
+        porcentaje_condominio: 100,
+        // ni COMPRA ni el resto de CON_TRANSFERENTE: así el salto no se decide antes de mirar características
+        tipo_adquisicion: 'OTROS',
+        fecha_adquisicion: '2024-09-04',
+        folios: 2,
+        documentos_sustento: 'OTROS',
+        medio_presentacion: 'FISICO',
+        fecha_presentacion: '2026-09-24',
+        // lo demás que características exige, ya puesto; falta longitud_frente
+        clase_uso: 'RESIDENCIAL',
+        sub_clase_uso: 'UNIFAMILIAR',
+        uso: 'CASA HABITACION',
+        area_terreno: 120
+      },
+      predio,
+      contribuyente,
+      actualizado: null
+    }
+    start('/predios/p1?tab=declaraciones', [
+      { path: '/srtm/predios/p1/declaraciones', body: [] },
+      { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: djNueva },
+      { path: '/srtm/declaraciones/d9', body: djNueva },
+      { path: '/srtm/declaraciones/d9/transferentes', body: [] },
+      { path: '/srtm/declaraciones/d9/niveles', body: [] },
+      { path: '/srtm/declaraciones/d9/obras', body: [] },
+      { path: '/srtm/declaraciones/d9/frentes', body: [] },
+      { path: '/srtm/arbitrios/parametros', body: { anio: year, ordenanza: null, servicios: [], parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML')], faltan: [] } }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva declaración' }))
+    await screen.findByRole('option', { name: 'HERENCIA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'HERENCIA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2020-01-15')
+    await userEvent.type(screen.getByLabelText(/Folios/), '4')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'DECLARATORIA DE HEREDEROS' }))
+    await userEvent.type(screen.getByLabelText(/Contribuyente/), 'quispe')
+    await userEvent.click(await screen.findByRole('button', { name: '20529936 · QUISPE MAMANI JUAN' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await screen.findByRole('tab', { name: 'Datos de la ubicación' })
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 50000' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Características' })).toHaveAttribute('aria-selected', 'true'))
+  })
+
+  // wasichai/srtm-ui#94: si el clerk cambia el año antes de presentar, las bases que cuentan son las
+  // del año presentado - no las del año por defecto con el que arrancó el formulario (año A, sin bases) ni
+  // ninguna que haya quedado en caché de él
+  it("uses the presented año's bases, not the default año's, when the clerk changes it before presenting", async () => {
+    const anioB = year + 3
+    const djAnioB = {
+      declaracion: {
+        id: 'd10',
+        contribuyente: 'c1',
+        predio: 'p1',
+        anio: anioB,
+        numero_declaracion: 50010,
+        secuencia_uso: '1',
+        condicion_propiedad: 'PROPIETARIO UNICO',
+        porcentaje_condominio: 100,
+        tipo_adquisicion: 'OTROS',
+        fecha_adquisicion: '2024-09-04',
+        folios: 2,
+        documentos_sustento: 'OTROS',
+        medio_presentacion: 'FISICO',
+        fecha_presentacion: '2026-09-24',
+        clase_uso: 'RESIDENCIAL',
+        sub_clase_uso: 'UNIFAMILIAR',
+        uso: 'CASA HABITACION',
+        area_terreno: 120
+      },
+      predio,
+      contribuyente,
+      actualizado: null
+    }
+    start('/predios/p1?tab=declaraciones', [
+      { path: '/srtm/predios/p1/declaraciones', body: [] },
+      { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: djAnioB },
+      { path: '/srtm/declaraciones/d10', body: djAnioB },
+      { path: '/srtm/declaraciones/d10/transferentes', body: [] },
+      { path: '/srtm/declaraciones/d10/niveles', body: [] },
+      { path: '/srtm/declaraciones/d10/obras', body: [] },
+      { path: '/srtm/declaraciones/d10/frentes', body: [] },
+      // año A, el que trae el formulario por defecto: sin bases (si el bug volviera, el salto iría a Transferentes)
+      { path: new RegExp(`^/srtm/arbitrios/parametros\\?anio=${year}$`), body: { anio: year, ordenanza: null, servicios: [], parametros: [], faltan: [] } },
+      // año B, el que se presenta: cobra por FRONTIS_ML
+      {
+        path: new RegExp(`^/srtm/arbitrios/parametros\\?anio=${anioB}$`),
+        body: { anio: anioB, ordenanza: null, servicios: [], parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML')], faltan: [] }
+      }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva declaración' }))
+    await screen.findByRole('option', { name: 'HERENCIA' })
+    await userEvent.selectOptions(screen.getByLabelText(/Tipo de adquisición/), 'HERENCIA')
+    await userEvent.type(screen.getByLabelText(/Fecha de adquisición/), '2020-01-15')
+    await userEvent.type(screen.getByLabelText(/Folios/), '4')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'DECLARATORIA DE HEREDEROS' }))
+    // cambia el año antes de seguir: lo presentado será el año B, no el A con el que arrancó el formulario
+    await userEvent.clear(screen.getByLabelText(/^Año/))
+    await userEvent.type(screen.getByLabelText(/^Año/), String(anioB))
+    await userEvent.type(screen.getByLabelText(/Contribuyente/), 'quispe')
+    await userEvent.click(await screen.findByRole('button', { name: '20529936 · QUISPE MAMANI JUAN' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await screen.findByRole('tab', { name: 'Datos de la ubicación' })
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+    expect(await screen.findByRole('heading', { name: 'Declaración jurada predial - 50010' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Características' })).toHaveAttribute('aria-selected', 'true'))
   })
 })

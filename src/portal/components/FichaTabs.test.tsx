@@ -249,4 +249,68 @@ describe('FichaTabs: portal-tributario', () => {
     expect(pestanas()).toEqual(['Datos', 'Domicilios', 'Relacionados', 'Contacto', 'Sustento'])
     expect(mas()).toHaveTextContent('Más (2)')
   })
+
+  // the tabs in "Más" are in the tablist, hidden: the arrows go round the ones the strip shows
+  it('walks the tabs of the strip with the arrows, home and end, not the ones in "Más"', async () => {
+    medidas(450)
+    renderIn('portal-tributario', <Ficha tabs={SIETE} />)
+    expect(pestanas()).toEqual(['Datos', 'Domicilios', 'Relacionados'])
+    screen.getByRole('tab', { name: 'Datos' }).focus()
+    await userEvent.keyboard('{End}')
+    expect(screen.getByRole('tab', { name: 'Relacionados' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Datos' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: 'Relacionados' })).toHaveFocus()
+    // moving the focus selects nothing
+    expect(screen.getByRole('tab', { name: 'Datos' })).toHaveAttribute('aria-selected', 'true')
+  })
+})
+
+// the arrows and the tab stop are the same in the classic strip and in the portal one
+describe.each(['light', 'portal-tributario'])('FichaTabs: the keyboard, with %s', (theme) => {
+  const CON_PREDIOS: FichaTab[] = [...TABS, { id: 'predios', label: 'Predios', render: () => <p>los predios</p> }]
+
+  function Larga() {
+    const [active, setActive] = useState('datos')
+    return <FichaTabs tabs={CON_PREDIOS} label="Ficha" active={active} onChange={setActive} />
+  }
+
+  it('reaches only the open tab with tab, as one stop', async () => {
+    renderIn(theme, <Larga />)
+    await userEvent.tab()
+    expect(screen.getByRole('tab', { name: 'Datos' })).toHaveFocus()
+    // the next tab goes on past the strip, not to Domicilios
+    await userEvent.tab()
+    expect(screen.getByRole('tablist')).not.toContainElement(document.activeElement as HTMLElement | null)
+  })
+
+  it('walks the enabled tabs with the arrows, round, skipping a disabled one, without opening them', async () => {
+    renderIn(theme, <Larga />)
+    screen.getByRole('tab', { name: 'Datos' }).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Domicilios' })).toHaveFocus()
+    // Sustento is disabled: the arrow goes past it
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Predios' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Datos' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: 'Predios' })).toHaveFocus()
+    // moving the focus opens nothing: the panels mount only when picked
+    expect(screen.getByRole('tab', { name: 'Datos' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByText('los predios')).toBeNull()
+  })
+
+  it('jumps to the ends with home and end, and opens the focused tab with enter', async () => {
+    renderIn(theme, <Larga />)
+    screen.getByRole('tab', { name: 'Datos' }).focus()
+    await userEvent.keyboard('{End}')
+    expect(screen.getByRole('tab', { name: 'Predios' })).toHaveFocus()
+    await userEvent.keyboard('{Home}')
+    expect(screen.getByRole('tab', { name: 'Datos' })).toHaveFocus()
+    await userEvent.keyboard('{End}{Enter}')
+    expect(screen.getByRole('tab', { name: 'Predios' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('los predios')).toBeVisible()
+  })
 })

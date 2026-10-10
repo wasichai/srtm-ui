@@ -63,7 +63,7 @@ function PredioPage({ id }: { id: string }) {
               </>
             }
             aside={
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <YearSelect value={anio} onChange={setAnio} />
                 <VerPu predio={id} codigo={predio.codigo ?? id} anio={anio} titulares={titulares} />
                 <EliminarFicha path={`/predios/${id}`} singular="predio" borrar={() => rentas.borrarPredio(id)} />
