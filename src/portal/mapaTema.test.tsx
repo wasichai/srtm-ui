@@ -187,3 +187,37 @@ describe('mapa de lotes con el tema', () => {
     expect(map.setPaintProperty).not.toHaveBeenCalled()
   })
 })
+
+describe('mapa de lotes: la vista', () => {
+  const vecino = (id: string, dx: number) => ({
+    ...LOTES.features[0],
+    id: `${id}:g`,
+    geometry: {
+      type: 'Polygon' as const,
+      coordinates: [
+        [
+          [-75.225 + dx, -10.948],
+          [-75.2245 + dx, -10.948],
+          [-75.2245 + dx, -10.9475],
+          [-75.225 + dx, -10.948]
+        ]
+      ]
+    }
+  })
+
+  it('goes to the lote picked, and stays where the clerk moved it while its neighbours load', () => {
+    const { map, rerender } = renderMap()
+    const moves = map.fitBounds.mock.calls.length
+    expect(moves).toBeGreaterThan(0)
+
+    // the clerk moves the map: the lotes around come, the one picked stays the same
+    const conVecinos: FeatureCollection = { type: 'FeatureCollection', features: [...LOTES.features, vecino('l2', 0.001), vecino('l3', 0.002)] }
+    rerender(<LotesMapImpl features={conVecinos} selectedId="l1" point={{ value: null, onChange: () => {} }} />)
+    expect(map.setData.mock.lastCall?.[0].features).toHaveLength(3)
+    expect(map.fitBounds).toHaveBeenCalledTimes(moves)
+
+    // another lote picked: the view goes to it
+    rerender(<LotesMapImpl features={conVecinos} selectedId="l3" point={{ value: null, onChange: () => {} }} />)
+    expect(map.fitBounds).toHaveBeenCalledTimes(moves + 1)
+  })
+})

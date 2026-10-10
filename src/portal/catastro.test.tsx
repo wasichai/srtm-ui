@@ -168,6 +168,43 @@ describe('catastro fiscal', () => {
     expect(within(dialog).getByRole('tab', { name: 'Buscar en Catastro Fiscal' })).toHaveAttribute('aria-selected', 'false')
   })
 
+  it('says a search failed, never that nothing matched, and asks again', async () => {
+    const busqueda: MockRoute = { path: '/srtm/predios/buscar', status: 400, body: { title: 'Bad Request', detail: 'Filtro no válido' } }
+    start('/predios', [busqueda])
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar predios' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Buscar predios' })
+    await userEvent.type(within(dialog).getByLabelText('Código de predio municipal'), '01-01-0001')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+    // a predio already in the padrón must not look missing: it would be registered again
+    const alerta = await within(dialog).findByRole('alert')
+    expect(alerta).toHaveTextContent(/No se sabe si hay predios que coincidan: vuelva a intentarlo antes de registrar uno nuevo/)
+    expect(within(dialog).queryByText('No se encontraron resultados')).not.toBeInTheDocument()
+
+    busqueda.status = 200
+    busqueda.body = page([predio])
+    await userEvent.click(within(alerta).getByRole('button', { name: 'Reintentar' }))
+    expect(await within(dialog).findByRole('cell', { name: '01-01-0001' })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('says why a pick failed, and keeps the dialog open to pick again', async () => {
+    start('/predios', [
+      { path: '/srtm/catastro', body: page([lote]) },
+      // the predio of the lote's municipal code cannot be looked up
+      { path: '/srtm/predios/buscar', status: 400, body: { title: 'Bad Request', detail: 'Filtro no válido' } }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar predios' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Buscar predios' })
+    await userEvent.click(within(dialog).getByRole('tab', { name: 'Buscar en Catastro Fiscal' }))
+    await userEvent.type(within(dialog).getByLabelText('Código CPU'), '54102166')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+    await userEvent.click(await within(dialog).findByRole('cell', { name: '54102166-0001-2' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Elegir' }))
+    expect(await within(dialog).findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Buscar predios' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Elegir' })).toBeEnabled()
+  })
+
   it('takes a lote into a new predio: its municipal code shown, and its data greyed until unlocked', async () => {
     start('/contribuyentes/c1/declaraciones/nueva', [
       { path: '/srtm/catastro', body: page([lote]) },

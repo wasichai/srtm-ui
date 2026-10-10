@@ -9,6 +9,7 @@ import type { SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { anulada } from '../components/EstadoBadge'
 import { currentYear, formatMoney, formatNumber, formatText } from '../components/format'
+import { secuencia } from '../components/secuencia'
 import { NUMERICA } from '../components/tabla'
 import { describirContribuyente } from '../forms/bloques'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
@@ -32,7 +33,8 @@ export function CondominosPanel({ declaracion, predio, readOnly }: { declaracion
   const query = useQuery({
     queryKey: ['predio', predio.id, 'declaraciones', anio],
     queryFn: () => rentas.declaracionesDePredio(predio.id!, anio),
-    select: (rows) => rows.filter((row) => row.declaracion.secuencia_uso === declaracion.secuencia_uso && !anulada(row.declaracion))
+    // the same secuencia as the backend reads it: an imported "1" and the wizard's "001" are one condominio
+    select: (rows) => rows.filter((row) => secuencia(row.declaracion.secuencia_uso) === secuencia(declaracion.secuencia_uso) && !anulada(row.declaracion))
   })
   const totales = useQuery({ queryKey: ['predio', predio.id, anio], queryFn: () => rentas.predio(predio.id!, anio), select: (ficha) => ficha.totales }).data
   const [agregando, setAgregando] = useState(false)

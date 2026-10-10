@@ -535,6 +535,28 @@ export interface CuotaMes {
   contribuyente: string | null
   fecha_calculo: string | null
   parametro_aplicado: string | null
+  // absent from an older backend (before the épica's desglose): the cell then shows only the monto, as before
+  desglose?: DesgloseCuota[]
+}
+
+// one secuencia de uso's cuota within a CuotaMes cell: its own figures plus formula, the readable arithmetic
+// (srtm-backend's Calculo.formula) - a cuota written before the desglose (base null) just carries soles(monto)
+export interface DesgloseCuota {
+  id: string | null
+  secuencia_uso: string | null
+  monto: number | null
+  base: string | null
+  cantidad_base: number | null
+  tasa_unitaria: number | null
+  habitantes: number | null
+  promedio_habitantes: number | null
+  variacion_habitante: number | null
+  habitantes_presuntos: boolean | null
+  zona: string | null
+  uso_arbitrio: string | null
+  influencia: string | null
+  afluencia: string | null
+  formula: string
 }
 
 // one servicio's twelve months: null where there is no cuota
@@ -557,6 +579,19 @@ export interface MatrizArbitrios {
   // how many cuotas a determination would add now, and what it lacks to
   pendientes: number
   faltan: string[]
+  // the same, each with where to fix it (absent from an older backend); the portal links to it
+  faltan_detalle?: Falta[]
+}
+
+// one thing a determination lacks: its mensaje (what faltan lists), the predio and the declaración it is about, and
+// where it gets fixed (srtm-backend's Falta.enlace, wasichai/srtm-backend#99): the declaración's características
+// (its uso, frontis, área construida), the predio's ubicación (its sector, its zona by ubicación, its ubicación
+// respecto del área verde), or neither (null: a row of the ordinance, though it names the predio)
+export interface Falta {
+  mensaje: string
+  predio?: string | null
+  declaracion?: string | null
+  enlace?: 'DECLARACION' | 'PREDIO' | null
 }
 
 export interface ArbitriosContribuyente {
@@ -579,6 +614,22 @@ export interface CuotaArbitrio {
   parametro_aplicado: string
   fecha_calculo: string
   observacion: string
+  // absent from an older backend (before the épica's desglose): the figures behind monto, same as DesgloseCuota's
+  secuencia_uso?: string | null
+  base?: string | null
+  cantidad_base?: number | null
+  tasa_unitaria?: number | null
+  habitantes?: number | null
+  habitantes_presuntos?: boolean | null
+  promedio_habitantes?: number | null
+  variacion_habitante?: number | null
+  zona?: string | null
+  uso_arbitrio?: string | null
+  influencia?: string | null
+  afluencia?: string | null
+  redondeo?: string | null
+  monto_sin_tope?: number | null
+  tope_aplicado?: number | null
 }
 
 // a row of parametro_tributario: a normative value in force from vigencia_desde to vigencia_hasta (open when null)

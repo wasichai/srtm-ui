@@ -112,6 +112,23 @@ describe('datos de los condóminos', () => {
     expect(screen.queryByText('PEREZ LUNA PEDRO')).not.toBeInTheDocument()
   })
 
+  it('takes "1" and "001" as the same secuencia de uso, as the backend does', async () => {
+    start('/declaraciones/d1?tab=condominos', [
+      {
+        path: '/srtm/predios/p1/declaraciones',
+        body: [
+          { declaracion: deJuan, predio: null, contribuyente: juan },
+          // written by the wizard, which pads it; juan's came from the padrón
+          { declaracion: { ...deRosa, secuencia_uso: '001' }, predio: null, contribuyente: rosa },
+          { declaracion: otraSecuencia, predio: null, contribuyente: pedro }
+        ]
+      }
+    ])
+    expect(await screen.findByRole('link', { name: 'NEIRA CAMPOS ROSA' })).toBeInTheDocument()
+    expect(screen.getByText(/suman 100 % de propiedad/)).toBeInTheDocument()
+    expect(screen.queryByText('PEREZ LUNA PEDRO')).not.toBeInTheDocument()
+  })
+
   it("adds a condómino to a propietario único's declaration", async () => {
     start('/declaraciones/d3?tab=condominos', [{ method: 'POST', path: '/srtm/declaraciones/d3/condominos', status: 201, body: { id: 'd5' } }])
     // a sole titular's tab is where its first condómino comes from

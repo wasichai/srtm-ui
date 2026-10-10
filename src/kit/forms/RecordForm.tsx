@@ -2,7 +2,7 @@ import { ApiError, type FieldViolation } from '@wasichai/core'
 import { Button, cn, Input, Label } from '@wasichai/ui'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useForm, type RegisterOptions, type UseFormReturn } from 'react-hook-form'
-import { formatDate } from '../format'
+import { formatDate, parseNumber } from '../format'
 import { useKit } from '../KitProvider'
 import type { KitTexts } from '../texts'
 import { errorMessage } from '../ui/errorMessage'
@@ -300,8 +300,8 @@ function validate(field: FieldSpec, value: string, values: FormValues, texts: Ki
   if (field.readOnly || (field.when && !field.when(values)) || (field.enabledWhen && !field.enabledWhen(values))) return true
   const text = value.trim()
   if (!text) return isRequired(field, values) ? texts.required : true
-  if (field.kind === 'integer') return /^-?\d+$/.test(text) || texts.integer
-  if (field.kind === 'decimal' || field.kind === 'money') return /^-?\d+([.,]\d+)?$/.test(text) || texts.number
+  if (field.kind === 'integer') return parseNumber(text, { integer: true }) !== null || texts.integer
+  if (field.kind === 'decimal' || field.kind === 'money') return parseNumber(text) !== null || texts.number
   return field.validate ? field.validate(text, values) : true
 }
 
@@ -322,8 +322,9 @@ function fromForm(fields: FieldSpec[], values: FormValues): Record<string, unkno
     fields.map((f) => {
       const text = (values[f.name] ?? '').trim()
       if (text === '') return [f.name, null]
-      if (f.kind === 'integer' || f.kind === 'month' || f.kind === 'year') return [f.name, Number.parseInt(text, 10)]
-      if (f.kind === 'decimal' || f.kind === 'money') return [f.name, Number(text.replace(',', '.'))]
+      if (f.kind === 'integer') return [f.name, parseNumber(text, { integer: true })]
+      if (f.kind === 'month' || f.kind === 'year') return [f.name, Number.parseInt(text, 10)]
+      if (f.kind === 'decimal' || f.kind === 'money') return [f.name, parseNumber(text)]
       if (f.kind === 'boolean') return [f.name, text === 'true']
       if (f.kind === 'geometry') return [f.name, parseGeometry(text)]
       return [f.name, text]

@@ -6,7 +6,9 @@ import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { NativeSelect } from '../../kit/forms/NativeSelect'
 import { SuggestInput } from '../../kit/forms/SuggestInput'
+import { errorMessage } from '../../kit/ui/errorMessage'
 import { rentas } from '../api'
+import { sinRespuesta } from '../components/DialogoDeActo'
 import { formatText } from '../components/format'
 import type { Bbox, Feature, FeatureCollection } from '../components/geo'
 import { recordIdOf } from '../components/geo'
@@ -31,6 +33,12 @@ interface BuscarPrediosDialogProps {
 
 // a code, a CPU or a partida identify a predio by themselves; otherwise the srtm asks for the vía
 const identifica = (f: FiltrosPredio) => Boolean(f.codigo || f.codigo_cpu || f.partida_registral)
+
+// why a request failed, in the clerk's words and as a sentence: no answer at all, or what the backend said
+function porQue(error: unknown, siNoDice: string): string {
+  const texto = sinRespuesta(error) ? 'No hubo respuesta del servidor.' : errorMessage(error, siNoDice)
+  return /[.!?…]$/.test(texto) ? texto : `${texto}.`
+}
 
 // the srtm's "buscar predios" (page 13): the same filters over the padrón (tributario) and over the catastro fiscal,
 // a paged table, and the lotes on a map under it. the row picked is the lote highlighted, and a lote clicked picks
@@ -94,6 +102,7 @@ function Busqueda({
   const [aviso, setAviso] = useState<string | null>(null)
   const [bbox, setBbox] = useState<Bbox | null>(null)
   const [busy, setBusy] = useState(false)
+  const [falloAlElegir, setFalloAlElegir] = useState<string | null>(null)
   const capture = useRef<(() => string | null) | null>(null)
 
   const resultados = useQuery<Pagina<Predio | CatastroFiscal>>({
@@ -142,6 +151,7 @@ function Busqueda({
     const row = filas.find((r) => r.id === selected)
     if (!row) return
     setBusy(true)
+    setFalloAlElegir(null)
     try {
       if (donde === 'tributario') {
         await onPick({ kind: 'predio', predio: row as Predio })
@@ -153,6 +163,9 @@ function Busqueda({
         await onPick({ kind: 'catastro', lote, predio })
       }
       onClose()
+    } catch (e) {
+      // what the pick needed (the predio of the lote, its ubigeo) did not come: said here, the dialog stays
+      setFalloAlElegir(porQue(e, 'Vuelva a intentarlo.'))
     } finally {
       setBusy(false)
     }
@@ -242,7 +255,20 @@ function Busqueda({
       </div>
 
       {aplicados &&
-        (filas.length === 0 && !resultados.isPending ? (
+        // a search that failed is not one that found nothing: said so, or a predio already in the padrón gets
+        // registered again
+        (resultados.isError && !resultados.data ? (
+          <Alert tone="danger" title="No se pudo buscar">
+            <p>
+              {porQue(resultados.error, 'El servidor no pudo completar la búsqueda.')} No se sabe si hay {donde === 'catastro' ? 'lotes' : 'predios'} que
+              coincidan: vuelva a intentarlo antes de registrar uno nuevo.
+            </p>
+            <Button variant="secondary" size="sm" className="mt-2" onClick={() => void resultados.refetch()}>
+              <RotateCcw className="size-4" />
+              Reintentar
+            </Button>
+          </Alert>
+        ) : filas.length === 0 && !resultados.isPending ? (
           <EmptyState title="No se encontraron resultados" />
         ) : (
           <div className="rounded-md border border-border">
@@ -320,6 +346,11 @@ function Busqueda({
         }}
       />
 
+      {falloAlElegir && (
+        <Alert tone="danger" title="No se pudo elegir">
+          {falloAlElegir}
+        </Alert>
+      )}
       <div className="flex flex-wrap justify-end gap-2">
         {/* the catastro fiscal is kept here too: a lote missing or wrong is added or fixed in the lote editor */}
         {donde === 'catastro' && (

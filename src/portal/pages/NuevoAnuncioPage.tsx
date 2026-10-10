@@ -3,7 +3,7 @@ import { Alert, Button, Card, CardBody, Input, Textarea } from '@wasichai/ui'
 import { FilePlus, Loader2 } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { rentas, RentasError } from '../api'
+import { claveDeIdempotencia, rentas, RentasError } from '../api'
 import { MensajeDeError, OBSERVACION_MAXIMA, OBSERVACION_MINIMA } from '../components/DialogoDeActo'
 import { formatDate, formatMoney, today } from '../components/format'
 import { usePuede } from '../components/permisos'
@@ -73,7 +73,7 @@ export function NuevoAnuncioPage() {
   const clave = useRef<string | null>(null)
   const registro = useMutation({
     mutationFn: (cuerpo: NuevoAnuncio) => {
-      clave.current ??= crypto.randomUUID()
+      clave.current ??= claveDeIdempotencia()
       return rentas.registrarAnuncio(cuerpo, clave.current)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: claves.anuncios })

@@ -15,6 +15,8 @@ interface HijosPanelProps<T> {
   // "domicilios": the list's heading. "domicilio": the dialogs'
   plural: string
   singular: string
+  // the singular is feminine: "Nueva obra complementaria"
+  femenino?: boolean
   // the dialog's form; a function when it depends on the rows (the only fiscal domicilio keeps its tipo)
   sections: SectionSpec[] | ((rows: T[], editing: T | null) => SectionSpec[])
   catalog: CatalogKey
@@ -47,6 +49,7 @@ export function HijosPanel<T extends Hijo>({
   queryKey,
   plural,
   singular,
+  femenino,
   sections,
   catalog,
   columns,
@@ -71,6 +74,7 @@ export function HijosPanel<T extends Hijo>({
       onChanged={refresh}
       plural={plural}
       singular={singular}
+      feminine={femenino}
       sections={sections}
       options={catalogos.data?.[catalog]}
       columns={columns}

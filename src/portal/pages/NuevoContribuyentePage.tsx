@@ -11,6 +11,7 @@ import { PasosAsistente } from '../components/PasosAsistente'
 import { INSTRUCCIONES_INSCRIPCION } from '../forms/instrucciones'
 import { CONTRIBUYENTE_SECTIONS } from '../forms/specs'
 import { useCatalogos, useRefresh } from '../queries'
+import { useVolver } from '../shell/useVolver'
 import type { Contribuyente } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { CONTRIBUYENTE_TABS } from './ContribuyentePage'
@@ -21,6 +22,7 @@ const FORM_ID = 'nuevo-contribuyente'
 // Domicilios, still in the wizard (inscripcion): the other tabs open step by step, as in the srtm
 export function NuevoContribuyentePage() {
   const navigate = useNavigate()
+  const volver = useVolver('/contribuyentes')
   const catalogos = useCatalogos()
   const refresh = useRefresh()
   // once sent, never again: a second click would inscribe the same document twice. the ref holds before the
@@ -46,7 +48,7 @@ export function NuevoContribuyentePage() {
   return (
     <div className="space-y-5">
       <CabeceraAsistente title="Nuevo contribuyente" detalle="Insertar contribuyente">
-        <Button variant="secondary" onClick={() => navigate(-1)}>
+        <Button variant="secondary" onClick={volver}>
           <X className="size-4" />
           Cancelar
         </Button>

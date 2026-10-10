@@ -1,8 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { PortalApp } from './PortalApp'
-import type { FilaServicio, MatrizArbitrios } from './types'
+import type { DesgloseCuota, FilaServicio, MatrizArbitrios } from './types'
 
 // los arbitrios de un año en las fichas de predio y de contribuyente (wasichai/srtm-backend#62): servicio por mes, el
 // titular de cada mes y los totales, tal como los determinó el backend. los totales son los suyos, nunca una suma de la
@@ -124,6 +125,166 @@ describe('arbitrios del predio', () => {
     ])
     await tabla()
     expect(screen.getByText('No se pueden determinar:').parentElement).toHaveTextContent(`ARBITRIO_ZONA S-09 ${year}`)
+  })
+
+  // by its enlace, where it gets fixed: predio and declaracion only say whose it is. a row of the ordinance names the
+  // predio too, and nothing in the predio fixes it
+  it('links a falta to the declaración, or to the predio, that fixes it; the rest, as plain text', async () => {
+    const faltanDetalle = [
+      { mensaje: 'Frontis del predio 01-01-0001', predio: 'p1', declaracion: 'd1', enlace: 'DECLARACION' as const },
+      { mensaje: 'Ubicación respecto del área verde del predio 01-01-0001', predio: 'p1', declaracion: null, enlace: 'PREDIO' as const },
+      { mensaje: `TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`, predio: 'p1', declaracion: null, enlace: null },
+      { mensaje: `Factor de habitantes negativo en 01-01-0001`, predio: 'p1', declaracion: 'd1', enlace: null },
+      { mensaje: `ARBITRIO_USO 010101 ${year}`, predio: 'p1', declaracion: 'd1' },
+      { mensaje: `Servicios de arbitrio vigentes en ${year}` }
+    ]
+    start('/predios/p1?tab=arbitrios', [
+      {
+        path: '/srtm/predios/p1/arbitrios',
+        body: matriz({ faltan: faltanDetalle.map((f) => f.mensaje), faltan_detalle: faltanDetalle })
+      },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    await tabla()
+    const alerta = screen.getByText('No se pueden determinar:').parentElement!
+    expect(within(alerta).getByRole('link', { name: 'Frontis del predio 01-01-0001' })).toHaveAttribute('href', '/declaraciones/d1?tab=caracteristicas')
+    expect(within(alerta).getByRole('link', { name: 'Ubicación respecto del área verde del predio 01-01-0001' })).toHaveAttribute(
+      'href',
+      '/predios/p1?tab=ubicacion'
+    )
+    expect(within(alerta).getAllByRole('link')).toHaveLength(2)
+    expect(alerta).toHaveTextContent(`TASA_ARBITRIO LIMPIEZA:Z1:CASA ${year}`)
+    expect(alerta).toHaveTextContent('Factor de habitantes negativo en 01-01-0001')
+    expect(alerta).toHaveTextContent(`ARBITRIO_USO 010101 ${year}`)
+    expect(alerta).toHaveTextContent(`Servicios de arbitrio vigentes en ${year}`)
+  })
+
+  it('shows the faltan as plain text, like before, when the backend sends no detalle', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: matriz({ faltan: [`ARBITRIO_ZONA S-09 ${year}`] }) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    await tabla()
+    const alerta = screen.getByText('No se pueden determinar:').parentElement!
+    expect(within(alerta).queryByRole('link')).not.toBeInTheDocument()
+  })
+})
+
+describe('desglose de la cuota, por secuencia de uso', () => {
+  const desglose = (secuencia: string, formula: string): DesgloseCuota => ({
+    id: `d-${secuencia}`,
+    secuencia_uso: secuencia,
+    monto: null,
+    base: 'AREA_CONSTRUIDA_M2',
+    cantidad_base: null,
+    tasa_unitaria: null,
+    habitantes: null,
+    promedio_habitantes: null,
+    variacion_habitante: null,
+    habitantes_presuntos: null,
+    zona: null,
+    uso_arbitrio: null,
+    influencia: null,
+    afluencia: null,
+    formula
+  })
+
+  // the first month of limpieza, with its desglose
+  const conEnero = (items: DesgloseCuota[]) =>
+    matriz({
+      filas: [
+        {
+          ...fila('limpieza', 'Limpieza pública', 8.5, 12, 102),
+          meses: fila('limpieza', 'Limpieza pública', 8.5, 12, 102).meses.map((c, i) => (i === 0 && c ? { ...c, desglose: items } : c))
+        }
+      ]
+    })
+
+  it('shows the formula of each secuencia on tap, over a cell with two of them, each with its uso', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      {
+        path: '/srtm/predios/p1/arbitrios',
+        body: conEnero([desglose('01', '0.0514 S/ por m² × 100.00 m² = 5.14'), desglose('02', '0.0514 S/ por m² × 65.00 m² = 3.34')])
+      },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    expect(within(t).queryByText(/0\.0514 S\/ por m² × 100\.00 m²/)).not.toBeInTheDocument()
+    await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    expect(screen.getByText('Uso 01: 0.0514 S/ por m² × 100.00 m² = 5.14')).toBeInTheDocument()
+    expect(screen.getByText('Uso 02: 0.0514 S/ por m² × 65.00 m² = 3.34')).toBeInTheDocument()
+  })
+
+  it('shows the formula alone when the cell has one secuencia', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: conEnero([desglose('01', '0.0514 S/ por m² × 100.00 m² = 5.14')]) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    expect(screen.getByText('0.0514 S/ por m² × 100.00 m² = 5.14')).toBeInTheDocument()
+  })
+
+  // the real backend always sends desglose: for a cuota written before it, one item per secuencia with base null and
+  // just its monto as formula
+  it('shows only the monto, like before, on a cuota from before the desglose that comes with one', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: conEnero([{ ...desglose('01', 'S/ 8.50'), base: null }]) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    const [, limpieza] = within(t).getAllByRole('row')
+    expect(within(limpieza).queryAllByRole('button')).toHaveLength(0)
+    expect(within(limpieza).getAllByTitle('TASA_ARBITRIO:X')).toHaveLength(12)
+  })
+
+  it('shows only the monto, like before, on a cuota from before the desglose', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: matriz({}) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    const [, limpieza] = within(t).getAllByRole('row')
+    expect(within(limpieza).queryAllByRole('button')).toHaveLength(0)
+    expect(within(limpieza).getAllByTitle('TASA_ARBITRIO:X').length).toBeGreaterThan(0)
+  })
+})
+
+describe('consulta de cuotas de arbitrios, igual de accesible', () => {
+  it('shows the parámetro aplicado on tap, not just on hover (title does not work on touch)', async () => {
+    start('/arbitrios', [
+      {
+        path: '/srtm/arbitrios/servicios',
+        body: [{ id: 'limpieza', codigo: 'LIMPIEZA', nombre: 'Limpieza pública', orden: 1, vigencia_desde: `${year}-01-01`, vigencia_hasta: null }]
+      },
+      {
+        path: '/srtm/arbitrios',
+        body: {
+          content: [
+            {
+              id: 'q1',
+              predio: 'p1',
+              contribuyente: 'c1',
+              servicio: 'limpieza',
+              anio: year,
+              periodo: 1,
+              monto: 8.5,
+              parametro_aplicado: 'TASA_ARBITRIO:X',
+              fecha_calculo: `${year}-03-15`,
+              observacion: ''
+            }
+          ],
+          page: 0,
+          size: 25,
+          totalElements: 1,
+          totalPages: 1
+        }
+      }
+    ])
+    const t = await screen.findByRole('table', { name: `Cuotas de arbitrios ${year}` })
+    expect(within(t).queryByText('TASA_ARBITRIO:X')).not.toBeInTheDocument()
+    await userEvent.click(within(t).getByRole('button', { name: /8[.,]50/ }))
+    expect(screen.getByText('TASA_ARBITRIO:X')).toBeInTheDocument()
   })
 })
 

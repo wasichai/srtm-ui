@@ -301,3 +301,39 @@ describe('sections keyed by id', () => {
     error.mockRestore()
   })
 })
+
+describe('RecordForm: figures', () => {
+  const CIFRAS: SectionSpec[] = [
+    {
+      id: 'valores',
+      title: 'Valores',
+      fields: [
+        { name: 'autoavaluo', label: 'Autoavalúo', kind: 'money' },
+        { name: 'pisos', label: 'Pisos', kind: 'integer' }
+      ]
+    }
+  ]
+
+  function renderCifras() {
+    const onSubmit = vi.fn(async (_values: { autoavaluo: number | null; pisos: number | null }) => {})
+    render(<RecordForm sections={CIFRAS} initial={{ autoavaluo: null, pisos: null }} submitLabel="Guardar" onSubmit={onSubmit} />)
+    return { onSubmit }
+  }
+
+  it('reads thousands the way the portal writes them (25,000.50), not as decimals', async () => {
+    const { onSubmit } = renderCifras()
+    await userEvent.type(screen.getByRole('textbox', { name: 'Autoavalúo' }), '25,000.50')
+    await userEvent.type(screen.getByRole('textbox', { name: 'Pisos' }), '1,200')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
+    expect(onSubmit.mock.calls[0][0]).toEqual({ autoavaluo: 25000.5, pisos: 1200 })
+  })
+
+  it('refuses a comma before decimals (1,5) instead of saving another figure', async () => {
+    const { onSubmit } = renderCifras()
+    await userEvent.type(screen.getByRole('textbox', { name: 'Autoavalúo' }), '1,5')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByText('Debe ser un número, con punto decimal (1,250.50)')).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+})

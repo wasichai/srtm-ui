@@ -3,9 +3,11 @@ import { EmptyState, QueryState } from '@wasichai/core'
 import { Alert, Table, Td, Th } from '@wasichai/ui'
 import { Link } from 'react-router'
 import { rentas } from '../api'
+import { FaltanDetalle } from '../components/DialogoDeActo'
 import { formatDate, formatMoney, MESES } from '../components/format'
+import { Popover } from '../components/Popover'
 import { NUMERICA } from '../components/tabla'
-import type { ArbitriosContribuyente, MatrizArbitrios, PersonaArbitrio } from '../types'
+import type { ArbitriosContribuyente, CuotaMes, MatrizArbitrios, PersonaArbitrio } from '../types'
 import { DeterminarArbitrios } from './DeterminarArbitrios'
 
 // the arbitrios of a year as they were determined (wasichai/srtm-backend#62): servicio by month, the titular the rule
@@ -100,7 +102,7 @@ function Matriz({ matriz: m, titulares = true }: { matriz: MatrizArbitrios; titu
                   <Td>{f.servicio.nombre ?? f.servicio.codigo}</Td>
                   {f.meses.map((c, i) => (
                     <Td key={MES_CORTO[i]} {...NUMERICA}>
-                      {c ? <span title={c.parametro_aplicado ?? undefined}>{formatMoney(c.monto)}</span> : <SinCuota />}
+                      {c ? <Monto cuota={c} /> : <SinCuota />}
                     </Td>
                   ))}
                   <Td {...NUMERICA}>{determinadas ? formatMoney(f.total) : <SinCuota />}</Td>
@@ -132,6 +134,27 @@ const SinCuota = () => (
   </span>
 )
 
+// a cuota's monto: with its desglose (one secuencia de uso per item), a popover with each one's formula, each line
+// with its uso when there are several; without one (an older backend), or with one that has nothing to break down
+// (a cuota from before the épica de arbitrios: the backend sends it with base null and its monto as formula), the
+// plain monto with its parámetro, as before
+function Monto({ cuota }: { cuota: CuotaMes }) {
+  const desglose = cuota.desglose ?? []
+  if (desglose.every((d) => d.base == null)) {
+    return <span title={cuota.parametro_aplicado ?? undefined}>{formatMoney(cuota.monto)}</span>
+  }
+  const varios = desglose.length > 1
+  return (
+    <Popover trigger={formatMoney(cuota.monto)}>
+      <ul className="space-y-1">
+        {desglose.map((d, i) => (
+          <li key={d.id ?? `${d.secuencia_uso ?? ''}-${i}`}>{varios && d.secuencia_uso ? `Uso ${d.secuencia_uso}: ${d.formula}` : d.formula}</li>
+        ))}
+      </ul>
+    </Popover>
+  )
+}
+
 // when the figures were determined, what is still to determine, and what keeps it from being determined
 function Situacion({ matriz: m, determinadas }: { matriz: MatrizArbitrios; determinadas: boolean }) {
   return (
@@ -139,7 +162,7 @@ function Situacion({ matriz: m, determinadas }: { matriz: MatrizArbitrios; deter
       {m.fecha_calculo && <p className="text-ink-muted">Determinados al {formatDate(m.fecha_calculo)}.</p>}
       {m.faltan.length > 0 ? (
         <Alert tone="warning" title="No se pueden determinar:">
-          {m.faltan.join('; ')}.
+          {m.faltan_detalle && m.faltan_detalle.length > 0 ? <FaltanDetalle faltan={m.faltan_detalle} /> : <>{m.faltan.join('; ')}</>}.
         </Alert>
       ) : m.pendientes > 0 ? (
         <Alert tone="notice">

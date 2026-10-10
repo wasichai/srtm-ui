@@ -141,7 +141,7 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
     // one map per mount: props are read through `latest`
   }, [])
 
-  // the lotes, the selected one marked; the view goes to the selected one, or to all of them
+  // the lotes, the selected one marked
   const featuresKey = JSON.stringify(features?.features.map((f) => [recordIdOf(f), f.geometry]) ?? [])
   useEffect(() => {
     const instance = map.current
@@ -154,10 +154,17 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
         return { type: 'Feature', geometry: f.geometry as never, properties: { ...f.properties, __rid: rid, __selected: rid === selectedId } }
       })
     })
-    const focus = list.find((f) => recordIdOf(f) === selectedId)
-    const bounds = boundsOf(focus ? [focus.geometry] : [])
-    if (bounds) instance.fitBounds(bounds, { padding: 80, maxZoom: 18, duration: 300 })
   }, [ready, featuresKey, selectedId])
+
+  // the view goes to the selected lote when it is picked or its outline changes, not whenever the lotes around it do:
+  // moving the map loads its neighbours, and the view must stay where the clerk took it
+  const focus = features?.features.find((f) => f.geometry && recordIdOf(f) === selectedId)
+  const focusKey = focus ? JSON.stringify([selectedId, focus.geometry]) : null
+  useEffect(() => {
+    const instance = map.current
+    const bounds = focus ? boundsOf([focus.geometry]) : null
+    if (instance && ready && bounds) instance.fitBounds(bounds, { padding: 80, maxZoom: 18, duration: 300 })
+  }, [ready, focusKey])
 
   // the point, and the view on it
   const pointKey = JSON.stringify(point?.value ?? null)

@@ -200,6 +200,19 @@ describe('EditableList', () => {
     expect(bin).not.toHaveAttribute('title')
   })
 
+  it('agrees with a feminine row in its dialogs', async () => {
+    setup({ plural: 'cosas', singular: 'cosa', feminine: true })
+    await screen.findByRole('grid', { name: 'Listado de cosas' })
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar cosa' }))
+    const nueva = await screen.findByRole('dialog', { name: 'Nueva cosa' })
+    expect(nueva).toHaveAccessibleDescription('Datos de la cosa')
+    await userEvent.click(within(nueva).getByRole('button', { name: 'Cancelar' }))
+    const [, first] = within(await screen.findByRole('grid', { name: 'Listado de cosas' })).getAllByRole('row')
+    await userEvent.click(first)
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar cosa' }))
+    expect(await screen.findByRole('dialog', { name: '¿Eliminar esta cosa?' })).toBeInTheDocument()
+  })
+
   it('removes the selected row after a confirmation, then asks what else to read again', async () => {
     const { remove, onChanged, calls } = setup()
     const [, first] = within(await grid()).getAllByRole('row')

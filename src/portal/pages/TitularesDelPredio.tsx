@@ -4,13 +4,8 @@ import { Link } from 'react-router'
 import { Alert } from '@wasichai/ui'
 import { rentas } from '../api'
 import { anulada } from '../components/EstadoBadge'
+import { secuencia } from '../components/secuencia'
 import type { DeclaracionDetalle } from '../types'
-
-// a secuencia de uso as the backend compares it: "1" is "001" (srtm-backend's Reglas.kt secuenciaUso)
-const secuencia = (valor: string) => {
-  const texto = valor.trim() || '1'
-  return /^\d+$/.test(texto) ? texto.padStart(3, '0') : texto
-}
 
 // the vigentes declaraciones of a predio in a year and secuencia de uso: its titulares, whom a new declaración would
 // join as a condómino (srtm-backend#4). none while the predio is new, or while its list cannot be read: the backend
@@ -21,9 +16,7 @@ export function useTitularesDelPredio(predio: string | undefined, anio: number |
     queryFn: () => rentas.declaracionesDePredio(predio!, anio ?? undefined),
     enabled: Boolean(predio && anio)
   })
-  return (query.data ?? []).filter(
-    ({ declaracion: d }) => !anulada(d) && d.secuencia_uso != null && secuencia(d.secuencia_uso) === secuencia(secuenciaUso ?? '')
-  )
+  return (query.data ?? []).filter(({ declaracion: d }) => !anulada(d) && d.secuencia_uso != null && secuencia(d.secuencia_uso) === secuencia(secuenciaUso))
 }
 
 const nombre = (row: DeclaracionDetalle) => row.contribuyente?.nombre_completo ?? 'otro contribuyente'

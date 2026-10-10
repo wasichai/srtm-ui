@@ -25,7 +25,8 @@ export function AdminApp({ workerUrl }: { workerUrl?: string }) {
         appTagline: 'Administración',
         storagePrefix: 'srtm',
         basename: '/admin',
-        defaultLoginEmail: 'admin@wasichai.local',
+        // the seed's admin, in development only (as the portal's LoginPage)
+        defaultLoginEmail: import.meta.env.DEV ? 'admin@wasichai.local' : undefined,
         themes: SRTM_THEMES
       }}
       modules={[workflowModule(), pagesModule(), viewsModule(), formsModule(), documentsModule(), gisModule({ workerUrl })]}

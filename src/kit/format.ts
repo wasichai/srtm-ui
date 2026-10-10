@@ -5,6 +5,16 @@ export const formatMoney = (value: number | null | undefined) => (value === null
 export const formatNumber = (value: number | null | undefined) => (value === null || value === undefined ? '—' : number.format(value))
 export const formatText = (value: string | number | null | undefined) => (value === null || value === undefined || value === '' ? '—' : String(value))
 
+// a figure as typed, read the way formatNumber writes it (es-PE): a point before the decimals and, if any, commas
+// between thousands (1,250.50). a comma before decimals (1,5) is refused, not guessed: read as thousands it would be
+// another figure. null when the text is not one
+const DECIMAL = /^-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/
+const INTEGER = /^-?(?:\d{1,3}(?:,\d{3})+|\d+)$/
+export const parseNumber = (text: string, { integer = false }: { integer?: boolean } = {}): number | null => {
+  const trimmed = text.trim()
+  return (integer ? INTEGER : DECIMAL).test(trimmed) ? Number(trimmed.replaceAll(',', '')) : null
+}
+
 export const currentYear = () => new Date().getFullYear()
 
 // an instant (a record's last update) is on the day it was in Lima, not in UTC: at night there it is already tomorrow
