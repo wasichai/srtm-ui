@@ -43,7 +43,58 @@ describe('BandaTitulo', () => {
   })
 })
 
+// a ficha's figures on the right of the band: what the classic page shows as stat cards under its header
+describe('BandaTitulo: the summary', () => {
+  const resumen = [
+    { label: 'Predios 2026', value: '1' },
+    { label: 'Autoavalúo 2026', value: 'S/ 10,080.45' },
+    { label: 'Vigente hasta', value: '—', nota: 'cesado el 01/02/2026' }
+  ]
+  const lista = () => banda().querySelector('dl') as HTMLElement
+
+  it('keeps the band as it was without one', () => {
+    render(<BandaTitulo kind="Predio" title="01-01-0001" />)
+    expect(banda()).toHaveClass('flex items-center gap-3 rounded-sm bg-brand px-4 py-[11px] text-on-brand', { exact: true })
+    expect(lista()).toBeNull()
+  })
+
+  it('draws the figures as a description list after the title, wrapping under it where narrow', () => {
+    render(<BandaTitulo kind="Contribuyente Nº 000012" title="QUISPE MAMANI JUAN" resumen={resumen} />)
+    expect(lista()).toHaveAttribute('data-ui', 'banda-resumen')
+    expect(screen.getByRole('heading', { level: 1 }).parentElement!.nextElementSibling).toBe(lista())
+    expect(banda()).toHaveClass('flex', 'flex-wrap', 'bg-brand', 'text-on-brand')
+    expect(Array.from(lista().children).map((cifra) => [cifra.querySelector('dt')?.textContent, cifra.querySelector('dd')?.textContent])).toEqual([
+      ['Predios 2026', '1'],
+      ['Autoavalúo 2026', 'S/ 10,080.45'],
+      // a stat card's note goes on, after the figure
+      ['Vigente hasta', '— cesado el 01/02/2026']
+    ])
+  })
+
+  it('writes each label in 12px bold capitals and each figure in 18px bold, after a line of on-brand', () => {
+    render(<BandaTitulo title="QUISPE MAMANI JUAN" resumen={resumen} />)
+    for (const cifra of Array.from(lista().children)) {
+      expect(cifra).toHaveClass('border-l', 'border-on-brand/40')
+      expect(cifra.querySelector('dt')).toHaveClass('text-xs', 'font-bold', 'tracking-wide', 'uppercase')
+      expect(cifra.querySelector('dd')).toHaveClass('text-[18px]', 'font-bold')
+    }
+    // the note smaller, not bold
+    expect(within(lista()).getByText('cesado el 01/02/2026')).toHaveClass('text-xs', 'font-normal')
+  })
+
+  it('keeps the help after the figures', () => {
+    render(<BandaTitulo title="QUISPE MAMANI JUAN" resumen={resumen} ayuda={() => {}} />)
+    expect(lista().nextElementSibling).toBe(within(banda()).getByRole('button', { name: 'Ayuda de este formulario' }))
+  })
+})
+
 describe('CabeceraBanda', () => {
+  it('puts the summary in the band, not in the row under it', () => {
+    render(<CabeceraBanda kind="Predio" title="01-01-0001" resumen={[{ label: 'Titulares 2026', value: '2' }]} badges={<span>URBANO</span>} />)
+    expect(within(banda()).getByText('Titulares 2026')).toBeInTheDocument()
+    expect(within(banda().nextElementSibling as HTMLElement).queryByText('Titulares 2026')).not.toBeInTheDocument()
+  })
+
   it('puts the badges on the left and the actions on the right, in a row under the band', () => {
     render(<CabeceraBanda kind="Predio" title="01-01-0001" badges={<span>URBANO</span>} aside={<button type="button">Eliminar</button>} />)
     const cabecera = banda().parentElement!

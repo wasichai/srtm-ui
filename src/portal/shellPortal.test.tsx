@@ -39,11 +39,16 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   render(<PortalApp />)
 }
 
-// the home page drawn, and the permissions in: an admin gets the way to the administration in the bar (the portal's
-// tree has one too)
+// the home page drawn, and the permissions in: the bar says so, by the session menu (portal) or by the way to the
+// administration (classic)
 async function listo() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
-  expect(await within(screen.getByRole('banner')).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  const bar = screen.getByRole('banner')
+  await waitFor(() =>
+    expect(
+      within(bar).queryByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' }) ?? within(bar).queryByRole('link', { name: /Administración/ })
+    ).toBeInTheDocument()
+  )
 }
 
 const sesion = () => screen.getByRole('button', { name: /menú de sesión/ })
@@ -58,9 +63,14 @@ describe('portal-tributario shell', () => {
     expect(bar).toHaveClass('bg-shell', 'text-shell-ink')
     expect(within(bar).getByText('Rentas municipales')).toBeInTheDocument()
     expect(within(bar).getByText('Municipalidad Distrital de Perené')).toBeInTheDocument()
-    // white on the bar, with its own dark text: the bar's white would not show on it
+    // white on the bar, with its own dark text: the bar's white would not show on it. it takes the room the
+    // administration left, up to 36rem
     expect(within(bar).getByRole('searchbox', { name: 'Buscar' })).toHaveClass('bg-surface', 'text-ink')
-    expect(within(bar).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    expect(within(bar).getByRole('search')).toHaveClass('max-w-xl')
+    expect(within(bar).getByRole('search')).not.toHaveClass('max-w-md')
+    // no administration in the bar: an admin has it in the session menu and at the end of the tree
+    expect(within(bar).queryByRole('link', { name: /Administración/ })).not.toBeInTheDocument()
+    expect(within(lateral()).getByRole('link', { name: 'Administración' })).toHaveAttribute('href', '/admin')
     expect(within(bar).getByRole('button', { name: /^Tema: Portal tributario/ })).toBeInTheDocument()
     // the session: initials, name and role on the button, sign-out inside its menu
     expect(within(bar).getByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' })).toHaveTextContent('ARAdmin RentasAdministrador')
@@ -82,6 +92,9 @@ describe('portal-tributario shell', () => {
     start(theme)
     await listo()
     expect(screen.getByRole('banner')).not.toHaveClass('bg-shell')
+    // the administration in the bar, and the search as it was
+    expect(within(screen.getByRole('banner')).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    expect(within(screen.getByRole('banner')).getByRole('search')).toHaveClass('relative w-full max-w-md', { exact: true })
     expect(lateral()).toHaveClass('bg-shell')
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /menú de sesión/ })).not.toBeInTheDocument()
@@ -163,6 +176,40 @@ describe('portal-tributario shell', () => {
     expect(window.location.pathname + window.location.search).toBe('/buscar?q=quispe')
   })
 
+  // the trail: under the portal, a plain line atop the scrolling content (no strip under the workspace tabs any more)
+  it('writes the trail as a plain line atop the content, before the page', async () => {
+    start('portal-tributario', { path: '/contribuyentes' })
+    const titulo = await screen.findByRole('heading', { name: 'Contribuyentes' })
+    const ruta = screen.getByRole('navigation', { name: 'Ruta' })
+    expect(
+      within(ruta)
+        .getAllByRole('listitem')
+        .map((paso) => paso.textContent)
+    ).toEqual(['Registro tributario y determinación', 'Registro tributario', 'Contribuyentes'])
+    // 12px muted, 8px over the page, no white strip nor border
+    expect(ruta).toHaveClass('mb-2', 'text-xs', 'text-ink-muted')
+    expect(ruta).not.toHaveClass('border-b')
+    expect(ruta).not.toHaveClass('bg-surface')
+    const ultimo = within(ruta).getAllByRole('listitem').at(-1)!
+    expect(ultimo).toHaveAttribute('aria-current', 'page')
+    expect(ultimo).toHaveClass('font-bold', 'text-ink')
+    // first in the scrolling content, the page after it; not right under the workspace tabs
+    const contenido = ruta.parentElement!
+    expect(contenido).toHaveClass('overflow-auto')
+    expect(contenido.firstElementChild).toBe(ruta)
+    expect(contenido).toContainElement(titulo)
+    expect(screen.getByRole('navigation', { name: 'Fichas abiertas' }).nextElementSibling).toBe(contenido)
+  })
+
+  it.each(['light', 'dark'])('keeps the trail as a strip under the workspace tabs with %s', async (theme) => {
+    start(theme, { path: '/contribuyentes' })
+    await screen.findByRole('heading', { name: 'Contribuyentes' })
+    const ruta = screen.getByRole('navigation', { name: 'Ruta' })
+    expect(ruta).toHaveClass('border-b border-border bg-surface px-6 py-2 text-xs text-ink-muted', { exact: true })
+    expect(screen.getByRole('navigation', { name: 'Fichas abiertas' }).nextElementSibling).toBe(ruta)
+    expect(within(ruta).getAllByRole('listitem').at(-1)).toHaveClass('flex items-center gap-1 font-semibold text-ink', { exact: true })
+  })
+
   // one frame for both shells: a theme switch changes the bar, the lateral and the footer, not the page or the menu
   it('switches to the portal shell keeping the page and the theme menu', async () => {
     start('light', { path: '/contribuyentes' })
@@ -174,5 +221,7 @@ describe('portal-tributario shell', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
     expect(screen.getByLabelText('Buscar contribuyentes')).toHaveValue('quispe')
     expect(screen.getByRole('button', { name: /^Tema: Portal tributario/ })).toHaveFocus()
+    // the trail moved into the content, the page with it untouched
+    expect(screen.getByRole('navigation', { name: 'Ruta' })).toHaveClass('mb-2')
   })
 })

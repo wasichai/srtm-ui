@@ -46,6 +46,7 @@ function start(theme: string, path: string) {
     { path: '/auth/me/preferences', body: { theme, locale: null } },
     { path: '/srtm/contribuyentes/c1/declaraciones', body: [] },
     { path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 1, totales } },
+    { path: '/srtm/predios/p1', body: { predio, titulares: 2, totales } },
     { path: '/srtm/declaraciones/d1', body: { declaracion, predio, contribuyente, actualizado: '2026-09-25T14:03:00Z' } },
     { path: /^\/srtm\/declaraciones\/d1\//, body: [] }
   ]
@@ -103,6 +104,45 @@ describe('title band: fichas', () => {
     start('portal-tributario', '/declaraciones/d1')
     const titulo = await h1('Declaración jurada predial - 39147')
     expect(siguienteA(titulo).firstElementChild).toHaveAttribute('data-slot', 'tabs')
+  })
+})
+
+// the year's figures: in the band with portal-tributario, the stat cards under the header with light
+describe('title band: the summary of the year', () => {
+  const cifras = (banda: HTMLElement) =>
+    Array.from(banda.querySelectorAll('[data-ui="banda-resumen"] > div')).map((cifra) => [
+      cifra.querySelector('dt')!.textContent,
+      cifra.querySelector('dd')!.textContent
+    ])
+  const sinTarjetas = (label: string) => expect(screen.getAllByText(label)).toHaveLength(1)
+
+  it.each([
+    ['/contribuyentes/c1', 'QUISPE MAMANI JUAN', [`Predios ${year}`, '1']],
+    ['/predios/p1', '01-01-0001 · JR. LIMA 123', [`Titulares ${year}`, '2']]
+  ])('%s: the figures in the band, no stat cards', async (path, title, primera) => {
+    start('portal-tributario', path)
+    const banda = bandaDe(await h1(title))!
+    const [predios, autoavaluo, afecto] = cifras(banda)
+    expect(predios).toEqual(primera)
+    expect(autoavaluo[0]).toBe(`Autoavalúo ${year}`)
+    expect(autoavaluo[1]).toMatch(/10[,.]080[.,]45/)
+    expect(afecto[0]).toBe(`Valor afecto ${year}`)
+    expect(afecto[1]).toMatch(/8[,.]000[.,]00/)
+    sinTarjetas(`Autoavalúo ${year}`)
+    sinTarjetas(`Valor afecto ${year}`)
+  })
+
+  it('keeps the stat cards under the header with light', async () => {
+    start('light', '/contribuyentes/c1')
+    await h1('QUISPE MAMANI JUAN')
+    expect(document.querySelector('[data-ui="banda-resumen"]')).toBeNull()
+    const tarjetas = screen.getByText(`Autoavalúo ${year}`).closest('.grid')!
+    expect(tarjetas).toHaveClass('grid gap-4 sm:grid-cols-3', { exact: true })
+    expect(Array.from(tarjetas.children).map((tarjeta) => tarjeta.querySelector('p')!.textContent)).toEqual([
+      `Predios ${year}`,
+      `Autoavalúo ${year}`,
+      `Valor afecto ${year}`
+    ])
   })
 })
 

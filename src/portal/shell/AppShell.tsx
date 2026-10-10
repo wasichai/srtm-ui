@@ -47,10 +47,10 @@ export function AppShell() {
         </button>
         <Marca />
         <div className="flex flex-1 justify-center">
-          <GlobalSearch inputClassName={piezas.busqueda} />
+          <GlobalSearch className={piezas.buscador} inputClassName={piezas.busqueda} />
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {isAdmin && piezas.admin && (
             <a href="/admin" className={piezas.admin}>
               <Settings className="size-4" />
               Administración
@@ -64,8 +64,10 @@ export function AppShell() {
         <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} onPlegar={lateral.plegar} />
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
-          <Breadcrumbs />
+          {!piezas.rutaEnContenido && <Breadcrumbs />}
           <div ref={contenido} id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
+            {/* the trail's slot before the page in both variants: a theme switch keeps the page mounted */}
+            {piezas.rutaEnContenido && <Breadcrumbs linea />}
             <Outlet />
           </div>
         </main>
@@ -76,7 +78,8 @@ export function AppShell() {
 }
 
 // the keyboard's first stop, shown only while it has the focus: past the header, the menu, the workspace tabs and the
-// trail, to the screen itself (wcag 2.4.1). it moves the focus, not the url: a #hash is a navigation to the router
+// trail (under the portal the trail is the first line of the screen's own box), to the screen itself (wcag 2.4.1). it
+// moves the focus, not the url: a #hash is a navigation to the router
 function SaltarAlContenido() {
   return (
     <a

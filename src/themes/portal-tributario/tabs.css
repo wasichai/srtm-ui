@@ -1,8 +1,10 @@
 /* workspace tabs and fieldsets with the legend on the border (wasichai/srtm-ui#48). the ficha's tabs are the library's
-   sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs' data-slot, #66). unlayered, so these win over
-   tailwind's utilities; hooked on the data-ui of TabBar and RecordForm. the aria and the behaviour do not change */
+   sheet's (@wasichai/ui/themes/portal-tributario.css, on FichaTabs' data-slot, #66); here only FichaTabs' own "Más".
+   unlayered, so these win over tailwind's utilities; hooked on the data-ui of TabBar, FichaTabs and RecordForm. the
+   aria and the behaviour do not change */
 
-/* the workspace tabs over the content: the same folders, 14px. the active tab joins what is under it */
+/* the workspace tabs over the content: the same folders, 14px. the active tab joins the page under it (the trail is
+   a line in the page, not a strip between them) */
 [data-theme='portal-tributario'] [data-ui='workspace-tabs'] {
     border-bottom: 0;
     background: var(--surface) linear-gradient(var(--brand), var(--brand)) bottom / 100% 1px no-repeat;
@@ -24,10 +26,55 @@
 
 [data-theme='portal-tributario'] [data-ui='workspace-tab']:has(> [aria-current='page']) {
     border-color: var(--brand);
-    border-bottom-color: var(--surface);
-    background: var(--surface);
+    border-bottom-color: var(--surface-muted);
+    background: var(--surface-muted);
     color: var(--ink);
     font-weight: bold;
+}
+
+/* the ficha's strip: its tabs and, when they do not all fit, "Más (n)" (FichaTabs' priority+). the steel line runs
+   under both, so the strip draws it too (the library draws it under the tablist only) */
+[data-theme='portal-tributario'] [data-ui='pestanas-tira'] {
+    background: linear-gradient(var(--brand), var(--brand)) bottom / 100% 1px no-repeat;
+}
+
+/* "Más (n)": one more inactive folder tab, with the library's measures for the ficha's tabs */
+[data-theme='portal-tributario'] [data-ui='pestanas-mas'] {
+    padding: 13px 22px;
+    border: 1px solid transparent;
+    border-bottom-color: var(--brand);
+    border-radius: 3px 3px 0 0;
+    background: #f0f0f0;
+    color: #666666;
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+[data-theme='portal-tributario'] [data-ui='pestanas-mas']:hover,
+[data-theme='portal-tributario'] [data-ui='pestanas-mas'][aria-expanded='true'] {
+    background: #e9e9e9;
+    color: var(--ink);
+}
+
+/* where the tabs close up, it does too: the same container (the ficha's tabs) and the same steps */
+@container (max-width: 1240px) {
+    [data-theme='portal-tributario'] [data-ui='pestanas-mas'] {
+        padding-inline: 12px;
+        font-size: 15px;
+    }
+}
+
+@container (max-width: 1000px) {
+    [data-theme='portal-tributario'] [data-ui='pestanas-mas'] {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+/* its menu: the session menu's panel (shell.css) */
+[data-theme='portal-tributario'] [data-ui='pestanas-menu'] {
+    border-color: #c8d4de;
+    box-shadow: 0 6px 22px rgb(13 95 168 / 22%);
 }
 
 /* a record form's sections: a steel fieldset with its legend on the border, 18px apart */

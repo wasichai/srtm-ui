@@ -67,10 +67,45 @@ describe('tabs.css', () => {
     expect(css).not.toMatch(/ficha-tab|ficha-panel|tabs-trigger/)
   })
 
-  it('joins the active workspace tab to what is under it', () => {
+  // no trail strip under the tabs any more (the trail is a line in the content): the active tab joins the page
+  it('joins the active workspace tab to the page under it', () => {
     const active = rule(css, `${PORTAL} [data-ui='workspace-tab']:has(> [aria-current='page'])`)
-    expect(active.get('background')).toBe('var(--surface)')
-    expect(active.get('border-bottom-color')).toBe('var(--surface)')
+    expect(active.get('background')).toBe('var(--surface-muted)')
+    expect(active.get('border-bottom-color')).toBe('var(--surface-muted)')
+    expect(active.get('color')).toBe('var(--ink)')
+  })
+
+  // FichaTabs' priority+ under the portal: the tabs that do not fit go into "Más (n)", one more inactive folder tab
+  it('draws "Más (n)" as an inactive folder tab on the line of the strip, with AA', () => {
+    expect(rule(css, `${PORTAL} [data-ui='pestanas-tira']`).get('background')).toBe('linear-gradient(var(--brand), var(--brand)) bottom / 100% 1px no-repeat')
+    const mas = rule(css, `${PORTAL} [data-ui='pestanas-mas']`)
+    expect(mas.get('padding')).toBe('13px 22px')
+    expect(mas.get('border-bottom-color')).toBe('var(--brand)')
+    expect(mas.get('border-radius')).toBe('3px 3px 0 0')
+    expect(mas.get('font-size')).toBe('16px')
+    expect(mas.get('background')).toBe('#f0f0f0')
+    expect(mas.get('color')).toBe('#666666')
+    expect(contrast(mas.get('color')!, mas.get('background')!)).toBeGreaterThanOrEqual(4.5)
+    const abierto = rule(css, `${PORTAL} [data-ui='pestanas-mas'][aria-expanded='true']`)
+    expect(abierto.get('background')).toBe('#e9e9e9')
+    expect(abierto.get('color')).toBe('var(--ink)')
+  })
+
+  // the same steps as the library's tabs, on the same container (the ficha's tabs)
+  it('closes "Más (n)" up with the tabs where the strip is narrow', () => {
+    expect(css).toMatch(/@container \(max-width: 1240px\)/)
+    expect(css).toMatch(/@container \(max-width: 1000px\)/)
+    const tallas = rules(css)
+      .filter((r) => r.selectors.includes(`${PORTAL} [data-ui='pestanas-mas']`))
+      .map((r) => r.declarations.get('font-size'))
+    expect(tallas).toEqual(['16px', '15px', '14px'])
+  })
+
+  it("gives its menu the session menu's border and shadow", () => {
+    const panel = rule(read('shell.css'), `${PORTAL} [data-ui='menu-sesion-panel']`)
+    const menu = rule(css, `${PORTAL} [data-ui='pestanas-menu']`)
+    expect(menu.get('border-color')).toBe(panel.get('border-color'))
+    expect(menu.get('box-shadow')).toBe(panel.get('box-shadow'))
   })
 
   it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {

@@ -675,6 +675,17 @@ describe('anuncios en los dos temas', () => {
     expect(screen.getByTestId('estado-anuncio')).toHaveTextContent('Cesado')
     expect(screen.getByText('Un anuncio cesado no se renueva.')).toBeInTheDocument()
   })
+
+  // the classic page's two stat cards, in the title band: the vigencia with its note, then the devengado
+  it('puts the vigencia and the devengado in the title band with portal-tributario', async () => {
+    start('/anuncios/a1', [{ path: '/srtm/anuncios/a1', body: cesado() }], { theme: 'portal-tributario' })
+    await fichaEn()
+    const resumen = document.querySelector<HTMLElement>('[data-ui="banda-titulo"] [data-ui="banda-resumen"]')!
+    expect(within(resumen).getByText(`Vigente hasta (al ${dmy(hoy())})`).nextElementSibling).toHaveTextContent(`— cesado el 01/02/${year}`)
+    expect(within(resumen).getByText(`Devengado al ${dmy(hoy())}`).nextElementSibling).toHaveTextContent(/^S\/\s?77[.,]77$/)
+    // no stat cards besides
+    expect(screen.getAllByText(`Devengado al ${dmy(hoy())}`)).toHaveLength(1)
+  })
 })
 
 describe('EstadoAnuncioBadge', () => {
