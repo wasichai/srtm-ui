@@ -468,17 +468,21 @@ describe('pestaña Infracciones de las fichas', () => {
 })
 
 describe('menú de escalas y plazos', () => {
-  it('the tree menu has Escalas y plazos last in the group, current on its page', async () => {
+  it('the menu bar has Escalas y plazos last in the group, current on its page', async () => {
     start('/infracciones/plazos', [{ path: '/srtm/infracciones/notificaciones/vencidas', body: pagina([]) }], { theme: 'portal-tributario' })
-    const lateral = screen.getByRole('navigation', { name: 'Secciones' })
-    await waitFor(() => expect(within(lateral).getByRole('link', { name: 'Escalas y plazos' })).toHaveAttribute('aria-current', 'page'))
-    const hojas = within(lateral)
+    const menu = screen.getByRole('navigation', { name: 'Secciones' })
+    const grupo = within(menu).getByRole('button', { name: 'Infracciones administrativas' })
+    await waitFor(() => expect(grupo).toHaveAttribute('aria-current', 'true'))
+    fireEvent.click(grupo)
+    const panel = document.getElementById(grupo.getAttribute('aria-controls')!)!
+    expect(within(panel).getByRole('link', { name: 'Escalas y plazos' })).toHaveAttribute('aria-current', 'page')
+    const hojas = within(panel)
       .getAllByRole('link')
       .map((l) => l.textContent)
     const desde = hojas.indexOf('Expedientes')
     expect(hojas.slice(desde, desde + 5)).toEqual(['Expedientes', 'Nueva acta', 'Notificaciones previas', 'CUIS', 'Escalas y plazos'])
     expect(
-      within(lateral)
+      within(menu)
         .getAllByRole('link')
         .filter((l) => l.getAttribute('aria-current') === 'page')
     ).toHaveLength(1)

@@ -6,7 +6,8 @@ import { PortalApp } from './PortalApp'
 
 // the title band of the portal-tributario theme (#55): the fichas and the wizards open with their h1 on the brand and
 // what goes with it (badges, the ficha's actions, the wizard's buttons) in a row under it; the folder tabs hang from
-// it where they come right after. light keeps the header of always
+// it where they come right after. a ficha shows the trail to it in the band, where the classic strip was. light keeps
+// the header of always, and the strip
 
 // jsdom has no webgl: the map is not what these tests look at
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
@@ -73,6 +74,9 @@ describe('title band: fichas', () => {
     expect(within(fila).getByRole('combobox', { name: 'Año' })).toBeVisible()
     expect(within(fila).getByRole('button', { name: /Eliminar/ })).toBeVisible()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    // the trail in the band, its last two steps: no strip over the page
+    expect(screen.getAllByRole('navigation', { name: 'Ruta' })).toEqual([within(banda).getByRole('navigation', { name: 'Ruta' })])
+    expect(within(banda).getByRole('navigation', { name: 'Ruta' })).toHaveTextContent(/^Registro tributario › Registro de contribuyente$/)
   })
 
   it('keeps the FichaHeader of always with light', async () => {
@@ -82,6 +86,14 @@ describe('title band: fichas', () => {
     expect(document.querySelector('[data-ui="banda-titulo"]')).toBeNull()
     expect(titulo).toHaveClass('mt-0.5', 'text-xl', 'font-semibold', 'break-words', 'text-ink')
     expect(titulo.previousElementSibling).toHaveTextContent('Contribuyente Nº 000012')
+    // the strip over the page, all of the trail
+    const ruta = screen.getByRole('navigation', { name: 'Ruta' })
+    expect(ruta).toHaveClass('border-b', 'bg-surface')
+    expect(
+      within(ruta)
+        .getAllByRole('listitem')
+        .map((paso) => paso.textContent)
+    ).toEqual(['Registro tributario y determinación', 'Registro tributario', 'Registro de contribuyente'])
   })
 
   // the srtm's Cancelar / Guardar and the wizard's Siguiente (#11): under the band, in their order
@@ -99,10 +111,11 @@ describe('title band: fichas', () => {
     ).toEqual(['Anular declaración', 'Cancelar', 'Guardar', 'Siguiente'])
   })
 
-  it("hangs the declaración's folder tabs from its header", async () => {
+  it("hangs the declaración's folder tabs from its header, its trail in the band", async () => {
     start('portal-tributario', '/declaraciones/d1')
     const titulo = await h1('Declaración jurada predial - 39147')
     expect(siguienteA(titulo).firstElementChild).toHaveAttribute('data-slot', 'tabs')
+    expect(within(bandaDe(titulo)!).getByRole('navigation', { name: 'Ruta' })).toHaveTextContent(/^Registro tributario › Declaración jurada predial$/)
   })
 })
 
@@ -122,6 +135,8 @@ describe('title band: wizards', () => {
     expect(banda).toHaveTextContent(subtitulo)
     if (kind) expect(await within(banda).findByText(kind)).toBeInTheDocument()
     expect(within(banda).queryByRole('button')).not.toBeInTheDocument()
+    // the form's name is the band's detail: no trail
+    expect(screen.queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
 
     const fila = filaDe(titulo)
     const cancelar = within(fila).getByRole('button', { name: 'Cancelar' })

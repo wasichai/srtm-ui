@@ -10,11 +10,12 @@ import { contrast, rule, rules } from './css'
 const dir = join(__dirname, 'portal-tributario')
 const read = (file: string) => readFileSync(join(dir, file), 'utf8')
 // the theme's tokens, from @wasichai/ui's sheet
-const libraryTokens = () =>
-  readFileSync(join(__dirname, '..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', 'tokens.css'), 'utf8')
+const library = (file: string) =>
+  readFileSync(join(__dirname, '..', '..', 'node_modules', '@wasichai', 'ui', 'dist', 'themes', 'portal-tributario', file), 'utf8')
+const libraryTokens = () => library('tokens.css')
 
 const PORTAL = "[data-theme='portal-tributario']"
-const PARCIALES = ['tables.css', 'shell.css', 'controls.css', 'tabs.css', 'pasos.css', 'banda.css']
+const PARCIALES = ['tables.css', 'shell.css', 'menu.css', 'controls.css', 'tabs.css', 'pasos.css', 'banda.css']
 
 describe('portal-tributario partials', () => {
   it('are the ones listed here', () => {
@@ -41,6 +42,46 @@ describe('portal-tributario partials', () => {
   })
 })
 
+describe('menu.css', () => {
+  const css = read('menu.css')
+  const tokens = rule(libraryTokens(), PORTAL)
+  const MENU = `${PORTAL} [data-ui='menu-portal']`
+
+  // the tree's greys (the library's nav.css), with AA on the bar, on an open group and on the current leaf
+  it('marks the current group and the hovered one in the dark link blue', () => {
+    const grupo = rule(css, `${MENU} [data-ui='menu-grupo']:is(:hover, [aria-current])`)
+    expect(grupo.get('color')).toBe('#0d4d80')
+    expect(contrast('#0d4d80', tokens.get('--table-head')!)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast('#0d4d80', tokens.get('--surface')!)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('draws the carets and the icons in #555, 3:1 on the bar', () => {
+    expect(rule(css, `${MENU} [data-ui='menu-caret']`).get('color')).toBe('#555')
+    expect(contrast('#555', tokens.get('--table-head')!)).toBeGreaterThanOrEqual(3)
+  })
+
+  it("shades its panel as the session menu's", () => {
+    expect(rule(css, `${MENU} [data-ui='menu-panel']`).get('box-shadow')).toBe('0 6px 22px rgb(13 95 168 / 22%)')
+    expect(rule(read('shell.css'), `${PORTAL} [data-ui='menu-sesion-panel']`).get('box-shadow')).toBe('0 6px 22px rgb(13 95 168 / 22%)')
+  })
+
+  it("marks the panel's leaves as the tree's: grey under the pointer, the current one darker, with AA", () => {
+    const hover = rule(css, `${MENU} [data-ui='menu-hoja']:hover`)
+    expect(hover.get('background-color')).toBe('#e9e9e9')
+    expect(contrast(tokens.get('--link')!, '#e9e9e9')).toBeGreaterThanOrEqual(4.5)
+    const actual = rule(css, `${MENU} [data-ui='menu-hoja'][aria-current='page']`)
+    expect(actual.get('color')).toBe('#0d4d80')
+    expect(actual.get('background-color')).toBe('#e6e6e6')
+    expect(contrast(actual.get('color')!, actual.get('background-color')!)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  // after the hover: the current leaf keeps its grey under the pointer
+  it('keeps the current leaf grey under the pointer', () => {
+    const selectores = rules(css).flatMap((r) => r.selectors)
+    expect(selectores.indexOf(`${MENU} [data-ui='menu-hoja'][aria-current='page']`)).toBeGreaterThan(selectores.indexOf(`${MENU} [data-ui='menu-hoja']:hover`))
+  })
+})
+
 describe('controls.css', () => {
   const css = read('controls.css')
 
@@ -64,13 +105,26 @@ describe('tabs.css', () => {
 
   // the ficha's tabs are the library sheet's, on FichaTabs' data-slot
   it("leaves the ficha's tabs to the library", () => {
-    expect(css).not.toMatch(/ficha-tab|ficha-panel|tabs-trigger/)
+    expect(css).not.toMatch(/ficha-tab|ficha-panel/)
   })
 
-  it('joins the active workspace tab to what is under it', () => {
+  // with the page's whole width the contribuyente's ten tabs fit in some 1320px with 18px a side (1400px with the
+  // library's 22px). only where the library has not tightened them: below its 1240px it does, and wins
+  it("narrows the sides of the ficha's tabs to 18px where the library leaves them at 22px", () => {
+    const TRIGGER = `${PORTAL} [data-slot='tabs-trigger']`
+    const propias = rules(css).filter((r) => r.selectors.some((selector) => selector.includes('tabs-trigger')))
+    expect(propias.map((r) => [r.selectors, [...r.declarations]])).toEqual([[[TRIGGER], [['padding-inline', '18px']]]])
+    expect(css).toMatch(/@container \(width > 1240px\) \{\s*\[data-theme='portal-tributario'\] \[data-slot='tabs-trigger'\]/)
+    const tabs = library('tabs.css')
+    expect(rule(tabs, "[data-slot='tabs-trigger']").get('padding')).toBe('13px 22px')
+    expect(tabs).toMatch(/@container \(max-width: 1240px\)/)
+  })
+
+  // no white strip under the workspace tabs any more: the active one joins the page
+  it('joins the active workspace tab to the page under it', () => {
     const active = rule(css, `${PORTAL} [data-ui='workspace-tab']:has(> [aria-current='page'])`)
-    expect(active.get('background')).toBe('var(--surface)')
-    expect(active.get('border-bottom-color')).toBe('var(--surface)')
+    expect(active.get('background')).toBe('var(--surface-muted)')
+    expect(active.get('border-bottom-color')).toBe('var(--surface-muted)')
   })
 
   it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {

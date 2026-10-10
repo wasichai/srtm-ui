@@ -767,7 +767,7 @@ describe('menú de los expedientes', () => {
     ['/infracciones', 'Expedientes'],
     ['/infracciones/a1', 'Expedientes'],
     ['/infracciones/nueva', 'Nueva acta']
-  ])('the tree menu has Expedientes and Nueva acta first in the group; on %s %s is current', async (path, actual) => {
+  ])('the menu bar has Expedientes and Nueva acta first in the group; on %s %s is current', async (path, actual) => {
     start(
       path,
       [
@@ -777,15 +777,19 @@ describe('menú de los expedientes', () => {
       ],
       { theme: 'portal-tributario' }
     )
-    const lateral = screen.getByRole('navigation', { name: 'Secciones' })
-    await waitFor(() => expect(within(lateral).getByRole('link', { name: actual })).toHaveAttribute('aria-current', 'page'))
-    const hojas = within(lateral)
+    const menu = screen.getByRole('navigation', { name: 'Secciones' })
+    const grupo = within(menu).getByRole('button', { name: 'Infracciones administrativas' })
+    await waitFor(() => expect(grupo).toHaveAttribute('aria-current', 'true'))
+    await userEvent.click(grupo)
+    const panel = document.getElementById(grupo.getAttribute('aria-controls')!)!
+    expect(within(panel).getByRole('link', { name: actual })).toHaveAttribute('aria-current', 'page')
+    const hojas = within(panel)
       .getAllByRole('link')
       .map((l) => l.textContent)
     const desde = hojas.indexOf('Expedientes')
     expect(hojas.slice(desde, desde + 4)).toEqual(['Expedientes', 'Nueva acta', 'Notificaciones previas', 'CUIS'])
     expect(
-      within(lateral)
+      within(menu)
         .getAllByRole('link')
         .filter((l) => l.getAttribute('aria-current') === 'page')
     ).toHaveLength(1)

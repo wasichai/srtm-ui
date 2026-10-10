@@ -4,8 +4,8 @@ import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
 
-// the shell of the portal-tributario theme (issue #52): brand bar with the search and a session menu, a light
-// lateral and the institutional footer. light, dark and system keep the classic shell
+// the shell of the portal-tributario theme (issue #52): brand bar with the search and a session menu, the menu bar
+// under it (menuPortal.test.tsx) and the institutional footer. light, dark and system keep the classic shell
 
 // jsdom has no webgl: the map is not what these tests look at
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
@@ -39,18 +39,19 @@ function start(theme: string, { path = '/', admin = true } = {}) {
   render(<PortalApp />)
 }
 
-// the home page drawn, and the permissions in: an admin gets the way to the administration in the bar (the portal's
-// tree has one too)
+// the home page drawn, and the permissions in: an admin gets the way to the administration, in the classic bar or at
+// the end of the portal's menu bar
 async function listo() {
   expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
-  expect(await within(screen.getByRole('banner')).findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+  expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
 }
 
 const sesion = () => screen.getByRole('button', { name: /menú de sesión/ })
-const lateral = () => screen.getByRole('navigation', { name: 'Secciones' })
+// the classic lateral, or the portal's menu bar
+const secciones = () => screen.getByRole('navigation', { name: 'Secciones' })
 
 describe('portal-tributario shell', () => {
-  it('draws the brand bar, a light lateral and the institutional footer', async () => {
+  it('draws the brand bar, the menu bar under it and the institutional footer', async () => {
     start('portal-tributario')
     await listo()
 
@@ -60,18 +61,22 @@ describe('portal-tributario shell', () => {
     expect(within(bar).getByText('Municipalidad Distrital de Perené')).toBeInTheDocument()
     // white on the bar, with its own dark text: the bar's white would not show on it
     expect(within(bar).getByRole('searchbox', { name: 'Buscar' })).toHaveClass('bg-surface', 'text-ink')
-    expect(within(bar).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    // the administration is at the end of the menu bar (and in the session menu), not here: the search takes its room
+    expect(within(bar).queryByRole('link', { name: /Administración/ })).not.toBeInTheDocument()
+    expect(within(bar).getByRole('search')).toHaveClass('max-w-xl')
     expect(within(bar).getByRole('button', { name: /^Tema: Portal tributario/ })).toBeInTheDocument()
     // the session: initials, name and role on the button, sign-out inside its menu
     expect(within(bar).getByRole('button', { name: 'Admin Rentas, Administrador: menú de sesión' })).toHaveTextContent('ARAdmin RentasAdministrador')
     expect(within(bar).queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument()
 
-    // not the dark sidebar: the lateral is light, its links in the link colour, the current one marked (the tree
-    // itself: arbolNav.test.tsx)
-    expect(lateral()).not.toHaveClass('bg-shell')
-    expect(lateral()).toHaveClass('bg-table-head')
-    expect(within(lateral()).getByRole('link', { name: 'Ir al inicio' })).toHaveAttribute('aria-current', 'page')
-    expect(within(lateral()).getByRole('link', { name: 'Buscar contribuyentes' })).toHaveClass('text-link')
+    // not the dark sidebar: a light bar right under the brand bar, home current in the link colour, a button per
+    // group (the bar itself: menuPortal.test.tsx)
+    expect(secciones()).not.toHaveClass('bg-shell')
+    expect(secciones()).toHaveClass('bg-table-head')
+    expect(bar.nextElementSibling).toBe(secciones())
+    expect(within(secciones()).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
+    expect(within(secciones()).getByRole('link', { name: 'Inicio' })).toHaveClass('text-link')
+    expect(within(secciones()).getByRole('button', { name: 'Contribuyentes' })).toHaveAttribute('aria-expanded', 'false')
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Municipalidad Distrital de Perené — Sistema de Gestión Tributaria Municipal')
     // the workspace tabs over the content, as in the classic shell
@@ -82,7 +87,9 @@ describe('portal-tributario shell', () => {
     start(theme)
     await listo()
     expect(screen.getByRole('banner')).not.toHaveClass('bg-shell')
-    expect(lateral()).toHaveClass('bg-shell')
+    expect(within(screen.getByRole('banner')).getByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
+    expect(within(screen.getByRole('banner')).getByRole('search')).toHaveClass('max-w-md')
+    expect(secciones()).toHaveClass('bg-shell')
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /menú de sesión/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
@@ -155,6 +162,26 @@ describe('portal-tributario shell', () => {
     ).toEqual(['Cerrar sesión'])
   })
 
+  // the portal marks the group in its menu bar; the trail of a ficha goes in its title band (bandaTitulo.test.tsx)
+  it('draws no trail strip over a page', async () => {
+    start('portal-tributario', { path: '/contribuyentes' })
+    expect(await screen.findByLabelText('Buscar contribuyentes')).toBeInTheDocument()
+    expect(within(secciones()).getByRole('button', { name: 'Contribuyentes' })).toHaveAttribute('aria-current', 'true')
+    expect(screen.queryByRole('navigation', { name: 'Ruta' })).not.toBeInTheDocument()
+  })
+
+  it.each(['light', 'dark'])('keeps the trail strip over the page with %s', async (theme) => {
+    start(theme, { path: '/contribuyentes' })
+    expect(await screen.findByLabelText('Buscar contribuyentes')).toBeInTheDocument()
+    const ruta = screen.getByRole('navigation', { name: 'Ruta' })
+    expect(screen.getByRole('navigation', { name: 'Fichas abiertas' }).nextElementSibling).toBe(ruta)
+    expect(
+      within(ruta)
+        .getAllByRole('listitem')
+        .map((paso) => paso.textContent)
+    ).toEqual(['Registro tributario y determinación', 'Registro tributario', 'Contribuyentes'])
+  })
+
   it.each(['portal-tributario', 'light'])('searches both padrones from the header with %s', async (theme) => {
     start(theme)
     await listo()
@@ -163,7 +190,7 @@ describe('portal-tributario shell', () => {
     expect(window.location.pathname + window.location.search).toBe('/buscar?q=quispe')
   })
 
-  // one frame for both shells: a theme switch changes the bar, the lateral and the footer, not the page or the menu
+  // one frame for both shells: a theme switch changes the bar, the sections and the footer, not the page or the menu
   it('switches to the portal shell keeping the page and the theme menu', async () => {
     start('light', { path: '/contribuyentes' })
     await userEvent.type(await screen.findByLabelText('Buscar contribuyentes'), 'quispe')
@@ -172,6 +199,9 @@ describe('portal-tributario shell', () => {
 
     await waitFor(() => expect(screen.getByRole('banner')).toHaveClass('bg-shell'))
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
+    // the lateral gone, the menu bar under the brand bar
+    expect(secciones()).toHaveAttribute('data-ui', 'menu-portal')
+    expect(document.getElementById('sidebar')).toBeNull()
     expect(screen.getByLabelText('Buscar contribuyentes')).toHaveValue('quispe')
     expect(screen.getByRole('button', { name: /^Tema: Portal tributario/ })).toHaveFocus()
   })

@@ -715,15 +715,20 @@ describe('menú de anuncios', () => {
     ])
   })
 
-  it('the tree menu has the group after Infracciones administrativas, its leaf current on a ficha', async () => {
+  // the bar shows the group short: Anuncios
+  it('the menu bar has the group after Infracciones administrativas, marked with its leaf on a ficha', async () => {
     start('/anuncios/a1', [{ path: '/srtm/anuncios/a1', body: ficha() }], { theme: 'portal-tributario' })
     await fichaEn()
-    const lateral = screen.getByRole('navigation', { name: 'Secciones' })
-    const grupos = within(lateral)
+    const menu = screen.getByRole('navigation', { name: 'Secciones' })
+    const grupos = within(menu)
       .getAllByRole('button')
       .map((b) => b.textContent)
-      .filter((t) => ['Infracciones administrativas', 'Anuncios y propaganda', 'Emisión'].includes(t ?? ''))
-    expect(grupos).toEqual(['Infracciones administrativas', 'Anuncios y propaganda', 'Emisión'])
-    expect(within(lateral).getByRole('link', { name: 'Padrón de anuncios' })).toHaveAttribute('aria-current', 'page')
+      .filter((t) => ['Infracciones', 'Anuncios', 'Emisión'].includes(t ?? ''))
+    expect(grupos).toEqual(['Infracciones', 'Anuncios', 'Emisión'])
+    const grupo = within(menu).getByRole('button', { name: 'Anuncios y propaganda' })
+    expect(grupo).toHaveAttribute('aria-current', 'true')
+    await userEvent.click(grupo)
+    const panel = document.getElementById(grupo.getAttribute('aria-controls')!)!
+    expect(within(panel).getByRole('link', { name: 'Padrón de anuncios' })).toHaveAttribute('aria-current', 'page')
   })
 })

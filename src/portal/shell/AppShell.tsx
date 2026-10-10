@@ -1,25 +1,26 @@
 import { cn } from '@wasichai/ui'
-import { Landmark, LogOut, Menu, Settings } from 'lucide-react'
-import { useLayoutEffect, useRef } from 'react'
+import { Landmark, LogOut, Menu as IconoMenu, Settings } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
 import { ENTIDAD, GlobalSearch, initials, NAV, type LateralProps, type PiezasShell } from './comun'
-import { usePanelLateral } from './panelLateral'
 import { PortalShell } from './PortalShell'
 import { TabBar } from './TabBar'
 import { ThemeMenu } from './ThemeMenu'
 
-// gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs over the content.
-// under the portal-tributario theme it delegates to PortalShell (brand bar, the tree of trámites, footer). one frame for
-// both, each variant bringing its pieces: a theme switch redraws the bar, the lateral and the footer but keeps the
-// page (and whatever is not saved in it) and the theme menu, with its focus and its error, mounted
+// gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs and the trail over the
+// content. under the portal-tributario theme it delegates to PortalShell (brand bar, the menu bar of trámites, footer;
+// the trail goes in the title band). one frame for both, each variant bringing its pieces: a theme switch redraws the
+// bar, the menu and the footer but keeps the page (and whatever is not saved in it) and the theme menu, with its focus
+// and its error, mounted. a piece a variant does not have leaves its place empty, so what follows keeps its place too
 export function AppShell() {
   const { isAdmin } = useSession()
+  // the classic lateral opens only on a phone, from the header, and closes on a pick
+  const [lateralAbierto, setLateralAbierto] = useState(false)
   const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
-  const { Marca, Sesion, Lateral, Pie } = piezas
-  const lateral = usePanelLateral(piezas.plegable === true)
+  const { Marca, Sesion, Menu, Lateral, Ruta, Pie } = piezas
   const contenido = useRef<HTMLDivElement>(null)
   const { pathname } = useLocation()
   // the screens scroll in their own box, which the router does not reset: another screen starts at its top. another
@@ -32,25 +33,24 @@ export function AppShell() {
     <div className="flex h-full flex-col">
       <SaltarAlContenido />
       <header className={piezas.cabecera}>
-        <button
-          ref={lateral.boton}
-          type="button"
-          className={piezas.botonMenu}
-          // a foldable lateral folds itself: this one only brings it back
-          hidden={piezas.plegable && lateral.abierto}
-          aria-label={piezas.plegable ? 'Mostrar el menú' : 'Menú'}
-          aria-expanded={lateral.abierto}
-          aria-controls="sidebar"
-          onClick={lateral.alternar}
-        >
-          <Menu className="size-5" />
-        </button>
+        {Lateral && (
+          <button
+            type="button"
+            className={piezas.botonMenu}
+            aria-label="Menú"
+            aria-expanded={lateralAbierto}
+            aria-controls="sidebar"
+            onClick={() => setLateralAbierto((abierto) => !abierto)}
+          >
+            <IconoMenu className="size-5" />
+          </button>
+        )}
         <Marca />
         <div className="flex flex-1 justify-center">
-          <GlobalSearch inputClassName={piezas.busqueda} />
+          <GlobalSearch className={piezas.buscador} inputClassName={piezas.busqueda} />
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {isAdmin && piezas.admin && (
             <a href="/admin" className={piezas.admin}>
               <Settings className="size-4" />
               Administración
@@ -60,11 +60,12 @@ export function AppShell() {
           <Sesion />
         </div>
       </header>
+      {Menu && <Menu />}
       <div className="flex min-h-0 flex-1">
-        <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} onPlegar={lateral.plegar} />
+        {Lateral && <Lateral abierto={lateralAbierto} onNavegar={() => setLateralAbierto(false)} />}
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
-          <Breadcrumbs />
+          {Ruta && <Ruta />}
           <div ref={contenido} id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
             <Outlet />
           </div>
@@ -76,7 +77,8 @@ export function AppShell() {
 }
 
 // the keyboard's first stop, shown only while it has the focus: past the header, the menu, the workspace tabs and the
-// trail, to the screen itself (wcag 2.4.1). it moves the focus, not the url: a #hash is a navigation to the router
+// trail (under the portal the trail is in the screen's own title band), to the screen itself (wcag 2.4.1). it moves the
+// focus, not the url: a #hash is a navigation to the router
 function SaltarAlContenido() {
   return (
     <a
@@ -98,7 +100,8 @@ const CLASICO: PiezasShell = {
   admin: 'hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink sm:flex',
   Marca: MarcaClasica,
   Sesion: SesionClasica,
-  Lateral: LateralClasico
+  Lateral: LateralClasico,
+  Ruta: Breadcrumbs
 }
 
 function MarcaClasica() {

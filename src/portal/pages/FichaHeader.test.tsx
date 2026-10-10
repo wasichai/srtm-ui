@@ -12,10 +12,10 @@ beforeEach(() => {
   delete document.documentElement.dataset.theme
 })
 
-// under a theme picked in this browser (signed out, so no server preference)
-function renderIn(theme: string, ui: ReactElement) {
+// under a theme picked in this browser (signed out, so no server preference), on a page
+function renderIn(theme: string, ui: ReactElement, route = '/') {
   localStorage.setItem('srtm.theme', theme)
-  return renderWithProviders(ui, { config: { storagePrefix: 'srtm', themes: SRTM_THEMES }, user: null })
+  return renderWithProviders(ui, { config: { storagePrefix: 'srtm', themes: SRTM_THEMES }, user: null, route })
 }
 
 const ficha = (
@@ -48,6 +48,12 @@ describe('FichaHeader', () => {
     expect(container.innerHTML).toBe(CLASICO)
   })
 
+  // the trail is the shell's strip there, not the header's
+  it('keeps its markup on a page with a trail with light', () => {
+    const { container } = renderIn('light', ficha, '/contribuyentes/c1')
+    expect(container.innerHTML).toBe(CLASICO)
+  })
+
   it('keeps its markup without badges nor aside with light', () => {
     const { container } = renderIn('light', <FichaHeader kind="Catastro fiscal" title="Nuevo lote" />)
     expect(container.innerHTML).toBe(
@@ -67,6 +73,12 @@ describe('FichaHeader', () => {
     expect(fila).toHaveAttribute('data-ui', 'cabecera-fila')
     expect(within(fila).getByText('DNI 20529936')).toBeVisible()
     expect(within(fila).getByRole('button', { name: 'Eliminar' })).toBeVisible()
+  })
+
+  it("shows the trail to the ficha in the band with portal-tributario, the srtm's group and the screen", () => {
+    renderIn('portal-tributario', ficha, '/contribuyentes/c1')
+    const banda = screen.getByRole('heading', { level: 1 }).closest('[data-ui="banda-titulo"]') as HTMLElement
+    expect(within(banda).getByRole('navigation', { name: 'Ruta' })).toHaveTextContent(/^Registro tributario › Registro de contribuyente$/)
   })
 
   it('offers the help only when given one', () => {
