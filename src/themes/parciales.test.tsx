@@ -59,18 +59,175 @@ describe('controls.css', () => {
   })
 })
 
-describe('tabs.css', () => {
-  const css = read('tabs.css')
+describe('shell.css', () => {
+  const css = read('shell.css')
+  const tokens = rule(libraryTokens(), PORTAL)
+  const ITEM = `${PORTAL} [data-ui='riel-item']`
 
-  // the ficha's tabs are the library sheet's, on FichaTabs' data-slot
-  it("leaves the ficha's tabs to the library", () => {
-    expect(css).not.toMatch(/ficha-tab|ficha-panel|tabs-trigger/)
+  // the rail of modules (RielPortal): what its tokens do not say, the greys nav.css gives core's tree
+  it("pins the rail's greys: #555 icons, a hover, and the current section darker blue on grey, with AA", () => {
+    expect(rule(css, `${ITEM} > svg`).get('color')).toBe('#555555')
+    expect(rule(css, `${ITEM}:hover`).get('background-color')).toBe('#e9e9e9')
+    const actual = rule(css, `${ITEM}[aria-current]`)
+    expect(actual.get('background-color')).toBe('#e6e6e6')
+    expect(actual.get('color')).toBe('#0d4d80')
+    expect(rule(css, `${ITEM}[aria-current] > svg`).get('color')).toBe('inherit')
+    expect(contrast('#0d4d80', '#e6e6e6')).toBeGreaterThanOrEqual(4.5)
+    for (const fondo of [tokens.get('--table-head')!, '#e9e9e9', tokens.get('--surface')!]) {
+      expect(contrast(tokens.get('--ink')!, fondo)).toBeGreaterThanOrEqual(4.5)
+      // an icon is not text: 3:1
+      expect(contrast('#555555', fondo)).toBeGreaterThanOrEqual(3)
+    }
   })
 
-  it('joins the active workspace tab to what is under it', () => {
-    const active = rule(css, `${PORTAL} [data-ui='workspace-tab']:has(> [aria-current='page'])`)
-    expect(active.get('background')).toBe('var(--surface)')
-    expect(active.get('border-bottom-color')).toBe('var(--surface)')
+  // the group whose panel is open goes white, current or not: after the hover and the current section
+  it('draws the open group white', () => {
+    const selectores = rules(css).flatMap((r) => r.selectors)
+    const abierto = `${ITEM}[aria-expanded='true']`
+    expect(rule(css, abierto).get('background-color')).toBe('var(--surface)')
+    expect(selectores.indexOf(abierto)).toBeGreaterThan(selectores.indexOf(`${ITEM}[aria-current]`))
+    expect(selectores.indexOf(`${ITEM}[aria-current]`)).toBeGreaterThan(selectores.indexOf(`${ITEM}:hover`))
+  })
+
+  // core draws a leaf at its tree's root like a group: in the panel they are the prototype's leaves
+  it("draws the panel's trámites as the prototype's leaves, the current one marked, with AA", () => {
+    const HOJA = `${PORTAL} [data-ui='riel-panel'] a[data-slot='nav-tree-group']`
+    const hoja = rule(css, HOJA)
+    expect(hoja.get('padding')).toBe('9px 14px 9px 20px')
+    expect(hoja.get('border-left')).toBe('4px solid transparent')
+    expect(hoja.get('color')).toBe('var(--link)')
+    expect(hoja.get('font-size')).toBe('15px')
+    expect(hoja.get('font-weight')).toBe('normal')
+    expect(rule(css, `${HOJA}:hover`).get('background-color')).toBe('#e9e9e9')
+    const actual = rule(css, `${HOJA}[aria-current='page']`)
+    expect(actual.get('border-left-color')).toBe('var(--link)')
+    expect(actual.get('background-color')).toBe('#e6e6e6')
+    expect(actual.get('color')).toBe('#0d4d80')
+    expect(actual.get('font-weight')).toBe('bold')
+    expect(rule(css, `${HOJA} > [data-slot='nav-tree-caret']:empty`).get('display')).toBe('none')
+    for (const fondo of [tokens.get('--table-head')!, '#e9e9e9']) expect(contrast(tokens.get('--link')!, fondo)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it("shadows the group's panel like the session menu, towards the content", () => {
+    expect(rule(css, `${PORTAL} [data-ui='riel-panel']`).get('box-shadow')).toBe('6px 0 22px rgb(13 95 168 / 22%)')
+  })
+
+  // the theme's cyan gives 2.8:1 on the rail's grey: link blue, in the rail and in the panel (core's tree)
+  it('rings the focus in link blue in the rail and its panel, 3:1 on their greys', () => {
+    expect(rule(css, `${PORTAL} [data-ui='riel'] :focus-visible`).get('outline-color')).toBe('var(--link)')
+    for (const fondo of [tokens.get('--table-head')!, '#e9e9e9', '#e6e6e6', tokens.get('--surface')!]) {
+      expect(contrast(tokens.get('--link')!, fondo)).toBeGreaterThanOrEqual(3)
+    }
+  })
+})
+
+describe('tabs.css', () => {
+  const css = read('tabs.css')
+  const tokens = rule(libraryTokens(), PORTAL)
+  const CABECERA = `${PORTAL} [data-ui='workspace-tabs'][data-ubicacion='cabecera']`
+
+  // the open fichas as the brand bar's second row, like a browser's tabs
+  it('draws the workspace tabs on the brand bar: outlined in 35% white, open at the bottom, in the bar white', () => {
+    const tab = rule(css, `${CABECERA} [data-ui='workspace-tab']`)
+    expect(tab.get('border')).toBe('1px solid rgb(255 255 255 / 35%)')
+    expect(tab.get('border-bottom')).toBe('0')
+    expect(tab.get('background')).toBe('transparent')
+    expect(tab.get('color')).toBe('var(--shell-ink)')
+    expect(tab.get('font-size')).toBe('14px')
+    expect(rule(css, `${CABECERA} [data-ui='workspace-tab']:hover`).get('background')).toBe('color-mix(in srgb, var(--shell-ink) 10%, transparent)')
+    expect(contrast(tokens.get('--shell-ink')!, tokens.get('--shell')!)).toBeGreaterThanOrEqual(4.5)
+    // the hover: 10% white over #0d5fa8
+    expect(contrast(tokens.get('--shell-ink')!, 'rgb(37 111 177)')).toBeGreaterThanOrEqual(4.5)
+  })
+
+  // the page's background, so the tab and the page are one
+  it("joins the open one to the page: the page's grey, ink in bold", () => {
+    const selectores = rules(css).flatMap((r) => r.selectors)
+    const abierta = `${CABECERA} [data-ui='workspace-tab']:has(> [aria-current='page'])`
+    const active = rule(css, abierta)
+    expect(active.get('border-color')).toBe('var(--surface-muted)')
+    expect(active.get('background')).toBe('var(--surface-muted)')
+    expect(active.get('color')).toBe('var(--ink)')
+    expect(active.get('font-weight')).toBe('bold')
+    expect(contrast(tokens.get('--ink')!, tokens.get('--surface-muted')!)).toBeGreaterThanOrEqual(4.5)
+    // as specific as the hover: after it, so the open one keeps its grey under the pointer
+    expect(selectores.indexOf(abierta)).toBeGreaterThan(selectores.indexOf(`${CABECERA} [data-ui='workspace-tab']:hover`))
+  })
+
+  // white on the bar, ink on the open tab
+  it('gives the close buttons and the focus ring the colour of their tab', () => {
+    expect(rule(css, `${CABECERA} [data-ui='workspace-tab'] > button`).get('color')).toBe('inherit')
+    expect(rule(css, `${CABECERA} [data-ui='workspace-tab'] > button:hover`).get('background')).toBe('color-mix(in srgb, currentcolor 15%, transparent)')
+    const foco = rule(css, `${CABECERA} :focus-visible`)
+    expect(foco.get('outline-color')).toBe('currentcolor')
+    expect(foco.get('outline-offset')).toBe('-2px')
+  })
+
+  // under the theme the tabs are always in the bar: no rule for a strip over the content
+  it('paints the workspace tabs only in the bar', () => {
+    const tabs = rules(css)
+      .flatMap((r) => r.selectors)
+      .filter((selector) => selector.includes('workspace-tab'))
+    expect(tabs.length).toBeGreaterThan(0)
+    expect(tabs.filter((selector) => !selector.startsWith(CABECERA))).toEqual([])
+  })
+
+  // the ficha in two columns (FichaTabs' vertical variant, the portal's): srtm's. the horizontal tabs stay the
+  // library sheet's, on FichaTabs' data-slot
+  const VERTICAL = `${PORTAL} [data-slot='tabs'][data-orientation='vertical']`
+
+  it('paints only the vertical variant of the ficha tabs, more specific than every rule of the library sheet', () => {
+    const fichas = rules(css)
+      .flatMap((r) => r.selectors)
+      .filter((selector) => /tabs/.test(selector.replace('workspace-tabs', '')))
+    expect(fichas.length).toBeGreaterThan(0)
+    // the theme, the root and its orientation: three attributes before the part, against the library's one or two
+    // (and a pseudo-class)
+    expect(fichas.filter((selector) => !selector.startsWith(VERTICAL))).toEqual([])
+    expect(css).not.toMatch(/ficha-tab|ficha-panel/)
+  })
+
+  it("keeps the library's horizontal rules out: no container sizes, no strip line, no bottom borders", () => {
+    expect(rule(css, VERTICAL).get('container-type')).toBe('normal')
+    const lista = rule(css, `${VERTICAL} [data-slot='tabs-list']`)
+    expect(lista.get('background')).toBe('none')
+    expect(lista.get('padding')).toBe('0')
+    expect(lista.get('border')).toBe('0')
+    expect(rule(css, `${VERTICAL} [data-slot='tabs-trigger']`).get('border')).toBe('1px solid transparent')
+    expect(rule(css, `${VERTICAL} [data-slot='tabs-content']`).get('border')).toBe('1px solid var(--brand)')
+  })
+
+  it('draws the vertical tabs as grey folders, 16px, square on the right, with AA', () => {
+    const tab = rule(css, `${VERTICAL} [data-slot='tabs-trigger']`)
+    expect(tab.get('padding')).toBe('10px 16px')
+    expect(tab.get('border-radius')).toBe('3px 0 0 3px')
+    expect(tab.get('background')).toBe('#f0f0f0')
+    expect(tab.get('color')).toBe('#666666')
+    expect(tab.get('font-size')).toBe('16px')
+    expect(tab.get('font-weight')).toBe('normal')
+    expect(tab.get('text-align')).toBe('left')
+    expect(contrast('#666666', '#f0f0f0')).toBeGreaterThanOrEqual(4.5)
+    expect(rule(css, `${VERTICAL} [data-slot='tabs-trigger']:hover:not(:disabled)`).get('color')).toBe('var(--ink)')
+  })
+
+  // the open one: white, bold ink, steel on three sides; its white right border 1px over the panel's left one, above it
+  it('joins the open tab to the panel on its right', () => {
+    const abierta = rule(css, `${VERTICAL} [data-slot='tabs-trigger'][aria-selected='true']`)
+    expect(abierta.get('border-color')).toBe('var(--brand)')
+    expect(abierta.get('border-right-color')).toBe('var(--surface)')
+    expect(abierta.get('background')).toBe('var(--surface)')
+    expect(abierta.get('color')).toBe('var(--ink)')
+    expect(abierta.get('font-weight')).toBe('bold')
+    expect(abierta.get('margin-right')).toBe('-1px')
+    expect(abierta.get('position')).toBe('relative')
+    expect(abierta.get('z-index')).toBe('1')
+  })
+
+  it('boxes the panel in steel, square where the tabs meet it', () => {
+    const panel = rule(css, `${VERTICAL} [data-slot='tabs-content']`)
+    expect(panel.get('border-radius')).toBe('0 3px 3px 3px')
+    expect(panel.get('background')).toBe('var(--surface)')
+    expect(panel.get('padding-bottom')).toBe('24px')
   })
 
   it('writes the legend in 15px bold shell blue, without capitals or tracking', () => {
@@ -172,11 +329,10 @@ describe('banda.css', () => {
   const css = read('banda.css')
   const cabecera = `${PORTAL} [data-ui='cabecera-banda']`
 
-  // the header, then the box whose child is FichaTabs' strip (the card tabs.css steps aside): one relative selector,
-  // since a :has() cannot hold another
-  it('hangs the folder tabs from the header, without the page gap', () => {
-    expect(rule(css, `${cabecera}:has(+ * > [data-slot='tabs'])`).get('margin-block-end')).toBe('0')
-    expect(rule(css, `${cabecera}:has(+ * > [data-slot='tabs']) > [data-ui='cabecera-fila']`).get('padding-block-end')).toBe('10px')
+  // the portal's ficha is in two columns: its tabs no longer hang from the header, the page's gap stays
+  it('leaves the gap between the header and the ficha to the page', () => {
+    expect(css).not.toMatch(/data-slot='tabs'/)
+    expect(rules(css).flatMap((r) => r.selectors)).not.toContain(`${cabecera}:has(+ * > [data-slot='tabs'])`)
   })
 
   it("keeps a link of the band in the band's white, and its focus ring white", () => {

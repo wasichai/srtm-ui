@@ -15,11 +15,17 @@ const PANTALLAS: [RegExp, string][] = [
   [/^\/catastro\//, 'Lote de catastro fiscal']
 ]
 
-export function Breadcrumbs() {
+// the trail of the screen on the current path: none for a screen it does not name. the classic shell draws it in a
+// strip over the content; the portal's title band (CabeceraBanda), its last steps
+export function useRuta(): string[] {
   const { pathname } = useLocation()
   const pantalla = PANTALLAS.find(([pattern]) => pattern.test(pathname))?.[1]
-  if (!pantalla) return null
-  const pasos = [...RAIZ, pantalla]
+  return pantalla ? [...RAIZ, pantalla] : []
+}
+
+export function Breadcrumbs() {
+  const pasos = useRuta()
+  if (!pasos.length) return null
   return (
     <nav aria-label="Ruta" className="border-b border-border bg-surface px-6 py-2 text-xs text-ink-muted">
       <ol className="flex flex-wrap items-center gap-1">

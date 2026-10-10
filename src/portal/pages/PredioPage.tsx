@@ -4,14 +4,16 @@ import { Badge, Card } from '@wasichai/ui'
 import { Coins, Gavel, Landmark, MapPin, Megaphone, Receipt, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
+import { useVarianteTema } from '../../themes'
 import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, formatMoney } from '../components/format'
-import { StatCard } from '../components/StatCard'
+import { ResumenCifras, StatCard } from '../components/StatCard'
 import { YearSelect } from '../components/YearSelect'
 import { UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { useCatalogos } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
+import type { Totales } from '../types'
 import { AnunciosDe } from './AnunciosPages'
 import { ArbitriosDelPredio } from './Arbitrios'
 import { DatosPanel } from './DatosPanel'
@@ -21,6 +23,13 @@ import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
 import { InfraccionesDe } from './InfraccionesDe'
 import { VerPu } from './VerPdf'
+
+// the year's figures: a StatCard each over the tabs in light and dark, one card under them in the portal's two columns
+const cifrasDelAnio = (titulares: number, totales: Totales) => [
+  { icon: Users, label: 'Titulares', value: String(titulares) },
+  { icon: Receipt, label: 'Autoavalúo', value: formatMoney(totales.autoavaluo) },
+  { icon: Coins, label: 'Valor afecto', value: formatMoney(totales.valor_afecto) }
+]
 
 export function PredioRoute() {
   const { id = '' } = useParams()
@@ -34,6 +43,7 @@ function PredioPage({ id }: { id: string }) {
   const ficha = useQuery({ queryKey: ['predio', id, anio], queryFn: () => rentas.predio(id, anio), placeholderData: keepPreviousData })
   const p = ficha.data?.predio
   useWorkspaceTab(p ? { path: `/predios/${id}`, label: p.codigo ?? 'Predio', kind: 'predio' } : null)
+  const portal = useVarianteTema() === 'portal'
 
   return (
     <QueryState query={ficha}>
@@ -61,16 +71,19 @@ function PredioPage({ id }: { id: string }) {
               </div>
             }
           />
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard icon={Users} label={`Titulares ${anio}`} value={String(titulares)} />
-            <StatCard icon={Receipt} label={`Autoavalúo ${anio}`} value={formatMoney(totales.autoavaluo)} />
-            <StatCard icon={Coins} label={`Valor afecto ${anio}`} value={formatMoney(totales.valor_afecto)} />
-          </div>
+          {!portal && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {cifrasDelAnio(titulares, totales).map((cifra) => (
+                <StatCard key={cifra.label} icon={cifra.icon} label={`${cifra.label} ${anio}`} value={cifra.value} />
+              ))}
+            </div>
+          )}
           <Card className="pb-4">
             <FichaTabs
               label="Secciones del predio"
               active={params.get('tab') ?? 'ubicacion'}
               onChange={(tab) => setParams({ tab }, { replace: true })}
+              aside={portal && <ResumenCifras titulo={`Resumen ${anio}`} cifras={cifrasDelAnio(titulares, totales)} />}
               tabs={[
                 {
                   id: 'ubicacion',
