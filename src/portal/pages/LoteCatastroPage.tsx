@@ -9,6 +9,7 @@ import { rentas } from '../api'
 import { nombres, PERENE_UBIGEO, ubigeoCampos } from '../forms/bloques'
 import { CatastroMapa } from '../forms/CatastroMapa'
 import { useCatalogos, useRefresh } from '../queries'
+import { useVolver } from '../shell/useVolver'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { CatastroFiscal, Ubigeo } from '../types'
 import { FichaHeader } from './FichaHeader'
@@ -165,7 +166,8 @@ function LoteCard({
   save: (values: LoteForm) => Promise<void>
   guardado?: boolean
 }) {
-  const navigate = useNavigate()
+  // the lote editor is often opened in another browser tab (buscar predios, over a form being filled)
+  const volver = useVolver('/')
   const catalogos = useCatalogos()
   return (
     <div className="space-y-5">
@@ -177,7 +179,7 @@ function LoteCard({
             options={catalogos.data?.catastro_fiscal}
             initial={initial}
             submitLabel={submitLabel}
-            onCancel={() => navigate(-1)}
+            onCancel={volver}
             onSubmit={save}
             footer={() =>
               guardado && (

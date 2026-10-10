@@ -1,7 +1,7 @@
 import { cn } from '@wasichai/ui'
 import { Landmark, LogOut, Menu as IconoMenu, Settings } from 'lucide-react'
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
@@ -21,9 +21,17 @@ export function AppShell() {
   const [lateralAbierto, setLateralAbierto] = useState(false)
   const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
   const { Marca, Sesion, Menu, Lateral, Ruta, Pie } = piezas
+  const contenido = useRef<HTMLDivElement>(null)
+  const { pathname } = useLocation()
+  // the screens scroll in their own box, which the router does not reset: another screen starts at its top. another
+  // tab of the same ficha (?tab=) keeps its place
+  useLayoutEffect(() => {
+    if (contenido.current) contenido.current.scrollTop = 0
+  }, [pathname])
 
   return (
     <div className="flex h-full flex-col">
+      <SaltarAlContenido />
       <header className={piezas.cabecera}>
         {Lateral && (
           <button
@@ -58,13 +66,31 @@ export function AppShell() {
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <TabBar />
           {Ruta && <Ruta />}
-          <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
+          <div ref={contenido} id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
             <Outlet />
           </div>
         </main>
       </div>
       {Pie && <Pie />}
     </div>
+  )
+}
+
+// the keyboard's first stop, shown only while it has the focus: past the header, the menu, the workspace tabs and the
+// trail (under the portal the trail is in the screen's own title band), to the screen itself (wcag 2.4.1). it moves the
+// focus, not the url: a #hash is a navigation to the router
+function SaltarAlContenido() {
+  return (
+    <a
+      href="#contenido"
+      onClick={(event) => {
+        event.preventDefault()
+        document.getElementById('contenido')?.focus()
+      }}
+      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-ink focus:shadow-lg"
+    >
+      Saltar al contenido
+    </a>
   )
 }
 

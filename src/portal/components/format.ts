@@ -1,7 +1,7 @@
 import { currentYear } from '../../kit/format'
 
 // the kit's, for the portal's importers
-export { currentYear, formatDate, formatMoney, formatNumber, formatText } from '../../kit/format'
+export { currentYear, formatDate, formatMoney, formatNumber, formatText, parseNumber } from '../../kit/format'
 
 // the years a clerk picks from: this one and the four before
 export const recentYears = () => Array.from({ length: 5 }, (_, i) => currentYear() - i)

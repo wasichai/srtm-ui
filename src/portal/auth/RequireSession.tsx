@@ -9,7 +9,14 @@ export function RequireSession({ children }: { children: ReactNode }) {
   return children
 }
 
-// only same-site paths: ?next=//evil.example must not leave the app
+// only a path of this site, read as the browser reads it: ?next=//evil.example must not leave the app, nor
+// /\evil.example (a backslash is a slash to it) nor a path with a tab or a newline in it (it drops them)
 export function safeNext(next: string | null): string {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+  if (!next?.startsWith('/')) return '/'
+  try {
+    const url = new URL(next, window.location.origin)
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : '/'
+  } catch {
+    return '/'
+  }
 }
