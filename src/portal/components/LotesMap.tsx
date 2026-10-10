@@ -1,5 +1,6 @@
 import { cn } from '@wasichai/ui'
-import { lazy, Suspense } from 'react'
+import { MapPinOff } from 'lucide-react'
+import { Component, lazy, Suspense, type ReactNode } from 'react'
 import type { Bbox, FeatureCollection, Geometry } from './geo'
 
 export interface LotesMapProps {
@@ -25,9 +26,33 @@ const LotesMapImpl = lazy(() => import('./LotesMapImpl'))
 export function LotesMap({ className, ...props }: LotesMapProps) {
   return (
     <div className={cn('relative h-72 w-full overflow-hidden rounded-md border border-border bg-surface-muted', className)}>
-      <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-ink-muted">Cargando mapa…</div>}>
-        <LotesMapImpl {...props} />
-      </Suspense>
+      <SinMapa>
+        <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-ink-muted">Cargando mapa…</div>}>
+          <LotesMapImpl {...props} />
+        </Suspense>
+      </SinMapa>
     </div>
   )
+}
+
+// a map that cannot be drawn (a machine without webgl, a remote desktop; its chunk gone after a deploy) says so in its
+// place, and only there: the form or the dialog around it, and whatever the clerk typed, stay and can be saved. trying
+// again would fail the same way, so it offers nothing to click
+class SinMapa extends Component<{ children: ReactNode }, { fallo: boolean }> {
+  state = { fallo: false }
+
+  static getDerivedStateFromError() {
+    return { fallo: true }
+  }
+
+  render() {
+    if (!this.state.fallo) return this.props.children
+    return (
+      <div role="alert" className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-ink-muted">
+        <MapPinOff className="size-6" />
+        <p className="font-medium text-ink">No se pudo mostrar el mapa en este equipo.</p>
+        <p>El resto del formulario sigue disponible: puede continuar y guardar sin él.</p>
+      </div>
+    )
+  }
 }

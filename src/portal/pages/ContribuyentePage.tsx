@@ -108,7 +108,7 @@ function ContribuyentePage({ id }: { id: string }) {
               </>
             }
             aside={
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <YearSelect value={anio} onChange={setAnio} />
                 <VerHr contribuyente={id} codigo={contribuyente.codigo ?? contribuyente.numero_documento ?? id} anio={anio} />
                 <VerHla contribuyente={id} codigo={contribuyente.codigo ?? contribuyente.numero_documento ?? id} anio={anio} />

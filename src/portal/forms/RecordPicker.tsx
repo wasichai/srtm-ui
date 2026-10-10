@@ -78,12 +78,22 @@ export function RecordPicker<T>({ label, placeholder, value, onChange, search, d
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          // enter must not send the form around the picker (an acta, an anuncio) with the record picked before: a pick
+          // is a click on one of the results
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.preventDefault()
+          }}
           placeholder={placeholder}
           aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
           className="h-9 w-full rounded-md border border-border bg-surface pr-3 pl-9 text-sm aria-[invalid=true]:border-danger"
         />
       </div>
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="text-xs text-danger">
+          {error}
+        </p>
+      )}
       {term.length >= 2 && (
         <ul aria-label={`Resultados de ${label.toLowerCase()}`} className="max-h-48 overflow-y-auto rounded-md border border-border bg-surface text-sm">
           {results.isPending && <li className="px-3 py-2 text-ink-muted">Buscando…</li>}

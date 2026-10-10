@@ -316,6 +316,20 @@ describe('portal', () => {
     expect(await screen.findByRole('link', { name: /Administración/ })).toHaveAttribute('href', '/admin')
   })
 
+  it('skips the header, the menu and the workspace tabs to the screen, from the first tab stop', async () => {
+    start('/')
+    expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
+    await userEvent.tab()
+    expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    const contenido = document.getElementById('contenido')!
+    expect(contenido).toHaveFocus()
+    expect(contenido).toContainElement(screen.getByRole('heading', { name: 'Inicio' }))
+    // the focus moves, the url stays
+    expect(window.location.pathname).toBe('/')
+    expect(window.location.hash).toBe('')
+  })
+
   it('switches the theme from a menu and stores it for the user, as the admin does', async () => {
     start('/', [{ method: 'PUT', path: '/auth/me/preferences', body: { theme: 'portal-tributario', locale: null } }])
     const button = await screen.findByRole('button', { name: /^Tema: Sistema/ })
@@ -421,6 +435,31 @@ describe('portal', () => {
     expect(await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })).toBeInTheDocument()
     expect(within(tabBar()).queryByRole('link', { name: '01-01-0001' })).not.toBeInTheDocument()
     expect(JSON.parse(sessionStorage.getItem('srtm.tabs')!)).toHaveLength(1)
+  })
+
+  it('opens another screen at its top, and keeps the place on another tab of the same ficha', async () => {
+    start('/contribuyentes')
+    const contenido = document.getElementById('contenido')!
+    await userEvent.click(await screen.findByRole('link', { name: '20529936' }))
+    expect(await screen.findByRole('heading', { name: 'QUISPE MAMANI JUAN' })).toBeInTheDocument()
+    contenido.scrollTop = 400
+    await userEvent.click(screen.getByRole('tab', { name: 'Relacionados' }))
+    expect(contenido.scrollTop).toBe(400)
+    await userEvent.click(screen.getByRole('tab', { name: 'Predios' }))
+    await userEvent.click(await screen.findByRole('link', { name: '01-01-0001' }))
+    expect(await screen.findByRole('heading', { name: '01-01-0001 · JR. LIMA 123' })).toBeInTheDocument()
+    expect(contenido.scrollTop).toBe(0)
+  })
+
+  it("brings back the clerk's own workspace tabs, never those of a session that ended here without signing out", async () => {
+    const otra = { path: '/contribuyentes/c9', label: '11111111 OTRA PERSONA', kind: 'contribuyente' }
+    sessionStorage.setItem('srtm.tabs', JSON.stringify([otra]))
+    sessionStorage.setItem('srtm.tabs.usuario', 'u9')
+    start('/')
+    expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument()
+    expect(within(tabBar()).queryByRole('link', { name: /OTRA PERSONA/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/OTRA PERSONA/)).not.toBeInTheDocument()
+    expect(sessionStorage.getItem('srtm.tabs.usuario')).toBe('u1')
   })
 
   it('loads a ficha tab only when it is opened: the year for Predios, every year for Declaraciones', async () => {
