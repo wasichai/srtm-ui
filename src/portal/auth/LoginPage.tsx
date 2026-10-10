@@ -11,7 +11,8 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
-  const [email, setEmail] = useState('admin@wasichai.local')
+  // the seed's admin (srtm-backend), in development only: a real deployment names no account on its sign-in page
+  const [email, setEmail] = useState(import.meta.env.DEV ? 'admin@wasichai.local' : '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
