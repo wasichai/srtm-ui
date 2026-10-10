@@ -1,6 +1,6 @@
 import { cn } from '@wasichai/ui'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type KeyboardEvent, type ReactNode } from 'react'
 
 export interface FichaTab {
   id: string
@@ -16,13 +16,29 @@ export interface FichaTab {
 export function FichaTabs({ tabs, label, active, onChange }: { tabs: FichaTab[]; label: string; active: string; onChange: (id: string) => void }) {
   const current = tabs.find((t) => t.id === active && !t.disabled) ?? tabs[0]
   const [opened, setOpened] = useState<string[]>([current.id])
-  useEffect(() => setOpened((ids) => (ids.includes(current.id) ? ids : [...ids, current.id])), [current.id])
-  // the tab just picked shows in this render, before the effect records it
-  const mounted = opened.includes(current.id) ? opened : [...opened, current.id]
+  // recorded while rendering, not in an effect: the tab just picked mounts in this same render
+  if (!opened.includes(current.id)) setOpened([...opened, current.id])
+
+  // the wai-aria tabs pattern, activated by hand: the arrows walk the enabled tabs round, home and end jump to the
+  // ends, enter or space opens the focused one. opening on focus would mount every panel on the way (and, in the
+  // inscription, count each tab passed over as visited)
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const list = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'))
+    const at = list.indexOf(document.activeElement as HTMLButtonElement)
+    if (at < 0) return
+    const focus = (index: number) => {
+      event.preventDefault()
+      list[(index + list.length) % list.length].focus()
+    }
+    if (event.key === 'ArrowRight') focus(at + 1)
+    else if (event.key === 'ArrowLeft') focus(at - 1)
+    else if (event.key === 'Home') focus(0)
+    else if (event.key === 'End') focus(-1)
+  }
 
   return (
     <div data-slot="tabs">
-      <div role="tablist" data-slot="tabs-list" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-border px-4">
+      <div role="tablist" data-slot="tabs-list" aria-label={label} onKeyDown={onKeyDown} className="flex gap-1 overflow-x-auto border-b border-border px-4">
         {tabs.map((tab) => {
           const selected = tab.id === current.id
           const Icon = tab.icon
@@ -52,7 +68,7 @@ export function FichaTabs({ tabs, label, active, onChange }: { tabs: FichaTab[];
         })}
       </div>
       {tabs
-        .filter((tab) => mounted.includes(tab.id))
+        .filter((tab) => opened.includes(tab.id))
         .map((tab) => (
           <div key={tab.id} role="tabpanel" data-slot="tabs-content" id={`panel-${tab.id}`} aria-labelledby={`tab-${tab.id}`} hidden={tab.id !== current.id}>
             {tab.render()}

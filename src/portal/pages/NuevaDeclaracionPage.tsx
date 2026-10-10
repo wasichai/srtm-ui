@@ -1,8 +1,8 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Alert, Button, Card } from '@wasichai/ui'
 import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { FieldGrid } from '../../kit/forms/FieldGrid'
 import { useFormGroup, useSharedFields } from '../../kit/forms/group'
@@ -19,7 +19,8 @@ import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, 
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
-import { useCatalogos, useRefresh } from '../queries'
+import { basesDeArbitrio, dimensionesDeArbitrio, parametrosArbitrioQuery, useCatalogos, useParametrosArbitrio, useRefresh } from '../queries'
+import { useVolver } from '../shell/useVolver'
 import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
@@ -48,6 +49,8 @@ export function NuevaDeclaracionRoute() {
 // with its contribuyente, or with its predio (then the contribuyente is looked up in step one)
 function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: string; predio?: string }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const volver = useVolver(contribuyente ? `/contribuyentes/${contribuyente}?tab=declaraciones` : '/')
   const catalogos = useCatalogos()
   const refresh = useRefresh()
   const ficha = useQuery({
@@ -77,17 +80,21 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   // what was typed in either step is lost by leaving: asked first
   const grupo = useFormGroup(['datos', 'ubicacion'] as const)
   const salida = useUnsavedChanges(grupo.pending.map((tab) => DECLARACION_TABS.find((t) => t.id === tab)!.label))
-  const [sections] = useState(() =>
-    ubicacionSections((elegido: Elegido) => {
-      const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
-      if (!predio) return false
-      setBuscado(predio)
-      // the declaration is on that predio: its tipo is the predio's
-      if (predio.tipo_predio) comun.change('tipo_predio', predio.tipo_predio)
-      setError(null)
-      return true
-    })
-  )
+  const [alElegir] = useState(() => (elegido: Elegido) => {
+    const predio = elegido.kind === 'predio' ? elegido.predio : elegido.predio
+    if (!predio) return false
+    setBuscado(predio)
+    // the declaration is on that predio: its tipo is the predio's
+    if (predio.tipo_predio) comun.change('tipo_predio', predio.tipo_predio)
+    setError(null)
+    return true
+  })
+  // the ubicación step comes after datos del predio, which says the año: when a servicio of that año reads its tasa
+  // by INFLUENCIA, a new predio is asked for its ubicación respecto a áreas verdes, as in the DJ (wasichai/srtm-ui#94).
+  // while the query loads or fails, optional, as before
+  const parametrosArbitrio = useParametrosArbitrio(anio ?? undefined)
+  const conInfluencia = useMemo(() => dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA'), [parametrosArbitrio.data])
+  const sections = useMemo(() => ubicacionSections(alElegir, conInfluencia), [alElegir, conInfluencia])
   const tipoPredio = comun.values.tipo_predio ?? (datos as DatosDelPredio | null)?.tipo_predio ?? 'PREDIO URBANO'
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice
@@ -116,8 +123,23 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
       await refresh()
       salida.allow()
-      // just presented: no transferentes yet
-      navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0)}&asistente=1`, { replace: true })
+      // just presented: no transferentes yet. las bases del año recién presentado, pedidas justo aquí por ese año
+      // exacto - no las de un año que el clerk haya cambiado en el formulario mientras esto corría, ni las de un
+      // año distinto que haya quedado en caché (wasichai/srtm-ui#94). queryClient.query, no fetchQuery (obsoleto en
+      // query-core 5.103): igual que él, usa la caché mientras está fresca y lanza si la consulta falla. sin año, o
+      // si falla, bases queda vacío: como hoy
+      let bases = new Set<string>()
+      if (dj.declaracion.anio != null) {
+        try {
+          const parametros = await queryClient.query(parametrosArbitrioQuery(dj.declaracion.anio))
+          bases = basesDeArbitrio(parametros.parametros)
+        } catch {
+          // sin datos: bases queda vacío, como hoy
+        }
+      }
+      navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0, bases)}&asistente=1`, {
+        replace: true
+      })
     } catch (e) {
       // what was refused goes under its field, in its step (this one, when the field is in both)
       const con = grupo.errors(e, ['datos', 'ubicacion'])
@@ -147,7 +169,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
         title="Nueva declaración jurada predial"
         detalle="Declaración jurada y registro de predio"
       >
-        <Button variant="secondary" onClick={() => navigate(-1)}>
+        <Button variant="secondary" onClick={volver}>
           <X className="size-4" />
           Cancelar
         </Button>

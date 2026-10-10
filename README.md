@@ -229,7 +229,16 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");
-  - cada pantalla muestra la ruta del SRTM ("Registro tributario y determinación › Registro tributario › …").
+  - cada pantalla muestra la ruta del SRTM ("Registro tributario y determinación › Registro tributario › …");
+  - las cifras se escriben como el portal las muestra: punto decimal y, si se quiere, comas de miles (`1,250.50`). Una
+    coma antes de decimales (`1,5`) se rechaza con un aviso, no se adivina;
+  - teclado: "Saltar al contenido" es la primera parada; las pestañas de una ficha se recorren con las flechas (Inicio
+    y Fin a los extremos) y se abren con Enter;
+  - una pantalla que falla al dibujarse lo dice en el contenido, con "Volver a intentar" e "Ir al inicio", sin perder
+    la cabecera ni las pestañas de trabajo; un mapa que no se puede dibujar (sin WebGL) lo dice en su sitio y deja el
+    formulario disponible;
+  - las pestañas de trabajo son del usuario que las abrió (`srtm.tabs.usuario`): otro usuario en la misma pestaña del
+    navegador no las ve.
 - **Mapas:** `components/LotesMap.tsx` usa maplibre-gl 6.10.0 y terra-draw 1.33.0, las mismas versiones que
   `@wasichai/gis`.
   - Se carga diferido: maplibre solo baja con el primer mapa. `main.tsx` le pasa la URL del worker.

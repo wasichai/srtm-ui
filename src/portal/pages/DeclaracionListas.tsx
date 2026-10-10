@@ -1,6 +1,6 @@
 import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { formatNumber, formatText, MESES, today } from '../components/format'
+import { formatNumber, formatText, MESES, parseNumber, today } from '../components/format'
 import { PERENE_UBIGEO } from '../forms/bloques'
 import { COLUMNAS } from '../forms/CategoriasFields'
 import { FRENTE_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
@@ -91,6 +91,7 @@ export function ObrasPanel({ declaracion, readOnly }: { declaracion: string; rea
       queryKey="obras"
       plural="obras complementarias"
       singular="obra complementaria"
+      femenino
       sections={OBRA_SECTIONS}
       catalog="obra_complementaria"
       wide
@@ -105,9 +106,10 @@ export function ObrasPanel({ declaracion, readOnly }: { declaracion: string; rea
         })
       }
       footer={(v: FormValues) => {
-        const cantidad = Number((v.cantidad ?? '').replace(',', '.'))
-        const metrado = Number((v.metrado ?? '').replace(',', '.'))
-        const total = v.cantidad && v.metrado && Number.isFinite(cantidad * metrado) ? cantidad * metrado : null
+        // read as the form sends them (parseNumber): what the preview shows is what gets saved
+        const cantidad = parseNumber(v.cantidad ?? '')
+        const metrado = parseNumber(v.metrado ?? '')
+        const total = cantidad !== null && metrado !== null ? cantidad * metrado : null
         return (
           <div className="max-w-xs space-y-1.5">
             <p className="text-xs text-ink-muted">Total metrado</p>
