@@ -143,7 +143,8 @@ export function BrechaPage() {
         <QueryState query={corridas}>
           {() =>
             terminada ? (
-              <Resultados key={anio} anio={anio} corrida={terminada} />
+              // a new corrida (or year) starts its results afresh: no filter or page of the previous one
+              <Resultados key={`${anio}-${terminada.id}`} anio={anio} corrida={terminada} />
             ) : (
               <Card>
                 <EmptyState title={`Aún no se ha calculado la brecha de ${anio}`}>
@@ -246,9 +247,19 @@ function Kpis({ panel, mensaje }: { panel: PanelBrecha; mensaje: string | null }
         icon={Landmark}
         label="Δ autoavalúo"
         value={formatMoney(kpis.deltaAutoavaluo)}
-        nota={`Declarado ${formatMoney(kpis.autoavaluoDeclarado)} · catastro ${formatMoney(kpis.autoavaluoCatastro)}`}
+        nota={`Declarado ${formatMoney(kpis.autoavaluoDeclarado)} · catastro ${formatMoney(kpis.autoavaluoCatastro)} (predios comparados y omisos)`}
       />
-      <StatCard icon={Coins} label="Δ impuesto predial" value={formatMoney(kpis.deltaImpuesto)} fecha={fecha} />
+      <StatCard
+        icon={Coins}
+        label="Δ impuesto predial"
+        value={formatMoney(kpis.deltaImpuesto)}
+        fecha={fecha}
+        nota={
+          kpis.deltaImpuestoOmisosEstimado === null || kpis.deltaImpuestoOmisosEstimado === undefined
+            ? 'Neto (subvaluados − sobrevaluados) + omisos estimados'
+            : `Neto (subvaluados − sobrevaluados) + omisos estimados (${formatMoney(kpis.deltaImpuestoOmisosEstimado)})`
+        }
+      />
       <StatCard
         icon={Receipt}
         label="Δ arbitrios"

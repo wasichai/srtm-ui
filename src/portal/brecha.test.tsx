@@ -64,11 +64,14 @@ const panel = {
     coinciden: 1,
     sinCatastro: 1,
     sinValor: 0,
-    autoavaluoDeclarado: 250000,
+    autoavaluoDeclarado: 180000,
     autoavaluoCatastro: 270000,
     deltaAutoavaluo: 90000,
     deltaImpuesto: 1234.56,
-    deltaArbitrios: null
+    deltaArbitrios: null,
+    deltaImpuestoOmisosEstimado: 240,
+    autoavaluoDeclaradoTotal: 250000,
+    autoavaluoCatastroTotal: 270000
   },
   porCategoria: [
     fila('OMISO', 1, 240),
@@ -227,8 +230,10 @@ describe('brecha de recaudación', () => {
     expect(tarjeta('Sobrevaluados')).toHaveTextContent('0')
     expect(tarjeta('Sin catastro')).toHaveTextContent('1')
     expect(tarjeta('Δ autoavalúo')).toHaveTextContent('S/ 90,000.00')
-    expect(tarjeta('Δ autoavalúo')).toHaveTextContent('Declarado S/ 250,000.00 · catastro S/ 270,000.00')
+    // the three figures reconcile: 180,000 + 90,000 = 270,000
+    expect(tarjeta('Δ autoavalúo')).toHaveTextContent('Declarado S/ 180,000.00 · catastro S/ 270,000.00 (predios comparados y omisos)')
     expect(tarjeta('Δ impuesto predial')).toHaveTextContent('S/ 1,234.56')
+    expect(tarjeta('Δ impuesto predial')).toHaveTextContent('Neto (subvaluados − sobrevaluados) + omisos estimados (S/ 240.00)')
     // no Δ arbitrios is never a 0: the corrida's mensaje says why
     expect(tarjeta('Δ arbitrios')).toHaveTextContent('No calculado')
     expect(tarjeta('Δ arbitrios')).toHaveTextContent('faltan Ordenanza de arbitrios')
@@ -346,6 +351,51 @@ describe('brecha de recaudación', () => {
     expect(ultima).toHaveTextContent(`Faltan parámetros del impuesto predial: UIT ${year}`)
     expect(await screen.findByRole('region', { name: 'Indicadores de la brecha' })).toBeInTheDocument()
     expect(llamadas('GET', `/srtm/brecha/${year}/panel`)[0].path).toBe(`/srtm/brecha/${year}/panel?corrida=c1`)
+  })
+
+  it('stops waiting on a corrida the backend reads abandoned (FALLIDA) and lets another start', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    const lista: MockRoute = { path: '/srtm/brecha/corridas', body: [corrida({ id: 'c2', estado: 'EN_CURSO', totalPredios: 10, procesados: 4 }), terminada] }
+    start('/brecha', lista)
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Última corrida' })).toHaveTextContent('En curso'))
+    expect(screen.getByRole('button', { name: 'Calcular brecha' })).toBeDisabled()
+
+    // its instance died: the backend answers it FALLIDA once its latido is past the lease
+    lista.body = [
+      corrida({ id: 'c2', estado: 'FALLIDA', totalPredios: 10, procesados: 4, mensaje: 'Abandonada: sin latido desde 2026-10-19T15:00:00Z' }),
+      terminada
+    ]
+    await act(() => vi.advanceTimersByTimeAsync(2000))
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Última corrida' })).toHaveTextContent('Fallida'))
+    expect(screen.getByRole('region', { name: 'Última corrida' })).toHaveTextContent('Abandonada: sin latido desde')
+    expect(screen.getByRole('button', { name: 'Calcular brecha' })).toBeEnabled()
+
+    const pedidos = llamadas('GET', '/srtm/brecha/corridas').length
+    await act(() => vi.advanceTimersByTimeAsync(6000))
+    expect(llamadas('GET', '/srtm/brecha/corridas')).toHaveLength(pedidos)
+  })
+
+  it('starts the results of a new corrida afresh, without the filters of the previous one', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    const lista: MockRoute = { path: '/srtm/brecha/corridas', body: [corrida({ id: 'c3', estado: 'EN_CURSO', totalPredios: 10, procesados: 4 }), terminada] }
+    start('/brecha', lista)
+    const categorias = await screen.findByRole('table', { name: 'Brecha por categoría' })
+    await screen.findByRole('table', { name: 'Predios de la brecha' })
+    await userEvent.click(within(categorias).getByRole('button', { name: 'Omisos' }))
+    await waitFor(() =>
+      expect(llamadas('GET', `/srtm/brecha/${year}/predios`).at(-1)?.path).toBe(`/srtm/brecha/${year}/predios?categoria=OMISO&page=0&size=20&corrida=c1`)
+    )
+
+    lista.body = [{ ...terminada, id: 'c3' }, terminada]
+    await act(() => vi.advanceTimersByTimeAsync(2000))
+    await waitFor(() => expect(llamadas('GET', `/srtm/brecha/${year}/predios`).at(-1)?.path).toBe(`/srtm/brecha/${year}/predios?page=0&size=20&corrida=c3`))
+    await waitFor(() =>
+      expect(within(screen.getByRole('table', { name: 'Brecha por categoría' })).getByRole('button', { name: 'Omisos' })).toHaveAttribute(
+        'aria-pressed',
+        'false'
+      )
+    )
+    expect(screen.queryByRole('button', { name: 'Quitar el filtro de categoría Omisos' })).not.toBeInTheDocument()
   })
 
   it("says the backend's reason when it refuses a corrida (409)", async () => {

@@ -1317,11 +1317,18 @@ export interface KpisBrecha {
   coinciden: number
   sinCatastro: number
   sinValor: number
+  // over the same predios (compared on both sides, and the omisos): declarado + Δ = catastro
   autoavaluoDeclarado: number | null
   autoavaluoCatastro: number | null
   deltaAutoavaluo: number | null
+  // net: what the subvaluados add less what the sobrevaluados take, plus the omisos' estimate
   deltaImpuesto: number | null
   deltaArbitrios: number | null
+  // the omisos' part of deltaImpuesto (each liquidated alone)
+  deltaImpuestoOmisosEstimado?: number | null
+  // every row (SIN_CATASTRO and SIN_VALOR too): they do not reconcile with deltaAutoavaluo
+  autoavaluoDeclaradoTotal?: number | null
+  autoavaluoCatastroTotal?: number | null
 }
 
 // GET /srtm/brecha/{anio}/panel: the six categorías always, in the backend's order; the sectores sorted, null last
