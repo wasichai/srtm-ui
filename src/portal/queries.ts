@@ -1,7 +1,17 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
-import type { DeterminacionMasiva, Emision, FiltrosActas, FiltrosAnuncios, FiltrosCuis, FiltrosNotificaciones, ParametroTributario } from './types'
+import type {
+  CorridaBrecha,
+  DeterminacionMasiva,
+  Emision,
+  FiltrosActas,
+  FiltrosBrecha,
+  FiltrosAnuncios,
+  FiltrosCuis,
+  FiltrosNotificaciones,
+  ParametroTributario
+} from './types'
 
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
@@ -176,4 +186,46 @@ export function useTasasAnuncios(anio: number) {
 
 export function useAnunciosDe(de: 'contribuyentes' | 'predios', id: string) {
   return useQuery({ queryKey: claves.anunciosDe(de, id), queryFn: () => rentas.anunciosDe(de, id) })
+}
+
+// the brecha de recaudación's query keys: all under ['brecha'], so a new corrida invalidates its list and whatever
+// reads its rows at once. the rows are keyed by the corrida they come from: a newer one reads them anew
+export const clavesBrecha = {
+  brecha: ['brecha'] as const,
+  corridas: (anio: number) => ['brecha', 'corridas', anio] as const,
+  panel: (anio: number, corrida: string) => ['brecha', 'panel', anio, corrida] as const,
+  predios: (anio: number, corrida: string, { categoria, sector }: FiltrosBrecha, page: number) =>
+    ['brecha', 'predios', anio, corrida, categoria ?? null, sector ?? null, page] as const,
+  lotes: (anio: number, corrida: string) => ['brecha', 'lotes', anio, corrida] as const
+}
+
+// a corrida still to end: the backend moves it on its own
+export const corridaActiva = (corrida: CorridaBrecha | undefined) => corrida?.estado === 'PENDIENTE' || corrida?.estado === 'EN_CURSO'
+
+// a year's corridas de brecha, newest first: asked every 2 s while one of them runs, not at all otherwise
+export function useCorridasBrecha(anio: number, enabled = true) {
+  return useQuery({
+    queryKey: clavesBrecha.corridas(anio),
+    queryFn: () => rentas.corridasBrecha(anio),
+    enabled,
+    refetchInterval: (query) => ((query.state.data ?? []).some(corridaActiva) ? 2000 : false)
+  })
+}
+
+// what a TERMINADA corrida measured: asked only once there is one
+export function usePanelBrecha(anio: number, corrida: string | undefined) {
+  return useQuery({ queryKey: clavesBrecha.panel(anio, corrida ?? ''), queryFn: () => rentas.panelBrecha(anio, corrida), enabled: Boolean(corrida) })
+}
+
+export function usePrediosBrecha(anio: number, corrida: string | undefined, filtros: FiltrosBrecha, page: number) {
+  return useQuery({
+    queryKey: clavesBrecha.predios(anio, corrida ?? '', filtros, page),
+    queryFn: () => rentas.prediosBrecha(anio, filtros, page, corrida),
+    enabled: Boolean(corrida),
+    placeholderData: keepPreviousData
+  })
+}
+
+export function useLotesBrecha(anio: number, corrida: string | undefined) {
+  return useQuery({ queryKey: clavesBrecha.lotes(anio, corrida ?? ''), queryFn: () => rentas.lotesBrecha(anio, corrida), enabled: Boolean(corrida) })
 }

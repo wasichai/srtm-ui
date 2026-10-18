@@ -226,6 +226,24 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     El selector incluye el año siguiente, para revisar las tasas cargadas antes de que rijan.
   - Pestaña **Anuncios** de las fichas de contribuyente y de predio (`?tab=anuncios`), con el estado al día.
   - Las consultas cuelgan de la clave `['anuncios', …]` (`claves.anuncios`): un acto refresca padrón, ficha y pestañas.
+- **Brecha de recaudación** (`/brecha`; grupo _Fiscalización_ del menú, y en el menú clásico): el padrón de srtm
+  frente a la valorización del catastro de los mismos predios (`/srtm/brecha` de srtm-backend). Todas las cifras son
+  del backend; la pantalla no calcula nada.
+  - **Calcular brecha** lanza una corrida del año elegido (`POST /srtm/brecha/corridas`); pide creación y edición sobre
+    `brecha_corrida` y creación sobre `brecha_predio` (sin ellas el botón se ve deshabilitado con el porqué). La lista
+    de corridas del año se vuelve a pedir cada 2 s mientras una corre: la última muestra su estado y su avance
+    (predios procesados / total), por qué falló una _Fallida_ o lo que una _Terminada_ no pudo calcular. Un 409 (otra
+    corrida en curso, catastro sin configurar) muestra el detalle del backend.
+  - Con una corrida _Terminada_, el panel, los predios y el mapa leen esa misma corrida (`?corrida=`): indicadores
+    (predios en catastro y en el padrón, omisos, subvaluados, sobrevaluados, coinciden, sin catastro, sin valor, Δ
+    autoavalúo, Δ impuesto y Δ arbitrios en soles; sin Δ arbitrios dice «No calculado» con el mensaje de la corrida,
+    nunca un 0), las tablas **por categoría** y **por sector**, y los **predios** paginados. Elegir una categoría o un
+    sector en sus tablas filtra los predios (se combinan y se quitan desde la cabecera de la tabla); el código de un
+    predio del padrón abre su ficha. Los predios sin sector no se pueden filtrar: el backend busca el sector exacto.
+  - El **mapa** pinta cada lote con el color de su categoría (`colorPor` de `LotesMap`, una expresión `match` de
+    maplibre sobre la propiedad `categoria`), con la leyenda encima. Los colores son los del tema (`--danger`,
+    `--warning`, `--brand`, `--success`, `--ink-muted`, `--ink`) y se repintan al cambiar de tema.
+  - Leer la brecha pide lectura sobre `brecha_corrida`.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

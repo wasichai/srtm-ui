@@ -100,10 +100,11 @@ describe('NAV_TREE', () => {
       ],
       ['Anuncios y propaganda', ['Padrón de anuncios /anuncios', 'Nuevo anuncio /anuncios/nuevo', 'Tasas de anuncios /anuncios/tasas']],
       ['Emisión', ['Emisión masiva /emisiones']],
+      ['Fiscalización', ['Brecha de recaudación /brecha']],
       'Administración /admin'
     ])
     expect(ver(arbolPara(NAV_TREE, { isAdmin: false }))).not.toContain('Administración /admin')
-    expect(arbolPara(NAV_TREE, { isAdmin: false })).toHaveLength(8)
+    expect(arbolPara(NAV_TREE, { isAdmin: false })).toHaveLength(9)
   })
 
   // a leaf is current on its route and the routes under it, the most specific leaf winning; a ficha with no leaf of
@@ -123,6 +124,7 @@ describe('NAV_TREE', () => {
     ['/catastro/nuevo', 'Nuevo lote'],
     ['/catastro/l1', undefined],
     ['/emisiones', 'Emisión masiva'],
+    ['/brecha', 'Brecha de recaudación'],
     ['/arbitrios', 'Consulta de cuotas'],
     ['/arbitrios/tasas', 'Tasas del año'],
     ['/arbitrios/determinaciones', 'Determinación masiva'],
@@ -167,7 +169,8 @@ describe('portal-tributario tree menu', () => {
       'Arbitrios',
       'Infracciones administrativas',
       'Anuncios y propaganda',
-      'Emisión'
+      'Emisión',
+      'Fiscalización'
     ].map((name) => within(nav).getByRole('button', { name }))
     for (const grupo of grupos) {
       expect(grupo).toHaveAttribute('aria-expanded', 'true')
@@ -197,6 +200,7 @@ describe('portal-tributario tree menu', () => {
       ['Nuevo anuncio', '/anuncios/nuevo'],
       ['Tasas de anuncios', '/anuncios/tasas'],
       ['Emisión masiva', '/emisiones'],
+      ['Brecha de recaudación', '/brecha'],
       ['Administración', '/admin']
     ])
     expect(within(nav).getByRole('link', { name: 'Buscar contribuyentes' })).toHaveClass('text-[15px]', 'text-link', 'pl-[34px]')
@@ -371,7 +375,7 @@ describe('portal-tributario tree menu', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent)
-    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Arbitrios', 'Infracciones', 'Anuncios', 'Emisión masiva'])
+    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Arbitrios', 'Infracciones', 'Anuncios', 'Emisión masiva', 'Brecha de recaudación'])
     expect(within(nav).queryByText('Mis trámites')).not.toBeInTheDocument()
     const menu = within(screen.getByRole('banner')).getByRole('button', { name: 'Menú' })
     expect(menu).toHaveClass('md:hidden')
