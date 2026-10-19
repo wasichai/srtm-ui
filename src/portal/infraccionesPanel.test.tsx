@@ -468,17 +468,18 @@ describe('pestaña Infracciones de las fichas', () => {
 })
 
 describe('menú de escalas y plazos', () => {
-  it('the tree menu has Escalas y plazos last in the group, current on its page', async () => {
+  it("the rail's Infracciones panel has Escalas y plazos last, current on its page", async () => {
     start('/infracciones/plazos', [{ path: '/srtm/infracciones/notificaciones/vencidas', body: pagina([]) }], { theme: 'portal-tributario' })
-    const lateral = screen.getByRole('navigation', { name: 'Secciones' })
-    await waitFor(() => expect(within(lateral).getByRole('link', { name: 'Escalas y plazos' })).toHaveAttribute('aria-current', 'page'))
-    const hojas = within(lateral)
+    await screen.findByText(`Ninguna notificación previa vencida sin acta al ${dmy(hoy())}.`)
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Secciones' })).getByRole('button', { name: 'Infracciones' }))
+    const panel = screen.getByRole('navigation', { name: 'Trámites: Infracciones administrativas' })
+    expect(within(panel).getByRole('link', { name: 'Escalas y plazos' })).toHaveAttribute('aria-current', 'page')
+    const hojas = within(panel)
       .getAllByRole('link')
       .map((l) => l.textContent)
-    const desde = hojas.indexOf('Expedientes')
-    expect(hojas.slice(desde, desde + 5)).toEqual(['Expedientes', 'Nueva acta', 'Notificaciones previas', 'CUIS', 'Escalas y plazos'])
+    expect(hojas.slice(-5)).toEqual(['Expedientes', 'Nueva acta', 'Notificaciones previas', 'CUIS', 'Escalas y plazos'])
     expect(
-      within(lateral)
+      within(panel)
         .getAllByRole('link')
         .filter((l) => l.getAttribute('aria-current') === 'page')
     ).toHaveLength(1)
