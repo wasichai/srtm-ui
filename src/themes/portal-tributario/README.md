@@ -400,7 +400,7 @@ menú de móvil.
   `corto` (la etiqueta del riel cuando la completa no cabe en 104px), y sus `children` son nodos de srtm:
   Contribuyentes (`Users`), Predios (`MapPinned`), Declaraciones (`FileText`), Catastro (`LandPlot`), Arbitrios
   (`Landmark`), Infracciones (`Gavel`, de "Infracciones administrativas"), Anuncios (`Megaphone`, de "Anuncios y
-  propaganda") y Emisión (`Printer`).
+  propaganda"), Emisión (`Printer`) y Fiscalización (`ChartColumn`).
 - **Sección actual**: el grupo que tiene la hoja actual (`currentNavTreeLeaf` de core: su ruta, luego `alsoAt`, luego
   el inicio más largo) lleva `aria-current="true"`, borde izquierdo de 4px `link`, fondo `#E6E6E6`, texto e ícono
   `#0D4D80` y negrita; "Inicio", lo mismo en `/` (`aria-current="page"`). Una ruta hija marca su grupo

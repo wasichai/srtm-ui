@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { currentNavTreeLeaf } from '@wasichai/core'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
-import { FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Users } from 'lucide-react'
+import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Users } from 'lucide-react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
 import { arbolPara, NAV_TREE, type GrupoNav, type NodoNav } from './shell/navTree'
@@ -104,10 +104,11 @@ describe('NAV_TREE', () => {
       ],
       ['Anuncios y propaganda', ['Padrón de anuncios /anuncios', 'Nuevo anuncio /anuncios/nuevo', 'Tasas de anuncios /anuncios/tasas']],
       ['Emisión', ['Emisión masiva /emisiones']],
+      ['Fiscalización', ['Brecha de recaudación /brecha']],
       'Administración /admin'
     ])
     expect(ver(arbolPara(NAV_TREE, { isAdmin: false }))).not.toContain('Administración /admin')
-    expect(arbolPara(NAV_TREE, { isAdmin: false })).toHaveLength(8)
+    expect(arbolPara(NAV_TREE, { isAdmin: false })).toHaveLength(9)
   })
 
   // what the rail draws of each group: its icon and, when the full label does not fit 104px, a short one
@@ -121,7 +122,8 @@ describe('NAV_TREE', () => {
       ['Arbitrios', Landmark],
       ['Infracciones', Gavel],
       ['Anuncios', Megaphone],
-      ['Emisión', Printer]
+      ['Emisión', Printer],
+      ['Fiscalización', ChartColumn]
     ])
   })
 
@@ -142,6 +144,7 @@ describe('NAV_TREE', () => {
     ['/catastro/nuevo', 'Nuevo lote'],
     ['/catastro/l1', undefined],
     ['/emisiones', 'Emisión masiva'],
+    ['/brecha', 'Brecha de recaudación'],
     ['/arbitrios', 'Consulta de cuotas'],
     ['/arbitrios/tasas', 'Tasas del año'],
     ['/arbitrios/determinaciones', 'Determinación masiva'],
@@ -182,6 +185,7 @@ describe('portal-tributario rail', () => {
       ['BUTTON', 'Infracciones'],
       ['BUTTON', 'Anuncios'],
       ['BUTTON', 'Emisión'],
+      ['BUTTON', 'Fiscalización'],
       ['A', 'Administración']
     ])
     const inicio = within(nav).getByRole('link', { name: 'Inicio' })
@@ -391,7 +395,7 @@ describe('portal-tributario rail', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent)
-    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Arbitrios', 'Infracciones', 'Anuncios', 'Emisión masiva'])
+    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Arbitrios', 'Infracciones', 'Anuncios', 'Emisión masiva', 'Brecha de recaudación'])
     expect(nav.querySelector('[data-ui="riel-item"]')).toBeNull()
     const menu = within(screen.getByRole('banner')).getByRole('button', { name: 'Menú' })
     expect(menu).toHaveClass('md:hidden')

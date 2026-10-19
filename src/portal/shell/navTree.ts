@@ -1,5 +1,5 @@
 import { isNavTreeGroup, type NavTreeGroup, type NavTreeLeaf } from '@wasichai/core'
-import { FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Settings, Users, type LucideIcon } from 'lucide-react'
+import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Settings, Users, type LucideIcon } from 'lucide-react'
 
 // the tree menu of the portal (portal-tributario theme): what a clerk does, grouped by what it is done on. the rail
 // (RielPortal) draws one item per group and opens its trámites beside it; the home page is not a leaf, the rail's
@@ -85,6 +85,8 @@ export const NAV_TREE: NodoNav[] = [
   },
   // the HR and PU of a whole year, in the background
   { label: 'Emisión', icon: Printer, children: [{ label: 'Emisión masiva', to: '/emisiones' }] },
+  // the padrón against catastro's valuation of the same predios: what the municipality fails to collect
+  { label: 'Fiscalización', icon: ChartColumn, children: [{ label: 'Brecha de recaudación', to: '/brecha' }] },
   { label: 'Administración', to: '/admin', external: true, soloAdmin: true, icon: Settings }
 ]
 

@@ -1,5 +1,5 @@
 import { cn } from '@wasichai/ui'
-import { Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Search, Users } from 'lucide-react'
+import { ChartColumn, Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Search, Users } from 'lucide-react'
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 
@@ -17,7 +17,9 @@ export const NAV = [
   { to: '/infracciones', label: 'Infracciones', icon: Gavel, end: false },
   // its pages link to each other (SubnavAnuncios)
   { to: '/anuncios', label: 'Anuncios', icon: Megaphone, end: false },
-  { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false }
+  { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false },
+  // the padrón against catastro (the brecha de recaudación), next to the other panels of a year
+  { to: '/brecha', label: 'Brecha de recaudación', icon: ChartColumn, end: false }
 ]
 
 // the lateral gets whether it is open (the header's menu button, usePanelLateral) and tells a pick, which closes it.
