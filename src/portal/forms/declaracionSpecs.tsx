@@ -328,9 +328,13 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
 
 // a nivel imported from an external padrón (Ica) may have no mes de construcción (srtm-backend#128): it is edited
 // without one. a new nivel and one that has its mes still ask for it, so the mes is never lost
+const NIVEL_SIN_MES: SectionSpec[] = NIVEL_SECTIONS.map((s) => ({
+  ...s,
+  fields: s.fields.map((f) => (f.name === 'mes_construccion' ? { ...f, required: false } : f))
+}))
+
 export function nivelSections(editing: Pick<NivelConstruccion, 'id' | 'mes_construccion'> | null): SectionSpec[] {
-  if (!editing?.id || editing.mes_construccion != null) return NIVEL_SECTIONS
-  return NIVEL_SECTIONS.map((s) => ({ ...s, fields: s.fields.map((f) => (f.name === 'mes_construccion' ? { ...f, required: false } : f)) }))
+  return editing?.id && editing.mes_construccion == null ? NIVEL_SIN_MES : NIVEL_SECTIONS
 }
 
 export const OBRA_SECTIONS: SectionSpec[] = [

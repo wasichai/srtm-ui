@@ -769,10 +769,7 @@ describe('portal', () => {
   })
 
   it('still asks for the mes of a stored nivel that has one', async () => {
-    start('/declaraciones/d1?tab=caracteristicas', [
-      { path: '/srtm/declaraciones/d1/niveles', body: [{ ...nivelGuardado, mes_construccion: 4 }] },
-      { method: 'PUT', path: '/srtm/niveles/n1', body: nivelGuardado }
-    ])
+    start('/declaraciones/d1?tab=caracteristicas', [{ path: '/srtm/declaraciones/d1/niveles', body: [{ ...nivelGuardado, mes_construccion: 4 }] }])
     const dialog = await editarNivel()
     expect(within(dialog).getByText('Mes construcción')).toHaveTextContent('*')
     await userEvent.selectOptions(within(dialog).getByLabelText(/Mes construcción/), '')
