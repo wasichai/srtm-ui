@@ -3,7 +3,7 @@ import { rentas } from '../api'
 import { formatNumber, formatText, MESES, parseNumber, today } from '../components/format'
 import { PERENE_UBIGEO } from '../forms/bloques'
 import { COLUMNAS } from '../forms/CategoriasFields'
-import { FRENTE_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
+import { FRENTE_SECTIONS, NIVEL_SECTIONS, nivelSections, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
 import { celda, etiqueta } from '../forms/etiquetas'
 import { nombreORazonSocial } from '../forms/specs'
 import type { NivelConstruccion, ObraComplementaria, OtroFrente, Transferente } from '../types'
@@ -50,7 +50,7 @@ export function NivelesPanel({ declaracion, readOnly }: { declaracion: string; r
       queryKey="niveles"
       plural="niveles de construcción"
       singular="nivel de construcción"
-      sections={NIVEL_SECTIONS}
+      sections={(_, editing) => nivelSections(editing)}
       catalog="nivel_construccion"
       wide
       sinEstado

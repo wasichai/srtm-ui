@@ -725,6 +725,69 @@ describe('portal', () => {
     })
   })
 
+  // a nivel imported from an external padrón (Ica) has no mes (srtm-backend#128): it is edited without one. a new nivel
+  // and one that has its mes still ask for it
+  const nivelGuardado = {
+    id: 'n1',
+    declaracion: 'd1',
+    tipo_nivel: 'PISO',
+    numero_piso: 1,
+    anio_construccion: 2010,
+    mes_construccion: null,
+    material: 'LADRILLO',
+    estado_conservacion: 'BUENO',
+    area_construida: 120,
+    area_comun: null,
+    porcentaje_area_comun: null,
+    muros_columnas: 'C',
+    techos: 'C',
+    pisos: 'D',
+    puertas_ventanas: 'D',
+    revestimientos: 'E',
+    banos: 'D',
+    instalaciones: 'D',
+    estado: 'ACTIVO'
+  }
+  const editarNivel = async () => {
+    await userEvent.click(await screen.findByRole('cell', { name: 'LADRILLO' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Editar nivel de construcción' }))
+    return screen.findByRole('dialog', { name: 'Editar nivel de construcción' })
+  }
+
+  it('saves a stored nivel with no mes de construcción without asking for one', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [
+      { path: '/srtm/declaraciones/d1/niveles', body: [nivelGuardado] },
+      { method: 'PUT', path: '/srtm/niveles/n1', body: nivelGuardado }
+    ])
+    const dialog = await editarNivel()
+    expect(within(dialog).getByText('Mes construcción')).not.toHaveTextContent('*')
+    await userEvent.clear(within(dialog).getByLabelText(/Área construida/))
+    await userEvent.type(within(dialog).getByLabelText(/Área construida/), '150')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/niveles/n1')
+    expect(put.body).toMatchObject({ mes_construccion: null, area_construida: 150 })
+  })
+
+  it('still asks for the mes of a stored nivel that has one', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [
+      { path: '/srtm/declaraciones/d1/niveles', body: [{ ...nivelGuardado, mes_construccion: 4 }] },
+      { method: 'PUT', path: '/srtm/niveles/n1', body: nivelGuardado }
+    ])
+    const dialog = await editarNivel()
+    expect(within(dialog).getByText('Mes construcción')).toHaveTextContent('*')
+    await userEvent.selectOptions(within(dialog).getByLabelText(/Mes construcción/), '')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Grabar' }))
+    expect(await within(dialog).findByText('Este dato es obligatorio')).toBeInTheDocument()
+    expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
+  })
+
+  it('asks a new nivel for its mes', async () => {
+    start('/declaraciones/d1?tab=caracteristicas', [{ path: '/srtm/declaraciones/d1/niveles', body: [nivelGuardado] }])
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar nivel de construcción' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('Mes construcción')).toHaveTextContent('*')
+  })
+
   it("shows an obra complementaria's total metrado while it is typed", async () => {
     start('/declaraciones/d1?tab=caracteristicas')
     await userEvent.click(await screen.findByRole('button', { name: 'Agregar obra complementaria' }))
