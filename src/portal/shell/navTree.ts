@@ -66,6 +66,8 @@ export const NAV_TREE: NodoNav[] = [
   },
   // the HR and PU of a whole year, in the background
   { label: 'Emisión', children: [{ label: 'Emisión masiva', to: '/emisiones' }] },
+  // the padrón against catastro's valuation of the same predios: what the municipality fails to collect
+  { label: 'Fiscalización', children: [{ label: 'Brecha de recaudación', to: '/brecha' }] },
   { label: 'Administración', to: '/admin', external: true, soloAdmin: true, icon: Settings }
 ]
 

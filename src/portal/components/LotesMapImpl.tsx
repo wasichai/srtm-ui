@@ -1,30 +1,18 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
-import {
-  GeoJSONSource,
-  Map as MapLibreMap,
-  NavigationControl,
-  ScaleControl,
-  setWorkerUrl,
-  type ExpressionSpecification,
-  type MapLayerMouseEvent,
-  type StyleSpecification
-} from 'maplibre-gl'
+import { GeoJSONSource, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapLayerMouseEvent, type StyleSpecification } from 'maplibre-gl'
 import { useEffect, useRef, useState } from 'react'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
+import { colorDeLote, IS_SELECTED, opacidadDeLote } from './colorDeLotes'
 import { boundsOf, PERENE, recordIdOf, type Geometry } from './geo'
 import type { LotesMapProps } from './LotesMap'
 import { mapWorkerUrl } from './mapWorker'
-import { mapColors, watchTheme, type MapColors } from './themeColors'
+import { mapColors, toRgb, watchTheme } from './themeColors'
 
 const LOTES = 'srtm-lotes'
 const FILL = 'srtm-lotes-fill'
 const LINE = 'srtm-lotes-line'
 const PUNTO = 'srtm-punto'
-const IS_SELECTED: ExpressionSpecification = ['boolean', ['get', '__selected'], false]
-
-// a lote in the theme's brand, the selected one in its map-selected
-const loteColor = ({ brand, selected }: MapColors): ExpressionSpecification => ['case', IS_SELECTED, selected, brand]
 
 // the OpenStreetMap raster tiles: needs internet. a municipal WMS/WMTS can replace it here
 const STYLE: StyleSpecification = {
@@ -36,14 +24,14 @@ const STYLE: StyleSpecification = {
 }
 
 // the lotes, the selected one in another colour; a point; drawing through terra-draw. one map per mount
-export default function LotesMapImpl({ features, selectedId, onSelect, onBounds, draw, point, onCapture, label }: LotesMapProps) {
+export default function LotesMapImpl({ features, selectedId, onSelect, onBounds, draw, point, onCapture, label, colorPor }: LotesMapProps) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const terra = useRef<TerraDraw | null>(null)
   const [ready, setReady] = useState(false)
   // callbacks change every render: the map's listeners read the current ones
-  const latest = useRef({ onSelect, onBounds, draw, point })
-  latest.current = { onSelect, onBounds, draw, point }
+  const latest = useRef({ onSelect, onBounds, draw, point, colorPor })
+  latest.current = { onSelect, onBounds, draw, point, colorPor }
 
   useEffect(() => {
     if (!container.current) return
@@ -70,8 +58,8 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
         type: 'fill',
         source: LOTES,
         paint: {
-          'fill-color': loteColor(colors),
-          'fill-opacity': ['case', IS_SELECTED, 0.45, 0.18]
+          'fill-color': colorDeLote(colors, latest.current.colorPor, toRgb),
+          'fill-opacity': opacidadDeLote(latest.current.colorPor)
         }
       })
       instance.addLayer({
@@ -79,7 +67,7 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
         type: 'line',
         source: LOTES,
         paint: {
-          'line-color': loteColor(colors),
+          'line-color': colorDeLote(colors, latest.current.colorPor, toRgb),
           'line-width': ['case', IS_SELECTED, 3, 1.5]
         }
       })
@@ -93,8 +81,8 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
       // another theme repaints the same layers: the map, its lotes, the one picked and the view stay
       stopTheme = watchTheme(() => {
         const next = mapColors()
-        instance.setPaintProperty(FILL, 'fill-color', loteColor(next))
-        instance.setPaintProperty(LINE, 'line-color', loteColor(next))
+        instance.setPaintProperty(FILL, 'fill-color', colorDeLote(next, latest.current.colorPor, toRgb))
+        instance.setPaintProperty(LINE, 'line-color', colorDeLote(next, latest.current.colorPor, toRgb))
         instance.setPaintProperty(PUNTO, 'circle-color', next.selected)
         instance.setPaintProperty(PUNTO, 'circle-stroke-color', next.surface)
       })
@@ -155,6 +143,19 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
       })
     })
   }, [ready, featuresKey, selectedId])
+
+  // another colorPor repaints the lotes (the load and a theme change paint with the current one)
+  const colorPorKey = JSON.stringify(colorPor ?? null)
+  const pintado = useRef(colorPorKey)
+  useEffect(() => {
+    const instance = map.current
+    if (!instance || !ready || pintado.current === colorPorKey) return
+    pintado.current = colorPorKey
+    const colors = mapColors()
+    instance.setPaintProperty(FILL, 'fill-color', colorDeLote(colors, colorPor, toRgb))
+    instance.setPaintProperty(FILL, 'fill-opacity', opacidadDeLote(colorPor))
+    instance.setPaintProperty(LINE, 'line-color', colorDeLote(colors, colorPor, toRgb))
+  }, [ready, colorPorKey])
 
   // the view goes to the selected lote when it is picked or its outline changes, not whenever the lotes around it do:
   // moving the map loads its neighbours, and the view must stay where the clerk took it

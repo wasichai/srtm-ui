@@ -75,7 +75,11 @@ import type {
   InfraccionesDe,
   NotificacionVencida,
   PanelInfracciones,
-  PlazosInfracciones
+  PlazosInfracciones,
+  CorridaBrecha,
+  FiltrosBrecha,
+  PanelBrecha,
+  PredioBrecha
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -386,6 +390,18 @@ export const rentas = {
   panelInfracciones: (anio: number) => get<PanelInfracciones>(`/srtm/infracciones/panel${query({ anio })}`),
   // every acta of a contribuyente (as obligado or contribuyente) or of a predio, with its fase and estado at al_dia
   infraccionesDe: (de: 'contribuyentes' | 'predios', id: string) => get<InfraccionesDe>(`/srtm/${de}/${id}/infracciones`),
+
+  // the brecha de recaudación: a corrida per year at a time (409 while one runs, or catastro not configured), the
+  // newest first. 403 without CREATE and UPDATE on brecha_corrida and CREATE on brecha_predio
+  corridasBrecha: (anio?: number) => get<CorridaBrecha[]>(`/srtm/brecha/corridas${query({ anio })}`),
+  calcularBrecha: (anio: number) => send<CorridaBrecha>('POST', '/srtm/brecha/corridas', { anio }),
+  // what a TERMINADA corrida measured (the year's latest when not given): 404 when there is none
+  panelBrecha: (anio: number, corrida?: string) => get<PanelBrecha>(`/srtm/brecha/${anio}/panel${query({ corrida })}`),
+  // its rows sorted by catastro's code; 422 names a filter it cannot serve. sector is an exact match
+  prediosBrecha: (anio: number, { categoria, sector }: FiltrosBrecha, page: number, corrida?: string, size = PAGE_SIZE) =>
+    get<Pagina<PredioBrecha>>(`/srtm/brecha/${anio}/predios${query({ categoria, sector, page, size, corrida })}`),
+  // the rows with a lote, each feature with its categoria, codigo and deltaImpuesto (EPSG:4326)
+  lotesBrecha: (anio: number, corrida?: string) => get<FeatureCollection>(`/srtm/brecha/${anio}/lotes${query({ corrida })}`),
 
   // the tasa de anuncios y propaganda (SPEC §7, Anuncios). the padrón with each anuncio's estado and vigencia at
   // vigentes_a (today when not given): 422 names a filter it cannot read (an estado out of VIGENTE, VENCIDO, CESADO,

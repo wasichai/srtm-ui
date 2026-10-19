@@ -1,7 +1,10 @@
 import { cn } from '@wasichai/ui'
 import { MapPinOff } from 'lucide-react'
 import { Component, lazy, Suspense, type ReactNode } from 'react'
+import type { ColorPor } from './colorDeLotes'
 import type { Bbox, FeatureCollection, Geometry } from './geo'
+
+export type { ColorPor } from './colorDeLotes'
 
 export interface LotesMapProps {
   // the lotes shown; each feature's record id is its selection id (recordIdOf)
@@ -16,6 +19,8 @@ export interface LotesMapProps {
   point?: { value: Geometry | null; onChange: (geometry: Geometry) => void } | null
   // "descargar imagen": the caller gets a function that returns the map as a png data url
   onCapture?: (capture: () => string | null) => void
+  // the lotes coloured by one of their properties (colorDeLotes.ts); without it, all in the theme's brand
+  colorPor?: ColorPor | null
   label?: string
   className?: string
 }

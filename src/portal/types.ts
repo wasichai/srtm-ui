@@ -1283,3 +1283,86 @@ export interface AnunciosDe {
   al_dia: string
   anuncios: (Anuncio & EstadoAnuncioAlDia)[]
 }
+
+// the brecha de recaudación (srtm-backend's /srtm/brecha): the padrón's autoavalúos against catastro's valuations of
+// the same predios, measured by a corrida the backend runs in the background. its fields are camelCase, as the backend
+// sends them; every figure is the backend's, never computed here. money a number (S/), null when not known
+export type EstadoCorridaBrecha = 'PENDIENTE' | 'EN_CURSO' | 'TERMINADA' | 'FALLIDA'
+export type CategoriaBrecha = 'OMISO' | 'SIN_CATASTRO' | 'SIN_VALOR' | 'SUBVALUADO' | 'SOBREVALUADO' | 'COINCIDE'
+
+// POST /srtm/brecha/corridas, GET /srtm/brecha/corridas[/{id}]. totalPredios is 0 until the measurement is done;
+// mensaje says why a FALLIDA failed, or what a TERMINADA could not compute (Δ arbitrios without an ordinance)
+export interface CorridaBrecha {
+  id: string
+  anio: number
+  estado: EstadoCorridaBrecha
+  versionCatastro: string | null
+  iniciado: string | null
+  terminado: string | null
+  totalPredios: number | null
+  procesados: number | null
+  mensaje: string | null
+  declarado: number | null
+  catastro: number | null
+  deltaImpuesto: number | null
+  deltaArbitrios: number | null
+}
+
+export interface KpisBrecha {
+  prediosCatastro: number
+  prediosPadron: number
+  omisos: number
+  subvaluados: number
+  sobrevaluados: number
+  coinciden: number
+  sinCatastro: number
+  sinValor: number
+  // over the same predios (compared on both sides, and the omisos): declarado + Δ = catastro
+  autoavaluoDeclarado: number | null
+  autoavaluoCatastro: number | null
+  deltaAutoavaluo: number | null
+  // net: what the subvaluados add less what the sobrevaluados take, plus the omisos' estimate
+  deltaImpuesto: number | null
+  deltaArbitrios: number | null
+  // the omisos' part of deltaImpuesto (each liquidated alone)
+  deltaImpuestoOmisosEstimado?: number | null
+  // every row (SIN_CATASTRO and SIN_VALOR too): they do not reconcile with deltaAutoavaluo
+  autoavaluoDeclaradoTotal?: number | null
+  autoavaluoCatastroTotal?: number | null
+}
+
+// GET /srtm/brecha/{anio}/panel: the six categorías always, in the backend's order; the sectores sorted, null last
+export interface PanelBrecha {
+  corrida: { id: string; terminado: string | null; versionCatastro: string | null }
+  kpis: KpisBrecha
+  porCategoria: { categoria: CategoriaBrecha; predios: number; deltaAutoavaluo: number | null; deltaImpuesto: number | null; deltaArbitrios: number | null }[]
+  porSector: { sector: string | null; predios: number; deltaImpuesto: number | null; deltaArbitrios: number | null; omisos: number; subvaluados: number }[]
+}
+
+// a row of GET /srtm/brecha/{anio}/predios. predio is srtm's (null for an omiso); estimado: its Δ impuesto is an
+// estimate (an omiso's); motivo why catastro could not value it
+export interface PredioBrecha {
+  id: string
+  predio: string | null
+  codigoPredio: string | null
+  codigoCatastro: string | null
+  categoria: CategoriaBrecha
+  sector: string | null
+  manzana: string | null
+  lote: string | null
+  uso: string | null
+  autoavaluoDeclarado: number | null
+  autoavaluoCatastro: number | null
+  deltaAutoavaluo: number | null
+  impuestoDeclarado: number | null
+  impuestoCatastro: number | null
+  deltaImpuesto: number | null
+  deltaArbitrios: number | null
+  estimado: boolean
+  motivo: string | null
+}
+
+export interface FiltrosBrecha {
+  categoria?: CategoriaBrecha | null
+  sector?: string | null
+}
