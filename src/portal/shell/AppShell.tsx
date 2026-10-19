@@ -12,14 +12,15 @@ import { TabBar } from './TabBar'
 import { ThemeMenu } from './ThemeMenu'
 
 // gisxp's shell: light header with the search in the middle, dark sidebar, workspace tabs over the content.
-// under the portal-tributario theme it delegates to PortalShell (brand bar, the tree of trámites, footer). one frame for
-// both, each variant bringing its pieces: a theme switch redraws the bar, the lateral and the footer but keeps the
-// page (and whatever is not saved in it) and the theme menu, with its focus and its error, mounted
+// under the portal-tributario theme it delegates to PortalShell (brand bar with the open fichas as its second row, the
+// rail of modules, footer). one frame for both, each variant bringing its pieces: a theme switch redraws the bar, the
+// lateral and the footer but keeps the page (and whatever is not saved in it) and the theme menu, with its focus and
+// its error, mounted. so a piece one variant leaves out keeps its place empty, and the tabs go last in the header
 export function AppShell() {
   const { isAdmin } = useSession()
   const piezas = useVarianteTema() === 'portal' ? PortalShell : CLASICO
   const { Marca, Sesion, Lateral, Pie } = piezas
-  const lateral = usePanelLateral(piezas.plegable === true)
+  const lateral = usePanelLateral()
   const contenido = useRef<HTMLDivElement>(null)
   const { pathname } = useLocation()
   // the screens scroll in their own box, which the router does not reset: another screen starts at its top. another
@@ -32,25 +33,24 @@ export function AppShell() {
     <div className="flex h-full flex-col">
       <SaltarAlContenido />
       <header className={piezas.cabecera}>
-        <button
-          ref={lateral.boton}
-          type="button"
-          className={piezas.botonMenu}
-          // a foldable lateral folds itself: this one only brings it back
-          hidden={piezas.plegable && lateral.abierto}
-          aria-label={piezas.plegable ? 'Mostrar el menú' : 'Menú'}
-          aria-expanded={lateral.abierto}
-          aria-controls="sidebar"
-          onClick={lateral.alternar}
-        >
-          <Menu className="size-5" />
-        </button>
+        {piezas.botonMenu && (
+          <button
+            type="button"
+            className={piezas.botonMenu}
+            aria-label="Menú"
+            aria-expanded={lateral.abierto}
+            aria-controls="sidebar"
+            onClick={lateral.alternar}
+          >
+            <Menu className="size-5" />
+          </button>
+        )}
         <Marca />
         <div className="flex flex-1 justify-center">
           <GlobalSearch inputClassName={piezas.busqueda} />
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {isAdmin && piezas.admin && (
             <a href="/admin" className={piezas.admin}>
               <Settings className="size-4" />
               Administración
@@ -59,12 +59,13 @@ export function AppShell() {
           <ThemeMenu className={piezas.tema} />
           <Sesion />
         </div>
+        {piezas.pestanasEnCabecera && <TabBar ubicacion="cabecera" />}
       </header>
-      <div className="flex min-h-0 flex-1">
-        <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} onPlegar={lateral.plegar} />
+      <div className={cn('flex min-h-0 flex-1', piezas.cuerpo)}>
+        <Lateral abierto={lateral.abierto} onNavegar={lateral.alNavegar} />
         <main id="content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <TabBar />
-          <Breadcrumbs />
+          {!piezas.pestanasEnCabecera && <TabBar />}
+          {!piezas.rutaEnBanda && <Breadcrumbs />}
           <div ref={contenido} id="contenido" tabIndex={-1} className="min-h-0 flex-1 overflow-auto px-6 py-5 outline-none">
             <Outlet />
           </div>
@@ -76,7 +77,8 @@ export function AppShell() {
 }
 
 // the keyboard's first stop, shown only while it has the focus: past the header, the menu, the workspace tabs and the
-// trail, to the screen itself (wcag 2.4.1). it moves the focus, not the url: a #hash is a navigation to the router
+// trail (under the portal the trail is in the screen's own title band), to the screen itself (wcag 2.4.1). it moves the
+// focus, not the url: a #hash is a navigation to the router
 function SaltarAlContenido() {
   return (
     <a

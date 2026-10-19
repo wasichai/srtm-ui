@@ -12,10 +12,10 @@ beforeEach(() => {
   delete document.documentElement.dataset.theme
 })
 
-// under a theme picked in this browser (signed out, so no server preference)
+// under a theme picked in this browser (signed out, so no server preference), on a contribuyente's ficha
 function renderIn(theme: string, ui: ReactElement) {
   localStorage.setItem('srtm.theme', theme)
-  return renderWithProviders(ui, { config: { storagePrefix: 'srtm', themes: SRTM_THEMES }, user: null })
+  return renderWithProviders(ui, { config: { storagePrefix: 'srtm', themes: SRTM_THEMES }, user: null, route: '/contribuyentes/c1' })
 }
 
 const ficha = (
@@ -67,6 +67,8 @@ describe('FichaHeader', () => {
     expect(fila).toHaveAttribute('data-ui', 'cabecera-fila')
     expect(within(fila).getByText('DNI 20529936')).toBeVisible()
     expect(within(fila).getByRole('button', { name: 'Eliminar' })).toBeVisible()
+    // the screen's trail, in the band: the strip over the content is the classic shell's
+    expect(within(banda).getByRole('navigation', { name: 'Ruta' })).toHaveTextContent('Registro tributario › Registro de contribuyente')
   })
 
   it('offers the help only when given one', () => {
