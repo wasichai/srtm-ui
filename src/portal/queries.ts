@@ -21,6 +21,11 @@ export function useContribuyentes(q: string, page: number) {
   return useQuery({ queryKey: ['contribuyentes', q, page], queryFn: () => rentas.contribuyentes(q, page), placeholderData: keepPreviousData })
 }
 
+// the valuación del padrón de origen of a declaración: null when the backend has none to give
+export function useValuacionOrigen(declaracion: string) {
+  return useQuery({ queryKey: ['valuacion-origen', declaracion], queryFn: () => rentas.valuacionOrigen(declaracion) })
+}
+
 export function usePredios(q: string, page: number) {
   return useQuery({ queryKey: ['predios', q, page], queryFn: () => rentas.predios(q, page), placeholderData: keepPreviousData })
 }

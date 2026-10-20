@@ -342,6 +342,38 @@ export interface OtroFrente {
   estado?: string | null
 }
 
+// the valuación del padrón de origen (srtm-backend#132): what an external padrón (Ica) brought, which the portal's
+// records do not carry. read-only, only the fields that have a value; it does not change the impuesto (valor_autoavaluo)
+export interface PredioOrigen {
+  codigo_via?: string
+  codigo_unidad_urbana?: string
+  codigo_hu_armonizacion?: string
+  codigo_via_armonizacion?: string
+}
+
+export interface DeclaracionOrigen {
+  arancel?: number
+  valor_terreno?: number
+  valor_construccion?: number
+  valor_otras_instalaciones?: number
+}
+
+export interface NivelOrigen {
+  clasificacion?: string
+  valor_unitario?: number
+  // S/ por m2
+  incremento?: number
+  porcentaje_depreciacion?: number
+  valor_total?: number
+}
+
+// niveles by the nivel's id: one without values is not there
+export interface ValuacionOrigen {
+  predio: PredioOrigen
+  declaracion: DeclaracionOrigen
+  niveles: Record<string, NivelOrigen>
+}
+
 export interface DeclaracionJurada {
   declaracion: Declaracion
   predio: Predio
@@ -448,6 +480,8 @@ export interface PredioFicha {
   anio: number
   titulares: number
   totales: Totales
+  // what an external padrón brought to the predio (srtm-backend#132): absent from an older backend
+  valuacion_origen?: { predio: PredioOrigen }
 }
 
 export interface Resumen {

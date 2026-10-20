@@ -3,11 +3,12 @@ import { rentas } from '../api'
 import { formatNumber, formatText, MESES, parseNumber, today } from '../components/format'
 import { PERENE_UBIGEO } from '../forms/bloques'
 import { COLUMNAS } from '../forms/CategoriasFields'
-import { FRENTE_SECTIONS, NIVEL_SECTIONS, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
+import { FRENTE_SECTIONS, NIVEL_SECTIONS, nivelSections, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
 import { celda, etiqueta } from '../forms/etiquetas'
 import { nombreORazonSocial } from '../forms/specs'
-import type { NivelConstruccion, ObraComplementaria, OtroFrente, Transferente } from '../types'
+import type { NivelConstruccion, NivelOrigen, ObraComplementaria, OtroFrente, Transferente } from '../types'
 import { HijosPanel } from './HijosPanel'
+import { AVISO_NIVELES, columnasDeOrigen } from './ValuacionOrigen'
 
 // the declaración jurada's lists, as the srtm draws them
 
@@ -41,7 +42,9 @@ export function TransferentesPanel({ declaracion, readOnly }: { declaracion: str
   )
 }
 
-export function NivelesPanel({ declaracion, readOnly }: { declaracion: string; readOnly?: boolean }) {
+// origen: the valuación del padrón de origen of each nivel (srtm-backend#132), read-only columns when any has one
+export function NivelesPanel({ declaracion, readOnly, origen }: { declaracion: string; readOnly?: boolean; origen?: Record<string, NivelOrigen> | null }) {
+  const deOrigen = columnasDeOrigen(origen)
   return (
     <HijosPanel<NivelConstruccion>
       parent={declaracion}
@@ -50,10 +53,11 @@ export function NivelesPanel({ declaracion, readOnly }: { declaracion: string; r
       queryKey="niveles"
       plural="niveles de construcción"
       singular="nivel de construcción"
-      sections={NIVEL_SECTIONS}
+      sections={(_, editing) => nivelSections(editing)}
       catalog="nivel_construccion"
       wide
       sinEstado
+      aviso={deOrigen.length > 0 ? () => <p className="text-xs text-ink-muted">{AVISO_NIVELES}</p> : undefined}
       nuevo={(rows) =>
         emptyOf<NivelConstruccion>(NIVEL_SECTIONS, {
           tipo_nivel: 'PISO',
@@ -76,7 +80,8 @@ export function NivelesPanel({ declaracion, readOnly }: { declaracion: string; r
           render: (n: NivelConstruccion) => n[c.field] ?? '',
           className: 'text-center'
         })),
-        { label: 'Conservación', render: (n) => celda('estado_conservacion', n.estado_conservacion) }
+        { label: 'Conservación', render: (n) => celda('estado_conservacion', n.estado_conservacion) },
+        ...deOrigen
       ]}
     />
   )

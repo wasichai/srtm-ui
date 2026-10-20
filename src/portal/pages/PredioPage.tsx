@@ -22,6 +22,7 @@ import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
 import { InfraccionesDe } from './InfraccionesDe'
+import { CodigosDelPredio } from './ValuacionOrigen'
 import { VerPu } from './VerPdf'
 
 // the year's figures: a StatCard each over the tabs in light and dark, one card under them in the portal's two columns
@@ -47,7 +48,7 @@ function PredioPage({ id }: { id: string }) {
 
   return (
     <QueryState query={ficha}>
-      {({ predio, titulares, totales }) => (
+      {({ predio, titulares, totales, valuacion_origen }) => (
         <div className="space-y-5">
           <FichaHeader
             kind={predio.numero_registro ? `Predio · Registro Nº ${predio.numero_registro}` : 'Predio'}
@@ -104,6 +105,7 @@ function PredioPage({ id }: { id: string }) {
                           return rentas.actualizarPredio(id, { ...latest, ...own })
                         }}
                       />
+                      <CodigosDelPredio valores={valuacion_origen?.predio} />
                     </div>
                   )
                 },
