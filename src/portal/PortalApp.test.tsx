@@ -194,6 +194,18 @@ const loteCatastro = {
 const routes: MockRoute[] = [
   { method: 'POST', path: '/auth/login', body: { token: 't', expiresAt: '2026-12-31T00:00:00Z', user: admin } },
   { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
+  // the organization's municipalidad (srtm-backend's GET /srtm/municipalidad): its place, what a new address starts on
+  {
+    path: '/srtm/municipalidad',
+    body: {
+      nombre: 'MUNICIPALIDAD DISTRITAL DE PERENE',
+      oficina: null,
+      escudo: null,
+      extension: null,
+      centro: null,
+      lugar: { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
+    }
+  },
   { path: '/auth/me/preferences', body: { theme: 'system', locale: null } },
   { method: 'PUT', path: '/auth/me/preferences', body: { theme: 'light', locale: null } },
   { path: '/srtm/resumen', body: { anio: year, contribuyentes: 11840, predios: 14947, declaraciones: 15644 } },

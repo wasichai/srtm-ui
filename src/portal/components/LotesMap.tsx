@@ -1,8 +1,9 @@
 import { cn } from '@wasichai/ui'
 import { MapPinOff } from 'lucide-react'
 import { Component, lazy, Suspense, type ReactNode } from 'react'
+import { useMunicipalidad } from '../queries'
 import type { ColorPor } from './colorDeLotes'
-import type { Bbox, FeatureCollection, Geometry } from './geo'
+import { vistaInicial, type Bbox, type FeatureCollection, type Geometry, type VistaMapa } from './geo'
 
 export type { ColorPor } from './colorDeLotes'
 
@@ -23,18 +24,27 @@ export interface LotesMapProps {
   colorPor?: ColorPor | null
   label?: string
   className?: string
+  // where it opens: LotesMap gives the organization's lotes (vistaInicial)
+  vista?: VistaMapa
 }
 
 // maplibre and terra-draw are heavy: they load with the first map, not with the portal
 const LotesMapImpl = lazy(() => import('./LotesMapImpl'))
 
+// it opens where the organization's lotes are (GET /srtm/municipalidad), so it waits for them; without them, on Perú
 export function LotesMap({ className, ...props }: LotesMapProps) {
+  const municipalidad = useMunicipalidad()
+  const cargando = <div className="flex h-full items-center justify-center text-sm text-ink-muted">Cargando mapa…</div>
   return (
     <div className={cn('relative h-72 w-full overflow-hidden rounded-md border border-border bg-surface-muted', className)}>
       <SinMapa>
-        <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-ink-muted">Cargando mapa…</div>}>
-          <LotesMapImpl {...props} />
-        </Suspense>
+        {municipalidad.isPending ? (
+          cargando
+        ) : (
+          <Suspense fallback={cargando}>
+            <LotesMapImpl vista={vistaInicial(municipalidad.data)} {...props} />
+          </Suspense>
+        )}
       </SinMapa>
     </div>
   )

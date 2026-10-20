@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Contribuyente } from '../types'
-import { describirContribuyente, nombres, PERENE_PREDIO, PERENE_UBIGEO, ubigeoCampos } from './bloques'
+import { describirContribuyente, lugarPorOmision, nombres, ubigeoCampos } from './bloques'
 
 // the field blocks the specs and pages share, so an address is asked the same way everywhere
 
@@ -33,10 +33,21 @@ describe('ubigeoCampos', () => {
   })
 })
 
-describe('PERENE', () => {
-  it('el distrito del municipio, y el predio nuevo además en la selva', () => {
-    expect(PERENE_UBIGEO).toEqual({ ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' })
-    expect(PERENE_PREDIO).toEqual({ ...PERENE_UBIGEO, region: 'SELVA' })
+describe('lugarPorOmision', () => {
+  it('el lugar que da el backend: el ubigeo y sus nombres, y el predio nuevo además en su región', () => {
+    const lugar = lugarPorOmision({ ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' })
+    expect(lugar.ubigeo).toEqual({ ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' })
+    expect(lugar.predio).toEqual({ ...lugar.ubigeo, region: 'SELVA' })
+  })
+
+  it('sin lugar, ninguno: ni ubigeo ni región', () => {
+    expect(lugarPorOmision(null)).toEqual({ ubigeo: {}, predio: {} })
+    expect(lugarPorOmision(undefined)).toEqual({ ubigeo: {}, predio: {} })
+  })
+
+  it('lo que el backend no sabe no se propone', () => {
+    const lugar = lugarPorOmision({ ubigeo: '110101', departamento: 'ICA', provincia: 'ICA', distrito: 'ICA', region: null })
+    expect(lugar.predio).toEqual({ ubigeo: '110101', departamento: 'ICA', provincia: 'ICA', distrito: 'ICA' })
   })
 })
 

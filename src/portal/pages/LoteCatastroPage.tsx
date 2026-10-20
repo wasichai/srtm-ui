@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router'
 import { RecordForm } from '../../kit/forms/RecordForm'
 import { emptyOf, type SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { nombres, PERENE_UBIGEO, ubigeoCampos } from '../forms/bloques'
+import { nombres, ubigeoCampos, useLugar } from '../forms/bloques'
 import { CatastroMapa } from '../forms/CatastroMapa'
 import { useCatalogos, useRefresh } from '../queries'
 import { useVolver } from '../shell/useVolver'
@@ -96,10 +96,13 @@ type LoteForm = CatastroFiscal & { departamento?: string | null; provincia?: str
 export function NuevoLotePage() {
   const navigate = useNavigate()
   const refresh = useRefresh()
+  // a new lote starts where the organization's predios are (GET /srtm/municipalidad), or nowhere
+  const municipal = useLugar()
+  if (municipal.cargando) return <LoadingState />
   return (
     <LoteCard
       title="Nuevo lote de catastro fiscal"
-      initial={emptyOf<LoteForm>(LOTE_SECTIONS, { ...PERENE_UBIGEO, tipo_predio: 'PREDIO URBANO' })}
+      initial={emptyOf<LoteForm>(LOTE_SECTIONS, { ...municipal.ubigeo, tipo_predio: 'PREDIO URBANO' })}
       submitLabel="Registrar lote"
       save={async (values) => {
         const created = await rentas.crearLote(cuerpo(values))

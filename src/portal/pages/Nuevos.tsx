@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { RecordForm } from '../../kit/forms/RecordForm'
 import { emptyOf } from '../../kit/forms/spec'
 import { rentas } from '../api'
-import { PERENE_PREDIO } from '../forms/bloques'
+import { useLugar } from '../forms/bloques'
 import { UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { camposDelLote, ubicacionDeLote } from '../forms/ubicacion'
 import { useCatalogos, useRefresh } from '../queries'
@@ -25,15 +25,16 @@ export function NuevoPredioPage() {
   // the lote's ubigeo is a code: its departamento, provincia and distrito come from the INEI list
   const ubigeos = useQuery({ queryKey: ['ubigeos'], queryFn: rentas.ubigeos, staleTime: Infinity, enabled: Boolean(lote?.ubigeo) })
   const delLote = lote ? sinVacios(ubicacionDeLote(lote, ubigeos.data)) : {}
-  // Perené's place and región only for a lote there, or for no lote
-  const base = !lote?.ubigeo || lote.ubigeo === PERENE_PREDIO.ubigeo ? PERENE_PREDIO : {}
+  // the organization's place and región (GET /srtm/municipalidad) only for a lote there, or for no lote
+  const lugar = useLugar()
+  const base = !lote?.ubigeo || lote.ubigeo === lugar.predio.ubigeo ? lugar.predio : {}
   return (
     <Card className="mx-auto max-w-6xl">
       <CardHeader>
         <CardTitle>Nuevo predio</CardTitle>
       </CardHeader>
       <CardBody>
-        {lote?.ubigeo && ubigeos.isPending ? (
+        {(lote?.ubigeo && ubigeos.isPending) || lugar.cargando ? (
           <p className="text-sm text-ink-muted">Cargando…</p>
         ) : (
           <RecordForm

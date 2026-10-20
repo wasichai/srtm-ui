@@ -1,7 +1,7 @@
 import { act, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import LotesMapImpl from './components/LotesMapImpl'
-import type { FeatureCollection } from './components/geo'
+import { PERU, type FeatureCollection } from './components/geo'
 
 // the map of lotes paints with the colours of the active theme (issue #51).
 // jsdom has no webgl: the map is a double that keeps its layers and the calls that matter here
@@ -14,7 +14,9 @@ const fake = vi.hoisted(() => {
     setData = vi.fn()
     fitBounds = vi.fn()
     remove = vi.fn()
-    constructor() {
+    options: Record<string, unknown>
+    constructor(options: Record<string, unknown>) {
+      this.options = options
       FakeMap.all.push(this)
     }
     on(event: string, ...rest: unknown[]) {
@@ -128,6 +130,25 @@ afterEach(() => {
   fake.FakeMap.all = []
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+})
+
+// where it opens: the organization's lotes (LotesMap gives vistaInicial of GET /srtm/municipalidad), never Perené
+describe('la vista inicial del mapa', () => {
+  it('opens on the extent it is given', () => {
+    const bounds: [[number, number], [number, number]] = [
+      [-75.76, -14.1],
+      [-75.7, -14.04]
+    ]
+    render(<LotesMapImpl vista={{ center: [-75.73, -14.07], zoom: 14, bounds }} />)
+    expect(fake.FakeMap.all.at(-1)!.options).toMatchObject({ center: [-75.73, -14.07], zoom: 14, bounds })
+  })
+
+  it('without one, on all of Perú', () => {
+    render(<LotesMapImpl />)
+    const options = fake.FakeMap.all.at(-1)!.options
+    expect(options).toMatchObject({ center: PERU, zoom: 5 })
+    expect(options.bounds).toBeUndefined()
+  })
 })
 
 describe('mapa de lotes con el tema', () => {

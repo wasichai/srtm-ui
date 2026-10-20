@@ -19,8 +19,35 @@ export interface FeatureCollection {
 
 export type Bbox = [number, number, number, number]
 
-// Perené (INEI 120302): where the padrón's lotes are
-export const PERENE: [number, number] = [-75.2247, -10.9475]
+// Perú, whole: where the map opens when the backend gives no place for the organization's lotes
+export const PERU: [number, number] = [-75.0152, -9.19]
+
+// how the map opens: on `bounds` when given (center and zoom then only until it fits them), else on center and zoom
+export interface VistaMapa {
+  center: [number, number]
+  zoom: number
+  bounds?: [[number, number], [number, number]]
+}
+
+// the organization's lotes (GET /srtm/municipalidad's extension and centro), not a fixed municipalidad: the whole
+// extent, else its centre close up, else all of Perú
+export function vistaInicial(municipalidad?: { extension: Bbox | null; centro: [number, number] | null } | null): VistaMapa {
+  const extension = municipalidad?.extension
+  const centro = municipalidad?.centro
+  if (extension) {
+    const [w, s, e, n] = extension
+    return {
+      center: centro ?? [(w + e) / 2, (s + n) / 2],
+      zoom: 14,
+      bounds: [
+        [w, s],
+        [e, n]
+      ]
+    }
+  }
+  if (centro) return { center: centro, zoom: 14 }
+  return { center: PERU, zoom: 5 }
+}
 
 // the id of a record behind a wasichai-gis feature ("<record>:<geometry>", or properties.__id)
 export function recordIdOf(feature: Feature): string {

@@ -1,7 +1,7 @@
 import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { formatNumber, formatText, MESES, parseNumber, today } from '../components/format'
-import { PERENE_UBIGEO } from '../forms/bloques'
+import { useLugar } from '../forms/bloques'
 import { COLUMNAS } from '../forms/CategoriasFields'
 import { FRENTE_SECTIONS, NIVEL_SECTIONS, nivelSections, OBRA_SECTIONS, TRANSFERENTE_SECTIONS } from '../forms/declaracionSpecs'
 import { celda, etiqueta } from '../forms/etiquetas'
@@ -16,6 +16,7 @@ const anioActual = () => Number(today().slice(0, 4))
 const mes = (m: number | null) => (m ? (MESES[m - 1] ?? String(m)) : '—')
 
 export function TransferentesPanel({ declaracion, readOnly }: { declaracion: string; readOnly?: boolean }) {
+  const lugar = useLugar()
   return (
     <HijosPanel<Transferente>
       parent={declaracion}
@@ -27,7 +28,7 @@ export function TransferentesPanel({ declaracion, readOnly }: { declaracion: str
       sections={TRANSFERENTE_SECTIONS}
       catalog="transferente"
       wide
-      nuevo={() => emptyOf<Transferente>(TRANSFERENTE_SECTIONS, { ...PERENE_UBIGEO, tipo_documento: 'DNI', fuente_informacion: 'MANUAL', estado: 'ACTIVO' })}
+      nuevo={() => emptyOf<Transferente>(TRANSFERENTE_SECTIONS, { ...lugar.ubigeo, tipo_documento: 'DNI', fuente_informacion: 'MANUAL', estado: 'ACTIVO' })}
       columns={[
         { label: 'Código', render: (t) => formatText(t.codigo) },
         {

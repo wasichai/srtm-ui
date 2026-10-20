@@ -1,5 +1,5 @@
 import { Landmark } from 'lucide-react'
-import { ENTIDAD, type PiezasShell } from './comun'
+import { SISTEMA, useEntidad, type PiezasShell } from './comun'
 import { MenuSesion } from './MenuSesion'
 import { RielPortal } from './RielPortal'
 
@@ -28,28 +28,31 @@ export const PortalShell: PiezasShell = {
   Pie
 }
 
-// the municipality's shield: lucide's Landmark for now. the real shield (an image) goes here and nowhere else
-function Escudo() {
+// the municipality's shield: the one uploaded to its municipalidad record, else lucide's Landmark
+function Escudo({ escudo }: { escudo: string | null }) {
+  if (escudo) return <img src={escudo} alt="" aria-hidden className="size-9 shrink-0 object-contain" />
   return <Landmark aria-hidden className="size-9 shrink-0" strokeWidth={1.75} />
 }
 
 function Marca() {
+  const { nombre, escudo } = useEntidad()
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <Escudo />
+      <Escudo escudo={escudo} />
       {/* on a phone the search needs the room: the shield alone */}
       <div className="min-w-0 leading-tight max-sm:hidden">
         <p className="truncate text-[17px] font-bold">Rentas municipales</p>
-        <p className="truncate text-[11.5px] text-shell-muted max-[860px]:hidden">{ENTIDAD}</p>
+        {nombre && <p className="truncate text-[11.5px] text-shell-muted max-[860px]:hidden">{nombre}</p>}
       </div>
     </div>
   )
 }
 
 function Pie() {
+  const { nombre } = useEntidad()
   return (
     <footer className="shrink-0 border-t border-line bg-table-stripe px-4 py-2.5 text-center text-[13px] text-ink-muted print:hidden">
-      {ENTIDAD} — Sistema de Gestión Tributaria Municipal
+      {nombre ? `${nombre} — ${SISTEMA}` : SISTEMA}
     </footer>
   )
 }

@@ -2,10 +2,18 @@ import { cn } from '@wasichai/ui'
 import { ChartColumn, Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Search, Users } from 'lucide-react'
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
+import { useMunicipalidad } from '../queries'
 
 // what both shells (AppShell's classic one and PortalShell) share
 
-export const ENTIDAD = 'Municipalidad Distrital de Perené'
+export const SISTEMA = 'Sistema de Gestión Tributaria Municipal'
+
+// the user's municipalidad as the shell names it (GET /srtm/municipalidad): its name and escudo (a data: uri). null
+// while it loads or when it cannot be read: then the shell names none
+export function useEntidad(): { nombre: string | null; escudo: string | null } {
+  const { data } = useMunicipalidad()
+  return { nombre: data?.nombre ?? null, escudo: data?.escudo ?? null }
+}
 
 export const NAV = [
   { to: '/', label: 'Inicio', icon: Home, end: true },

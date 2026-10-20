@@ -14,7 +14,7 @@ import { rentas } from '../api'
 import { FichaTabs } from '../components/FichaTabs'
 import { currentYear, today } from '../components/format'
 import { PasosAsistente } from '../components/PasosAsistente'
-import { describirContribuyente, PERENE_PREDIO } from '../forms/bloques'
+import { describirContribuyente, useLugar } from '../forms/bloques'
 import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, UBICACION_SECTIONS } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
@@ -53,6 +53,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   const volver = useVolver(contribuyente ? `/contribuyentes/${contribuyente}?tab=declaraciones` : '/')
   const catalogos = useCatalogos()
   const refresh = useRefresh()
+  // a predio registered here starts where the organization's predios are (GET /srtm/municipalidad), or nowhere
+  const lugar = useLugar()
   const ficha = useQuery({
     queryKey: ['contribuyente', contribuyente, currentYear()],
     queryFn: () => rentas.contribuyente(contribuyente!, currentYear()),
@@ -282,7 +284,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                       hideActions
                       sections={sections}
                       options={catalogos.data?.predio}
-                      initial={emptyOf<Predio>(sections, { ...PERENE_PREDIO, tipo_predio: tipoPredio })}
+                      initial={emptyOf<Predio>(sections, { ...lugar.predio, tipo_predio: tipoPredio })}
                       submitLabel="Guardar"
                       onSubmit={(predio) => presentar({ predio })}
                     />

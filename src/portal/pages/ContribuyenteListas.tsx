@@ -3,7 +3,7 @@ import { Alert } from '@wasichai/ui'
 import { emptyOf, type FormValues } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import { formatText } from '../components/format'
-import { PERENE_UBIGEO } from '../forms/bloques'
+import { useLugar } from '../forms/bloques'
 import { celda, etiqueta } from '../forms/etiquetas'
 import { describirDomicilio, DOMICILIO_SECTIONS, MEDIO_CONTACTO_SECTIONS, nombreORazonSocial, RELACIONADO_SECTIONS, SUSTENTO_SECTIONS } from '../forms/specs'
 import { UbicarDireccion } from '../forms/UbicarDireccion'
@@ -24,6 +24,7 @@ const TIPO_FIJO = DOMICILIO_SECTIONS.map((s) => ({
 }))
 
 export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyente }) {
+  const lugar = useLugar()
   return (
     <HijosPanel<Domicilio>
       parent={contribuyente.id!}
@@ -37,7 +38,7 @@ export function DomiciliosPanel({ contribuyente }: { contribuyente: Contribuyent
       fijo={(d, rows) => (unicoFiscal(d, rows) ? 'Es el único domicilio fiscal activo: no se puede eliminar' : null)}
       nuevo={(rows) =>
         emptyOf<Domicilio>(DOMICILIO_SECTIONS, {
-          ...PERENE_UBIGEO,
+          ...lugar.ubigeo,
           tipo_domicilio: rows.some(esFiscalActivo) ? 'REAL' : 'FISCAL',
           tipo_predio: 'PREDIO URBANO',
           estado: 'ACTIVO'

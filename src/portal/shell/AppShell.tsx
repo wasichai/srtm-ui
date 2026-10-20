@@ -5,7 +5,7 @@ import { NavLink, Outlet, useLocation } from 'react-router'
 import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
 import { Breadcrumbs } from './Breadcrumbs'
-import { ENTIDAD, GlobalSearch, initials, NAV, type LateralProps, type PiezasShell } from './comun'
+import { GlobalSearch, initials, NAV, useEntidad, type LateralProps, type PiezasShell } from './comun'
 import { usePanelLateral } from './panelLateral'
 import { PortalShell } from './PortalShell'
 import { TabBar } from './TabBar'
@@ -104,11 +104,12 @@ const CLASICO: PiezasShell = {
 }
 
 function MarcaClasica() {
+  const { nombre, escudo } = useEntidad()
   return (
     <div className="flex items-center gap-2">
-      <Landmark className="size-5 text-brand" />
+      {escudo ? <img src={escudo} alt="" aria-hidden className="size-5 object-contain" /> : <Landmark className="size-5 text-brand" />}
       <span className="text-sm font-bold text-brand">Rentas municipales</span>
-      <span className="hidden truncate text-sm text-ink-muted lg:inline">{ENTIDAD}</span>
+      {nombre && <span className="hidden truncate text-sm text-ink-muted lg:inline">{nombre}</span>}
     </div>
   )
 }

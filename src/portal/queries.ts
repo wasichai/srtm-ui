@@ -13,6 +13,16 @@ import type {
   ParametroTributario
 } from './types'
 
+// the user's organization as the portal shows it (srtm-backend's GET /srtm/municipalidad): its name and escudo in the
+// shell, where its lotes are for the map, and the place a new address starts on. asked once per sign-in (LoginPage
+// forgets it, as another user may be of another organization); while it loads or if it fails, the portal names no
+// municipalidad and places nothing
+export const MUNICIPALIDAD_KEY = ['municipalidad'] as const
+
+export function useMunicipalidad() {
+  return useQuery({ queryKey: MUNICIPALIDAD_KEY, queryFn: rentas.municipalidad, staleTime: Infinity })
+}
+
 export function useCatalogos() {
   return useQuery({ queryKey: ['catalogos'], queryFn: rentas.catalogos, staleTime: Infinity })
 }

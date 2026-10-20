@@ -81,6 +81,18 @@ const djRoute: MockRoute = { path: '/srtm/declaraciones/d1', body: dj }
 const contribuyenteRoute: MockRoute = { path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 1, totales } }
 const routes: MockRoute[] = [
   { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
+  // the organization's municipalidad (srtm-backend's GET /srtm/municipalidad): its place, what a new address starts on
+  {
+    path: '/srtm/municipalidad',
+    body: {
+      nombre: 'MUNICIPALIDAD DISTRITAL DE PERENE',
+      oficina: null,
+      escudo: null,
+      extension: null,
+      centro: null,
+      lugar: { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
+    }
+  },
   { path: '/auth/me/preferences', body: { theme: 'system', locale: null } },
   {
     path: '/srtm/catalogos',
