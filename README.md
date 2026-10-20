@@ -308,9 +308,9 @@ tag `vX.Y.Z` y el release de GitHub con esas notas. El paquete es `private`: no 
   sube la menor.
 - `version` y `CHANGELOG.md` no se editan a mano. La última versión publicada está en `.release-please-manifest.json` y
   las reglas, en `release-please-config.json`.
-- **La primera release está fijada a 0.5.0** con `"release-as"` (como la v0.1.0 de wasichai-ui). Al fusionar ese primer
-  PR hay que quitar `release-as` de `release-please-config.json`: si se queda, release-please seguiría proponiendo
-  0.5.0. Para fijar otra versión más adelante, se añade de nuevo.
+- **La release 1.0.0 está fijada** con `"release-as"` (la primera, 0.5.0, también lo estuvo; wasichai-ui hizo lo mismo
+  con su 1.0.0). Al fusionar ese PR hay que quitar `release-as` de `release-please-config.json`: si se queda,
+  release-please seguiría proponiendo 1.0.0. Para fijar otra versión más adelante, se añade de nuevo.
 - El secret `RELEASE_PLEASE_TOKEN` (Settings → Secrets and variables → Actions) es opcional: un PAT fine-grained de este
   repo con Contents y Pull requests en lectura y escritura. Sin él se usa el `GITHUB_TOKEN`, que necesita Settings →
   Actions → General → _Allow GitHub Actions to create and approve pull requests_ y con el que el PR de release no lanza
@@ -318,7 +318,7 @@ tag `vX.Y.Z` y el release de GitHub con esas notas. El paquete es `private`: no 
 
 ## Notas
 
-- Versión de wasichai-ui: `@wasichai/*` 0.5.0, igual en todos los paquetes. Para actualizar, cambiar la versión de
+- Versión de wasichai-ui: `@wasichai/*` 1.0.0, igual en todos los paquetes. Para actualizar, cambiar la versión de
   todos a la vez en `package.json`, alinear las dependencias que comparten (react-query, testing-library…) y correr
   `yarn install`. Luego reiniciar el servidor con `yarn dev --force`: Vite guarda los paquetes pre-empaquetados y, si
   no, sigue sirviendo la versión anterior.
