@@ -24,7 +24,8 @@ const PRESENTACION: SectionSpec[] = [
   }
 ]
 
-const numero = (d: Declaracion | undefined) => `DJ n° ${d?.numero_declaracion ?? 'sin número'}`
+// one brought by the padrón has no number: it is named by its year
+const numero = (d: Declaracion) => (d.numero_declaracion != null ? `DJ n° ${d.numero_declaracion}` : `DJ del padrón${d.anio != null ? ` (${d.anio})` : ''}`)
 
 export function RectificarDeclaracion({ declaracion }: { declaracion: Declaracion }) {
   const [open, setOpen] = useState(false)

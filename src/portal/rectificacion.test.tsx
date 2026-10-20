@@ -146,6 +146,14 @@ describe('rectificar una declaración jurada', () => {
     expect(screen.getByRole('button', { name: 'Rectificar' })).toBeInTheDocument()
   })
 
+  it('names a declaration of the padrón (without number) it replaces by its year', async () => {
+    const importada = declaracion({ id: 'd1', numero_declaracion: null, motivo: 'INSCRIPCION', estado: 'SUSTITUIDA' })
+    start('/declaraciones/d3', [{ path: '/srtm/predios/p1/declaraciones', body: [fila(importada), fila(rectificatoria)] }])
+    await screen.findByRole('heading', { name: 'Declaración jurada predial - 39150' })
+    expect(await screen.findByRole('link', { name: `Sustituye a la DJ del padrón (${year})` })).toHaveAttribute('href', '/declaraciones/d1')
+    expect(screen.queryByText(/sin número/)).not.toBeInTheDocument()
+  })
+
   it("marks the sustituidas among a contribuyente's declarations", async () => {
     start('/contribuyentes/c1?tab=declaraciones', [{ path: '/srtm/contribuyentes/c1/declaraciones', body: [fila(rectificatoria), fila(sustituida)] }])
     const vieja = (await screen.findByRole('link', { name: '39147' })).closest('tr')!
@@ -205,6 +213,34 @@ describe('declarar otro año desde la declaración anterior', () => {
       return call!
     })
     expect(post.body).toMatchObject({ predio_id: 'p1', desde: 'd0', declaracion: { anio: year } })
+    await waitFor(() => expect(window.location.pathname).toBe('/declaraciones/d4'))
+  })
+
+  it('declares from it in step one, without filling datos del predio: only the año and the presentación go', async () => {
+    const importada = { ...anterior, numero_declaracion: null }
+    start(
+      '/declaraciones/nueva?predio=p1',
+      [
+        ...asistente,
+        { path: '/srtm/predios/p1/declaraciones', body: [fila(importada)] },
+        { method: 'POST', path: '/srtm/contribuyentes/c1/declaraciones-juradas', status: 201, body: ficha(nueva) }
+      ],
+      [fila(importada)]
+    )
+    expect(await screen.findByLabelText('Código de predio')).toHaveValue('01-01-0001')
+    expect(screen.queryByRole('button', { name: /Declarar desde la DJ/ })).not.toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/Contribuyente/), 'quispe')
+    await userEvent.click(await screen.findByRole('button', { name: '20529936 · QUISPE MAMANI JUAN' }))
+    const desde = await screen.findByRole('button', { name: `Declarar desde la DJ ${year - 1}` })
+    expect(screen.getByRole('tab', { name: 'Datos del predio' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText(new RegExp(`declaró este predio en ${year - 1} \\(DJ del padrón\\)`))).toBeInTheDocument()
+    await userEvent.click(desde)
+    const post = await waitFor(() => {
+      const call = called('POST', '/srtm/contribuyentes/c1/declaraciones-juradas')
+      expect(call).toBeDefined()
+      return call!
+    })
+    expect(post.body).toEqual({ predio_id: 'p1', desde: 'd0', declaracion: { anio: year, medio_presentacion: 'FISICO', fecha_presentacion: today() } })
     await waitFor(() => expect(window.location.pathname).toBe('/declaraciones/d4'))
   })
 

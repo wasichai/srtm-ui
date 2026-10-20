@@ -89,7 +89,7 @@ function DialogoSugerido({ sugerido: s, onUsar, onClose }: { sugerido: Autoavalu
   const motivo = motivoLegible(s.llave)
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto">
         <DialogTitle className="text-lg font-semibold">Autoavalúo sugerido</DialogTitle>
         <DialogDescription className="mb-4 text-sm text-ink-muted">
           Lo calcula el catastro de la municipalidad con lo que declara esta declaración, sus niveles y sus obras. No se guarda: si lo usas, queda en el

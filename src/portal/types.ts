@@ -437,7 +437,8 @@ export interface ObraCategoria {
 // predio and contribuyente, of another year, that the backend copies with its lists (only the año and the
 // presentation are this one's)
 export interface NuevaDeclaracion {
-  declaracion: Declaracion
+  // declared from another (desde), only the año and the presentación: the rest is the one it is copied from
+  declaracion: Declaracion | Pick<Declaracion, 'anio' | 'medio_presentacion' | 'fecha_presentacion'>
   predio?: Predio
   predio_id?: string
   desde?: string

@@ -115,6 +115,16 @@ const sugerido = (status: number, body: unknown): MockRoute => ({ path: '/srtm/d
 const calcular = async () => userEvent.click(await screen.findByRole('button', { name: 'Calcular autoavalúo sugerido' }))
 
 describe('autoavalúo sugerido', () => {
+  it('opens wide enough for the table by piso, which scrolls inside it when it does not fit', async () => {
+    start([sugerido(200, VALUADA)])
+    await calcular()
+    const dialog = await screen.findByRole('dialog', { name: 'Autoavalúo sugerido' })
+    expect(dialog).toHaveClass('max-w-5xl')
+    expect(dialog).toHaveClass('overflow-y-auto')
+    const pisos = within(dialog).getByRole('table', { name: 'Construcción por piso' })
+    expect(pisos.closest('.overflow-x-auto')).not.toBeNull()
+  })
+
   it('shows how the catastro values the declaración, and puts its figure in the form, still to be saved', async () => {
     start([sugerido(200, VALUADA), { method: 'PUT', path: '/srtm/declaraciones/d1', body: { ...declaracion, valor_autoavaluo: 96752.21 } }])
     expect(fetch!.calls.some((c) => c.path.endsWith('/autoavaluo-sugerido'))).toBe(false)
