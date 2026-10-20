@@ -104,6 +104,18 @@ const dj = {
 
 const routes: MockRoute[] = [
   { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
+  // the organization's municipalidad (srtm-backend's GET /srtm/municipalidad): its place, what a new address starts on
+  {
+    path: '/srtm/municipalidad',
+    body: {
+      nombre: 'MUNICIPALIDAD DISTRITAL DE PERENE',
+      oficina: null,
+      escudo: null,
+      extension: null,
+      centro: null,
+      lugar: { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE', region: 'SELVA' }
+    }
+  },
   { path: '/auth/me/preferences', body: { theme: 'system', locale: null } },
   { path: '/srtm/resumen', body: { anio: year, contribuyentes: 1, predios: 1, declaraciones: 1 } },
   {
@@ -390,6 +402,20 @@ describe('lotes from buscar predios', () => {
 })
 
 describe('lote editor', () => {
+  it('starts on no place when the backend gives none for the organization', async () => {
+    start('/', [
+      {
+        path: '/srtm/municipalidad',
+        body: { nombre: 'MUNICIPALIDAD PROVINCIAL DE ICA', oficina: null, escudo: null, extension: null, centro: null, lugar: null }
+      }
+    ])
+    await userEvent.click(await screen.findByRole('link', { name: 'Nuevo lote de catastro' }))
+    expect(await screen.findByRole('heading', { name: 'Nuevo lote de catastro fiscal' })).toBeInTheDocument()
+    // no Perené, nor any other
+    expect(await screen.findByLabelText(/^Departamento/)).toHaveValue('')
+    expect(screen.getByLabelText(/^Distrito/)).toHaveValue('')
+  })
+
   it('registers a lote of the catastro with the polygon drawn on the map', async () => {
     const nuevo = { ...lote, id: 'k2', codigo_cpu: '54102170-0001-9', codigo_predio_municipal: null, ubigeo: '120302' }
     start('/', [

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { colorDeLote, IS_SELECTED, opacidadDeLote } from './colorDeLotes'
-import { boundsOf, PERENE, recordIdOf, type Geometry } from './geo'
+import { boundsOf, recordIdOf, vistaInicial, type Geometry } from './geo'
 import type { LotesMapProps } from './LotesMap'
 import { mapWorkerUrl } from './mapWorker'
 import { mapColors, toRgb, watchTheme } from './themeColors'
@@ -24,7 +24,7 @@ const STYLE: StyleSpecification = {
 }
 
 // the lotes, the selected one in another colour; a point; drawing through terra-draw. one map per mount
-export default function LotesMapImpl({ features, selectedId, onSelect, onBounds, draw, point, onCapture, label, colorPor }: LotesMapProps) {
+export default function LotesMapImpl({ features, selectedId, onSelect, onBounds, draw, point, onCapture, label, colorPor, vista }: LotesMapProps) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const terra = useRef<TerraDraw | null>(null)
@@ -37,11 +37,14 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
     if (!container.current) return
     const url = mapWorkerUrl()
     if (url) setWorkerUrl(url)
+    // the view it opens on; later ones are the clerk's (or a lote's, a point's)
+    const inicial = vista ?? vistaInicial(null)
     const instance = new MapLibreMap({
       container: container.current,
       style: STYLE,
-      center: PERENE,
-      zoom: 14,
+      center: inicial.center,
+      zoom: inicial.zoom,
+      ...(inicial.bounds ? { bounds: inicial.bounds, fitBoundsOptions: { padding: 40, maxZoom: 16 } } : {}),
       attributionControl: { compact: true },
       // the camera button reads the canvas
       canvasContextAttributes: { preserveDrawingBuffer: true }

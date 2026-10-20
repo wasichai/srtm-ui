@@ -1,5 +1,6 @@
 import type { FieldSpec } from '../../kit/forms/spec'
-import type { Contribuyente } from '../types'
+import { useMunicipalidad } from '../queries'
+import type { Contribuyente, LugarMunicipal } from '../types'
 import type { Picked } from './RecordPicker'
 import { UbigeoFields } from './UbigeoFields'
 
@@ -17,10 +18,23 @@ export function ubigeoCampos(): FieldSpec[] {
   ]
 }
 
-// the municipality's own district: what a new address starts on
-export const PERENE_UBIGEO = { ubigeo: '120302', departamento: 'JUNIN', provincia: 'CHANCHAMAYO', distrito: 'PERENE' } as const
-// and a new predio, in the selva besides
-export const PERENE_PREDIO = { ...PERENE_UBIGEO, region: 'SELVA' } as const
+type Lleno<T> = { [K in keyof T]?: NonNullable<T[K]> }
+const sinNulos = <T extends object>(valores: T): Lleno<T> =>
+  Object.fromEntries(Object.entries(valores).filter(([, v]) => v !== null && v !== undefined)) as Lleno<T>
+
+// what a new address starts on: the place most of the organization's predios are in (GET /srtm/municipalidad's
+// lugar), its ubigeo and the three names; a new predio its región besides. none (empty) when the backend gives none
+export function lugarPorOmision(lugar: LugarMunicipal | null | undefined) {
+  if (!lugar) return { ubigeo: {}, predio: {} }
+  const ubigeo = sinNulos({ ubigeo: lugar.ubigeo, departamento: lugar.departamento, provincia: lugar.provincia, distrito: lugar.distrito })
+  return { ubigeo, predio: sinNulos({ ...ubigeo, region: lugar.region }) }
+}
+
+// the organization's: cargando while GET /srtm/municipalidad is still on its way, for a form that starts on it
+export function useLugar() {
+  const municipalidad = useMunicipalidad()
+  return { cargando: municipalidad.isPending, ...lugarPorOmision(municipalidad.data?.lugar) }
+}
 
 // the names of a catalog's rows, for a suggest field's list
 export const nombres = (items: { nombre: string | null }[]) => items.map((i) => i.nombre ?? '').filter(Boolean)

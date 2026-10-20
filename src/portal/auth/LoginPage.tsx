@@ -1,14 +1,18 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '@wasichai/core'
 import { Button, Card, CardBody, Input, Label } from '@wasichai/ui'
 import { Landmark } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
+import { MUNICIPALIDAD_KEY } from '../queries'
+import { SISTEMA } from '../shell/comun'
 import { safeNext } from './RequireSession'
 import { useSession } from './session'
 
 export function LoginPage() {
   const { user, signIn } = useSession()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
   // the seed's admin (srtm-backend), in development only: a real deployment names no account on its sign-in page
@@ -25,6 +29,8 @@ export function LoginPage() {
     setError(null)
     try {
       await signIn(email, password)
+      // the municipalidad is the organization's: another user may be of another one
+      queryClient.removeQueries({ queryKey: MUNICIPALIDAD_KEY })
       navigate(next, { replace: true })
     } catch (e) {
       setError(e instanceof ApiError && e.status === 401 ? 'Correo o contraseña incorrectos' : 'No se pudo iniciar sesión. Inténtalo de nuevo.')
@@ -42,7 +48,8 @@ export function LoginPage() {
               <Landmark className="size-6" />
             </span>
             <h1 className="text-xl font-semibold">Rentas municipales</h1>
-            <p className="text-sm text-ink-muted">Municipalidad Distrital de Perené</p>
+            {/* before signing in there is no organization yet: no municipalidad's name */}
+            <p className="text-sm text-ink-muted">{SISTEMA}</p>
           </div>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">

@@ -13,6 +13,10 @@ vi.mock('./components/LotesMap', () => ({ LotesMap: () => null }))
 const user = { id: 'u1', email: 'admin@wasichai.local', displayName: 'Admin Rentas', organizationId: 'o1', roles: ['ADMIN'] }
 const page = (content: unknown[]) => ({ content, page: 0, size: 20, totalElements: content.length, totalPages: 1 })
 
+// the user's organization (srtm-backend's GET /srtm/municipalidad): another than Perené, with its escudo
+const ESCUDO = 'data:image/png;base64,iVBORw0KGgo='
+const ICA = { nombre: 'MUNICIPALIDAD PROVINCIAL DE ICA', oficina: null, escudo: ESCUDO, extension: null, centro: null, lugar: null }
+
 let fetch: FetchMock | null = null
 beforeEach(() => {
   localStorage.clear()
@@ -22,7 +26,8 @@ beforeEach(() => {
 afterEach(() => fetch?.restore())
 
 // signed in with the theme stored in the browser and for the user (the server's copy wins once it loads)
-function start(theme: string, { path = '/', admin = true } = {}) {
+// municipalidad null: the backend does not answer it (a 404)
+function start(theme: string, { path = '/', admin = true, municipalidad = ICA as typeof ICA | null } = {}) {
   localStorage.setItem('srtm.token', 't')
   localStorage.setItem('srtm.user', JSON.stringify(user))
   localStorage.setItem('srtm.theme', theme)
@@ -33,7 +38,8 @@ function start(theme: string, { path = '/', admin = true } = {}) {
     { method: 'PUT', path: '/auth/me/preferences', body: { theme: 'portal-tributario', locale: null } },
     { path: '/srtm/resumen', body: { anio: 2026, contribuyentes: 11840, predios: 14947, declaraciones: 15644 } },
     { path: '/srtm/contribuyentes', body: page([]) },
-    { path: '/srtm/predios', body: page([]) }
+    { path: '/srtm/predios', body: page([]) },
+    ...(municipalidad ? [{ path: '/srtm/municipalidad', body: municipalidad }] : [])
   ]
   fetch = mockFetch(routes)
   render(<PortalApp />)
@@ -57,7 +63,10 @@ describe('portal-tributario shell', () => {
     const bar = screen.getByRole('banner')
     expect(bar).toHaveClass('bg-shell', 'text-shell-ink')
     expect(within(bar).getByText('Rentas municipales')).toBeInTheDocument()
-    expect(within(bar).getByText('Municipalidad Distrital de Perené')).toBeInTheDocument()
+    // the user's municipalidad, with its escudo: none is fixed in the portal
+    expect(await within(bar).findByText('MUNICIPALIDAD PROVINCIAL DE ICA')).toBeInTheDocument()
+    expect(bar.querySelector('img')).toHaveAttribute('src', ESCUDO)
+    expect(within(bar).queryByText(/Peren/)).not.toBeInTheDocument()
     // white on the bar, with its own dark text: the bar's white would not show on it
     expect(within(bar).getByRole('searchbox', { name: 'Buscar' })).toHaveClass('bg-surface', 'text-ink')
     // the administration is in the rail and the session menu, not in the bar
@@ -72,7 +81,7 @@ describe('portal-tributario shell', () => {
     expect(lateral()).toHaveClass('bg-table-head')
     expect(within(lateral()).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
 
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('Municipalidad Distrital de Perené — Sistema de Gestión Tributaria Municipal')
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('MUNICIPALIDAD PROVINCIAL DE ICA — Sistema de Gestión Tributaria Municipal')
     // the open fichas are the bar's second row, like a browser's tabs: not over the content, and no trail there
     const fichas = within(bar).getByRole('navigation', { name: 'Fichas abiertas' })
     expect(fichas).toHaveAttribute('data-ubicacion', 'cabecera')
@@ -81,6 +90,24 @@ describe('portal-tributario shell', () => {
     expect(bar.lastElementChild).toBe(fichas)
     expect(within(screen.getByRole('main')).queryByRole('navigation', { name: 'Fichas abiertas' })).not.toBeInTheDocument()
     expect(within(fichas).getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it("names no municipalidad while it cannot read the user's", async () => {
+    start('portal-tributario', { municipalidad: null })
+    await listo()
+
+    const bar = screen.getByRole('banner')
+    expect(within(bar).getByText('Rentas municipales')).toBeInTheDocument()
+    expect(within(bar).queryByText(/Municipalidad/i)).not.toBeInTheDocument()
+    // lucide's Landmark, no image
+    expect(bar.querySelector('img')).toBeNull()
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(/^Sistema de Gestión Tributaria Municipal$/)
+  })
+
+  it("the classic shell names the user's municipalidad too", async () => {
+    start('light')
+    await listo()
+    expect(await within(screen.getByRole('banner')).findByText('MUNICIPALIDAD PROVINCIAL DE ICA')).toBeInTheDocument()
   })
 
   it('has no trail strip over the content: a ficha shows its trail in its band', async () => {

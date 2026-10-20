@@ -57,6 +57,7 @@ import type {
   PredioFicha,
   Relacionado,
   Resumen,
+  MunicipalidadPortal,
   ServicioArbitrio,
   Sustento,
   TasasAnuncios,
@@ -242,6 +243,7 @@ function hijos<T>(parent: 'contribuyentes' | 'declaraciones', segment: string): 
 export const rentas = {
   blob,
   resumen: () => get<Resumen>('/srtm/resumen'),
+  municipalidad: () => get<MunicipalidadPortal>('/srtm/municipalidad'),
   catalogos: () => get<Catalogos>('/srtm/catalogos'),
   ubigeos: () => get<Ubigeo[]>('/srtm/ubigeos'),
   vias: (q: string, tipo?: string | null, ubigeo?: string | null) => get<Pagina<Via>>(`/srtm/vias${query({ q, tipo, ubigeo })}`),

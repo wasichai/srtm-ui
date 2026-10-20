@@ -1,4 +1,4 @@
-import type { Geometry } from './components/geo'
+import type { Bbox, Geometry } from './components/geo'
 
 // what /api/srtm answers (srtm-backend, package srtm.rentas). keys are the model's field names
 
@@ -489,6 +489,26 @@ export interface Resumen {
   contribuyentes: number
   predios: number
   declaraciones: number
+}
+
+// the place most of the organization's predios are in (srtm-backend's GET /srtm/municipalidad): where a new address starts
+export interface LugarMunicipal {
+  ubigeo: string
+  departamento: string | null
+  provincia: string | null
+  distrito: string | null
+  region: string | null
+}
+
+// GET /srtm/municipalidad: what the portal shows of the user's organization. the header's name, oficina and escudo
+// (a data: uri), and where its lotes are (extension [w, s, e, n] and centro [lon, lat], EPSG:4326): null without any
+export interface MunicipalidadPortal {
+  nombre: string
+  oficina: string | null
+  escudo: string | null
+  extension: Bbox | null
+  centro: [number, number] | null
+  lugar: LugarMunicipal | null
 }
 
 export interface Pagina<T> {
