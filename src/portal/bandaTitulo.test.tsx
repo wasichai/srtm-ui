@@ -105,7 +105,7 @@ describe('title band: fichas', () => {
       within(acciones)
         .getAllByRole('button')
         .map((b) => b.textContent)
-    ).toEqual(['Anular declaración', 'Cancelar', 'Guardar', 'Siguiente'])
+    ).toEqual(['Rectificar', 'Anular declaración', 'Cancelar', 'Guardar', 'Siguiente'])
   })
 
   it("puts the declaración's two-column ficha right after its header", async () => {

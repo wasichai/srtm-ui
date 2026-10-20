@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router'
 import { Alert } from '@wasichai/ui'
 import { rentas } from '../api'
-import { anulada } from '../components/EstadoBadge'
+import { sinVigencia } from '../components/EstadoBadge'
 import { secuencia } from '../components/secuencia'
 import type { DeclaracionDetalle } from '../types'
 
@@ -16,7 +16,7 @@ export function useTitularesDelPredio(predio: string | undefined, anio: number |
     queryFn: () => rentas.declaracionesDePredio(predio!, anio ?? undefined),
     enabled: Boolean(predio && anio)
   })
-  return (query.data ?? []).filter(({ declaracion: d }) => !anulada(d) && d.secuencia_uso != null && secuencia(d.secuencia_uso) === secuencia(secuenciaUso))
+  return (query.data ?? []).filter(({ declaracion: d }) => !sinVigencia(d) && d.secuencia_uso != null && secuencia(d.secuencia_uso) === secuencia(secuenciaUso))
 }
 
 const nombre = (row: DeclaracionDetalle) => row.contribuyente?.nombre_completo ?? 'otro contribuyente'

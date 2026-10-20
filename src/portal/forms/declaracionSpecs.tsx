@@ -220,8 +220,9 @@ export const UBICACION_SECTIONS: SectionSpec[] = ubicacionSections()
 
 // características: the declaration's uso and areas; niveles and obras are lists of their own. bases: las
 // BASE_ARBITRIO del año en vigor (srtm-backend's Base) - FRONTIS_ML pide longitud_frente, AREA_CONSTRUIDA_M2 pide
-// area_construida (wasichai/srtm-ui#94). vacío por defecto: sin esas filas, como siempre, opcionales
-export function caracteristicasSections(bases: Set<string> = new Set()): SectionSpec[] {
+// area_construida (wasichai/srtm-ui#94). vacío por defecto: sin esas filas, como siempre, opcionales. sugerido: what
+// the Valores section offers by its title (the autoavalúo sugerido of a declaración that is edited)
+export function caracteristicasSections(bases: Set<string> = new Set(), sugerido?: SectionSpec['action']): SectionSpec[] {
   return [
     {
       id: 'caracteristicas-de-predio',
@@ -243,6 +244,7 @@ export function caracteristicasSections(bases: Set<string> = new Set()): Section
       // not on the srtm's screens (pages 17 and 20): what the fichas' totals add up
       id: 'valores',
       title: 'Valores',
+      action: sugerido,
       fields: [
         { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 },
         { name: 'valor_condominio', label: 'Valor de condominio (S/)', kind: 'money', span: 2 },

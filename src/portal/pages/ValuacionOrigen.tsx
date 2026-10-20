@@ -8,6 +8,9 @@ import type { DeclaracionOrigen, NivelConstruccion, NivelOrigen, PredioOrigen } 
 
 const NOTA = 'Solo lectura, para cotejar con el padrón de origen. No cambia el impuesto, que sale del autoavalúo.'
 
+// once the declaración is edited (srtm-backend#150's modificada), the valuación no longer describes it
+export const AVISO_MODIFICADA = 'La declaración cambió después de la importación: la valuación de origen corresponde a la versión importada.'
+
 // each field with its own formatter, checked against the field's type
 type Campo<T> = { [K in keyof T]-?: { campo: K; termino: string; formato: (valor: T[K]) => string } }[keyof T]
 
@@ -28,7 +31,17 @@ const DECLARACION: Campo<DeclaracionOrigen>[] = [
 // a value: neither absent nor blank (the backend leaves both out already)
 const conValor = (valor: unknown) => valor !== undefined && valor !== null && valor !== ''
 
-function Bloque<T extends object>({ titulo, campos, valores }: { titulo: string; campos: Campo<T>[]; valores: T | null | undefined }) {
+function Bloque<T extends object>({
+  titulo,
+  campos,
+  valores,
+  modificada
+}: {
+  titulo: string
+  campos: Campo<T>[]
+  valores: T | null | undefined
+  modificada?: boolean
+}) {
   if (!valores) return null
   const datos = campos.filter((c) => conValor(valores[c.campo]))
   if (datos.length === 0) return null
@@ -42,6 +55,7 @@ function Bloque<T extends object>({ titulo, campos, valores }: { titulo: string;
           </Dato>
         ))}
       </dl>
+      {modificada && <p className="text-xs font-medium text-warning">{AVISO_MODIFICADA}</p>}
       <p className="text-xs text-ink-muted">{NOTA}</p>
     </section>
   )
@@ -57,8 +71,8 @@ function Dato({ termino, children }: { termino: string; children: ReactNode }) {
 }
 
 // the declaración's valuation, in datos del predio
-export function ValuacionDeLaDeclaracion({ valores }: { valores: DeclaracionOrigen | null | undefined }) {
-  return <Bloque titulo="Valuación del padrón de origen" campos={DECLARACION} valores={valores} />
+export function ValuacionDeLaDeclaracion({ valores, modificada }: { valores: DeclaracionOrigen | null | undefined; modificada?: boolean }) {
+  return <Bloque titulo="Valuación del padrón de origen" campos={DECLARACION} valores={valores} modificada={modificada} />
 }
 
 // the predio's codes in the source catastro and the armonización, in the ubicación (the DJ's and the predio's)
