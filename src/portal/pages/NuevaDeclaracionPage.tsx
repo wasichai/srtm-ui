@@ -30,7 +30,7 @@ import {
   useRefresh
 } from '../queries'
 import { useVolver } from '../shell/useVolver'
-import type { Declaracion, Predio } from '../types'
+import type { Declaracion, NuevaDeclaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
 import { COMUNES, DECLARACION_TABS, siguientePendiente } from './DeclaracionPage'
 import { AvisoTitulares, useTitularesDelPredio } from './TitularesDelPredio'
@@ -84,7 +84,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   // the tipo de predio of both steps is one value; the año and secuencia de uso are followed (SEGUIDOS)
   const comun = useSharedFields(SEGUIDOS)
   // one that already has a titular that year is not presented on: a condómino joins from that declaración
-  const anio = comun.values.anio === undefined ? datos?.anio : Number(comun.values.anio) || null
+  // (the form's first año, until the clerk changes it: what declaring from another year presents in step one)
+  const anio = comun.values.anio === undefined ? (datos?.anio ?? currentYear()) : Number(comun.values.anio) || null
   const titulares = useTitularesDelPredio(existente?.id, anio, comun.values.secuencia_uso ?? datos?.secuencia_uso)
   // the titular's most recent vigente declaración of the predio in another year: the new one may be declared from it
   const partida = declaracionDePartida(useDeclaracionesDePredio(existente?.id).data, titular, anio)
@@ -112,7 +113,9 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice
   const enviando = useRef(false)
-  // desde: the declaración of another year the backend copies, with its lists (srtm-backend#151)
+  // desde: the declaración of another year the backend copies, with its lists and the titular's datos
+  // (srtm-backend#151). of what was typed it takes only the año and the presentación: datos del predio is not asked
+  // for, nor validated (it may be declared from step one)
   const presentar = async (predio: { predio?: Predio; predio_id?: string }, desde?: string) => {
     if (!titular || enviando.current) return
     // a predio that already has a titular that year is joined from its declaración, not presented on
@@ -121,18 +124,24 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
     setError(null)
     setBusy(true)
     try {
-      // datos del predio as it is now: the clerk may have gone back to it
-      const actual = (await grupo.values('datos')) as DatosDelPredio | null
-      if (!actual) {
-        setTab('datos')
-        return
-      }
-      // datos del predio carries the predio's tipo; the declaration does not keep it. a predio of the padrón gets a
-      // changed one saved first, over the predio as it is now (core's update replaces every field)
-      const declaracion = Object.fromEntries(Object.entries(actual).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
-      if (predio.predio_id && actual.tipo_predio && actual.tipo_predio !== existente?.tipo_predio) {
-        const { predio: latest } = await rentas.predio(predio.predio_id, currentYear())
-        await rentas.actualizarPredio(predio.predio_id, { ...latest, tipo_predio: actual.tipo_predio })
+      let declaracion: NuevaDeclaracion['declaracion']
+      if (desde) {
+        // medio and fecha de presentación are read-only in datos del predio: its first values
+        declaracion = { anio, medio_presentacion: datos?.medio_presentacion ?? 'FISICO', fecha_presentacion: datos?.fecha_presentacion ?? today() }
+      } else {
+        // datos del predio as it is now: the clerk may have gone back to it
+        const actual = (await grupo.values('datos')) as DatosDelPredio | null
+        if (!actual) {
+          setTab('datos')
+          return
+        }
+        // datos del predio carries the predio's tipo; the declaration does not keep it. a predio of the padrón gets a
+        // changed one saved first, over the predio as it is now (core's update replaces every field)
+        declaracion = Object.fromEntries(Object.entries(actual).filter(([k]) => !DATOS_DEL_PREDIO.includes(k))) as Declaracion
+        if (predio.predio_id && actual.tipo_predio && actual.tipo_predio !== existente?.tipo_predio) {
+          const { predio: latest } = await rentas.predio(predio.predio_id, currentYear())
+          await rentas.actualizarPredio(predio.predio_id, { ...latest, tipo_predio: actual.tipo_predio })
+        }
       }
       const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio, ...(desde ? { desde } : {}) })
       await refresh()
@@ -170,6 +179,22 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   // where the tabs (and the steps, with the portal's theme) can go: datos del predio, and the ubicación once it is in
   const abierta = (t: string) => t === 'datos' || (t === 'ubicacion' && Boolean(datos))
   const ir = (next: string) => setTab(next === 'ubicacion' && datos ? 'ubicacion' : 'datos')
+
+  // declaring from the titular's declaración of another year, offered once the contribuyente and the predio are known:
+  // in step one when the wizard came with the predio, in step two when it was picked there
+  const desdePartida = existente && titulares.length === 0 && partida && (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-4 py-3 text-sm">
+      <p className="max-w-2xl text-ink">
+        El contribuyente declaró este predio en {partida.anio} ({partida.numero_declaracion != null ? `DJ n° ${partida.numero_declaracion}` : 'DJ del padrón'}).
+        Desde esa declaración se copian las características, los niveles, las obras y los otros frentes, los transferentes y el autoavalúo, para corregirlos; de
+        lo escrito aquí solo se toman el año y la presentación.
+      </p>
+      <Button type="button" variant="secondary" disabled={busy} onClick={() => void presentar({ predio_id: existente.id }, partida.id)}>
+        <Copy className="size-4" />
+        Declarar desde la DJ {partida.anio}
+      </Button>
+    </div>
+  )
 
   const c = ficha.data?.contribuyente
   return (
@@ -218,7 +243,9 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
             disabled: !abierta(t.id),
             render: () =>
               t.id === 'datos' ? (
-                <div className="px-6 pt-5">
+                <div className="space-y-5 px-6 pt-5">
+                  {tab === 'datos' && desdePartida}
+                  {tab === 'datos' && error && desdePartida && <Alert tone="danger">{error}</Alert>}
                   {predio && !predioFijo ? (
                     // the predio's code and tipo go in the form's first values
                     <QueryState query={fijo}>{() => null}</QueryState>
@@ -288,19 +315,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                         )}
                       </div>
                       {titulares.length > 0 && <AvisoTitulares titulares={titulares} contribuyente={titular} anio={anio} />}
-                      {titulares.length === 0 && partida && (
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-4 py-3 text-sm">
-                          <p className="max-w-2xl text-ink">
-                            El contribuyente declaró este predio en {partida.anio} (DJ n° {partida.numero_declaracion ?? 'sin número'}). Desde esa declaración
-                            se copian las características, los niveles, las obras y los otros frentes, los transferentes y el autoavalúo, para corregirlos; de
-                            lo escrito aquí solo se toman el año y la presentación.
-                          </p>
-                          <Button type="button" variant="secondary" disabled={busy} onClick={() => void presentar({ predio_id: existente.id }, partida.id)}>
-                            <Copy className="size-4" />
-                            Declarar desde la DJ {partida.anio}
-                          </Button>
-                        </div>
-                      )}
+                      {tab === 'ubicacion' && desdePartida}
                       <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, tipo_predio: tipoPredio }} />
                     </div>
                   ) : (
