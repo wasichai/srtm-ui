@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Alert, Button, Card } from '@wasichai/ui'
-import { ArrowRight, FileText, MapPin, Undo2, X } from 'lucide-react'
+import { ArrowRight, Copy, FileText, MapPin, Undo2, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { FieldGrid } from '../../kit/forms/FieldGrid'
@@ -19,7 +19,16 @@ import { DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections, 
 import { INSTRUCCIONES_NUEVA_DECLARACION } from '../forms/instrucciones'
 import { RecordPicker, type Picked } from '../forms/RecordPicker'
 import type { Elegido } from '../forms/ubicacion'
-import { basesDeArbitrio, dimensionesDeArbitrio, parametrosArbitrioQuery, useCatalogos, useParametrosArbitrio, useRefresh } from '../queries'
+import {
+  basesDeArbitrio,
+  declaracionDePartida,
+  dimensionesDeArbitrio,
+  parametrosArbitrioQuery,
+  useCatalogos,
+  useDeclaracionesDePredio,
+  useParametrosArbitrio,
+  useRefresh
+} from '../queries'
 import { useVolver } from '../shell/useVolver'
 import type { Declaracion, Predio } from '../types'
 import { CabeceraAsistente } from './CabeceraAsistente'
@@ -77,6 +86,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
   // one that already has a titular that year is not presented on: a condómino joins from that declaración
   const anio = comun.values.anio === undefined ? datos?.anio : Number(comun.values.anio) || null
   const titulares = useTitularesDelPredio(existente?.id, anio, comun.values.secuencia_uso ?? datos?.secuencia_uso)
+  // the titular's most recent vigente declaración of the predio in another year: the new one may be declared from it
+  const partida = declaracionDePartida(useDeclaracionesDePredio(existente?.id).data, titular, anio)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // what was typed in either step is lost by leaving: asked first
@@ -101,7 +112,8 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
 
   // one presentation at a time: a second "Siguiente" would register the declaration twice
   const enviando = useRef(false)
-  const presentar = async (predio: { predio?: Predio; predio_id?: string }) => {
+  // desde: the declaración of another year the backend copies, with its lists (srtm-backend#151)
+  const presentar = async (predio: { predio?: Predio; predio_id?: string }, desde?: string) => {
     if (!titular || enviando.current) return
     // a predio that already has a titular that year is joined from its declaración, not presented on
     if (predio.predio_id && titulares.length > 0) return
@@ -122,7 +134,7 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
         const { predio: latest } = await rentas.predio(predio.predio_id, currentYear())
         await rentas.actualizarPredio(predio.predio_id, { ...latest, tipo_predio: actual.tipo_predio })
       }
-      const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio })
+      const dj = await rentas.presentarDeclaracion(titular, { declaracion, ...predio, ...(desde ? { desde } : {}) })
       await refresh()
       salida.allow()
       // just presented: no transferentes yet. las bases del año recién presentado, pedidas justo aquí por ese año
@@ -139,7 +151,9 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
           // sin datos: bases queda vacío, como hoy
         }
       }
-      navigate(`/declaraciones/${dj.declaracion.id}?tab=${siguientePendiente(dj.declaracion, 0, bases)}&asistente=1`, {
+      // one copied from another year has its lists already: its características are what a new year reviews
+      const pestana = desde ? 'caracteristicas' : siguientePendiente(dj.declaracion, 0, bases)
+      navigate(`/declaraciones/${dj.declaracion.id}?tab=${pestana}&asistente=1`, {
         replace: true
       })
     } catch (e) {
@@ -274,6 +288,19 @@ function NuevaDeclaracionPage({ contribuyente, predio }: { contribuyente?: strin
                         )}
                       </div>
                       {titulares.length > 0 && <AvisoTitulares titulares={titulares} contribuyente={titular} anio={anio} />}
+                      {titulares.length === 0 && partida && (
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-4 py-3 text-sm">
+                          <p className="max-w-2xl text-ink">
+                            El contribuyente declaró este predio en {partida.anio} (DJ n° {partida.numero_declaracion ?? 'sin número'}). Desde esa declaración
+                            se copian las características, los niveles, las obras y los otros frentes, los transferentes y el autoavalúo, para corregirlos; de
+                            lo escrito aquí solo se toman el año y la presentación.
+                          </p>
+                          <Button type="button" variant="secondary" disabled={busy} onClick={() => void presentar({ predio_id: existente.id }, partida.id)}>
+                            <Copy className="size-4" />
+                            Declarar desde la DJ {partida.anio}
+                          </Button>
+                        </div>
+                      )}
                       <FieldGrid sections={UBICACION_SECTIONS} values={{ ...existente, tipo_predio: tipoPredio }} />
                     </div>
                   ) : (

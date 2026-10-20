@@ -4,7 +4,7 @@ import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@
 import { FileText, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { rentas, type TitularPu } from '../api'
-import { anulada } from '../components/EstadoBadge'
+import { sinVigencia } from '../components/EstadoBadge'
 import { PdfDialog } from '../components/PdfDialog'
 
 // Ver PU and Ver HR (wasichai/srtm-ui#61): srtm-backend makes the PDF, PdfDialog shows it
@@ -22,7 +22,7 @@ function useTitulares(predio: string, anio: number, enabled: boolean) {
       const vistos = new Set<string>()
       return filas.flatMap(({ declaracion, contribuyente }) => {
         const id = contribuyente?.id ?? declaracion.contribuyente
-        if (anulada(declaracion) || !id || vistos.has(id)) return []
+        if (sinVigencia(declaracion) || !id || vistos.has(id)) return []
         vistos.add(id)
         const documento = [contribuyente?.tipo_documento, contribuyente?.numero_documento].filter(Boolean).join(' ')
         return [{ id, nombre: contribuyente?.nombre_completo ?? id, documento: documento || null }]

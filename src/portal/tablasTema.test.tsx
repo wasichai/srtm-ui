@@ -7,7 +7,7 @@ import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { FieldGrid } from '../kit/forms/FieldGrid'
 import { SRTM_THEMES } from '../themes'
-import { EstadoBadge, MarcaAnulada } from './components/EstadoBadge'
+import { EstadoBadge, MarcaSinVigencia } from './components/EstadoBadge'
 import { formatNumber } from './components/format'
 import { tonoDeEstado } from './components/tono'
 import { DeclaracionesDelAnio } from './pages/Declaraciones'
@@ -108,8 +108,14 @@ describe('EstadoBadge', () => {
     expect(screen.getByText('Activo').textContent).toBe(clasico)
   })
 
+  it('marks a sustituida declaración, not in red: it was replaced, not annulled', () => {
+    renderIn('portal-tributario', <MarcaSinVigencia declaracion={{ estado: 'SUSTITUIDA' }} />)
+    const marca = screen.getByText('Sustituida')
+    expect(marca).not.toHaveAttribute('data-tono', 'rojo')
+  })
+
   it('marks an annulled declaración in red in the portal theme', () => {
-    renderIn('portal-tributario', <MarcaAnulada declaracion={{ estado: 'ANULADA' }} />)
+    renderIn('portal-tributario', <MarcaSinVigencia declaracion={{ estado: 'ANULADA' }} />)
     const marca = screen.getByText('Anulada')
     expect(marca).toHaveAttribute('data-tono', 'rojo')
     expect(marca).toHaveClass('text-danger')

@@ -7,6 +7,7 @@ import type {
   AnuncioRegistrado,
   AnunciosDe,
   ArbitriosContribuyente,
+  AutoavaluoSugerido,
   CatalogoCuis,
   CatastroFiscal,
   Catalogos,
@@ -55,6 +56,7 @@ import type {
   ParametrosArbitrios,
   Predio,
   PredioFicha,
+  Rectificacion,
   Relacionado,
   Resumen,
   MunicipalidadPortal,
@@ -277,6 +279,10 @@ export const rentas = {
     }),
   // the descargo: the declaración stays, read-only, out of totales and condominio
   anularDeclaracion: (id: string, motivo_anulacion: string | null) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/anular`, { motivo_anulacion }),
+  // the rectificatoria: a new declaración, numbered, that replaces this one (left SUSTITUIDA). answers the new one's ficha
+  rectificarDeclaracion: (id: string, body: Rectificacion) => send<DeclaracionJurada>('POST', `/srtm/declaraciones/${id}/rectificar`, body),
+  // valued by the organization's catastro-backend, never stored: 409 without a catastro, 502 when it fails
+  autoavaluoSugerido: (id: string) => get<AutoavaluoSugerido>(`/srtm/declaraciones/${id}/autoavaluo-sugerido`),
   // another titular of the declaración's predio, year and secuencia: the backend recomputes everyone's %
   agregarCondomino: (id: string, body: NuevoCondomino) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/condominos`, body),
   transferentes: hijos<Transferente>('declaraciones', 'transferentes'),

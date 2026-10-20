@@ -119,6 +119,24 @@ describe('valuación del padrón de origen', () => {
     expect(screen.getByText(/columnas del padrón de origen/)).toBeInTheDocument()
   })
 
+  it('says the valuación is the imported version once the declaración changed (modificada)', async () => {
+    start('/declaraciones/d1?tab=datos', [origen({ ...ICA, modificada: true })])
+    const bloque = await screen.findByRole('region', { name: 'Valuación del padrón de origen' })
+    const aviso = 'La declaración cambió después de la importación: la valuación de origen corresponde a la versión importada.'
+    expect(bloque).toHaveTextContent(aviso)
+    await userEvent.click(screen.getByRole('tab', { name: 'Características' }))
+    expect(await screen.findByText(/columnas del padrón de origen/)).toHaveTextContent(aviso)
+  })
+
+  it('says nothing of a change while the declaración is as imported', async () => {
+    start('/declaraciones/d1?tab=datos', [origen({ ...ICA, modificada: false })])
+    const bloque = await screen.findByRole('region', { name: 'Valuación del padrón de origen' })
+    expect(bloque).not.toHaveTextContent(/cambió después de la importación/)
+    await userEvent.click(screen.getByRole('tab', { name: 'Características' }))
+    expect(await screen.findByText(/columnas del padrón de origen/)).toBeInTheDocument()
+    expect(screen.queryByText(/cambió después de la importación/)).not.toBeInTheDocument()
+  })
+
   // the niveles are asked for after the valuación (at the page's mount): once they are drawn, it has come
   it('shows nothing of it when the declaración has no padrón de origen', async () => {
     start('/declaraciones/d1?tab=caracteristicas', [origen(VACIA)])

@@ -8,7 +8,7 @@ import { celda, etiqueta } from '../forms/etiquetas'
 import { nombreORazonSocial } from '../forms/specs'
 import type { NivelConstruccion, NivelOrigen, ObraComplementaria, OtroFrente, Transferente } from '../types'
 import { HijosPanel } from './HijosPanel'
-import { AVISO_NIVELES, columnasDeOrigen } from './ValuacionOrigen'
+import { AVISO_MODIFICADA, AVISO_NIVELES, columnasDeOrigen } from './ValuacionOrigen'
 
 // the declaración jurada's lists, as the srtm draws them
 
@@ -43,8 +43,19 @@ export function TransferentesPanel({ declaracion, readOnly }: { declaracion: str
   )
 }
 
-// origen: the valuación del padrón de origen of each nivel (srtm-backend#132), read-only columns when any has one
-export function NivelesPanel({ declaracion, readOnly, origen }: { declaracion: string; readOnly?: boolean; origen?: Record<string, NivelOrigen> | null }) {
+// origen: the valuación del padrón de origen of each nivel (srtm-backend#132), read-only columns when any has one.
+// modificada: the declaración changed since it was imported (srtm-backend#150), so they are the imported version's
+export function NivelesPanel({
+  declaracion,
+  readOnly,
+  origen,
+  modificada
+}: {
+  declaracion: string
+  readOnly?: boolean
+  origen?: Record<string, NivelOrigen> | null
+  modificada?: boolean
+}) {
   const deOrigen = columnasDeOrigen(origen)
   return (
     <HijosPanel<NivelConstruccion>
@@ -58,7 +69,16 @@ export function NivelesPanel({ declaracion, readOnly, origen }: { declaracion: s
       catalog="nivel_construccion"
       wide
       sinEstado
-      aviso={deOrigen.length > 0 ? () => <p className="text-xs text-ink-muted">{AVISO_NIVELES}</p> : undefined}
+      aviso={
+        deOrigen.length > 0
+          ? () => (
+              <p className="text-xs text-ink-muted">
+                {AVISO_NIVELES}
+                {modificada && <span className="block font-medium text-warning">{AVISO_MODIFICADA}</span>}
+              </p>
+            )
+          : undefined
+      }
       nuevo={(rows) =>
         emptyOf<NivelConstruccion>(NIVEL_SECTIONS, {
           tipo_nivel: 'PISO',

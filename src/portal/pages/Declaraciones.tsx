@@ -4,7 +4,7 @@ import { Badge, Button, Table, Td, Th } from '@wasichai/ui'
 import { FileText, Pencil, Plus } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { rentas } from '../api'
-import { anulada, MarcaAnulada } from '../components/EstadoBadge'
+import { MarcaSinVigencia, sinVigencia } from '../components/EstadoBadge'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { NUMERICA } from '../components/tabla'
 import type { Declaracion, DeclaracionDetalle } from '../types'
@@ -96,7 +96,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                   </Td>
                   <Td>
                     {row.declaracion.condicion_propiedad ? <Badge>{row.declaracion.condicion_propiedad}</Badge> : '—'}
-                    <MarcaAnulada declaracion={row.declaracion} />
+                    <MarcaSinVigencia declaracion={row.declaracion} />
                   </Td>
                   <Td {...NUMERICA}>{formatNumber(row.declaracion.porcentaje_condominio)}</Td>
                   <Td>{formatText(usoDe(row.declaracion))}</Td>
@@ -111,7 +111,7 @@ export function DeclaracionesDelAnio({ side, id, anio }: { side: Side; id: strin
                   </Td>
                   {side === 'contribuyente' && (
                     <Td>
-                      {row.predio?.id && !anulada(row.declaracion) && (
+                      {row.predio?.id && !sinVigencia(row.declaracion) && (
                         <PuDeFila predio={row.predio.id} codigo={row.predio.codigo ?? row.predio.id} contribuyente={id} anio={anio} />
                       )}
                     </Td>
@@ -182,7 +182,7 @@ export function HistorialDeclaraciones({ side, id }: { side: Side; id: string })
                         <FileText className="size-3.5" />
                         {row.declaracion.numero_declaracion ?? 'Abrir'}
                       </Link>
-                      <MarcaAnulada declaracion={row.declaracion} />
+                      <MarcaSinVigencia declaracion={row.declaracion} />
                     </Td>
                     <Td>
                       <OtherSide side={side} detalle={row} />

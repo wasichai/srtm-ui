@@ -2,8 +2,8 @@ import { Badge, cn } from '@wasichai/ui'
 import { useVarianteTema } from '../../themes'
 import { tonoDeEstado, type Tono } from './tono'
 
-// a list row's ACTIVO / INACTIVO (none is ACTIVO), or a declaración's VIGENTE / ANULADA (none is VIGENTE)
-const ETIQUETAS: Record<string, string> = { ACTIVO: 'Activo', VIGENTE: 'Vigente', ANULADA: 'Anulada' }
+// a list row's ACTIVO / INACTIVO (none is ACTIVO), or a declaración's VIGENTE / ANULADA / SUSTITUIDA (none is VIGENTE)
+const ETIQUETAS: Record<string, string> = { ACTIVO: 'Activo', VIGENTE: 'Vigente', ANULADA: 'Anulada', SUSTITUIDA: 'Sustituida' }
 
 const COLOR: Record<Tono, string> = { verde: 'text-success', ambar: 'text-warning', rojo: 'text-danger', '': 'text-ink' }
 
@@ -33,12 +33,18 @@ export function EstadoBadge({ estado }: { estado: string | null | undefined }) {
 // an annulled declaración (a descargo) stays listed, marked, but counts in no totals and no condominio
 export const anulada = (declaracion: { estado?: string | null }) => declaracion.estado === 'ANULADA'
 
-// beside a declaración in a list: only an annulled one is marked
-export function MarcaAnulada({ declaracion }: { declaracion: { estado?: string | null } }) {
-  if (!anulada(declaracion)) return null
+// one replaced by its rectificatoria (srtm-backend#151): kept, read-only, counted nowhere, as an annulled one
+export const sustituida = (declaracion: { estado?: string | null }) => declaracion.estado === 'SUSTITUIDA'
+
+// annulled or sustituida: only read, and out of every titular, condominio and PU
+export const sinVigencia = (declaracion: { estado?: string | null }) => anulada(declaracion) || sustituida(declaracion)
+
+// beside a declaración in a list: only an annulled or a sustituida one is marked
+export function MarcaSinVigencia({ declaracion }: { declaracion: { estado?: string | null } }) {
+  if (!sinVigencia(declaracion)) return null
   return (
     <span className="ml-2 inline-flex align-middle">
-      <EstadoBadge estado="ANULADA" />
+      <EstadoBadge estado={declaracion.estado} />
     </span>
   )
 }

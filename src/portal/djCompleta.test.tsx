@@ -210,7 +210,7 @@ describe('the full declaración jurada', () => {
   it('edits the valores of a declaration in its características, over the declaration as it is now', async () => {
     start('/declaraciones/d1?tab=caracteristicas', [{ method: 'PUT', path: '/srtm/declaraciones/d1', body: declaracion }])
     const panel = within(await screen.findByRole('tabpanel'))
-    expect(await panel.findByRole('group', { name: 'Valores' })).toBeInTheDocument()
+    expect(await panel.findByRole('group', { name: /^Valores/ })).toBeInTheDocument()
     await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
     await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')
     await userEvent.type(panel.getByLabelText('Deducción (S/)'), '1500')
@@ -249,7 +249,7 @@ describe('the full declaración jurada', () => {
       }
     ])
     const panel = within(await screen.findByRole('tabpanel'))
-    await panel.findByRole('group', { name: 'Valores' })
+    await panel.findByRole('group', { name: /^Valores/ })
     // the year's ordenanza cobra por FRONTIS_ML and AREA_CONSTRUIDA_M2: both become required (compatibility with a
     // year that lacks those filas, or a parámetros query that fails, stays optional: the unmodified test above,
     // which mocks no /srtm/arbitrios/parametros route at all, still saves área construida without it)
@@ -265,7 +265,7 @@ describe('the full declaración jurada', () => {
       { path: '/srtm/arbitrios/parametros', body: { anio: year, ordenanza: null, servicios: [], parametros: [filaBase('LIMPIEZA', 'FRONTIS_ML')], faltan: [] } }
     ])
     const panel = within(await screen.findByRole('tabpanel'))
-    await panel.findByRole('group', { name: 'Valores' })
+    await panel.findByRole('group', { name: /^Valores/ })
     await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
     await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
     await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')

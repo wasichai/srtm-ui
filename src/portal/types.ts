@@ -248,10 +248,13 @@ export interface Declaracion {
   sub_clase_uso?: string | null
   area_comun_terreno?: number | null
   otros_datos?: string | null
-  // VIGENTE or ANULADA (none, in the imported ones, is VIGENTE): the backend's, set by anular
+  // VIGENTE, ANULADA or SUSTITUIDA (none, in the imported ones, is VIGENTE): the backend's, set by anular and rectificar
   estado?: string | null
   motivo_anulacion?: string | null
   fecha_anulacion?: string | null
+  // a rectificatoria's: the id of the declaración it replaces. the sustituida's: when (srtm-backend#151)
+  sustituye?: string | null
+  fecha_sustitucion?: string | null
 }
 
 // the declaración jurada's lists. declaracion is the parent's id, set by the backend
@@ -367,11 +370,13 @@ export interface NivelOrigen {
   valor_total?: number
 }
 
-// niveles by the nivel's id: one without values is not there
+// niveles by the nivel's id: one without values is not there. modificada: the declaración changed after it was
+// imported, so the valuación is the imported version's (absent from an older backend)
 export interface ValuacionOrigen {
   predio: PredioOrigen
   declaracion: DeclaracionOrigen
   niveles: Record<string, NivelOrigen>
+  modificada?: boolean
 }
 
 export interface DeclaracionJurada {
@@ -428,11 +433,63 @@ export interface ObraCategoria {
   material?: string | null
 }
 
-// presenting one: an existing predio (predio_id) or a new one (predio)
+// presenting one: an existing predio (predio_id) or a new one (predio). desde: a vigente declaración of the same
+// predio and contribuyente, of another year, that the backend copies with its lists (only the año and the
+// presentation are this one's)
 export interface NuevaDeclaracion {
   declaracion: Declaracion
   predio?: Predio
   predio_id?: string
+  desde?: string
+}
+
+// how and when a rectificatoria is presented: the backend's FÍSICO and today when absent
+export interface Rectificacion {
+  medio_presentacion?: string | null
+  fecha_presentacion?: string | null
+}
+
+// the autoavalúo sugerido of a declaración (srtm-backend#152): valued by the organization's catastro-backend, never
+// stored. not valued: the totals and detalle are null, and motivo (for a person) and llave (a code) say why
+export interface PisoSugerido {
+  piso: string | null
+  seccion: number | null
+  area_construida: number | null
+  valor_unitario: number | null
+  incremento: number | null
+  tabla_depreciacion: string | null
+  antiguedad: number | null
+  porcentaje_depreciacion: number | null
+  valor_unitario_depreciado: number | null
+  valor: number | null
+}
+
+export interface ObraSugerida {
+  codigo_vu: string | null
+  cantidad: number | null
+  valor_unitario: number | null
+  factor_oficializacion: number | null
+  tabla_depreciacion: string | null
+  antiguedad: number | null
+  porcentaje_depreciacion: number | null
+  valor: number | null
+}
+
+export interface AutoavaluoSugerido {
+  anio: number | null
+  version: string | null
+  region: string | null
+  codigo_municipal: string | null
+  arancel_m2: number | null
+  // CUERPO: the declaración's own (an external padrón's); FICHA: the catastro's, by the predio's code
+  origen_arancel: 'CUERPO' | 'FICHA' | null
+  terreno: number | null
+  construccion: number | null
+  obras: number | null
+  autoavaluo: number | null
+  motivo: string | null
+  llave: string | null
+  detalle: { pisos: PisoSugerido[]; obras: ObraSugerida[] } | null
 }
 
 export interface CategoriaValor {

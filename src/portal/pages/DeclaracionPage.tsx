@@ -11,7 +11,7 @@ import { dataFields, type FieldSpec, type FormValues, type SectionSpec } from '.
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { ConfirmDiscard, useUnsavedChanges } from '../../kit/ui/UnsavedChanges'
 import { rentas } from '../api'
-import { anulada, EstadoBadge } from '../components/EstadoBadge'
+import { anulada, EstadoBadge, sinVigencia, sustituida } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
 import { caracteristicasSections, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections } from '../forms/declaracionSpecs'
@@ -20,9 +20,11 @@ import { basesDeArbitrio, dimensionesDeArbitrio, useCatalogos, useParametrosArbi
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion } from '../types'
 import { AnularDeclaracion, AvisoAnulada } from './AnularDeclaracion'
+import { AutoavaluoSugeridoBoton } from './AutoavaluoSugerido'
 import { CondominosPanel } from './Condominos'
 import { FichaHeader } from './FichaHeader'
 import { FrentesPanel, NivelesPanel, ObrasPanel, TransferentesPanel } from './DeclaracionListas'
+import { AvisoSustituida, EnlaceSustituye, RectificarDeclaracion } from './RectificarDeclaracion'
 import { CodigosDelPredio, ValuacionDeLaDeclaracion } from './ValuacionOrigen'
 
 // the srtm's tabs of a declaración jurada predial
@@ -99,7 +101,12 @@ function DeclaracionPage({ id }: { id: string }) {
   // así bases, conInfluencia y las secciones no se recalculan en cada render, solo cuando la query cambia de veras
   const bases = useMemo(() => basesDeArbitrio(parametrosArbitrio.data?.parametros), [parametrosArbitrio.data])
   const conInfluencia = useMemo(() => dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA'), [parametrosArbitrio.data])
-  const seccionesCaracteristicas = useMemo(() => caracteristicasSections(bases), [bases])
+  // the autoavalúo sugerido, by the Valores' title, only while the declaración is edited
+  const editable = dj ? !sinVigencia(dj.declaracion) : false
+  const seccionesCaracteristicas = useMemo(
+    () => caracteristicasSections(bases, editable ? (form) => <AutoavaluoSugeridoBoton declaracion={id} form={form} /> : undefined),
+    [bases, editable, id]
+  )
   const seccionesUbicacion = useMemo(() => ubicacionSections(undefined, conInfluencia), [conInfluencia])
   // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
   const asistente = params.has('asistente')
@@ -192,8 +199,8 @@ function DeclaracionPage({ id }: { id: string }) {
           tipo_predio: predio.tipo_predio,
           fecha_actualizacion: actualizado ?? null
         }
-        // an annulled one (a descargo) is only read: no way back
-        const soloLectura = anulada(declaracion)
+        // an annulled one (a descargo) or a sustituida (rectified) is only read: no way back
+        const soloLectura = sinVigencia(declaracion)
         const formulario = (nombre: Formulario, sections: SectionSpec[], values: object, options?: Record<string, string[]>) =>
           soloLectura ? (
             <FieldGrid sections={sections} values={values} />
@@ -229,6 +236,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     {predio.codigo}
                   </Link>
                   <span>· {predio.direccion}</span>
+                  <EnlaceSustituye declaracion={declaracion} />
                 </>
               }
               aside={
@@ -236,6 +244,7 @@ function DeclaracionPage({ id }: { id: string }) {
                 soloLectura ? undefined : (
                   <div role="group" aria-label="Acciones de la declaración" className="flex flex-col items-end gap-2">
                     <div className="flex flex-wrap justify-end gap-2">
+                      <RectificarDeclaracion declaracion={declaracion} />
                       <AnularDeclaracion declaracion={declaracion} />
                       <Button variant="secondary" disabled={!hayCambios || guardando} onClick={() => setDescartando(true)}>
                         <X className="size-4" />
@@ -276,7 +285,8 @@ function DeclaracionPage({ id }: { id: string }) {
             {asistente && (
               <PasosAsistente pasos={DECLARACION_TABS} actual={activa} onIr={(tab) => abrir(tab)} instruccion={INSTRUCCIONES_DECLARACION[activa]} />
             )}
-            {soloLectura && <AvisoAnulada declaracion={declaracion} />}
+            {anulada(declaracion) && <AvisoAnulada declaracion={declaracion} />}
+            {sustituida(declaracion) && <AvisoSustituida declaracion={declaracion} />}
             <Card className="pb-4">
               <FichaTabs
                 label="Secciones de la declaración jurada"
@@ -289,7 +299,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     render: () => (
                       <div className="px-6 pt-5">
                         {formulario('datos', DJ_DATOS_SECTIONS, datos, opcionesDatos(catalogos.data))}
-                        <ValuacionDeLaDeclaracion valores={origen?.declaracion} />
+                        <ValuacionDeLaDeclaracion valores={origen?.declaracion} modificada={origen?.modificada} />
                       </div>
                     )
                   },
@@ -318,7 +328,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     render: () => (
                       <div className="space-y-8 px-6 pt-5">
                         {formulario('caracteristicas', seccionesCaracteristicas, declaracion, catalogos.data?.declaracion_predial)}
-                        <NivelesPanel declaracion={id} readOnly={soloLectura} origen={origen?.niveles} />
+                        <NivelesPanel declaracion={id} readOnly={soloLectura} origen={origen?.niveles} modificada={origen?.modificada} />
                         <ObrasPanel declaracion={id} readOnly={soloLectura} />
                       </div>
                     )

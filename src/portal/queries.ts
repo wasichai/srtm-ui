@@ -1,8 +1,10 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { rentas } from './api'
+import { sinVigencia } from './components/EstadoBadge'
 import type {
   CorridaBrecha,
+  DeclaracionDetalle,
   DeterminacionMasiva,
   Emision,
   FiltrosActas,
@@ -34,6 +36,37 @@ export function useContribuyentes(q: string, page: number) {
 // the valuación del padrón de origen of a declaración: null when the backend has none to give
 export function useValuacionOrigen(declaracion: string) {
   return useQuery({ queryKey: ['valuacion-origen', declaracion], queryFn: () => rentas.valuacionOrigen(declaracion) })
+}
+
+// a predio's declaraciones, of a year or of every year: the same query key as the ficha's lists and its titulares
+export function useDeclaracionesDePredio(predio: string | null | undefined, anio?: number | null) {
+  return useQuery({
+    queryKey: ['predio', predio, 'declaraciones', anio ?? 'todas'],
+    queryFn: () => rentas.declaracionesDePredio(predio!, anio ?? undefined),
+    enabled: Boolean(predio)
+  })
+}
+
+// what a new declaración of a contribuyente for anio may start from (desde): its most recent vigente one of the
+// predio in another year. undefined when there is none
+export function declaracionDePartida(filas: DeclaracionDetalle[] | undefined, contribuyente: string | undefined, anio: number | null | undefined) {
+  const suyas = (filas ?? []).filter(({ declaracion: d, contribuyente: c }) => {
+    const de = c?.id ?? d.contribuyente
+    return contribuyente && de === contribuyente && !sinVigencia(d) && d.anio != null && d.anio !== anio
+  })
+  return suyas.map((f) => f.declaracion).sort((a, b) => b.anio! - a.anio!)[0]
+}
+
+// the autoavalúo sugerido of a declaración: asked only when the user asks (refetch), never again by itself, as each
+// one is a valuation by the catastro-backend
+export function useAutoavaluoSugerido(declaracion: string) {
+  return useQuery({
+    queryKey: ['autoavaluo-sugerido', declaracion],
+    queryFn: () => rentas.autoavaluoSugerido(declaracion),
+    enabled: false,
+    retry: false,
+    gcTime: 0
+  })
 }
 
 export function usePredios(q: string, page: number) {
