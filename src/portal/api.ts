@@ -62,6 +62,7 @@ import type {
   TasasAnuncios,
   Transferente,
   Ubigeo,
+  ValuacionOrigen,
   UnidadUrbana,
   UsoPredio,
   SubsanacionNotificacion,
@@ -266,6 +267,12 @@ export const rentas = {
   presentarDeclaracion: (contribuyente: string, body: NuevaDeclaracion) =>
     send<DeclaracionJurada>('POST', `/srtm/contribuyentes/${contribuyente}/declaraciones-juradas`, body),
   declaracionJurada: (id: string) => get<DeclaracionJurada>(`/srtm/declaraciones/${id}`),
+  // what an external padrón brought to it, read-only: null from a backend without the endpoint (404)
+  valuacionOrigen: (id: string) =>
+    get<ValuacionOrigen>(`/srtm/declaraciones/${id}/valuacion-origen`).catch((e: unknown) => {
+      if (e instanceof ApiError && e.status === 404) return null
+      throw e
+    }),
   // the descargo: the declaración stays, read-only, out of totales and condominio
   anularDeclaracion: (id: string, motivo_anulacion: string | null) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/anular`, { motivo_anulacion }),
   // another titular of the declaración's predio, year and secuencia: the backend recomputes everyone's %

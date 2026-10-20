@@ -16,13 +16,14 @@ import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
 import { caracteristicasSections, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
-import { basesDeArbitrio, dimensionesDeArbitrio, useCatalogos, useParametrosArbitrio, useRefresh } from '../queries'
+import { basesDeArbitrio, dimensionesDeArbitrio, useCatalogos, useParametrosArbitrio, useRefresh, useValuacionOrigen } from '../queries'
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion } from '../types'
 import { AnularDeclaracion, AvisoAnulada } from './AnularDeclaracion'
 import { CondominosPanel } from './Condominos'
 import { FichaHeader } from './FichaHeader'
 import { FrentesPanel, NivelesPanel, ObrasPanel, TransferentesPanel } from './DeclaracionListas'
+import { CodigosDelPredio, ValuacionDeLaDeclaracion } from './ValuacionOrigen'
 
 // the srtm's tabs of a declaración jurada predial
 export const DECLARACION_TABS = [
@@ -85,6 +86,8 @@ function DeclaracionPage({ id }: { id: string }) {
   const refresh = useRefresh()
   const ficha = useQuery({ queryKey: ['declaracion', id], queryFn: () => rentas.declaracionJurada(id) })
   const dj = ficha.data
+  // what an external padrón brought (srtm-backend#132), read-only: nothing is drawn while it loads, fails or is empty
+  const origen = useValuacionOrigen(id).data
   useWorkspaceTab(
     dj ? { path: `/declaraciones/${id}`, label: `DJ ${dj.declaracion.numero_declaracion ?? ''} ${dj.predio.codigo ?? ''}`.trim(), kind: 'declaracion' } : null
   )
@@ -283,12 +286,22 @@ function DeclaracionPage({ id }: { id: string }) {
                   {
                     ...DECLARACION_TABS[0],
                     icon: FileText,
-                    render: () => <div className="px-6 pt-5">{formulario('datos', DJ_DATOS_SECTIONS, datos, opcionesDatos(catalogos.data))}</div>
+                    render: () => (
+                      <div className="px-6 pt-5">
+                        {formulario('datos', DJ_DATOS_SECTIONS, datos, opcionesDatos(catalogos.data))}
+                        <ValuacionDeLaDeclaracion valores={origen?.declaracion} />
+                      </div>
+                    )
                   },
                   {
                     ...DECLARACION_TABS[1],
                     icon: MapPin,
-                    render: () => <div className="px-6 pt-5">{formulario('ubicacion', seccionesUbicacion, predio, catalogos.data?.predio)}</div>
+                    render: () => (
+                      <div className="px-6 pt-5">
+                        {formulario('ubicacion', seccionesUbicacion, predio, catalogos.data?.predio)}
+                        <CodigosDelPredio valores={origen?.predio} />
+                      </div>
+                    )
                   },
                   {
                     ...DECLARACION_TABS[2],
@@ -305,7 +318,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     render: () => (
                       <div className="space-y-8 px-6 pt-5">
                         {formulario('caracteristicas', seccionesCaracteristicas, declaracion, catalogos.data?.declaracion_predial)}
-                        <NivelesPanel declaracion={id} readOnly={soloLectura} />
+                        <NivelesPanel declaracion={id} readOnly={soloLectura} origen={origen?.niveles} />
                         <ObrasPanel declaracion={id} readOnly={soloLectura} />
                       </div>
                     )
