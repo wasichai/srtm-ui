@@ -337,3 +337,38 @@ describe('RecordForm: figures', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 })
+
+describe('RecordForm: a field the backend works out', () => {
+  const sections: SectionSpec[] = [
+    {
+      id: 'totales',
+      title: 'Totales',
+      fields: [
+        { name: 'cantidad', label: 'Cantidad', kind: 'integer' },
+        { name: 'total', label: 'Total', kind: 'decimal', readOnly: true, hint: 'suma de las filas' }
+      ]
+    }
+  ]
+  const form = (initial: object, onSubmit = vi.fn(async () => {})) => (
+    <RecordForm sections={sections} initial={initial} submitLabel="Guardar" onSubmit={onSubmit} />
+  )
+
+  it('says where its value comes from, under the input', () => {
+    render(form({ cantidad: 1, total: 10 }))
+    expect(screen.getByRole('textbox', { name: 'Total' })).toHaveAccessibleDescription('suma de las filas')
+    expect(screen.getByRole('textbox', { name: 'Cantidad' })).not.toHaveAccessibleDescription()
+  })
+
+  it('shows the record as read again, keeping the changes typed meanwhile', async () => {
+    const onSubmit = vi.fn(async () => {})
+    const { rerender } = render(form({ cantidad: 1, total: 10 }, onSubmit))
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Cantidad' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Cantidad' }), '3')
+    rerender(form({ cantidad: 1, total: 25 }, onSubmit))
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Total' })).toHaveValue('25'))
+    expect(screen.getByRole('textbox', { name: 'Cantidad' })).toHaveValue('3')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    // the read-only one goes as the record has it
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ cantidad: 3, total: 25 }))
+  })
+})
