@@ -155,6 +155,22 @@ export function RecordForm<T extends object>({
     // only for a record read again: the helpers above are new every render
   }, [first])
 
+  // a read-only field is the backend's: it shows the record as it is now, read again, even while the clerk has
+  // changes of their own (which only the editable fields hold)
+  const stored = JSON.stringify(
+    toForm(
+      fields.filter((f) => f.readOnly),
+      initial as Record<string, unknown>
+    )
+  )
+  useEffect(() => {
+    for (const [name, value] of Object.entries(JSON.parse(stored) as FormValues)) {
+      loaded.current = { ...loaded.current, [name]: value }
+      if ((form.getValues(name) ?? '') !== value) form.setValue(name, value)
+    }
+    // only for a record read again: the fields are new every render
+  }, [stored])
+
   // a field one with other forms (`shared`): the clerk's change here goes to them, theirs comes here
   const changeShared = shared?.change
   const sharedFields = shared?.fields
@@ -257,7 +273,8 @@ function Field({
   const enabled = !field.enabledWhen || field.enabledWhen(values)
   const locked = lockedOf(values).includes(field.name) || !!field.lockedWhen?.(values)
   const required = enabled && isRequired(field, values)
-  const aria = { id, 'aria-invalid': error ? (true as const) : undefined, 'aria-describedby': error ? `${id}-error` : undefined }
+  const describedBy = [error && `${id}-error`, field.hint && `${id}-hint`].filter(Boolean).join(' ') || undefined
+  const aria = { id, 'aria-invalid': error ? (true as const) : undefined, 'aria-describedby': describedBy }
 
   let control: ReactNode
   if (!enabled && !field.readOnly) {
@@ -283,6 +300,11 @@ function Field({
         {required && !field.readOnly && <span className="text-danger"> *</span>}
       </Label>
       {control}
+      {field.hint && (
+        <p id={`${id}-hint`} className="text-xs text-ink-muted">
+          {field.hint}
+        </p>
+      )}
       {error && (
         <p id={`${id}-error`} className="text-xs text-danger">
           {error}

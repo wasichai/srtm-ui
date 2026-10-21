@@ -6,8 +6,8 @@ import { motivoLegible } from './pages/AutoavaluoSugerido'
 import { PortalApp } from './PortalApp'
 
 // the autoavalúo sugerido (srtm-backend#152): the organization's catastro-backend values the declaración, its predio,
-// niveles and obras; the portal shows how, and the user may take the figure into the form, still to be saved. nothing
-// is stored by asking
+// niveles and obras; the portal shows how (since srtm-backend#156 the backend stores that valuation itself) and, where
+// the user writes the autoavalúo, the figure may be taken into the form, still to be saved. nothing is stored by asking
 
 // jsdom has no webgl
 vi.mock('./components/LotesMap', () => ({ LotesMap: () => <div data-testid="lotes-map" /> }))
@@ -31,7 +31,14 @@ const declaracion = {
   valor_autoavaluo: 50000,
   estado: 'VIGENTE'
 }
-const ficha = (d: object) => ({ declaracion: d, predio, contribuyente: juan, actualizado: '2026-09-25T14:03:00Z' })
+// manual: the organization writes the autoavalúo (srtm-backend#156); with a catastro, the backend does
+const ficha = (d: object, autoavaluo_manual = false) => ({
+  declaracion: d,
+  predio,
+  contribuyente: juan,
+  actualizado: '2026-09-25T14:03:00Z',
+  autoavaluo_manual
+})
 
 // srtm-backend#152's example
 const VALUADA = {
@@ -112,24 +119,28 @@ function start(extra: MockRoute[] = [], path = '/declaraciones/d1?tab=caracteris
 }
 
 const sugerido = (status: number, body: unknown): MockRoute => ({ path: '/srtm/declaraciones/d1/autoavaluo-sugerido', status, body })
-const calcular = async () => userEvent.click(await screen.findByRole('button', { name: 'Calcular autoavalúo sugerido' }))
+const calcular = async () => userEvent.click(await screen.findByRole('button', { name: 'Ver cálculo del autoavalúo' }))
 
 describe('autoavalúo sugerido', () => {
   it('opens wide enough for the table by piso, which scrolls inside it when it does not fit', async () => {
     start([sugerido(200, VALUADA)])
     await calcular()
-    const dialog = await screen.findByRole('dialog', { name: 'Autoavalúo sugerido' })
+    const dialog = await screen.findByRole('dialog', { name: 'Cálculo del autoavalúo' })
     expect(dialog).toHaveClass('max-w-5xl')
     expect(dialog).toHaveClass('overflow-y-auto')
     const pisos = within(dialog).getByRole('table', { name: 'Construcción por piso' })
     expect(pisos.closest('.overflow-x-auto')).not.toBeNull()
   })
 
-  it('shows how the catastro values the declaración, and puts its figure in the form, still to be saved', async () => {
-    start([sugerido(200, VALUADA), { method: 'PUT', path: '/srtm/declaraciones/d1', body: { ...declaracion, valor_autoavaluo: 96752.21 } }])
+  it('shows how the catastro values the declaración, and puts its figure in the form, still to be saved, where the autoavalúo is the user’s', async () => {
+    start([
+      sugerido(200, VALUADA),
+      { path: '/srtm/declaraciones/d1', body: ficha(declaracion, true) },
+      { method: 'PUT', path: '/srtm/declaraciones/d1', body: { ...declaracion, valor_autoavaluo: 96752.21 } }
+    ])
     expect(fetch!.calls.some((c) => c.path.endsWith('/autoavaluo-sugerido'))).toBe(false)
     await calcular()
-    const dialog = await screen.findByRole('dialog', { name: 'Autoavalúo sugerido' })
+    const dialog = await screen.findByRole('dialog', { name: 'Cálculo del autoavalúo' })
     expect(dialog).toHaveTextContent('S/ 96,752.21')
     expect(dialog).toHaveTextContent('S/ 9,100.00')
     expect(dialog).toHaveTextContent('S/ 78,781.60')
@@ -161,7 +172,7 @@ describe('autoavalúo sugerido', () => {
   it('says why the catastro did not value it, and offers no figure', async () => {
     start([sugerido(200, SIN_VALOR)])
     await calcular()
-    const dialog = await screen.findByRole('dialog', { name: 'Autoavalúo sugerido' })
+    const dialog = await screen.findByRole('dialog', { name: 'Cálculo del autoavalúo' })
     expect(dialog).toHaveTextContent(`No hay tablas de ${year + 1} en catastro`)
     expect(dialog).toHaveTextContent(SIN_VALOR.motivo)
     expect(within(dialog).queryByRole('button', { name: 'Usar este valor' })).not.toBeInTheDocument()
@@ -171,7 +182,7 @@ describe('autoavalúo sugerido', () => {
     start([sugerido(409, { title: 'Conflict', detail: 'Catastro no configurado para esta organización' })])
     await calcular()
     expect(await screen.findByText('La municipalidad no tiene catastro configurado')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Calcular autoavalúo sugerido' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Ver cálculo del autoavalúo' })).toBeDisabled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
@@ -179,13 +190,13 @@ describe('autoavalúo sugerido', () => {
     start([sugerido(502, { title: 'Bad Gateway', detail: 'catastro-backend respondió 500 a la valuación de los insumos' })])
     await calcular()
     expect(await screen.findByText(/catastro-backend respondió 500/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Calcular autoavalúo sugerido' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Ver cálculo del autoavalúo' })).toBeEnabled()
   })
 
   it('is not offered on a declaración that is only read', async () => {
     start([{ path: '/srtm/declaraciones/d1', body: ficha({ ...declaracion, estado: 'SUSTITUIDA' }) }])
     expect(await screen.findByText(/Listado de niveles de construcción/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Calcular autoavalúo sugerido' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ver cálculo del autoavalúo' })).not.toBeInTheDocument()
   })
 })
 

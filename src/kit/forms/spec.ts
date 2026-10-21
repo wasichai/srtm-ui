@@ -65,6 +65,8 @@ export interface FieldSpec {
   // a string: the input's hint. a function: what an empty value means, shown on a read-only or locked field and in
   // FieldGrid only. an editable input takes string hints only: a function gives it none
   placeholder?: string | ((ctx: PlaceholderContext) => string | undefined)
+  // a faint line under the input: where its value comes from (a read-only one the backend works out)
+  hint?: string
   span?: 1 | 2 | 3 | 4 | 6
   suggest?: SuggestSource
   // kind year: the oldest year offered; default 100 years back

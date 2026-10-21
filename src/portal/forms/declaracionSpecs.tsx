@@ -219,10 +219,12 @@ export function ubicacionSections(onPredio?: (elegido: Elegido) => boolean, conI
 export const UBICACION_SECTIONS: SectionSpec[] = ubicacionSections()
 
 // características: the declaration's uso and areas; niveles and obras are lists of their own. bases: las
-// BASE_ARBITRIO del año en vigor (srtm-backend's Base) - FRONTIS_ML pide longitud_frente, AREA_CONSTRUIDA_M2 pide
-// area_construida (wasichai/srtm-ui#94). vacío por defecto: sin esas filas, como siempre, opcionales. sugerido: what
-// the Valores section offers by its title (the autoavalúo sugerido of a declaración that is edited)
-export function caracteristicasSections(bases: Set<string> = new Set(), sugerido?: SectionSpec['action']): SectionSpec[] {
+// BASE_ARBITRIO del año en vigor (srtm-backend's Base) - FRONTIS_ML pide el frontis principal (wasichai/srtm-ui#94);
+// AREA_CONSTRUIDA_M2 lee el área construida, que es la suma de los niveles. vacío por defecto: sin esas filas, como
+// siempre, opcional. sugerido: what the Valores section offers by its title (how the autoavalúo was worked out, on a
+// declaración that is edited). manual: the organization has no catastro, so the user writes the autoavalúo
+// (srtm-backend#156). the rest of Valores is the backend's, worked out again on every write of the DJ and its lists
+export function caracteristicasSections(bases: Set<string> = new Set(), sugerido?: SectionSpec['action'], manual = false): SectionSpec[] {
   return [
     {
       id: 'caracteristicas-de-predio',
@@ -236,7 +238,7 @@ export function caracteristicasSections(bases: Set<string> = new Set(), sugerido
         // clasificacion and estado_construccion are the padrón's, not the srtm DJ's (srtm-backend README): kept, not shown
         { name: 'area_terreno', label: 'Área del terreno (m2)', kind: 'decimal', required: true, span: 2 },
         { name: 'area_comun_terreno', label: 'Área común del terreno (m2)', kind: 'decimal', span: 2 },
-        { name: 'longitud_frente', label: 'Frontis (m)', kind: 'decimal', required: bases.has('FRONTIS_ML'), span: 1 },
+        { name: 'frontis_principal', label: 'Frontis principal (m)', kind: 'decimal', required: bases.has('FRONTIS_ML'), span: 1 },
         { name: 'numero_habitantes', label: 'Cant. de habitantes / Aforo', kind: 'integer', span: 1 }
       ]
     },
@@ -246,11 +248,15 @@ export function caracteristicasSections(bases: Set<string> = new Set(), sugerido
       title: 'Valores',
       action: sugerido,
       fields: [
-        { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 },
-        { name: 'valor_condominio', label: 'Valor de condominio (S/)', kind: 'money', span: 2 },
+        manual
+          ? { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', span: 2 }
+          : { name: 'valor_autoavaluo', label: 'Autoavalúo (S/)', kind: 'money', readOnly: true, hint: 'calculado con el catastro', span: 2 },
+        { name: 'valor_condominio', label: 'Valor de condominio (S/)', kind: 'money', readOnly: true, span: 2 },
         { name: 'deduccion', label: 'Deducción (S/)', kind: 'money', span: 2 },
-        { name: 'valor_afecto', label: 'Valor afecto (S/)', kind: 'money', span: 2 },
-        { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', required: bases.has('AREA_CONSTRUIDA_M2'), span: 2 }
+        { name: 'valor_afecto', label: 'Valor afecto (S/)', kind: 'money', readOnly: true, span: 2 },
+        { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', readOnly: true, hint: 'suma de los niveles', span: 2 },
+        { name: 'area_comun_construida', label: 'Área común construida (m2)', kind: 'decimal', readOnly: true, hint: 'suma de los niveles', span: 2 },
+        { name: 'longitud_frente', label: 'Longitud de frente (m)', kind: 'decimal', readOnly: true, hint: 'frontis principal + otros frentes', span: 2 }
       ]
     }
   ]
