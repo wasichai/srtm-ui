@@ -1495,3 +1495,12 @@ export interface FiltrosBrecha {
   categoria?: CategoriaBrecha | null
   sector?: string | null
 }
+
+// what a redeterminación of a predio's arbitrios did (wasichai/srtm-backend#158): the cuotas written again and the ones
+// annulled, and why one could not be done (null when every one could). the answer of POST …/arbitrios/redeterminacion,
+// and the Srtm-Arbitrios header of a write of a declaración
+export interface ResultadoRedeterminacion {
+  redeterminadas: number
+  anuladas: number
+  error?: string | null
+}

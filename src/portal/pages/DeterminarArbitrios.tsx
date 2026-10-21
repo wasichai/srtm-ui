@@ -1,10 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Alert, Button } from '@wasichai/ui'
-import { Calculator } from 'lucide-react'
+import { Calculator, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { rentas } from '../api'
+import { mensajesDeRedeterminacion } from '../components/avisoArbitrios'
 import { DialogoDeActo } from '../components/DialogoDeActo'
 import { usePuede } from '../components/permisos'
+import { YearSelect } from '../components/YearSelect'
 
 // determining a year's arbitrios from a ficha (wasichai/srtm-backend#62): the cuotas still to determine are computed
 // and written, the ones already there stay as they are, and none can be edited or deleted afterwards. the observación
@@ -52,6 +54,70 @@ export function DeterminarArbitrios({ alcance, id, anio, avisos = [] }: { alcanc
           )}
           onCerrar={() => setAbierto(false)}
         />
+      )}
+    </div>
+  )
+}
+
+// redetermining a predio's arbitrios by hand (wasichai/srtm-backend#158): the year is computed again with the
+// declaraciones of today, and each month that comes out different is annulled and written again. what a write of a
+// declaración does by itself, for when it could not (a clerk without the permissions, a parámetro missing then). srtm
+// keeps no payments, so a paid cuota is annulled too: the dialog says so. it writes cuotas and their anulaciones, so
+// without CREATE on both the action is disabled and says why
+export function RedeterminarArbitrios({ id, anio }: { id: string; anio: number }) {
+  const puedeCuotas = usePuede('cuota_arbitrio')
+  const puedeAnular = usePuede('anulacion_cuota_arbitrio')
+  const puede = puedeCuotas && puedeAnular
+  const [abierto, setAbierto] = useState(false)
+  const [elegido, setElegido] = useState(anio)
+  const queryClient = useQueryClient()
+
+  const abrir = () => {
+    setElegido(anio)
+    setAbierto(true)
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Button variant="secondary" disabled={!puede} onClick={abrir}>
+        <RefreshCw className="size-4" />
+        Redeterminar arbitrios
+      </Button>
+      {!puede && <p className="text-xs text-ink-muted">Sin permiso: redeterminar pide creación sobre las cuotas de arbitrio y sus anulaciones.</p>}
+      {abierto && (
+        <DialogoDeActo
+          titulo="Redeterminar los arbitrios del predio"
+          descripcion={
+            <>
+              Se calculan de nuevo los 12 meses del año con las declaraciones de hoy. Cada cuota que cambia se anula y se escribe de nuevo; las que no cambian
+              quedan como están.
+            </>
+          }
+          avisos={['Las cuotas ya pagadas también se anulan: srtm no tiene registro de pagos.']}
+          porQue="Por qué se redetermina"
+          accion="Redeterminar"
+          siFalla="No se pudo redeterminar"
+          enviar={(observacion) => rentas.redeterminarArbitriosDePredio(id, elegido, observacion)}
+          // every ficha and list of arbitrios reads the same cuotas
+          onExito={() => queryClient.invalidateQueries({ queryKey: ['arbitrios'] })}
+          exito={(r) => {
+            const mensajes = mensajesDeRedeterminacion(r, elegido)
+            return mensajes.length === 0 ? (
+              <Alert tone="success">Las cuotas de {elegido} ya estaban al día: nada que redeterminar.</Alert>
+            ) : (
+              <div className="space-y-2">
+                {mensajes.map((m) => (
+                  <Alert key={m.texto} tone={m.tono}>
+                    {m.texto}
+                  </Alert>
+                ))}
+              </div>
+            )
+          }}
+          onCerrar={() => setAbierto(false)}
+        >
+          <YearSelect value={elegido} onChange={setElegido} />
+        </DialogoDeActo>
       )}
     </div>
   )

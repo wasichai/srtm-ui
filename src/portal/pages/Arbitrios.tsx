@@ -8,7 +8,7 @@ import { formatDate, formatMoney, MESES } from '../components/format'
 import { Popover } from '../components/Popover'
 import { NUMERICA } from '../components/tabla'
 import type { ArbitriosContribuyente, CuotaMes, MatrizArbitrios, PersonaArbitrio } from '../types'
-import { DeterminarArbitrios } from './DeterminarArbitrios'
+import { DeterminarArbitrios, RedeterminarArbitrios } from './DeterminarArbitrios'
 
 // the arbitrios of a year as they were determined (wasichai/srtm-backend#62): servicio by month, the titular the rule
 // charges each month, and the totals. every total is the backend's, never summed here; a figure carries the date it was
@@ -22,7 +22,10 @@ export function ArbitriosDelPredio({ id, anio }: { id: string; anio: number }) {
     <QueryState query={query}>
       {(matriz) => (
         <div className="space-y-4">
-          <DeterminarArbitrios alcance="predio" id={id} anio={anio} />
+          <div className="flex flex-wrap items-start gap-3">
+            <DeterminarArbitrios alcance="predio" id={id} anio={anio} />
+            <RedeterminarArbitrios id={id} anio={anio} />
+          </div>
           <Matriz matriz={matriz} />
         </div>
       )}
