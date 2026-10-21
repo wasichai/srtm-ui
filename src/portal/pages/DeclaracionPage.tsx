@@ -20,7 +20,7 @@ import { basesDeArbitrio, dimensionesDeArbitrio, useCatalogos, useParametrosArbi
 import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Declaracion } from '../types'
 import { AnularDeclaracion, AvisoAnulada } from './AnularDeclaracion'
-import { AutoavaluoSugeridoBoton } from './AutoavaluoSugerido'
+import { AutoavaluoPorRevisar, AutoavaluoSugeridoBoton } from './AutoavaluoSugerido'
 import { CondominosPanel } from './Condominos'
 import { FichaHeader } from './FichaHeader'
 import { FrentesPanel, NivelesPanel, ObrasPanel, TransferentesPanel } from './DeclaracionListas'
@@ -101,11 +101,13 @@ function DeclaracionPage({ id }: { id: string }) {
   // así bases, conInfluencia y las secciones no se recalculan en cada render, solo cuando la query cambia de veras
   const bases = useMemo(() => basesDeArbitrio(parametrosArbitrio.data?.parametros), [parametrosArbitrio.data])
   const conInfluencia = useMemo(() => dimensionesDeArbitrio(parametrosArbitrio.data?.parametros).has('INFLUENCIA'), [parametrosArbitrio.data])
-  // the autoavalúo sugerido, by the Valores' title, only while the declaración is edited
+  // how the autoavalúo was worked out, by the Valores' title, only while the declaración is edited. manual: the
+  // organization has no catastro, and the user writes the autoavalúo (srtm-backend#156)
   const editable = dj ? !sinVigencia(dj.declaracion) : false
+  const manual = dj?.autoavaluo_manual === true
   const seccionesCaracteristicas = useMemo(
-    () => caracteristicasSections(bases, editable ? (form) => <AutoavaluoSugeridoBoton declaracion={id} form={form} /> : undefined),
-    [bases, editable, id]
+    () => caracteristicasSections(bases, editable ? (form) => <AutoavaluoSugeridoBoton declaracion={id} form={form} manual={manual} /> : undefined, manual),
+    [bases, editable, id, manual]
   )
   const seccionesUbicacion = useMemo(() => ubicacionSections(undefined, conInfluencia), [conInfluencia])
   // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
@@ -327,6 +329,7 @@ function DeclaracionPage({ id }: { id: string }) {
                     icon: Building2,
                     render: () => (
                       <div className="space-y-8 px-6 pt-5">
+                        <AutoavaluoPorRevisar declaracion={declaracion} soloLectura={soloLectura} />
                         {formulario('caracteristicas', seccionesCaracteristicas, declaracion, catalogos.data?.declaracion_predial)}
                         <NivelesPanel declaracion={id} readOnly={soloLectura} origen={origen?.niveles} modificada={origen?.modificada} />
                         <ObrasPanel declaracion={id} readOnly={soloLectura} />

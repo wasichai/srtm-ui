@@ -233,11 +233,18 @@ export interface HijosApi<T> {
   borrar: (id: string) => Promise<void>
 }
 
+// a row's fila (the same row in the DJ of every condómino, srtm-backend#156) is the backend's: never sent
+function sinFila<T>(body: T): T {
+  if (!body || typeof body !== 'object' || !('fila' in body)) return body
+  const { fila: _, ...resto } = body as T & { fila?: unknown }
+  return resto as T
+}
+
 function hijos<T>(parent: 'contribuyentes' | 'declaraciones', segment: string): HijosApi<T> {
   return {
     listar: (id) => get<T[]>(`/srtm/${parent}/${id}/${segment}`),
-    agregar: (id, body) => send<T>('POST', `/srtm/${parent}/${id}/${segment}`, body),
-    actualizar: (id, body) => send<T>('PUT', `/srtm/${segment}/${id}`, body),
+    agregar: (id, body) => send<T>('POST', `/srtm/${parent}/${id}/${segment}`, sinFila(body)),
+    actualizar: (id, body) => send<T>('PUT', `/srtm/${segment}/${id}`, sinFila(body)),
     borrar: (id) => remove(`/srtm/${segment}/${id}`)
   }
 }
@@ -283,6 +290,9 @@ export const rentas = {
   rectificarDeclaracion: (id: string, body: Rectificacion) => send<DeclaracionJurada>('POST', `/srtm/declaraciones/${id}/rectificar`, body),
   // valued by the organization's catastro-backend, never stored: 409 without a catastro, 502 when it fails
   autoavaluoSugerido: (id: string) => get<AutoavaluoSugerido>(`/srtm/declaraciones/${id}/autoavaluo-sugerido`),
+  // values a vigente declaración again, and its derived values, without changing it (the catastro answers now, or has
+  // the parámetro it lacked)
+  recalcularDeclaracion: (id: string) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/recalcular`, null),
   // another titular of the declaración's predio, year and secuencia: the backend recomputes everyone's %
   agregarCondomino: (id: string, body: NuevoCondomino) => send<Declaracion>('POST', `/srtm/declaraciones/${id}/condominos`, body),
   transferentes: hijos<Transferente>('declaraciones', 'transferentes'),

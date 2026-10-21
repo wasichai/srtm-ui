@@ -1,18 +1,21 @@
 import { ApiError } from '@wasichai/core'
 import { Alert, Button, Dialog, DialogContent, DialogDescription, DialogTitle, Table, Td, Th } from '@wasichai/ui'
-import { Calculator, Check } from 'lucide-react'
+import { Calculator, Check, RefreshCw } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { FormValues } from '../../kit/forms/spec'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { formatMoney, formatNumber, formatText } from '../components/format'
 import { NUMERICA } from '../components/tabla'
-import { useAutoavaluoSugerido } from '../queries'
-import type { AutoavaluoSugerido } from '../types'
+import { rentas } from '../api'
+import { useAutoavaluoSugerido, useRefresh } from '../queries'
+import type { AutoavaluoSugerido, Declaracion } from '../types'
 
 // the autoavalúo sugerido (srtm-backend#152): the organization's catastro-backend values what the declaración
-// declares. asked only by the button, never stored: "Usar este valor" fills valor_autoavaluo in the form, which the
-// user still saves. a municipalidad without catastro (409) leaves the button disabled, saying why
+// declares. since srtm-backend#156 the backend writes that valuation as the autoavalúo on every write, so the button
+// shows how it was worked out. asked only by the button, never stored. manual (an organization without catastro, whose
+// user writes the autoavalúo): "Usar este valor" fills valor_autoavaluo in the form, which the user still saves. a
+// municipalidad without catastro (409) leaves the button disabled, saying why
 
 // the catastro's llave, as a person reads it: a code before ':' and what it is about after. any other as it comes
 const LLAVES: Partial<Record<string, (resto: string[]) => string>> = {
@@ -39,12 +42,52 @@ export function motivoLegible(llave: string | null | undefined): string | null {
   return legible && (codigo !== 'PARAMETRO_FALTANTE' || resto.length > 0) ? legible(resto) : llave
 }
 
+// the catastro could not value the declaración (srtm-backend#156): the backend kept the autoavalúo before and says why.
+// Recalcular values it again, once the catastro answers or has what it lacked; a declaración only read is only told
+export function AutoavaluoPorRevisar({ declaracion, soloLectura }: { declaracion: Declaracion; soloLectura?: boolean }) {
+  const refresh = useRefresh()
+  const [recalculando, setRecalculando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  if (!declaracion.autoavaluo_por_revisar) return null
+  const recalcular = async () => {
+    setError(null)
+    setRecalculando(true)
+    try {
+      await rentas.recalcularDeclaracion(declaracion.id!)
+      await refresh()
+    } catch (e) {
+      setError(errorMessage(e, 'No se pudo recalcular el autoavalúo'))
+    } finally {
+      setRecalculando(false)
+    }
+  }
+  const motivo = motivoLegible(declaracion.autoavaluo_motivo) ?? 'el catastro no valuó la declaración'
+  return (
+    <div role="status" aria-label="Autoavalúo por revisar">
+      <Alert tone="warning">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p>
+            <span className="font-semibold">Autoavalúo por revisar:</span> {motivo}
+          </p>
+          {!soloLectura && (
+            <Button type="button" variant="secondary" size="sm" disabled={recalculando} onClick={() => void recalcular()}>
+              <RefreshCw className="size-4" />
+              {recalculando ? 'Recalculando…' : 'Recalcular'}
+            </Button>
+          )}
+        </div>
+        {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+      </Alert>
+    </div>
+  )
+}
+
 const ORIGEN_ARANCEL: Record<string, string> = {
   CUERPO: 'Arancel de la declaración (padrón de origen)',
   FICHA: 'Arancel de la ficha catastral'
 }
 
-export function AutoavaluoSugeridoBoton({ declaracion, form }: { declaracion: string; form: UseFormReturn<FormValues> }) {
+export function AutoavaluoSugeridoBoton({ declaracion, form, manual }: { declaracion: string; form: UseFormReturn<FormValues>; manual?: boolean }) {
   const query = useAutoavaluoSugerido(declaracion)
   const [abierto, setAbierto] = useState(false)
   const sinCatastro = query.error instanceof ApiError && query.error.status === 409
@@ -60,7 +103,7 @@ export function AutoavaluoSugeridoBoton({ declaracion, form }: { declaracion: st
     <span className="inline-flex flex-col items-end gap-1">
       <Button type="button" variant="secondary" size="sm" disabled={sinCatastro || query.isFetching} onClick={() => void calcular()}>
         <Calculator className="size-4" />
-        {query.isFetching ? 'Calculando…' : 'Calcular autoavalúo sugerido'}
+        {query.isFetching ? 'Calculando…' : 'Ver cálculo del autoavalúo'}
       </Button>
       {sinCatastro && <span className="text-xs text-ink-muted">La municipalidad no tiene catastro configurado</span>}
       {query.isError && !sinCatastro && !query.isFetching && (
@@ -68,7 +111,7 @@ export function AutoavaluoSugeridoBoton({ declaracion, form }: { declaracion: st
           {errorMessage(query.error, 'No se pudo calcular el autoavalúo sugerido')}
         </span>
       )}
-      {abierto && query.data && <DialogoSugerido sugerido={query.data} onUsar={usar} onClose={() => setAbierto(false)} />}
+      {abierto && query.data && <DialogoSugerido sugerido={query.data} onUsar={manual ? usar : undefined} onClose={() => setAbierto(false)} />}
     </span>
   )
 }
@@ -84,16 +127,18 @@ function Dato({ termino, children, fuerte }: { termino: string; children: ReactN
 
 const lista = 'grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm'
 
-function DialogoSugerido({ sugerido: s, onUsar, onClose }: { sugerido: AutoavaluoSugerido; onUsar: (valor: number) => void; onClose: () => void }) {
+// onUsar: only where the user writes the autoavalúo
+function DialogoSugerido({ sugerido: s, onUsar, onClose }: { sugerido: AutoavaluoSugerido; onUsar?: (valor: number) => void; onClose: () => void }) {
   const valuado = s.autoavaluo !== null && s.autoavaluo !== undefined
   const motivo = motivoLegible(s.llave)
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto">
-        <DialogTitle className="text-lg font-semibold">Autoavalúo sugerido</DialogTitle>
+        <DialogTitle className="text-lg font-semibold">Cálculo del autoavalúo</DialogTitle>
         <DialogDescription className="mb-4 text-sm text-ink-muted">
-          Lo calcula el catastro de la municipalidad con lo que declara esta declaración, sus niveles y sus obras. No se guarda: si lo usas, queda en el
-          formulario hasta que guardes.
+          {onUsar
+            ? 'Lo calcula el catastro de la municipalidad con lo que declara esta declaración, sus niveles y sus obras. No se guarda: si lo usas, queda en el formulario hasta que guardes.'
+            : 'Así valúa el catastro de la municipalidad lo que declara esta declaración, sus niveles y sus obras: es el autoavalúo que el sistema guarda con cada cambio.'}
         </DialogDescription>
         <div className="space-y-5">
           <dl className={lista}>
@@ -184,7 +229,7 @@ function DialogoSugerido({ sugerido: s, onUsar, onClose }: { sugerido: Autoavalu
             <Button type="button" variant="secondary" onClick={onClose}>
               Cerrar
             </Button>
-            {valuado && (
+            {valuado && onUsar && (
               <Button type="button" onClick={() => onUsar(s.autoavaluo!)}>
                 <Check className="size-4" />
                 Usar este valor

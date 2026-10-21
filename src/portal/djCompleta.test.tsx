@@ -211,22 +211,20 @@ describe('the full declaración jurada', () => {
     start('/declaraciones/d1?tab=caracteristicas', [{ method: 'PUT', path: '/srtm/declaraciones/d1', body: declaracion }])
     const panel = within(await screen.findByRole('tabpanel'))
     expect(await panel.findByRole('group', { name: /^Valores/ })).toBeInTheDocument()
-    await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
-    await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')
     await userEvent.type(panel.getByLabelText('Deducción (S/)'), '1500')
-    await userEvent.clear(panel.getByLabelText('Valor afecto (S/)'))
-    await userEvent.type(panel.getByLabelText('Valor afecto (S/)'), '23500.5')
-    await userEvent.clear(panel.getByLabelText('Área construida (m2)'))
-    await userEvent.type(panel.getByLabelText('Área construida (m2)'), '150')
+    await userEvent.type(panel.getByLabelText('Frontis principal (m)'), '9')
+    // the backend's (srtm-backend#156): shown, not typed
+    for (const label of ['Autoavalúo (S/)', 'Valor afecto (S/)', 'Área construida (m2)']) expect(panel.getByLabelText(label)).toBeDisabled()
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
     expect(put.body).toMatchObject({
-      valor_autoavaluo: 25000.5,
-      valor_condominio: null,
       deduccion: 1500,
-      valor_afecto: 23500.5,
-      area_construida: 150,
+      frontis_principal: 9,
+      // what the backend works out rides along as stored, and is ignored there
+      valor_autoavaluo: 10080.45,
+      valor_afecto: 8000,
+      area_construida: 90,
       // the other tabs' fields ride along as stored
       numero_declaracion: 39147,
       tipo_adquisicion: 'COMPRA',
@@ -234,8 +232,9 @@ describe('the full declaración jurada', () => {
     })
   })
 
-  // wasichai/srtm-ui#94: the DJ exige frontis y área construida solo cuando la ordenanza vigente cobra por esa base
-  it('asks for frontis and área construida once the year charges arbitrios by that base, optional until then', async () => {
+  // wasichai/srtm-ui#94: the DJ exige el frontis principal solo cuando la ordenanza vigente cobra por FRONTIS_ML. el
+  // área construida es la suma de los niveles (srtm-backend#156): de solo lectura, nunca obligatoria
+  it('asks for the frontis principal once the year charges arbitrios by frontis, optional until then', async () => {
     start('/declaraciones/d1?tab=caracteristicas', [
       {
         path: '/srtm/arbitrios/parametros',
@@ -250,11 +249,10 @@ describe('the full declaración jurada', () => {
     ])
     const panel = within(await screen.findByRole('tabpanel'))
     await panel.findByRole('group', { name: /^Valores/ })
-    // the year's ordenanza cobra por FRONTIS_ML and AREA_CONSTRUIDA_M2: both become required (compatibility with a
-    // year that lacks those filas, or a parámetros query that fails, stays optional: the unmodified test above,
-    // which mocks no /srtm/arbitrios/parametros route at all, still saves área construida without it)
-    await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
-    expect(screen.getByText(/^Área construida/).textContent).toContain('*')
+    // the year's ordenanza cobra por FRONTIS_ML: the frontis principal becomes required (a year that lacks those
+    // filas, or a parámetros query that fails, leaves it optional: the test above mocks no /srtm/arbitrios/parametros)
+    await waitFor(() => expect(screen.getByText(/^Frontis principal \(m\)/).textContent).toContain('*'))
+    expect(screen.getByText(/^Área construida/, { selector: 'label' }).textContent).not.toContain('*')
   })
 
   // wasichai/srtm-ui#94: once required, an empty frontis keeps the DJ from being saved, and nothing is sent; typed,
@@ -266,18 +264,17 @@ describe('the full declaración jurada', () => {
     ])
     const panel = within(await screen.findByRole('tabpanel'))
     await panel.findByRole('group', { name: /^Valores/ })
-    await waitFor(() => expect(screen.getByText(/^Frontis \(m\)/).textContent).toContain('*'))
-    await userEvent.clear(panel.getByLabelText('Autoavalúo (S/)'))
-    await userEvent.type(panel.getByLabelText('Autoavalúo (S/)'), '25000.50')
+    await waitFor(() => expect(screen.getByText(/^Frontis principal \(m\)/).textContent).toContain('*'))
+    await userEvent.type(panel.getByLabelText('Deducción (S/)'), '1500')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     expect(await panel.findByText('Este dato es obligatorio')).toBeInTheDocument()
     expect(fetch!.calls.some((c) => c.method === 'PUT')).toBe(false)
 
-    await userEvent.type(panel.getByLabelText(/^Frontis \(m\)/), '10.5')
+    await userEvent.type(panel.getByLabelText(/^Frontis principal \(m\)/), '10.5')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     const put = await called((c) => c.method === 'PUT' && c.path === '/srtm/declaraciones/d1')
-    expect(put.body).toMatchObject({ longitud_frente: 10.5, valor_autoavaluo: 25000.5 })
+    expect(put.body).toMatchObject({ frontis_principal: 10.5, deduccion: 1500 })
   })
 
   // wasichai/srtm-ui#94: el asistente, tras presentar, debe saltar a «Características» cuando le falta frontis y
@@ -300,7 +297,7 @@ describe('the full declaración jurada', () => {
         documentos_sustento: 'OTROS',
         medio_presentacion: 'FISICO',
         fecha_presentacion: '2026-09-24',
-        // lo demás que características exige, ya puesto; falta longitud_frente
+        // lo demás que características exige, ya puesto; falta frontis_principal
         clase_uso: 'RESIDENCIAL',
         sub_clase_uso: 'UNIFAMILIAR',
         uso: 'CASA HABITACION',

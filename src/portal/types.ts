@@ -215,10 +215,19 @@ export interface Declaracion {
   clasificacion: string | null
   estado_construccion: string | null
   area_terreno: number | null
+  // the backend's (srtm-backend#156): area_construida and area_comun_construida are the active niveles' sums,
+  // longitud_frente the frontis principal plus the active otros frentes'. sent back, they are ignored
   area_construida: number | null
+  area_comun_construida?: number | null
   longitud_frente: number | null
+  // what is written of the frente principal
+  frontis_principal?: number | null
   numero_habitantes: number | null
+  // the catastro's valuation, the user's only where the organization has none (DeclaracionJurada.autoavaluo_manual).
+  // por_revisar: the catastro could not value it, so it kept the one before; motivo says why (a text or a llave)
   valor_autoavaluo: number | null
+  autoavaluo_por_revisar?: boolean | null
+  autoavaluo_motivo?: string | null
   valor_condominio: number | null
   deduccion: number | null
   valor_afecto: number | null
@@ -292,6 +301,8 @@ export const COLUMNAS_CATEGORIA = ['muros_columnas', 'techos', 'pisos', 'puertas
 
 export interface NivelConstruccion {
   id?: string
+  // the same row in the DJ of every condómino: the backend's, never sent
+  fila?: string | null
   declaracion?: string | null
   tipo_nivel: string | null
   numero_piso: number | null
@@ -314,6 +325,8 @@ export interface NivelConstruccion {
 
 export interface ObraComplementaria {
   id?: string
+  // the same row in the DJ of every condómino: the backend's, never sent
+  fila?: string | null
   declaracion?: string | null
   ingreso: string | null
   material: string | null
@@ -333,6 +346,8 @@ export interface ObraComplementaria {
 
 export interface OtroFrente {
   id?: string
+  // the same row in the DJ of every condómino: the backend's, never sent
+  fila?: string | null
   declaracion?: string | null
   tipo_via: string | null
   via: string | null
@@ -385,6 +400,8 @@ export interface DeclaracionJurada {
   contribuyente: Contribuyente
   // when the declaration was last saved (the srtm's "fecha de actualización")
   actualizado?: string | null
+  // the organization has no catastro: the user writes the autoavalúo (srtm-backend#156)
+  autoavaluo_manual?: boolean
 }
 
 // a lote of the catastro fiscal
