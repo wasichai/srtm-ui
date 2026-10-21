@@ -1,4 +1,5 @@
 import { ApiError, createApiClient, type ApiClient, type FieldViolation } from '@wasichai/core'
+import { avisarDeArbitrios } from './components/avisoArbitrios'
 import type { Bbox, FeatureCollection } from './components/geo'
 import type {
   ActaCreada,
@@ -83,7 +84,8 @@ import type {
   CorridaBrecha,
   FiltrosBrecha,
   PanelBrecha,
-  PredioBrecha
+  PredioBrecha,
+  ResultadoRedeterminacion
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -192,12 +194,14 @@ async function blob(path: string): Promise<{ blob: Blob; filename: string }> {
 const get = <T>(path: string) => client.request<T>(path)
 
 // a write with a JSON body: like client.request, but a failure is a RentasError that keeps the problem's `faltan`
-// (core's drops it), and it takes headers of its own (an Idempotency-Key). 204 or an empty body answer undefined
+// (core's drops it), and it takes headers of its own (an Idempotency-Key). 204 or an empty body answer undefined. a
+// write of a declaración publishes what it did to the predio's arbitrios (Srtm-Arbitrios, srtm-backend#158)
 export async function send<T>(method: 'POST' | 'PUT', path: string, body: unknown, headers?: HeadersInit): Promise<T> {
   const cabeceras = autorizado(headers)
   cabeceras.set('Content-Type', 'application/json')
   const response = await fetch(`${client.baseUrl}${path}`, { method, headers: cabeceras, body: JSON.stringify(body) })
   if (!response.ok) throw await problema(response)
+  avisarDeArbitrios(response)
   const text = response.status === 204 ? '' : await response.text()
   return (text ? JSON.parse(text) : undefined) as T
 }
@@ -214,6 +218,14 @@ export function claveDeIdempotencia(): string {
 }
 
 const remove = (path: string) => client.request<void>(path, { method: 'DELETE' })
+
+// a row of a list removed (204): like remove, but fetched here, so a declaración's row publishes what its removal did
+// to the arbitrios (Srtm-Arbitrios, srtm-backend#158), which core's client does not read
+async function quitar(path: string): Promise<void> {
+  const response = await fetch(`${client.baseUrl}${path}`, { method: 'DELETE', headers: autorizado() })
+  if (!response.ok) throw await problema(response)
+  avisarDeArbitrios(response)
+}
 
 function query(params: Record<string, string | number | null | undefined>): string {
   const search = new URLSearchParams()
@@ -245,7 +257,7 @@ function hijos<T>(parent: 'contribuyentes' | 'declaraciones', segment: string): 
     listar: (id) => get<T[]>(`/srtm/${parent}/${id}/${segment}`),
     agregar: (id, body) => send<T>('POST', `/srtm/${parent}/${id}/${segment}`, sinFila(body)),
     actualizar: (id, body) => send<T>('PUT', `/srtm/${segment}/${id}`, sinFila(body)),
-    borrar: (id) => remove(`/srtm/${segment}/${id}`)
+    borrar: (id) => quitar(`/srtm/${segment}/${id}`)
   }
 }
 
@@ -336,6 +348,11 @@ export const rentas = {
   // 403 without CREATE on cuota_arbitrio
   determinarArbitriosDePredio: (id: string, anio: number, observacion: string) =>
     send<CuotaArbitrio[]>('POST', `/srtm/predios/${id}/arbitrios`, { anio, observacion }),
+  // the year computed again with the declaraciones of today (srtm-backend#158): each month that comes out different
+  // annulled and written again, paid or not. 403 without CREATE on cuota_arbitrio and anulacion_cuota_arbitrio, 422
+  // with what is missing, 400 for the año or the observación
+  redeterminarArbitriosDePredio: (id: string, anio: number, observacion: string) =>
+    send<ResultadoRedeterminacion>('POST', `/srtm/predios/${id}/arbitrios/redeterminacion`, { anio, observacion }),
   // every predio of its declarations of the year: all of them or none
   determinarArbitriosDeContribuyente: (id: string, anio: number, observacion: string) =>
     send<CuotaArbitrio[]>('POST', `/srtm/contribuyentes/${id}/arbitrios`, { anio, observacion }),

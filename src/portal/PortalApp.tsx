@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router'
 import { SRTM_THEMES } from '../themes'
 import { client } from './api'
+import { AvisosDeArbitrios } from './components/AvisosDeArbitrios'
 import { LoginPage } from './auth/LoginPage'
 import { RequireSession } from './auth/RequireSession'
 import { ajustarI18n } from './i18n'
@@ -108,6 +109,7 @@ export function PortalApp() {
     <WasichaiProviders config={app.config} registry={app.registry} apiClient={client} i18n={app.i18n} queryClient={app.queryClient}>
       <KitDelPortal>
         <RouterProvider router={app.router} />
+        <AvisosDeArbitrios />
       </KitDelPortal>
     </WasichaiProviders>
   )
