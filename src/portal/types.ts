@@ -1502,5 +1502,45 @@ export interface FiltrosBrecha {
 export interface ResultadoRedeterminacion {
   redeterminadas: number
   anuladas: number
+  // the cuotas already paid in caja, left as they were (absent from an older backend)
+  pagadas?: number
   error?: string | null
+}
+
+// what a sincronización with caja did (wasichai/srtm-backend#158, #164): the answer of POST …/caja and, without
+// sin_documento, the Srtm-Caja header of a write of srtm
+export interface ResumenCaja {
+  encoladas: number
+  enviadas: number
+  sustituidas: number
+  retiradas: number
+  pagadas_en_caja: number
+  conflictos: number
+  pendientes: number
+  sin_documento?: number
+  error?: string | null
+}
+
+export type EstadoOrdenCaja = 'POR_ENVIAR' | 'ENVIADA' | 'POR_RETIRAR' | 'RETIRADA' | 'PAGADA_EN_CAJA' | 'CONFLICTO' | 'ERROR' | 'CANCELADA'
+
+// an orden of a contribuyente in caja, as GET …/caja shows it
+export interface OrdenEnCaja {
+  id: string | null
+  referencia: string | null
+  tipo: 'PREDIAL' | 'ARBITRIO' | null
+  ranura: string | null
+  importe: number | null
+  concepto: string | null
+  // any other value is shown raw
+  estado: EstadoOrdenCaja | string | null
+  pagada: boolean
+  ultimo_error: string | null
+  enviada_en: string | null
+  retirada_en: string | null
+}
+
+// GET …/caja: the ordenes of the year and what caja collected that srtm could not apply to a debt
+export interface EstadoCaja {
+  ordenes: OrdenEnCaja[]
+  saldo_a_favor: number
 }
