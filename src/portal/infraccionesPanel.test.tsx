@@ -406,14 +406,15 @@ describe('pestaña Infracciones de las fichas', () => {
     expect(screen.getByText(`Fase y estado de la deuda al ${dmy(`${year}-03-04`)}.`)).toBeInTheDocument()
   })
 
-  it('comes after Arbitrios', async () => {
+  it('comes after Arbitrios and Caja', async () => {
     start('/contribuyentes/c1?tab=infracciones', [
       { path: '/srtm/contribuyentes/c1/infracciones', body: infracciones() },
       { path: '/srtm/contribuyentes/c1', body: fichaContribuyente }
     ])
     await tablaDeLaFicha()
     const pestanas = screen.getAllByRole('tab').map((t) => t.textContent)
-    expect(pestanas.indexOf('Infracciones')).toBe(pestanas.indexOf('Arbitrios') + 1)
+    expect(pestanas.indexOf('Caja')).toBe(pestanas.indexOf('Arbitrios') + 1)
+    expect(pestanas.indexOf('Infracciones')).toBe(pestanas.indexOf('Caja') + 1)
   })
 
   it('opens during the inscription once the fiscal domicilio is there (its step)', async () => {

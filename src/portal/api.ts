@@ -86,7 +86,9 @@ import type {
   FiltrosBrecha,
   PanelBrecha,
   PredioBrecha,
-  ResultadoRedeterminacion
+  ResultadoRedeterminacion,
+  ResumenCaja,
+  EstadoCaja
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -356,6 +358,18 @@ export const rentas = {
   // with what is missing, 400 for the año or the observación
   redeterminarArbitriosDePredio: (id: string, anio: number, observacion: string) =>
     send<ResultadoRedeterminacion>('POST', `/srtm/predios/${id}/arbitrios/redeterminacion`, { anio, observacion }),
+  // a contribuyente's year in its organization's caja (srtm-backend#163): the ordenes and the saldo a favor. 409 when the
+  // organización has no caja, 403 without READ on orden_caja
+  cajaDeContribuyente: (id: string, anio: number) => get<EstadoCaja>(`/srtm/contribuyentes/${id}/caja${query({ anio })}`),
+  // the year's cuotas sent now: what changed and the ordenes in ERROR tried again. 403 without CREATE on orden_caja.
+  // fetched here, not through send: the caller publishes the ResumenCaja it answers, and send would publish the
+  // Srtm-Caja header of the same response too (two avisos)
+  enviarACaja: async (id: string, anio: number): Promise<ResumenCaja> => {
+    const response = await fetch(`${client.baseUrl}/srtm/contribuyentes/${id}/caja${query({ anio })}`, { method: 'POST', headers: autorizado() })
+    if (!response.ok) throw await problema(response)
+    return (await response.json()) as ResumenCaja
+  },
+
   // every predio of its declarations of the year: all of them or none
   determinarArbitriosDeContribuyente: (id: string, anio: number, observacion: string) =>
     send<CuotaArbitrio[]>('POST', `/srtm/contribuyentes/${id}/arbitrios`, { anio, observacion }),

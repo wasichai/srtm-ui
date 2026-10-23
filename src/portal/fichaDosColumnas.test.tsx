@@ -77,7 +77,7 @@ describe('ficha in two columns', () => {
       'Medios de contacto',
       'Sustento'
     ])
-    expect(pestanas(screen.getByRole('tablist', { name: 'Rentas' }))).toEqual(['Predios', 'Declaraciones', 'Arbitrios', 'Infracciones', 'Anuncios'])
+    expect(pestanas(screen.getByRole('tablist', { name: 'Rentas' }))).toEqual(['Predios', 'Declaraciones', 'Arbitrios', 'Caja', 'Infracciones', 'Anuncios'])
   })
 
   it('goes from one group to the next with the arrows, the url following', async () => {

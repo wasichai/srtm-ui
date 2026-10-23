@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { QueryState } from '@wasichai/core'
 import { Badge, Card } from '@wasichai/ui'
-import { Coins, FileText, Gavel, Landmark, MapPinned, Megaphone, Receipt } from 'lucide-react'
+import { Coins, FileText, Gavel, Landmark, MapPinned, Megaphone, Receipt, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { useVarianteTema } from '../../themes'
@@ -19,6 +19,7 @@ import type { Totales } from '../types'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { AnunciosDe } from './AnunciosPages'
 import { ArbitriosDelContribuyente } from './Arbitrios'
+import { CajaDelContribuyente } from './CajaDelContribuyente'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
 import { EliminarFicha } from './EliminarFicha'
@@ -209,6 +210,16 @@ function ContribuyentePage({ id }: { id: string }) {
                   render: () => (
                     <div className="px-6 pt-5">
                       <ArbitriosDelContribuyente id={id} anio={anio} />
+                    </div>
+                  )
+                },
+                {
+                  id: 'caja',
+                  label: 'Caja',
+                  icon: Wallet,
+                  render: () => (
+                    <div className="px-6 pt-5">
+                      <CajaDelContribuyente id={id} anio={anio} />
                     </div>
                   )
                 },
