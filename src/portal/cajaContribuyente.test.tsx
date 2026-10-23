@@ -146,10 +146,66 @@ describe('la pestaña Caja', () => {
 })
 
 describe('Enviar a caja', () => {
-  it('without CREATE on orden_caja there is no button', async () => {
+  it('without CREATE on orden_caja the button is disabled, and says why', async () => {
     start([{ path: '/srtm/contribuyentes/c1/caja', body: estado() }], enCaja())
     await screen.findByRole('table')
-    expect(screen.queryByRole('button', { name: 'Enviar a caja' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enviar a caja' })).toBeDisabled()
+    expect(screen.getByText(/Sin permiso: enviar a caja/)).toBeInTheDocument()
+  })
+
+  it('without READ on orden_caja the tab is not listed', async () => {
+    start([{ path: '/srtm/contribuyentes/c1/caja', body: estado() }], { admin: false, objects: { contribuyente: ['READ'] } })
+    await screen.findAllByRole('tab')
+    expect(screen.queryByRole('tab', { name: 'Caja' })).not.toBeInTheDocument()
+  })
+
+  it('a GET that fails with 500 shows the generic error, not the sin caja text', async () => {
+    start([{ path: '/srtm/contribuyentes/c1/caja', status: 500, body: { title: 'Internal Server Error', detail: 'Falló la lectura' } }])
+    // a 5xx is retried twice before it shows
+    expect(await screen.findByRole('alert', {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(screen.queryByText('La municipalidad no tiene caja configurada')).not.toBeInTheDocument()
+  })
+
+  it('while the POST is pending the button is disabled and says so', async () => {
+    let soltar: () => void = () => {}
+    const espera = new Promise<void>((r) => (soltar = r))
+    start(
+      [
+        {
+          method: 'POST',
+          path: '/srtm/contribuyentes/c1/caja',
+          body: { encoladas: 0, enviadas: 0, sustituidas: 0, retiradas: 0, pagadas_en_caja: 0, conflictos: 0, pendientes: 0, error: null }
+        },
+        { path: '/srtm/contribuyentes/c1/caja', body: estado() }
+      ],
+      enCaja(true)
+    )
+    const anterior = globalThis.fetch
+    globalThis.fetch = async (input, init) => {
+      if ((init?.method ?? 'GET').toUpperCase() === 'POST') await espera
+      return anterior(input, init)
+    }
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar a caja' }))
+    expect(await screen.findByRole('button', { name: 'Enviando…' })).toBeDisabled()
+    soltar()
+    expect(await screen.findByRole('button', { name: 'Enviar a caja' })).toBeEnabled()
+  })
+
+  it('changing the year clears the error of a failed send', async () => {
+    start(
+      [
+        { method: 'POST', path: '/srtm/contribuyentes/c1/caja', status: 503, body: { title: 'Service Unavailable', detail: 'Caja no responde' } },
+        { path: '/srtm/contribuyentes/c1/caja', body: estado() }
+      ],
+      enCaja(true)
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar a caja' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Caja no responde')
+    await userEvent.selectOptions(
+      screen.getAllByRole('combobox').find((c) => within(c).queryByText(String(year - 1)))!,
+      String(year - 1)
+    )
+    await vi.waitFor(() => expect(screen.queryByText('Caja no responde')).not.toBeInTheDocument())
   })
 
   it('posts the year, reads again and the aviso says it, once even if the response carries the header', async () => {

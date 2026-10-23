@@ -43,6 +43,8 @@ export function AvisosDeArbitrios() {
     })
     const dejarCaja = escucharCaja((r) => {
       if (cambioCaja(r)) void queryClient.invalidateQueries({ queryKey: ['caja'] })
+      // a month caja collected reads as paid in the matriz
+      if (r.pagadas_en_caja > 0) void queryClient.invalidateQueries({ queryKey: ['arbitrios'] })
       mostrar(mensajesDeCaja(r), 'aviso-caja')
     })
     return () => {
@@ -54,7 +56,7 @@ export function AvisosDeArbitrios() {
 
   if (avisos.length === 0) return null
   return (
-    <div aria-label="Avisos de arbitrios" className="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2 print:hidden">
+    <div aria-label="Avisos" className="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2 print:hidden">
       {avisos.map((aviso) => (
         <div key={aviso.id} data-testid={aviso.testid} className="rounded-md border border-border bg-surface px-3 py-2 shadow-lg">
           <Alert tone={aviso.tono} onDismiss={() => setAvisos((actuales) => actuales.filter((a) => a.id !== aviso.id))}>

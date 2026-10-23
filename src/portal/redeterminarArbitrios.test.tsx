@@ -81,7 +81,7 @@ describe('el encabezado Srtm-Arbitrios', () => {
 
   it('says the cuotas already paid in caja, which were left as they are', () => {
     expect(mensajesDeRedeterminacion({ redeterminadas: 12, anuladas: 3, pagadas: 2, error: null })).toEqual([
-      { tono: 'success', texto: 'Se redeterminaron 12 cuotas de arbitrios del año (3 anuladas) (2 ya pagadas en caja, sin cambios).' }
+      { tono: 'success', texto: 'Se redeterminaron 12 cuotas de arbitrios del año (3 anuladas; 2 ya pagadas en caja, sin cambios).' }
     ])
     expect(mensajesDeRedeterminacion({ redeterminadas: 0, anuladas: 0, pagadas: 2, error: null })).toEqual([
       { tono: 'success', texto: 'Ninguna cuota de arbitrios cambió (2 ya pagadas en caja, sin cambios).' }

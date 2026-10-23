@@ -19,6 +19,7 @@ import type { Totales } from '../types'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { AnunciosDe } from './AnunciosPages'
 import { ArbitriosDelContribuyente } from './Arbitrios'
+import { usePuede } from '../components/permisos'
 import { CajaDelContribuyente } from './CajaDelContribuyente'
 import { DatosPanel } from './DatosPanel'
 import { DeclaracionesDelAnio, HistorialDeclaraciones } from './Declaraciones'
@@ -66,6 +67,7 @@ export function ContribuyenteRoute() {
 
 function ContribuyentePage({ id }: { id: string }) {
   const [anio, setAnio] = useState(currentYear)
+  const veCaja = usePuede('orden_caja', 'READ')
   const [params, setParams] = useSearchParams()
   const catalogos = useCatalogos()
   const ficha = useQuery({
@@ -219,7 +221,7 @@ function ContribuyentePage({ id }: { id: string }) {
                   icon: Wallet,
                   render: () => (
                     <div className="px-6 pt-5">
-                      <CajaDelContribuyente id={id} anio={anio} />
+                      <CajaDelContribuyente key={anio} id={id} anio={anio} />
                     </div>
                   )
                 },
@@ -243,12 +245,15 @@ function ContribuyentePage({ id }: { id: string }) {
                     </div>
                   )
                 }
-              ].map((tab) => ({
-                ...tab,
-                // the portal's two columns head the srtm's registro and rentas' own tabs apart
-                grupo: CONTRIBUYENTE_TABS.some((srtm) => srtm.id === tab.id) ? 'Registro tributario' : 'Rentas',
-                disabled: !habilitada(tab.id)
-              }))}
+              ]
+                // the caja's tab is for whoever may read its ordenes
+                .filter((tab) => tab.id !== 'caja' || veCaja)
+                .map((tab) => ({
+                  ...tab,
+                  // the portal's two columns head the srtm's registro and rentas' own tabs apart
+                  grupo: CONTRIBUYENTE_TABS.some((srtm) => srtm.id === tab.id) ? 'Registro tributario' : 'Rentas',
+                  disabled: !habilitada(tab.id)
+                }))}
             />
           </Card>
         </div>

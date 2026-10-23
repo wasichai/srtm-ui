@@ -51,15 +51,14 @@ export function CajaDelContribuyente({ id, anio }: { id: string; anio: number })
     <QueryState query={query}>
       {(caja) => (
         <div className="space-y-4">
-          {puede && (
-            <div className="flex flex-col items-start gap-1">
-              <Button variant="secondary" disabled={enviar.isPending} onClick={() => enviar.mutate()}>
-                <Send className="size-4" />
-                {enviar.isPending ? 'Enviando…' : 'Enviar a caja'}
-              </Button>
-              {(enviar.data?.sin_documento ?? 0) > 0 && <p className="text-xs text-ink-muted">El contribuyente no tiene documento: no se envía a caja</p>}
-            </div>
-          )}
+          <div className="flex flex-col items-start gap-1">
+            <Button variant="secondary" disabled={!puede || enviar.isPending} onClick={() => enviar.mutate()}>
+              <Send className="size-4" />
+              {enviar.isPending ? 'Enviando…' : 'Enviar a caja'}
+            </Button>
+            {!puede && <p className="text-xs text-ink-muted">Sin permiso: enviar a caja pide creación sobre las órdenes de caja.</p>}
+            {(enviar.data?.sin_documento ?? 0) > 0 && <p className="text-xs text-ink-muted">El contribuyente no tiene documento: no se envía a caja</p>}
+          </div>
           {enviar.isError && <Alert tone="danger">{errorMessage(enviar.error, 'No se pudo enviar a caja')}</Alert>}
           {caja.saldo_a_favor > 0 && <p className="text-sm font-semibold">Saldo a favor: {formatMoney(caja.saldo_a_favor)}</p>}
           {caja.ordenes.length === 0 ? (

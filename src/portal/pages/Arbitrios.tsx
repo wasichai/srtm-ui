@@ -144,7 +144,9 @@ function MontoDeLaCelda({ cuota }: { cuota: CuotaMes }) {
   return (
     <span role="group" aria-label="Pagado en caja" className="inline-flex flex-col items-end">
       <Monto cuota={cuota} />
-      <span className="text-xs font-semibold text-success">✓ Pagado</span>
+      <span className="text-xs font-semibold text-success">
+        <span aria-hidden="true">✓</span> Pagado
+      </span>
     </span>
   )
 }

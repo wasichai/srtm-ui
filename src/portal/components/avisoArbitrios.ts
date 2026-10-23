@@ -37,14 +37,14 @@ const anuladas = (n: number) => (n === 1 ? '1 anulada' : `${n} anuladas`)
 export function mensajesDeRedeterminacion(r: ResultadoRedeterminacion, anio?: number): MensajeArbitrios[] {
   const mensajes: MensajeArbitrios[] = []
   const pagadas = r.pagadas ?? 0
-  const yaPagadas = pagadas > 0 ? ` (${pagadas} ya ${pagadas === 1 ? 'pagada' : 'pagadas'} en caja, sin cambios)` : ''
+  const yaPagadas = pagadas > 0 ? `${pagadas} ya ${pagadas === 1 ? 'pagada' : 'pagadas'} en caja, sin cambios` : ''
   if (r.redeterminadas + r.anuladas > 0) {
     mensajes.push({
       tono: 'success',
-      texto: `${cuotas(r.redeterminadas)} de arbitrios ${anio ? `de ${anio}` : 'del año'} (${anuladas(r.anuladas)})${yaPagadas}.`
+      texto: `${cuotas(r.redeterminadas)} de arbitrios ${anio ? `de ${anio}` : 'del año'} (${anuladas(r.anuladas)}${yaPagadas && `; ${yaPagadas}`}).`
     })
   } else if (pagadas > 0) {
-    mensajes.push({ tono: 'success', texto: `Ninguna cuota de arbitrios cambió${yaPagadas}.` })
+    mensajes.push({ tono: 'success', texto: `Ninguna cuota de arbitrios cambió (${yaPagadas}).` })
   }
   if (r.error) mensajes.push({ tono: 'warning', texto: `Los arbitrios no se redeterminaron: ${r.error}` })
   return mensajes
