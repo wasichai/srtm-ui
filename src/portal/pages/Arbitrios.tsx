@@ -105,7 +105,7 @@ function Matriz({ matriz: m, titulares = true }: { matriz: MatrizArbitrios; titu
                   <Td>{f.servicio.nombre ?? f.servicio.codigo}</Td>
                   {f.meses.map((c, i) => (
                     <Td key={MES_CORTO[i]} {...NUMERICA}>
-                      {c ? <Monto cuota={c} /> : <SinCuota />}
+                      {c ? <MontoDeLaCelda cuota={c} /> : <SinCuota />}
                     </Td>
                   ))}
                   <Td {...NUMERICA}>{determinadas ? formatMoney(f.total) : <SinCuota />}</Td>
@@ -136,6 +136,20 @@ const SinCuota = () => (
     —
   </span>
 )
+
+// a cell: the monto as always, and when caja collected it a «Pagado» mark under it. the mark is text plus the success
+// tone (a token: light, dark and print), so it reads without colour and the monto stays visible
+function MontoDeLaCelda({ cuota }: { cuota: CuotaMes }) {
+  if (!cuota.pagada) return <Monto cuota={cuota} />
+  return (
+    <span role="group" aria-label="Pagado en caja" className="inline-flex flex-col items-end">
+      <Monto cuota={cuota} />
+      <span className="text-xs font-semibold text-success">
+        <span aria-hidden="true">✓</span> Pagado
+      </span>
+    </span>
+  )
+}
 
 // a cuota's monto: with its desglose (one secuencia de uso per item), a popover with each one's formula, each line
 // with its uso when there are several; without one (an older backend), or with one that has nothing to break down

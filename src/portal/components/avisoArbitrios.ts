@@ -2,7 +2,7 @@ import type { ResultadoRedeterminacion } from '../types'
 
 // a write of a declaración (the DJ, its ficha, a row of its lists, a 204, the anulación, the rectificatoria, the
 // recálculo, a condómino) can redetermine its predio's arbitrios (wasichai/srtm-backend#158): the answer then carries
-// this header, {"redeterminadas":N,"anuladas":N,"error":null|"…"}, JSON with every non-ascii character escaped. absent
+// this header, {"redeterminadas":N,"anuladas":N,"pagadas":N,"error":null|"…"}, JSON with every non-ascii character escaped. absent
 // when no redeterminación ran
 export const ENCABEZADO_ARBITRIOS = 'Srtm-Arbitrios'
 
@@ -13,7 +13,12 @@ export function leerResultadoRedeterminacion(valor: string | null): ResultadoRed
     const r = JSON.parse(valor) as Record<string, unknown> | null
     if (!r || typeof r !== 'object') return null
     const numero = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
-    return { redeterminadas: numero(r.redeterminadas), anuladas: numero(r.anuladas), error: typeof r.error === 'string' && r.error ? r.error : null }
+    return {
+      redeterminadas: numero(r.redeterminadas),
+      anuladas: numero(r.anuladas),
+      ...(typeof r.pagadas === 'number' ? { pagadas: numero(r.pagadas) } : {}),
+      error: typeof r.error === 'string' && r.error ? r.error : null
+    }
   } catch {
     return null
   }
@@ -31,8 +36,15 @@ const anuladas = (n: number) => (n === 1 ? '1 anulada' : `${n} anuladas`)
 // (both when the request summed several predios), nothing when nothing changed
 export function mensajesDeRedeterminacion(r: ResultadoRedeterminacion, anio?: number): MensajeArbitrios[] {
   const mensajes: MensajeArbitrios[] = []
+  const pagadas = r.pagadas ?? 0
+  const yaPagadas = pagadas > 0 ? `${pagadas} ya ${pagadas === 1 ? 'pagada' : 'pagadas'} en caja, sin cambios` : ''
   if (r.redeterminadas + r.anuladas > 0) {
-    mensajes.push({ tono: 'success', texto: `${cuotas(r.redeterminadas)} de arbitrios ${anio ? `de ${anio}` : 'del año'} (${anuladas(r.anuladas)}).` })
+    mensajes.push({
+      tono: 'success',
+      texto: `${cuotas(r.redeterminadas)} de arbitrios ${anio ? `de ${anio}` : 'del año'} (${anuladas(r.anuladas)}${yaPagadas && `; ${yaPagadas}`}).`
+    })
+  } else if (pagadas > 0) {
+    mensajes.push({ tono: 'success', texto: `Ninguna cuota de arbitrios cambió (${yaPagadas}).` })
   }
   if (r.error) mensajes.push({ tono: 'warning', texto: `Los arbitrios no se redeterminaron: ${r.error}` })
   return mensajes

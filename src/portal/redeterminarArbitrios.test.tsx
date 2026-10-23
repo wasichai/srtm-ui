@@ -5,7 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { rentas } from './api'
 import { AvisosDeArbitrios, DURACION_AVISO } from './components/AvisosDeArbitrios'
-import { escucharRedeterminaciones, leerResultadoRedeterminacion, mensajesDeRedeterminacion, publicarRedeterminacion } from './components/avisoArbitrios'
+import {
+  cambiaronCuotas,
+  escucharRedeterminaciones,
+  leerResultadoRedeterminacion,
+  mensajesDeRedeterminacion,
+  publicarRedeterminacion
+} from './components/avisoArbitrios'
 import { PortalApp } from './PortalApp'
 import type { MatrizArbitrios, ResultadoRedeterminacion } from './types'
 
@@ -71,6 +77,19 @@ describe('el encabezado Srtm-Arbitrios', () => {
       { tono: 'warning', texto: 'Los arbitrios no se redeterminaron: sin permiso' }
     ])
     expect(mensajesDeRedeterminacion({ redeterminadas: 0, anuladas: 0, error: null })).toEqual([])
+  })
+
+  it('says the cuotas already paid in caja, which were left as they are', () => {
+    expect(mensajesDeRedeterminacion({ redeterminadas: 12, anuladas: 3, pagadas: 2, error: null })).toEqual([
+      { tono: 'success', texto: 'Se redeterminaron 12 cuotas de arbitrios del año (3 anuladas; 2 ya pagadas en caja, sin cambios).' }
+    ])
+    expect(mensajesDeRedeterminacion({ redeterminadas: 0, anuladas: 0, pagadas: 2, error: null })).toEqual([
+      { tono: 'success', texto: 'Ninguna cuota de arbitrios cambió (2 ya pagadas en caja, sin cambios).' }
+    ])
+    expect(mensajesDeRedeterminacion({ redeterminadas: 0, anuladas: 0, pagadas: 1 })[0].texto).toBe(
+      'Ninguna cuota de arbitrios cambió (1 ya pagada en caja, sin cambios).'
+    )
+    expect(cambiaronCuotas({ redeterminadas: 0, anuladas: 0, pagadas: 2 })).toBe(false)
   })
 })
 
@@ -280,5 +299,14 @@ describe('redeterminar desde la ficha del predio', () => {
     act(() => publicarRedeterminacion({ redeterminadas: 2, anuladas: 2, error: null }))
     expect(await screen.findByText('Se redeterminaron 2 cuotas de arbitrios del año (2 anuladas).')).toBeInTheDocument()
     await vi.waitFor(() => expect(lecturas()).toBeGreaterThan(antes))
+  })
+})
+
+describe('redeterminar una cuota pagada en caja', () => {
+  it('shows the 409 text in the dialog', async () => {
+    start({ status: 409, body: { title: 'Conflict', detail: 'la cuota ya se pagó en caja (recibo R-1)' } })
+    const { dialogo, boton } = await redeterminar('Cambió el uso del predio')
+    await userEvent.click(boton)
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent('la cuota ya se pagó en caja (recibo R-1)')
   })
 })

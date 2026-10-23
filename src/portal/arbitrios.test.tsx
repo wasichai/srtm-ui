@@ -336,3 +336,35 @@ describe('arbitrios del contribuyente', () => {
     expect(screen.queryByRole('list', { name: 'Titular de cada mes' })).not.toBeInTheDocument()
   })
 })
+
+describe('el mes pagado en caja', () => {
+  const conPagada = () => {
+    const f = fila('limpieza', 'Limpieza pública', 8.5, 12, 102)
+    f.meses[2] = { ...f.meses[2]!, pagada: true }
+    return matriz({ filas: [f] })
+  }
+
+  it('marks the paid month «Pagado», named «pagado en caja», its monto still visible', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: conPagada() },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    const marca = within(t).getByRole('group', { name: /pagado en caja/i })
+    expect(marca).toHaveTextContent('Pagado')
+    expect(marca).toHaveTextContent(/8[.,]50/)
+    expect(within(t).getAllByRole('group')).toHaveLength(1)
+    // the total is still the backend's
+    expect(within(within(t).getAllByRole('row').at(-1)!).getAllByRole('cell').at(-1)?.textContent).toMatch(/999[.,]99/)
+  })
+
+  it('an unpaid month is unchanged', async () => {
+    start('/predios/p1?tab=arbitrios', [
+      { path: '/srtm/predios/p1/arbitrios', body: matriz({}) },
+      { path: '/srtm/predios/p1', body: predioFicha }
+    ])
+    const t = await tabla()
+    expect(within(t).queryByRole('group')).toBeNull()
+    expect(within(t).queryByText(/Pagado/)).toBeNull()
+  })
+})
