@@ -666,6 +666,8 @@ export interface CuotaMes {
   parametro_aplicado: string | null
   // absent from an older backend (before the épica's desglose): the cell then shows only the monto, as before
   desglose?: DesgloseCuota[]
+  // every cuota of the cell was paid in caja (srtm-backend#165): absent from an older backend, then unpaid
+  pagada?: boolean
 }
 
 // one secuencia de uso's cuota within a CuotaMes cell: its own figures plus formula, the readable arithmetic

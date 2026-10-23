@@ -301,3 +301,12 @@ describe('redeterminar desde la ficha del predio', () => {
     await vi.waitFor(() => expect(lecturas()).toBeGreaterThan(antes))
   })
 })
+
+describe('redeterminar una cuota pagada en caja', () => {
+  it('shows the 409 text in the dialog', async () => {
+    start({ status: 409, body: { title: 'Conflict', detail: 'la cuota ya se pagó en caja (recibo R-1)' } })
+    const { dialogo, boton } = await redeterminar('Cambió el uso del predio')
+    await userEvent.click(boton)
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent('la cuota ya se pagó en caja (recibo R-1)')
+  })
+})
