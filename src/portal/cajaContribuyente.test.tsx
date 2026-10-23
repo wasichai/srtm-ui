@@ -101,6 +101,18 @@ describe('la pestaña Caja', () => {
     expect(fetch!.calls.find((c) => c.method === 'GET' && c.path.startsWith('/srtm/contribuyentes/c1/caja'))!.url).toContain(`anio=${year}`)
   })
 
+  it('shows the recibo of an orden that has one, and nothing otherwise', async () => {
+    start([
+      {
+        path: '/srtm/contribuyentes/c1/caja',
+        body: estado({ ordenes: [orden({ pagada: true, recibo: 'R-000123' }), orden({ id: 'o2', referencia: 'ARB-0002' })] })
+      }
+    ])
+    await screen.findByRole('table')
+    expect(screen.getAllByText(/^Recibo /)).toHaveLength(1)
+    expect(screen.getByText('Recibo R-000123')).toBeInTheDocument()
+  })
+
   it('shows an unknown estado raw', async () => {
     start([{ path: '/srtm/contribuyentes/c1/caja', body: estado({ ordenes: [orden({ estado: 'RARA' })] }) }])
     expect(await screen.findByText('RARA')).toBeInTheDocument()
@@ -161,8 +173,11 @@ describe('Enviar a caja', () => {
 
   it('a GET that fails with 500 shows the generic error, not the sin caja text', async () => {
     start([{ path: '/srtm/contribuyentes/c1/caja', status: 500, body: { title: 'Internal Server Error', detail: 'Falló la lectura' } }])
-    // a 5xx is retried twice before it shows
-    expect(await screen.findByRole('alert', {}, { timeout: 8000 })).toBeInTheDocument()
+    // a 5xx is retried twice before it shows: the retry's backoff (seconds) (1s, 2s) waits no time here
+    const setTimeoutReal = globalThis.setTimeout
+    vi.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: TimerHandler, ms?: number, ...args: unknown[]) =>
+      setTimeoutReal(fn, ms === 1000 || ms === 2000 ? 0 : ms, ...args)) as typeof setTimeout)
+    expect(await screen.findByRole('alert', {}, { timeout: 1500 })).toBeInTheDocument()
     expect(screen.queryByText('La municipalidad no tiene caja configurada')).not.toBeInTheDocument()
   })
 

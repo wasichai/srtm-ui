@@ -1536,6 +1536,8 @@ export interface OrdenEnCaja {
   // any other value is shown raw
   estado: EstadoOrdenCaja | string | null
   pagada: boolean
+  // the número of the registered, not-anulled pago that applied to the orden (srtm-backend#175); absent from an older backend
+  recibo?: string | null
   ultimo_error: string | null
   enviada_en: string | null
   retirada_en: string | null

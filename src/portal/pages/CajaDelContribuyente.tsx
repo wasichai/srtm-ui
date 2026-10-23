@@ -84,6 +84,7 @@ export function CajaDelContribuyente({ id, anio }: { id: string; anio: number })
                         <div className="flex flex-wrap items-center gap-2">
                           <BadgeDeMapa valor={o.estado} mapa={ESTADOS} />
                           {o.pagada && <Badge>Pagada</Badge>}
+                          {o.recibo && <span className="text-xs text-ink-muted">Recibo {o.recibo}</span>}
                         </div>
                         {o.ultimo_error && <p className="mt-1 text-xs text-danger">{o.ultimo_error}</p>}
                       </Td>
