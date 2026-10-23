@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.0.0](https://github.com/wasichai/srtm-ui/compare/v0.5.0...v1.0.0) (2026-10-23)
+
+
+### Features
+
+* **arbitrios:** aviso de cuotas redeterminadas y botón Redeterminar ([859a9c9](https://github.com/wasichai/srtm-ui/commit/859a9c972c19c8a40119f55aa92abb57dac1341a))
+* **arbitrios:** aviso de cuotas redeterminadas y botón Redeterminar ([4ccebb5](https://github.com/wasichai/srtm-ui/commit/4ccebb597defd4418235e5591d95ab303f656f17))
+* **arbitrios:** el mes pagado en caja en la matriz ([#123](https://github.com/wasichai/srtm-ui/issues/123)) ([de089fd](https://github.com/wasichai/srtm-ui/commit/de089fdfa13084aa7fe44e559e92be21ace72cfe))
+* **brecha:** panel de brecha de recaudación ([#106](https://github.com/wasichai/srtm-ui/issues/106)) ([1081a20](https://github.com/wasichai/srtm-ui/commit/1081a200439ec43659b67d506116bd93f06bab81))
+* **caja:** aviso de Srtm-Caja junto al de arbitrios ([#123](https://github.com/wasichai/srtm-ui/issues/123)) ([e535623](https://github.com/wasichai/srtm-ui/commit/e535623b7ce844a85fff076de3fe2798aac2e50d))
+* **caja:** el recibo en la pestaña Caja ([#123](https://github.com/wasichai/srtm-ui/issues/123)) ([9ad40a9](https://github.com/wasichai/srtm-ui/commit/9ad40a9f424208c99a326983d30fd84f46ef371a))
+* **caja:** enviar a caja, pestaña Caja, aviso Srtm-Caja y mes pagado en la matriz ([752d049](https://github.com/wasichai/srtm-ui/commit/752d049ccf9a94cef1af5498f957563285a62ed6))
+* **caja:** pestaña Caja y botón Enviar a caja en la ficha del contribuyente ([#123](https://github.com/wasichai/srtm-ui/issues/123)) ([acd4196](https://github.com/wasichai/srtm-ui/commit/acd41962f09af101446b11bcc84d5bde7e479b42))
+* **declaraciones:** rectificar, declarar desde la anterior y autoavalúo sugerido ([6e96efb](https://github.com/wasichai/srtm-ui/commit/6e96efb9a2c37f43c44dffcdbc8f0eb475d9fbd0))
+* **declaraciones:** rectificar, declarar desde la anterior y autoavalúo sugerido ([ac5a261](https://github.com/wasichai/srtm-ui/commit/ac5a261131dda7f922a8b68021aca4f63e06d94e)), closes [#114](https://github.com/wasichai/srtm-ui/issues/114)
+* **declaraciones:** valores derivados de solo lectura y autoavalúo automático ([a7c7329](https://github.com/wasichai/srtm-ui/commit/a7c7329121bce3227113ee7be23ac3a803ce133c))
+* **declaraciones:** valores derivados de solo lectura y autoavalúo automático ([fc143e3](https://github.com/wasichai/srtm-ui/commit/fc143e38767541ad4395a60899d972a84c75890a)), closes [#119](https://github.com/wasichai/srtm-ui/issues/119)
+* **declaracion:** la valuación del padrón de origen en solo lectura ([07c0050](https://github.com/wasichai/srtm-ui/commit/07c00504e5ed208d49df0737c998437588ec14d5))
+* **declaracion:** nivel sin mes y valuación del padrón de origen en solo lectura ([c04ceba](https://github.com/wasichai/srtm-ui/commit/c04ceba55f04d0730e4fde92800a529d6bcd1d2b))
+* **declaracion:** un nivel guardado sin mes de construcción se edita sin pedirlo ([e2096d9](https://github.com/wasichai/srtm-ui/commit/e2096d97ae82808895122142bc002bc5a1ec912c)), closes [#110](https://github.com/wasichai/srtm-ui/issues/110)
+* **deps:** adopta @wasichai/* 1.0.0 y fija la release en 1.0.0 ([#116](https://github.com/wasichai/srtm-ui/issues/116)) ([c73559e](https://github.com/wasichai/srtm-ui/commit/c73559e9e79343b43147a1813e51279d64f7bc0c))
+* **kit:** pista bajo el campo y campos de solo lectura que siguen al registro ([87ed6c9](https://github.com/wasichai/srtm-ui/commit/87ed6c95bbf3749cfc7f495b6c49f0777f0953b1))
+* **portal:** alternativa C de distribución, riel de módulos y ficha en dos columnas ([c164429](https://github.com/wasichai/srtm-ui/commit/c164429d021c65d246921d77d0746bb9d6e141ec))
+
+
+### Bug Fixes
+
+* **caja:** permisos, estado por año y avisos de la revisión final ([#123](https://github.com/wasichai/srtm-ui/issues/123)) ([316dfdb](https://github.com/wasichai/srtm-ui/commit/316dfdba0aea33dcfe0ced84cbab92092b22bd7a))
+* **declaraciones:** declarar desde la anterior sin el primer paso, DJ del padrón sustituida y ancho del autoavalúo sugerido ([2b57b0d](https://github.com/wasichai/srtm-ui/commit/2b57b0dfca5f07b88f525bce94a230355b10104a))
+* **declaraciones:** declarar desde la anterior sin el primer paso, DJ del padrón y autoavalúo ([58182d9](https://github.com/wasichai/srtm-ui/commit/58182d916f7f6cbe619c7f7c0feee4c3b57c00e0))
+* **portal:** la cabecera, el login y el mapa no fijan a Perené ([826ac54](https://github.com/wasichai/srtm-ui/commit/826ac543d846e99f11b3a79361a312caf5bf9365))
+* **portal:** la cabecera, el login y el mapa no fijan a Perené ([049258b](https://github.com/wasichai/srtm-ui/commit/049258bcfff45008fe4772042eec17a466672061)), closes [#112](https://github.com/wasichai/srtm-ui/issues/112)
+
 ## [0.5.0](https://github.com/wasichai/srtm-ui/compare/v0.5.0...v0.5.0) (2026-10-10)
 
 
