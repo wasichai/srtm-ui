@@ -116,6 +116,15 @@ describe('el aviso de caja', () => {
     expect(screen.queryByTestId('aviso-caja')).not.toBeInTheDocument()
   })
 
+  it('ordenes paid in caja make the matriz of arbitrios read again', () => {
+    const { invalidar } = montar()
+    act(() => publicarCaja(resumen({ pagadas_en_caja: 1 })))
+    expect(invalidar).toHaveBeenCalledWith({ queryKey: ['arbitrios'] })
+    invalidar.mockClear()
+    act(() => publicarCaja(resumen({ enviadas: 1 })))
+    expect(invalidar).not.toHaveBeenCalledWith({ queryKey: ['arbitrios'] })
+  })
+
   it('only pendientes: shown, nothing read again', () => {
     const { invalidar } = montar()
     act(() => publicarCaja(resumen({ pendientes: 2 })))

@@ -173,11 +173,14 @@ describe('Enviar a caja', () => {
 
   it('a GET that fails with 500 shows the generic error, not the sin caja text', async () => {
     start([{ path: '/srtm/contribuyentes/c1/caja', status: 500, body: { title: 'Internal Server Error', detail: 'Falló la lectura' } }])
-    // a 5xx is retried twice before it shows: the retry's backoff (seconds) (1s, 2s) waits no time here
-    const setTimeoutReal = globalThis.setTimeout
-    vi.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: TimerHandler, ms?: number, ...args: unknown[]) =>
-      setTimeoutReal(fn, ms === 1000 || ms === 2000 ? 0 : ms, ...args)) as typeof setTimeout)
-    expect(await screen.findByRole('alert', {}, { timeout: 1500 })).toBeInTheDocument()
+    // a 5xx is retried twice before it shows: the backoff (1s, 2s) is advanced, not waited
+    vi.useFakeTimers({ toFake: ['setTimeout'], shouldAdvanceTime: true })
+    try {
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(await screen.findByRole('alert')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
     expect(screen.queryByText('La municipalidad no tiene caja configurada')).not.toBeInTheDocument()
   })
 
