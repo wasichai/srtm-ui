@@ -138,6 +138,12 @@ describe('el arancel de la DJ', () => {
     expect(puts()[1].body).toMatchObject({ id_aranc: null })
   })
 
+  it('says when the stored tramo’s arancel cannot be read, not that it has none', async () => {
+    start(declaracion({ id_aranc: 'ZZ-01' }), [{ path: ARANCELES, status: 403, body: { title: 'Forbidden' } }])
+    const campo = await screen.findByLabelText('Arancel (S/ por m²)')
+    await waitFor(() => expect(campo).toHaveAttribute('placeholder', 'no se pudo leer el arancel del tramo'))
+  })
+
   it('shows the backend’s 400 on id_aranc under the field', async () => {
     const mensaje = `no hay un arancel VIGENTE ZZ-01 para ${year}`
     start(declaracion(), [

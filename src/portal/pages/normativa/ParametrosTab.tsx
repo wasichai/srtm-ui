@@ -69,6 +69,7 @@ export function ParametrosTab() {
       estado: (borrador.estado || undefined) as EstadoNormativa | undefined,
       vigente_en: borrador.vigente_en || undefined
     })
+    setVerificacion(null)
   }
 
   const filas = query.data ?? []

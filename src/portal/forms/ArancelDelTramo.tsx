@@ -48,7 +48,15 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
 
   if (idAranc) {
     const valor = arancel ? formatMoney(arancel.valor_m2) : ''
-    const sinVigente = !arancel && !vigente.isPending ? `sin arancel VIGENTE en ${anio ?? 'el año'}: se conserva el guardado` : undefined
+    // a DJ without año asks nothing; a failed search says so, not that there is no VIGENTE one
+    const sinVigente =
+      anio === null
+        ? 'la declaración no tiene año'
+        : vigente.isError
+          ? 'no se pudo leer el arancel del tramo'
+          : !arancel && !vigente.isPending
+            ? `sin arancel VIGENTE en ${anio}: se conserva el guardado`
+            : undefined
     return (
       <div className="space-y-1.5">
         <Label htmlFor={id} className="block truncate">
@@ -77,7 +85,7 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
           </Button>
         </div>
         <p id={`${id}-hint`} className="text-xs text-ink-muted">
-          del arancel {idAranc}
+          del arancel {idAranc}: valor vigente del tramo
           {arancel && describir(arancel) ? ` (${describir(arancel)})` : ''}
         </p>
         {errorDelCampo}
@@ -99,6 +107,9 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
     </Combobox>
   )
 }
+
+// what is typed before it searches, as RecordPicker
+const MINIMO = 2
 
 // search-as-you-type over the VIGENTE aranceles of the año, by id_aranc or vía: the wai-aria combobox with a listbox
 function Combobox({
@@ -122,10 +133,10 @@ function Combobox({
   const resultados = useQuery({
     queryKey: clavesNormativa.aranceles(filtros, 0),
     queryFn: () => normativa.aranceles(filtros, 0),
-    enabled: term.length >= 1 && anio !== null
+    enabled: term.length >= MINIMO && anio !== null
   })
   const opciones = resultados.data?.content ?? []
-  const abierta = term.length >= 1 && anio !== null
+  const abierta = term.length >= MINIMO && anio !== null
   const elegir = (a: Arancel) => {
     onElegir(a)
     setQ('')

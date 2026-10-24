@@ -70,6 +70,7 @@ export function ArancelesTab() {
     event.preventDefault()
     setFiltros({ q: borrador.q.trim() || undefined, estado: (borrador.estado || undefined) as EstadoNormativa | undefined })
     setPage(0)
+    setVerificacion(null)
   }
 
   const filas = query.data?.content ?? []
@@ -97,6 +98,7 @@ export function ArancelesTab() {
             onChange={(nuevo) => {
               setAnio(nuevo)
               setPage(0)
+              setVerificacion(null)
               sincronizar.reset()
             }}
             siguiente
@@ -166,8 +168,8 @@ export function ArancelesTab() {
         </div>
       )}
       {sincronizar.isError && (
-        <Alert tone={esNoEncontrado(sincronizar.error) ? 'notice' : 'danger'} onDismiss={() => sincronizar.reset()}>
-          {esNoEncontrado(sincronizar.error) ? SIN_SINCRONIZACION : <MensajeDeError error={sincronizar.error} siFalla="No se pudo sincronizar" />}
+        <Alert tone={sinSincronizacion(sincronizar.error) ? 'notice' : 'danger'} onDismiss={() => sincronizar.reset()}>
+          {sinSincronizacion(sincronizar.error) ? SIN_SINCRONIZACION : <MensajeDeError error={sincronizar.error} siFalla="No se pudo sincronizar" />}
         </Alert>
       )}
 
@@ -198,7 +200,10 @@ export function ArancelesTab() {
               setSincronizacion(null)
               setDialogo(d)
             }}
-            onPage={setPage}
+            onPage={(nueva) => {
+              setPage(nueva)
+              setVerificacion(null)
+            }}
           />
         )}
       </QueryState>
@@ -231,7 +236,8 @@ export function ArancelesTab() {
   )
 }
 
-const esNoEncontrado = (error: unknown) => error instanceof ApiError && error.status === 404
+// a backend without srtm-backend#189: 404, or 405 when POST …/sincronizar falls on /{id} (only PATCH and DELETE there)
+const sinSincronizacion = (error: unknown) => error instanceof ApiError && (error.status === 404 || error.status === 405)
 
 // how catastro's copy stands: copied (when), failed (why, in its tooltip), or a VIGENTE still to copy
 export function EstadoCatastro({ arancel: a }: { arancel: Arancel }) {

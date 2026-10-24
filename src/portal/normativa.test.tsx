@@ -230,6 +230,22 @@ describe('parámetros', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
+  it('closes an open vigencia with the date asked in its dialog', async () => {
+    start(
+      '/normativa',
+      rutas([parametro({})], [{ method: 'POST', path: '/srtm/normativa/parametros/p1/cerrar', body: parametro({ vigencia_hasta: `${year}-12-31` }) }])
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar vigencia' }))
+    const dialogo = await screen.findByRole('dialog')
+    const cerrar = within(dialogo).getByRole('button', { name: 'Cerrar vigencia' })
+    expect(cerrar).toBeDisabled()
+    await userEvent.type(within(dialogo).getByLabelText(/Vigente hasta/), `${year}-12-31`)
+    await userEvent.click(cerrar)
+    await waitFor(() => expect(llamadas('POST', '/srtm/normativa/parametros/p1/cerrar')).toHaveLength(1))
+    expect(llamadas('POST', '/srtm/normativa/parametros/p1/cerrar')[0].body).toEqual({ vigencia_hasta: `${year}-12-31` })
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
   it('registers one with the fields its tipo asks for, and shows the 400 under its field', async () => {
     start(
       '/normativa',
@@ -331,8 +347,12 @@ describe('aranceles', () => {
     await waitFor(() => expect(llamadas('GET', lista).length).toBeGreaterThan(1))
   })
 
-  it('says the synchronization is not there yet when the backend answers 404', async () => {
-    start('/normativa?tab=aranceles', [{ path: lista, body: pagina([arancel({})]) }])
+  // a backend without srtm-backend#189: POST …/sincronizar falls on /{id}, which only has PATCH and DELETE (405)
+  it.each([404, 405])('says the synchronization is not there yet when the backend answers %i', async (status) => {
+    start('/normativa?tab=aranceles', [
+      { path: lista, body: pagina([arancel({})]) },
+      { method: 'POST', path: `${lista}/sincronizar`, status, body: { title: status === 404 ? 'Not Found' : 'Method Not Allowed' } }
+    ])
     await userEvent.click(await screen.findByRole('button', { name: 'Sincronizar con catastro' }))
     expect(await screen.findByText('La sincronización con catastro aún no está disponible')).toBeInTheDocument()
   })
