@@ -88,7 +88,17 @@ import type {
   PredioBrecha,
   ResultadoRedeterminacion,
   ResumenCaja,
-  EstadoCaja
+  EstadoCaja,
+  Arancel,
+  DatosDeArancel,
+  DatosDeParametro,
+  FiltrosAranceles,
+  FiltrosParametros,
+  Parametro,
+  ResultadoImportacion,
+  ResultadoVerificacion,
+  Sincronizacion,
+  TipoDeParametro
 } from './types'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
@@ -199,7 +209,7 @@ const get = <T>(path: string) => client.request<T>(path)
 // a write with a JSON body: like client.request, but a failure is a RentasError that keeps the problem's `faltan`
 // (core's drops it), and it takes headers of its own (an Idempotency-Key). 204 or an empty body answer undefined. a
 // write of a declaración publishes what it did to the predio's arbitrios (Srtm-Arbitrios, srtm-backend#158) and to its ordenes in caja (Srtm-Caja, #164)
-export async function send<T>(method: 'POST' | 'PUT', path: string, body: unknown, headers?: HeadersInit): Promise<T> {
+export async function send<T>(method: 'POST' | 'PUT' | 'PATCH', path: string, body: unknown, headers?: HeadersInit): Promise<T> {
   const cabeceras = autorizado(headers)
   cabeceras.set('Content-Type', 'application/json')
   const response = await fetch(`${client.baseUrl}${path}`, { method, headers: cabeceras, body: JSON.stringify(body) })
@@ -230,6 +240,13 @@ async function quitar(path: string): Promise<void> {
   if (!response.ok) throw await problema(response)
   avisarDeArbitrios(response)
   avisarDeCaja(response)
+}
+
+// a csv file as the body itself (text/csv), not multipart: Normativa's imports
+async function enviarCsv<T>(path: string, archivo: Blob): Promise<T> {
+  const response = await fetch(`${client.baseUrl}${path}`, { method: 'POST', headers: autorizado({ 'Content-Type': 'text/csv' }), body: archivo })
+  if (!response.ok) throw await problema(response)
+  return (await response.json()) as T
 }
 
 function query(params: Record<string, string | number | null | undefined>): string {
@@ -264,6 +281,40 @@ function hijos<T>(parent: 'contribuyentes' | 'declaraciones', segment: string): 
     actualizar: (id, body) => send<T>('PUT', `/srtm/${segment}/${id}`, sinFila(body)),
     borrar: (id) => quitar(`/srtm/${segment}/${id}`)
   }
+}
+
+const NORMATIVA = '/srtm/normativa'
+
+// Normativa (srtm-backend#186): the parámetros and aranceles with their double signature. a write answers 400 with
+// the fields it refuses (errors[].field), 409 when the estado does not allow it or the key is taken, 403 without the
+// permission on parametro_tributario or arancel. the import answers what it would do with dry_run (the backend's
+// default) and writes with dry_run=false. a verificación, an anulación and an import of aranceles also say what the
+// copy to catastro did (sincronizacion, null without catastro)
+export const normativa = {
+  tipos: () => get<TipoDeParametro[]>(`${NORMATIVA}/tipos`),
+  parametros: (filtros: FiltrosParametros) => get<Parametro[]>(`${NORMATIVA}/parametros${query({ ...filtros })}`),
+  registrarParametro: (body: DatosDeParametro) => send<Parametro>('POST', `${NORMATIVA}/parametros`, body),
+  corregirParametro: (id: string, body: DatosDeParametro) => send<Parametro>('PATCH', `${NORMATIVA}/parametros/${id}`, body),
+  borrarParametro: (id: string) => remove(`${NORMATIVA}/parametros/${id}`),
+  verificarParametros: (ids: string[]) => send<ResultadoVerificacion>('POST', `${NORMATIVA}/parametros/verificar`, { ids }),
+  anularParametro: (id: string, motivo: string) => send<Parametro>('POST', `${NORMATIVA}/parametros/${id}/anular`, { motivo }),
+  // only a VIGENTE with no vigencia_hasta: 409 otherwise, 400 for a date before its vigencia_desde
+  cerrarParametro: (id: string, vigencia_hasta: string) => send<Parametro>('POST', `${NORMATIVA}/parametros/${id}/cerrar`, { vigencia_hasta }),
+  importarParametros: (archivo: Blob, dryRun: boolean) =>
+    enviarCsv<ResultadoImportacion>(`${NORMATIVA}/parametros/importar${query({ dry_run: String(dryRun) })}`, archivo),
+
+  // a page sorted by id_aranc. q: a prefix of id_aranc or cod_via. estado VIGENTE includes the rows with none
+  aranceles: (filtros: FiltrosAranceles, page: number, size = PAGE_SIZE) => get<Pagina<Arancel>>(`${NORMATIVA}/aranceles${query({ ...filtros, page, size })}`),
+  registrarArancel: (body: DatosDeArancel) => send<Arancel>('POST', `${NORMATIVA}/aranceles`, body),
+  corregirArancel: (id: string, body: DatosDeArancel) => send<Arancel>('PATCH', `${NORMATIVA}/aranceles/${id}`, body),
+  borrarArancel: (id: string) => remove(`${NORMATIVA}/aranceles/${id}`),
+  verificarAranceles: (ids: string[]) => send<ResultadoVerificacion>('POST', `${NORMATIVA}/aranceles/verificar`, { ids }),
+  anularArancel: (id: string, motivo: string) =>
+    send<Arancel & { sincronizacion?: Sincronizacion | null }>('POST', `${NORMATIVA}/aranceles/${id}/anular`, { motivo }),
+  importarAranceles: (archivo: Blob, dryRun: boolean) =>
+    enviarCsv<ResultadoImportacion>(`${NORMATIVA}/aranceles/importar${query({ dry_run: String(dryRun) })}`, archivo),
+  // the year's aranceles not copied yet, or that failed, copied again (srtm-backend#189): 404 from a backend without it
+  sincronizarAranceles: (anio: number) => send<Sincronizacion>('POST', `${NORMATIVA}/aranceles/sincronizar${query({ anio })}`, null)
 }
 
 export const rentas = {

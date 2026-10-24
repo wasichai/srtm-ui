@@ -1,4 +1,4 @@
-import { currentNavTreeLeaf, isNavTreeGroup, NavTree, navTreeLeaves } from '@wasichai/core'
+import { currentNavTreeLeaf, isNavTreeGroup, NavTree, navTreeLeaves, useAuth } from '@wasichai/core'
 import { cn } from '@wasichai/ui'
 import { Home, type LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
@@ -21,8 +21,9 @@ const estado = (actual: boolean) => (actual ? 'border-link bg-ink/6 font-bold' :
 // elsewhere, a pick or another route closes it. it never folds: on a phone it spans the row and wraps its items
 export function RielPortal() {
   const { isAdmin } = useSession()
+  const { permissions } = useAuth()
   const { pathname } = useLocation()
-  const nodos = useMemo(() => arbolPara(NAV_TREE, { isAdmin }), [isAdmin])
+  const nodos = useMemo(() => arbolPara(NAV_TREE, { isAdmin, permissions }), [isAdmin, permissions])
   const grupos = nodos.filter((nodo): nodo is GrupoNav => isNavTreeGroup(nodo))
   const hojas = nodos.filter((nodo): nodo is HojaNav => !isNavTreeGroup(nodo))
   const actual = currentNavTreeLeaf(nodos, pathname)

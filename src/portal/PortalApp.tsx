@@ -21,6 +21,7 @@ import { AnuncioRoute } from './pages/AnuncioPage'
 import { PadronAnunciosPage, TasasAnunciosPage } from './pages/AnunciosPages'
 import { NuevoAnuncioPage } from './pages/NuevoAnuncioPage'
 import { NotificacionesPage } from './pages/NotificacionesPage'
+import { NormativaPage } from './pages/normativa/NormativaPage'
 import { EscalasYPlazosPage } from './pages/EscalasYPlazosPage'
 import { ExpedientesPage } from './pages/ExpedientesPage'
 import { ExpedienteRoute } from './pages/ExpedientePage'
@@ -84,6 +85,7 @@ const rutas = createRoutesFromElements(
         <Route path="anuncios/:id" element={<AnuncioRoute />} />
         <Route path="infracciones/plazos" element={<EscalasYPlazosPage />} />
         <Route path="infracciones/:id" element={<ExpedienteRoute />} />
+        <Route path="normativa" element={<NormativaPage />} />
         <Route path="*" element={<PaginaNoEncontrada />} />
       </Route>
     </Route>

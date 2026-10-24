@@ -1,8 +1,9 @@
 import { cn } from '@wasichai/ui'
-import { ChartColumn, Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Search, Users } from 'lucide-react'
+import { ChartColumn, Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Scale, Search, Users, type LucideIcon } from 'lucide-react'
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useMunicipalidad } from '../queries'
+import { NORMATIVA_LEE } from './navTree'
 
 // what both shells (AppShell's classic one and PortalShell) share
 
@@ -15,7 +16,8 @@ export function useEntidad(): { nombre: string | null; escudo: string | null } {
   return { nombre: data?.nombre ?? null, escudo: data?.escudo ?? null }
 }
 
-export const NAV = [
+// lee: only for who may read one of these objects, as NAV_TREE's leaves (arbolPara)
+export const NAV: { to: string; label: string; icon: LucideIcon; end: boolean; lee?: readonly string[] }[] = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
   { to: '/contribuyentes', label: 'Contribuyentes', icon: Users, end: false },
   { to: '/predios', label: 'Predios', icon: MapPinned, end: false },
@@ -27,7 +29,8 @@ export const NAV = [
   { to: '/anuncios', label: 'Anuncios', icon: Megaphone, end: false },
   { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false },
   // the padrón against catastro (the brecha de recaudación), next to the other panels of a year
-  { to: '/brecha', label: 'Brecha de recaudación', icon: ChartColumn, end: false }
+  { to: '/brecha', label: 'Brecha de recaudación', icon: ChartColumn, end: false },
+  { to: '/normativa', label: 'Normativa', icon: Scale, end: false, lee: NORMATIVA_LEE }
 ]
 
 // the lateral gets whether it is open (the header's menu button, usePanelLateral) and tells a pick, which closes it.

@@ -1,5 +1,6 @@
-import { isNavTreeGroup, type NavTreeGroup, type NavTreeLeaf } from '@wasichai/core'
-import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Settings, Users, type LucideIcon } from 'lucide-react'
+import { isNavTreeGroup, type CallerPermissions, type NavTreeGroup, type NavTreeLeaf } from '@wasichai/core'
+import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Scale, Settings, Users, type LucideIcon } from 'lucide-react'
+import { puedeLeerAlguno } from '../components/permisos'
 
 // the tree menu of the portal (portal-tributario theme): what a clerk does, grouped by what it is done on. the rail
 // (RielPortal) draws one item per group and opens its trámites beside it; the home page is not a leaf, the rail's
@@ -9,6 +10,8 @@ import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone,
 export interface HojaNav extends NavTreeLeaf {
   // for admins only: the administration. no group has it
   soloAdmin?: boolean
+  // only for who may read one of these objects (READ): a screen that is nothing but their lists. no group has it
+  lee?: readonly string[]
 }
 
 // core's group, with what the rail draws of it: its icon and, when the label does not fit the rail's 104px, a short
@@ -20,6 +23,9 @@ export interface GrupoNav extends NavTreeGroup<HojaNav> {
 }
 
 export type NodoNav = GrupoNav | HojaNav
+
+// who sees Normativa: its two tabs, each the list of one object
+export const NORMATIVA_LEE = ['parametro_tributario', 'arancel'] as const
 
 export const NAV_TREE: NodoNav[] = [
   {
@@ -87,14 +93,17 @@ export const NAV_TREE: NodoNav[] = [
   { label: 'Emisión', icon: Printer, children: [{ label: 'Emisión masiva', to: '/emisiones' }] },
   // the padrón against catastro's valuation of the same predios: what the municipality fails to collect
   { label: 'Fiscalización', icon: ChartColumn, children: [{ label: 'Brecha de recaudación', to: '/brecha' }] },
+  // the parámetros and aranceles the backend computes with, with their double signature (srtm-backend#186)
+  { label: 'Normativa', icon: Scale, children: [{ label: 'Parámetros y aranceles', to: '/normativa', lee: NORMATIVA_LEE }] },
   { label: 'Administración', to: '/admin', external: true, soloAdmin: true, icon: Settings }
 ]
 
-// the tree a user sees: what is for admins only, only for them; a group left empty goes too
-export function arbolPara(nodos: NodoNav[], { isAdmin }: { isAdmin: boolean }): NodoNav[] {
+// the tree a user sees: what is for admins only, only for them; what reads some objects, only for who may read one
+// (core's permissions: an admin may); a group left empty goes too
+export function arbolPara(nodos: NodoNav[], { isAdmin, permissions = null }: { isAdmin: boolean; permissions?: CallerPermissions | null }): NodoNav[] {
   return nodos.flatMap((nodo): NodoNav[] => {
-    if (!isNavTreeGroup(nodo)) return nodo.soloAdmin && !isAdmin ? [] : [nodo]
-    const children = arbolPara(nodo.children, { isAdmin })
+    if (!isNavTreeGroup(nodo)) return (nodo.soloAdmin && !isAdmin) || !(isAdmin || puedeLeerAlguno(permissions, nodo.lee)) ? [] : [nodo]
+    const children = arbolPara(nodo.children, { isAdmin, permissions })
     return children.length ? [{ ...nodo, children }] : []
   })
 }

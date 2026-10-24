@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import { rentas } from './api'
+import { normativa, rentas } from './api'
 import { sinVigencia } from './components/EstadoBadge'
 import type {
   CorridaBrecha,
@@ -11,7 +11,9 @@ import type {
   FiltrosBrecha,
   FiltrosAnuncios,
   FiltrosCuis,
+  FiltrosAranceles,
   FiltrosNotificaciones,
+  FiltrosParametros,
   ParametroTributario
 } from './types'
 
@@ -276,4 +278,30 @@ export function usePrediosBrecha(anio: number, corrida: string | undefined, filt
 
 export function useLotesBrecha(anio: number, corrida: string | undefined) {
   return useQuery({ queryKey: clavesBrecha.lotes(anio, corrida ?? ''), queryFn: () => rentas.lotesBrecha(anio, corrida), enabled: Boolean(corrida) })
+}
+
+// Normativa (srtm-backend#186): every write asks the whole of it again (queryKey: clavesNormativa.todo); the DJ's
+// combobox of aranceles reads the same aranceles
+export const clavesNormativa = {
+  todo: ['normativa'] as const,
+  tipos: ['normativa', 'tipos'] as const,
+  parametros: (filtros: FiltrosParametros) => ['normativa', 'parametros', filtros] as const,
+  aranceles: (filtros: FiltrosAranceles, page: number) => ['normativa', 'aranceles', filtros, page] as const
+}
+
+export function useTiposDeParametro(enabled = true) {
+  return useQuery({ queryKey: clavesNormativa.tipos, queryFn: normativa.tipos, staleTime: Infinity, enabled })
+}
+
+export function useParametros(filtros: FiltrosParametros) {
+  return useQuery({ queryKey: clavesNormativa.parametros(filtros), queryFn: () => normativa.parametros(filtros), placeholderData: keepPreviousData })
+}
+
+export function useAranceles(filtros: FiltrosAranceles, page: number, enabled = true) {
+  return useQuery({
+    queryKey: clavesNormativa.aranceles(filtros, page),
+    queryFn: () => normativa.aranceles(filtros, page),
+    placeholderData: keepPreviousData,
+    enabled
+  })
 }
