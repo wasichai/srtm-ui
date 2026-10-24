@@ -390,7 +390,11 @@ export const rentas = {
   // refused (409, with why) while it has declaraciones
   borrarPredio: (id: string) => remove(`/srtm/predios/${id}`),
 
-  actualizarDeclaracion: (id: string, body: Declaracion) => send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, body),
+  // the stored arancel is the backend's, read-only (srtm-backend#195): what is sent is the DJ without it
+  actualizarDeclaracion: (id: string, body: Declaracion) => {
+    const { arancel: _, ...resto } = body
+    return send<Declaracion>('PUT', `/srtm/declaraciones/${id}`, resto)
+  },
 
   // the arbitrios of a year: a predio's servicio by month, and a contribuyente's by predio (only its own cuotas)
   arbitriosDePredio: (id: string, anio: number) => get<MatrizArbitrios>(`/srtm/predios/${id}/arbitrios${query({ anio })}`),

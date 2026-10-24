@@ -76,10 +76,10 @@ afterEach(() => {
   fetch = null
 })
 
-function start(d: object, extra: MockRoute[] = [], permisos: unknown = { admin: true, objects: {} }) {
+function start(d: object, extra: MockRoute[] = [], permisos: unknown = { admin: true, objects: {} }, tab = 'caracteristicas') {
   localStorage.setItem('srtm.token', 't')
   localStorage.setItem('srtm.user', JSON.stringify(admin))
-  window.history.pushState({}, '', '/declaraciones/d1?tab=caracteristicas')
+  window.history.pushState({}, '', `/declaraciones/d1?tab=${tab}`)
   fetch = mockFetch([...extra, ...base(d, permisos)])
   render(<PortalApp />)
 }
@@ -88,6 +88,8 @@ const puts = () => fetch!.calls.filter((c) => c.method === 'PUT' && c.path === '
 // es-PE writes S/ and the figure with a no-break space
 const valor = (campo: HTMLElement) => (campo as HTMLInputElement).value.replace(/\s/g, ' ')
 const guardar = () => userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+// a paragraph by its whole text, with es-PE's no-break spaces read as spaces
+const parrafo = (texto: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent?.replace(/\s/g, ' ') === texto
 
 describe('el arancel de la DJ', () => {
   it('picks the tramo among the year’s VIGENTE aranceles, shows its arancel read-only, and saves id_aranc', async () => {
@@ -171,5 +173,105 @@ describe('el arancel de la DJ', () => {
     expect(screen.queryByRole('combobox', { name: 'Tramo de vía (id_aranc)' })).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Arancel (S/ por m²)')).not.toBeInTheDocument()
     expect(fetch!.calls.filter((c) => c.path.startsWith(ARANCELES))).toHaveLength(0)
+  })
+
+  // the arancel stored on the DJ (srtm-backend#195, srtm-ui#129)
+  describe('el arancel guardado', () => {
+    it('shows the stored figure of a DJ with its tramo, «del arancel <id_aranc>», with no notice while it agrees', async () => {
+      start(declaracion({ id_aranc: 'ZZ-01', arancel: 21.5 }), [{ path: ARANCELES, body: pagina([arancel({})]) }])
+      const campo = await screen.findByLabelText('Arancel (S/ por m²)')
+      await waitFor(() => expect(valor(campo)).toBe('S/ 21.50'))
+      expect(await screen.findByText(parrafo('del arancel ZZ-01 (vía V900 · cuadra 3 · lado I)'))).toBeInTheDocument()
+      expect(screen.queryByText(/valor vigente del tramo/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/use Recalcular/)).not.toBeInTheDocument()
+    })
+
+    it('keeps the stored figure and tells when the tramo’s VIGENTE arancel is another', async () => {
+      start(declaracion({ id_aranc: 'ZZ-01', arancel: 19 }), [{ path: ARANCELES, body: pagina([arancel({})]) }])
+      const campo = await screen.findByLabelText('Arancel (S/ por m²)')
+      expect(await screen.findByText(parrafo('El arancel vigente del tramo es S/ 21.50: use Recalcular para tomarlo'))).toBeInTheDocument()
+      expect(valor(campo)).toBe('S/ 19.00')
+    })
+
+    it('shows the stored figure when the tramo has no VIGENTE arancel any more (annulled)', async () => {
+      start(declaracion({ id_aranc: 'ZZ-01', arancel: 19 }), [{ path: ARANCELES, body: pagina([]) }])
+      const campo = await screen.findByLabelText('Arancel (S/ por m²)')
+      expect(await screen.findByText(parrafo(`sin arancel VIGENTE en ${year}: se conserva el guardado (S/ 19.00)`))).toBeInTheDocument()
+      expect(valor(campo)).toBe('S/ 19.00')
+    })
+
+    it('shows the stored figure of a DJ without tramo, read-only, beside the combobox; nothing when it is null', async () => {
+      start(declaracion({ arancel: 17.25 }))
+      expect(await screen.findByRole('combobox', { name: 'Tramo de vía (id_aranc)' })).toBeInTheDocument()
+      expect(screen.getByText(parrafo('Arancel de la declaración: S/ 17.25 por m²'))).toBeInTheDocument()
+      expect(screen.queryByRole('textbox', { name: /Arancel de la declaración/ })).not.toBeInTheDocument()
+    })
+
+    it('shows no figure of a DJ without tramo whose arancel is null', async () => {
+      start(declaracion({ arancel: null }))
+      expect(await screen.findByRole('combobox', { name: 'Tramo de vía (id_aranc)' })).toBeInTheDocument()
+      expect(screen.queryByText(/Arancel de la declaración/)).not.toBeInTheDocument()
+    })
+
+    it('never sends the stored arancel back on a save', async () => {
+      start(declaracion({ id_aranc: 'ZZ-01', arancel: 19 }), [
+        { path: ARANCELES, body: pagina([arancel({})]) },
+        { method: 'PUT', path: '/srtm/declaraciones/d1', body: declaracion({ id_aranc: 'ZZ-01', arancel: 19 }) }
+      ])
+      const area = await screen.findByLabelText(/Área del terreno/)
+      await userEvent.clear(area)
+      await userEvent.type(area, '130')
+      await guardar()
+      await waitFor(() => expect(puts()).toHaveLength(1))
+      expect(puts()[0].body).toMatchObject({ area_terreno: 130, id_aranc: 'ZZ-01' })
+      expect(puts()[0].body).not.toHaveProperty('arancel')
+    })
+
+    it('without the stored arancel (an older backend), shows the VIGENTE one’s figure as before, with no notice', async () => {
+      start(declaracion({ id_aranc: 'ZZ-01' }), [{ path: ARANCELES, body: pagina([arancel({ valor_m2: 23 })]) }])
+      const campo = await screen.findByLabelText('Arancel (S/ por m²)')
+      await waitFor(() => expect(valor(campo)).toBe('S/ 23.00'))
+      expect(screen.getByText(/del arancel ZZ-01: valor vigente del tramo/)).toBeInTheDocument()
+      expect(screen.queryByText(/use Recalcular/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Arancel de la declaración/)).not.toBeInTheDocument()
+    })
+  })
+
+  // M2 of srtm-ui#127's review: the combobox searches by the año being edited in Datos
+  describe('el año del combobox', () => {
+    const otroAnio = year + 1
+    const cambiarAnio = async () => {
+      const anio = await screen.findByLabelText(/^Año/)
+      await userEvent.clear(anio)
+      await userEvent.type(anio, String(otroAnio))
+      await userEvent.click(screen.getByRole('tab', { name: /Características/ }))
+    }
+
+    it('searches with the año typed in Datos, not the stored one', async () => {
+      start(declaracion(), [{ path: ARANCELES, body: pagina([arancel({ anio: otroAnio })]) }], undefined, 'datos')
+      await cambiarAnio()
+      await userEvent.type(await screen.findByRole('combobox', { name: 'Tramo de vía (id_aranc)' }), 'ZZ')
+      await screen.findByRole('listbox', { name: 'Aranceles vigentes' })
+      const busquedas = fetch!.calls.filter((c) => c.path.startsWith(ARANCELES)).map((c) => c.path)
+      expect(busquedas).toContain(`${ARANCELES}?anio=${otroAnio}&estado=VIGENTE&q=ZZ&page=0&size=20`)
+      expect(busquedas.some((p) => p.includes(`anio=${year}&`))).toBe(false)
+    })
+
+    it('tells in the field, before saving, that the tramo has no VIGENTE arancel in the new año', async () => {
+      start(
+        declaracion({ id_aranc: 'ZZ-01', arancel: 21.5 }),
+        [
+          { path: new RegExp(`^${ARANCELES}\\?anio=${otroAnio}&`), body: pagina([]) },
+          { path: ARANCELES, body: pagina([arancel({})]) }
+        ],
+        undefined,
+        'datos'
+      )
+      await cambiarAnio()
+      expect(
+        await screen.findByText(parrafo(`El tramo ZZ-01 no tiene arancel VIGENTE en ${otroAnio}: elija otro tramo o quítelo antes de guardar`))
+      ).toBeInTheDocument()
+      expect(puts()).toHaveLength(0)
+    })
   })
 })

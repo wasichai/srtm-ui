@@ -265,8 +265,11 @@ export interface Declaracion {
   sustituye?: string | null
   fecha_sustitucion?: string | null
   // the tramo de vía its predio fronts (srtm-backend#188): its arancel is then that tramo's VIGENTE valor_m2 in the
-  // DJ's año, Normativa's. the arancel itself is not in the dto; without id_aranc it stays as it is
+  // DJ's año, Normativa's. without id_aranc it stays as it is
   id_aranc?: string | null
+  // the arancel (S/ por m²) stored on the DJ, read-only (srtm-backend#195): the tramo's when it was last worked out,
+  // else the padrón's. never sent back: actualizarDeclaracion drops it. undefined from a backend that lacks it
+  readonly arancel?: number | null
 }
 
 // the declaración jurada's lists. declaracion is the parent's id, set by the backend

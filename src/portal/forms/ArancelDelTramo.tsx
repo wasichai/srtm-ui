@@ -11,10 +11,19 @@ import { clavesNormativa } from '../queries'
 import type { Arancel } from '../types'
 
 // the arancel of a DJ by its tramo de vía (srtm-backend#188): a combobox over Normativa's VIGENTE aranceles of the
-// DJ's año writes the form's hidden id_aranc. with one, the arancel is that tramo's valor_m2, read-only: the backend
-// takes it on every write (recalcular), and the dto never carries the arancel itself, so what shows is the VIGENTE
-// arancel's own figure. «Quitar tramo» empties id_aranc: the DJ's arancel is then as it was (manual, or the padrón's).
-// the backend's 400 on id_aranc (no VIGENTE one for the año) goes under it. only for who may read aranceles
+// año being edited (Datos') writes the form's hidden id_aranc. with one, the arancel is read-only: the DJ's stored
+// figure (srtm-backend#195), with a notice when the tramo's VIGENTE one differs (Recalcular takes it); from a backend
+// that does not send it yet, the VIGENTE arancel's own figure. «Quitar tramo» empties id_aranc: the DJ's arancel is
+// then as it was (manual, or the padrón's), shown as a fact. the backend's 400 on id_aranc (no VIGENTE one for the
+// año) goes under it, and a change of año to one where the tramo has none is told before saving. only for who may
+// read aranceles
+
+// the DJ as stored: its año, its id_aranc and its arancel (undefined while the backend does not send it)
+export interface LoGuardado {
+  anio: number | null
+  id_aranc: string | null
+  arancel?: number | null
+}
 
 const describir = (a: Arancel) => [a.cod_via && `vía ${a.cod_via}`, a.cuadra && `cuadra ${a.cuadra}`, a.lado && `lado ${a.lado}`].filter(Boolean).join(' · ')
 
@@ -29,15 +38,21 @@ function useVigente(idAranc: string, anio: number | null) {
   })
 }
 
-export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues>; anio: number | null }) {
+export function ArancelDelTramo({ form, anio, guardado }: { form: UseFormReturn<FormValues>; anio: number | null; guardado?: LoGuardado }) {
   const campoId = useFieldId()
   const id = campoId('id_aranc')
   const idAranc = form.watch('id_aranc') ?? ''
   const error = form.formState.errors.id_aranc?.message
-  // the one picked here: its figure shows at once, before the backend is asked again
+  // the one picked here, in this año: its figure shows at once, before the backend is asked again
   const [elegido, setElegido] = useState<Arancel | null>(null)
-  const vigente = useVigente(elegido?.id_aranc === idAranc ? '' : idAranc, anio)
-  const arancel = elegido?.id_aranc === idAranc ? elegido : vigente.data
+  const delElegido = elegido !== null && elegido.id_aranc === idAranc && elegido.anio === anio
+  const vigente = useVigente(delElegido ? '' : idAranc, anio)
+  const arancel = delElegido ? elegido : vigente.data
+  const leido = delElegido || vigente.isSuccess
+  // the stored figure is this tramo's while the tramo is the stored one; a null or absent one is not shown
+  const cifraGuardada = guardado?.arancel ?? null
+  const delGuardado = cifraGuardada !== null && idAranc === (guardado?.id_aranc ?? '')
+  const anioCambiado = guardado !== undefined && anio !== guardado.anio
 
   const poner = (valor: string) => form.setValue('id_aranc', valor, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
   const errorDelCampo = error && (
@@ -47,7 +62,8 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
   )
 
   if (idAranc) {
-    const valor = arancel ? formatMoney(arancel.valor_m2) : ''
+    const cifra = delGuardado ? cifraGuardada : arancel?.valor_m2
+    const valor = cifra !== undefined ? formatMoney(cifra) : ''
     // a DJ without año asks nothing; a failed search says so, not that there is no VIGENTE one
     const sinVigente =
       anio === null
@@ -56,6 +72,20 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
           ? 'no se pudo leer el arancel del tramo'
           : !arancel && !vigente.isPending
             ? `sin arancel VIGENTE en ${anio}: se conserva el guardado`
+            : undefined
+    // what the tramo's VIGENTE arancel says of the figure shown: none in a new año is refused on save, so it is told
+    // first; none in the stored año keeps the stored figure; another figure is Recalcular's to take
+    const aviso =
+      anio === null || !leido
+        ? undefined
+        : !arancel
+          ? anioCambiado
+            ? { tono: 'text-warning', texto: `El tramo ${idAranc} no tiene arancel VIGENTE en ${anio}: elija otro tramo o quítelo antes de guardar` }
+            : delGuardado
+              ? { tono: 'text-ink-muted', texto: `sin arancel VIGENTE en ${anio}: se conserva el guardado (${formatMoney(cifraGuardada)})` }
+              : undefined
+          : delGuardado && arancel.valor_m2 !== cifraGuardada
+            ? { tono: 'text-warning', texto: `El arancel vigente del tramo es ${formatMoney(arancel.valor_m2)}: use Recalcular para tomarlo` }
             : undefined
     return (
       <div className="space-y-1.5">
@@ -69,7 +99,7 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
             value={valor}
             placeholder={sinVigente ?? 'Cargando…'}
             aria-invalid={error ? true : undefined}
-            aria-describedby={[error && `${id}-error`, `${id}-hint`].filter(Boolean).join(' ')}
+            aria-describedby={[error && `${id}-error`, `${id}-hint`, aviso && `${id}-aviso`].filter(Boolean).join(' ')}
           />
           <Button
             type="button"
@@ -85,9 +115,15 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
           </Button>
         </div>
         <p id={`${id}-hint`} className="text-xs text-ink-muted">
-          del arancel {idAranc}: valor vigente del tramo
+          del arancel {idAranc}
+          {delGuardado ? '' : ': valor vigente del tramo'}
           {arancel && describir(arancel) ? ` (${describir(arancel)})` : ''}
         </p>
+        {aviso && (
+          <p id={`${id}-aviso`} role="status" className={`text-xs ${aviso.tono}`}>
+            {aviso.texto}
+          </p>
+        )}
         {errorDelCampo}
       </div>
     )
@@ -103,6 +139,11 @@ export function ArancelDelTramo({ form, anio }: { form: UseFormReturn<FormValues
         poner(a.id_aranc)
       }}
     >
+      {cifraGuardada !== null && (
+        <p className="text-xs text-ink-muted">
+          Arancel de la declaración: <span className="tabular-nums">{formatMoney(cifraGuardada)}</span> por m²
+        </p>
+      )}
       {errorDelCampo}
     </Combobox>
   )
