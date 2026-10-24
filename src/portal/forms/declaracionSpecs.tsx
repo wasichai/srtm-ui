@@ -1,6 +1,7 @@
-import type { FormValues, SectionSpec } from '../../kit/forms/spec'
+import type { FieldSpec, FormValues, SectionSpec } from '../../kit/forms/spec'
 import { rentas } from '../api'
 import type { Catalogos, NivelConstruccion } from '../types'
+import { ArancelDelTramo } from './ArancelDelTramo'
 import { auto } from './auto'
 import { nombres, ubigeoCampos } from './bloques'
 import { BuscarPrediosButton } from './BuscarPrediosButton'
@@ -223,8 +224,15 @@ export const UBICACION_SECTIONS: SectionSpec[] = ubicacionSections()
 // AREA_CONSTRUIDA_M2 lee el área construida, que es la suma de los niveles. vacío por defecto: sin esas filas, como
 // siempre, opcional. sugerido: what the Valores section offers by its title (how the autoavalúo was worked out, on a
 // declaración that is edited). manual: the organization has no catastro, so the user writes the autoavalúo
-// (srtm-backend#156). the rest of Valores is the backend's, worked out again on every write of the DJ and its lists
-export function caracteristicasSections(bases: Set<string> = new Set(), sugerido?: SectionSpec['action'], manual = false): SectionSpec[] {
+// (srtm-backend#156). the rest of Valores is the backend's, worked out again on every write of the DJ and its lists.
+// arancel: the user may read Normativa's aranceles, so the DJ's tramo de vía (id_aranc) is picked among the VIGENTE
+// ones of its año (srtm-backend#188); without it id_aranc is neither shown nor sent (the stored one stays)
+export function caracteristicasSections(
+  bases: Set<string> = new Set(),
+  sugerido?: SectionSpec['action'],
+  manual = false,
+  arancel?: { anio: number | null }
+): SectionSpec[] {
   return [
     {
       id: 'caracteristicas-de-predio',
@@ -256,11 +264,18 @@ export function caracteristicasSections(bases: Set<string> = new Set(), sugerido
         { name: 'valor_afecto', label: 'Valor afecto (S/)', kind: 'money', readOnly: true, span: 2 },
         { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', readOnly: true, hint: 'suma de los niveles', span: 2 },
         { name: 'area_comun_construida', label: 'Área común construida (m2)', kind: 'decimal', readOnly: true, hint: 'suma de los niveles', span: 2 },
-        { name: 'longitud_frente', label: 'Longitud de frente (m)', kind: 'decimal', readOnly: true, hint: 'frontis principal + otros frentes', span: 2 }
+        { name: 'longitud_frente', label: 'Longitud de frente (m)', kind: 'decimal', readOnly: true, hint: 'frontis principal + otros frentes', span: 2 },
+        ...(arancel ? arancelDelTramo(arancel.anio) : [])
       ]
     }
   ]
 }
+
+// the hidden id_aranc and the combobox that writes it, showing its arancel
+const arancelDelTramo = (anio: number | null): FieldSpec[] => [
+  { name: 'id_aranc', label: 'Tramo de vía (id_aranc)', kind: 'hidden' },
+  { name: 'arancel_del_tramo', label: 'Arancel', kind: 'custom', span: 4, render: (form) => <ArancelDelTramo form={form} anio={anio} /> }
+]
 
 export const TRANSFERENTE_SECTIONS: SectionSpec[] = [
   {

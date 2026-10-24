@@ -14,6 +14,7 @@ import { rentas } from '../api'
 import { anulada, EstadoBadge, sinVigencia, sustituida } from '../components/EstadoBadge'
 import { FichaTabs } from '../components/FichaTabs'
 import { PasosAsistente } from '../components/PasosAsistente'
+import { usePuede } from '../components/permisos'
 import { caracteristicasSections, DATOS_DEL_PREDIO, DJ_DATOS_SECTIONS, opcionesDatos, ubicacionSections } from '../forms/declaracionSpecs'
 import { INSTRUCCIONES_DECLARACION } from '../forms/instrucciones'
 import { basesDeArbitrio, dimensionesDeArbitrio, useCatalogos, useParametrosArbitrio, useRefresh, useValuacionOrigen } from '../queries'
@@ -105,9 +106,18 @@ function DeclaracionPage({ id }: { id: string }) {
   // organization has no catastro, and the user writes the autoavalúo (srtm-backend#156)
   const editable = dj ? !sinVigencia(dj.declaracion) : false
   const manual = dj?.autoavaluo_manual === true
+  // the tramo de vía is picked among Normativa's aranceles (srtm-backend#188): only for who may read them
+  const leeAranceles = usePuede('arancel', 'READ')
+  const anioDj = dj?.declaracion.anio ?? null
   const seccionesCaracteristicas = useMemo(
-    () => caracteristicasSections(bases, editable ? (form) => <AutoavaluoSugeridoBoton declaracion={id} form={form} manual={manual} /> : undefined, manual),
-    [bases, editable, id, manual]
+    () =>
+      caracteristicasSections(
+        bases,
+        editable ? (form) => <AutoavaluoSugeridoBoton declaracion={id} form={form} manual={manual} /> : undefined,
+        manual,
+        leeAranceles ? { anio: anioDj } : undefined
+      ),
+    [bases, editable, id, manual, leeAranceles, anioDj]
   )
   const seccionesUbicacion = useMemo(() => ubicacionSections(undefined, conInfluencia), [conInfluencia])
   // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
