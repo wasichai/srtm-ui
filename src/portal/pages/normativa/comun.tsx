@@ -202,7 +202,7 @@ export function DialogoImportar({
   const id = useId()
   const [archivo, setArchivo] = useState<File | null>(null)
   const prueba = useMutation({ mutationFn: (elegido: File) => importar(elegido, true) })
-  const confirmar = useMutation({ mutationFn: () => importar(archivo!, false), onSuccess: onHecho })
+  const confirmar = useMutation({ mutationFn: () => importar(archivo!, false), onSettled: onHecho })
   const elegir = (elegido: File | null) => {
     setArchivo(elegido)
     confirmar.reset()

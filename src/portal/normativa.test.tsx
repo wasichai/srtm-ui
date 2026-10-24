@@ -210,6 +210,46 @@ describe('parámetros', () => {
     expect(importaciones.map((c) => c.path)).toEqual(['/srtm/normativa/parametros/importar?dry_run=true', '/srtm/normativa/parametros/importar?dry_run=false'])
   })
 
+  it('reads the list again after Confirmar even when the import fails midway', async () => {
+    const vista = {
+      dry_run: true,
+      crear: [
+        {
+          fila: 2,
+          id: null,
+          tipo: 'UIT',
+          clave: null,
+          vigencia_desde: `${year + 1}-01-01`,
+          vigencia_hasta: null,
+          valor_numerico: 1300,
+          texto: null,
+          estado: 'POR_VERIFICAR'
+        }
+      ],
+      actualizar: [],
+      iguales: 1,
+      rechazos: []
+    }
+    start(
+      '/normativa',
+      rutas(
+        [],
+        [
+          { method: 'POST', path: /importar\?dry_run=false/, status: 409, body: { title: 'Conflict', detail: 'escritura parcial' } },
+          { method: 'POST', path: /importar\?dry_run=true/, body: vista }
+        ]
+      )
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Importar CSV' }))
+    const dialogo = await screen.findByRole('dialog')
+    await userEvent.upload(within(dialogo).getByLabelText('Archivo CSV'), new File(['tipo\nUIT\n'], 'parametros.csv', { type: 'text/csv' }))
+    await within(dialogo).findByRole('region', { name: 'Vista previa de la importación' })
+    const antes = llamadas('GET', '/srtm/normativa/parametros').length
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Confirmar' }))
+    await waitFor(() => expect(llamadas('POST', '/srtm/normativa/parametros/importar')).toHaveLength(2))
+    await waitFor(() => expect(llamadas('GET', '/srtm/normativa/parametros').length).toBeGreaterThan(antes))
+  })
+
   it('annuls a VIGENTE with the motivo written in its dialog, and offers to close an open vigencia', async () => {
     start(
       '/normativa',
@@ -317,17 +357,20 @@ describe('aranceles', () => {
           arancel({ id: 'a1', id_aranc: 'ZZ-01', sincronizado_en: `${year}-10-20T15:30:00Z` }),
           arancel({ id: 'a2', id_aranc: 'ZZ-02', error_sincronizacion: 'catastro respondió 502' }),
           arancel({ id: 'a3', id_aranc: 'ZZ-03' }),
-          arancel({ id: 'a4', id_aranc: 'ZZ-04', estado: 'POR_VERIFICAR', verifico: null })
+          arancel({ id: 'a4', id_aranc: 'ZZ-04', estado: 'POR_VERIFICAR', verifico: null }),
+          arancel({ id: 'a5', id_aranc: 'ZZ-05', estado: 'ANULADO', motivo_anulacion: 'Error' })
         ])
       }
     ])
     const tabla = await screen.findByRole('table', { name: `Aranceles de ${year}` })
-    const [, uno, dos, tres, cuatro] = within(tabla).getAllByRole('row')
+    const [, uno, dos, tres, cuatro, cinco] = within(tabla).getAllByRole('row')
     expect(uno.querySelector('[data-catastro]')).toHaveAttribute('data-catastro', 'sincronizado')
     expect(uno).toHaveTextContent(`sincronizado 20/10/${year} 10:30`)
     expect(within(dos).getByText('error')).toHaveAttribute('title', 'catastro respondió 502')
     expect(within(tres).getByText('pendiente')).toBeInTheDocument()
     expect(cuatro.querySelector('[data-catastro]')).toBeNull()
+    // an ANULADO whose delete in catastro is still to go is pending too
+    expect(within(cinco).getByText('pendiente')).toBeInTheDocument()
   })
 
   it('synchronizes the year with catastro and shows the result', async () => {

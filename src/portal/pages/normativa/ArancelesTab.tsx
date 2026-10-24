@@ -239,7 +239,7 @@ export function ArancelesTab() {
 // a backend without srtm-backend#189: 404, or 405 when POST …/sincronizar falls on /{id} (only PATCH and DELETE there)
 const sinSincronizacion = (error: unknown) => error instanceof ApiError && (error.status === 404 || error.status === 405)
 
-// how catastro's copy stands: copied (when), failed (why, in its tooltip), or a VIGENTE still to copy
+// how catastro's copy stands: copied (when), failed (why, in its tooltip), or anything but a POR_VERIFICAR still to copy (an ANULADO whose delete is pending too)
 export function EstadoCatastro({ arancel: a }: { arancel: Arancel }) {
   if (a.error_sincronizacion) {
     return (
@@ -255,7 +255,7 @@ export function EstadoCatastro({ arancel: a }: { arancel: Arancel }) {
       </span>
     )
   }
-  if (a.estado === 'VIGENTE') {
+  if (a.estado !== 'POR_VERIFICAR') {
     return (
       <span data-catastro="pendiente" className="text-sm text-warning">
         pendiente

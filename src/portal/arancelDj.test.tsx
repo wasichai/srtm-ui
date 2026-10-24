@@ -183,13 +183,13 @@ describe('el arancel de la DJ', () => {
       await waitFor(() => expect(valor(campo)).toBe('S/ 21.50'))
       expect(await screen.findByText(parrafo('del arancel ZZ-01 (vía V900 · cuadra 3 · lado I)'))).toBeInTheDocument()
       expect(screen.queryByText(/valor vigente del tramo/)).not.toBeInTheDocument()
-      expect(screen.queryByText(/use Recalcular/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/se tomará al guardar o con Recalcular/)).not.toBeInTheDocument()
     })
 
     it('keeps the stored figure and tells when the tramo’s VIGENTE arancel is another', async () => {
       start(declaracion({ id_aranc: 'ZZ-01', arancel: 19 }), [{ path: ARANCELES, body: pagina([arancel({})]) }])
       const campo = await screen.findByLabelText('Arancel (S/ por m²)')
-      expect(await screen.findByText(parrafo('El arancel vigente del tramo es S/ 21.50: use Recalcular para tomarlo'))).toBeInTheDocument()
+      expect(await screen.findByText(parrafo('El arancel vigente del tramo es S/ 21.50: se tomará al guardar o con Recalcular'))).toBeInTheDocument()
       expect(valor(campo)).toBe('S/ 19.00')
     })
 
@@ -232,7 +232,7 @@ describe('el arancel de la DJ', () => {
       const campo = await screen.findByLabelText('Arancel (S/ por m²)')
       await waitFor(() => expect(valor(campo)).toBe('S/ 23.00'))
       expect(screen.getByText(/del arancel ZZ-01: valor vigente del tramo/)).toBeInTheDocument()
-      expect(screen.queryByText(/use Recalcular/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/se tomará al guardar o con Recalcular/)).not.toBeInTheDocument()
       expect(screen.queryByText(/Arancel de la declaración/)).not.toBeInTheDocument()
     })
   })
@@ -286,7 +286,7 @@ describe('el arancel de la DJ', () => {
       )
       await cambiarAnio()
       expect(await screen.findByText(parrafo(`Al guardar se tomará S/ 24.00 (arancel vigente del tramo en ${otroAnio})`))).toBeInTheDocument()
-      expect(screen.queryByText(/use Recalcular/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/se tomará al guardar o con Recalcular/)).not.toBeInTheDocument()
       expect(valor(screen.getByLabelText('Arancel (S/ por m²)'))).toBe('S/ 21.50')
     })
   })
