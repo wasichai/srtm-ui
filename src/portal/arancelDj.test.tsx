@@ -273,5 +273,21 @@ describe('el arancel de la DJ', () => {
       ).toBeInTheDocument()
       expect(puts()).toHaveLength(0)
     })
+
+    it('tells that the save takes the new año’s VIGENTE figure, not Recalcular, when the año changed', async () => {
+      start(
+        declaracion({ id_aranc: 'ZZ-01', arancel: 21.5 }),
+        [
+          { path: new RegExp(`^${ARANCELES}\\?anio=${otroAnio}&`), body: pagina([arancel({ anio: otroAnio, valor_m2: 24 })]) },
+          { path: ARANCELES, body: pagina([arancel({})]) }
+        ],
+        undefined,
+        'datos'
+      )
+      await cambiarAnio()
+      expect(await screen.findByText(parrafo(`Al guardar se tomará S/ 24.00 (arancel vigente del tramo en ${otroAnio})`))).toBeInTheDocument()
+      expect(screen.queryByText(/use Recalcular/)).not.toBeInTheDocument()
+      expect(valor(screen.getByLabelText('Arancel (S/ por m²)'))).toBe('S/ 21.50')
+    })
   })
 })
