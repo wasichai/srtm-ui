@@ -56,6 +56,10 @@ const FORMULARIOS = ['datos', 'ubicacion', 'caracteristicas'] as const
 type Formulario = (typeof FORMULARIOS)[number]
 // the predio's tipo, in datos del predio and in the ubicación: one value
 export const COMUNES = ['tipo_predio'] as const
+// and the año being edited in datos del predio: the tramo de vía's combobox, in características, searches by it
+const COMPARTIDOS = [...COMUNES, 'anio'] as const
+// a 4-digit año as typed: null while it is not one
+const anioEscrito = (valor: string) => (/^\d{4}$/.test(valor.trim()) ? Number(valor) : null)
 const etiqueta = (tab: string) => DECLARACION_TABS.find((t) => t.id === tab)?.label ?? tab
 
 // of a form's changes, the fields that are this record's
@@ -109,15 +113,20 @@ function DeclaracionPage({ id }: { id: string }) {
   // the tramo de vía is picked among Normativa's aranceles (srtm-backend#188): only for who may read them
   const leeAranceles = usePuede('arancel', 'READ')
   const anioDj = dj?.declaracion.anio ?? null
+  const comun = useSharedFields(COMPARTIDOS)
+  // the año as the clerk edits it in Datos (srtm-ui#129), the stored one until then
+  const anioEditado = comun.values.anio !== undefined ? anioEscrito(comun.values.anio) : anioDj
+  const idArancDj = dj?.declaracion.id_aranc ?? null
+  const arancelDj = dj?.declaracion.arancel
   const seccionesCaracteristicas = useMemo(
     () =>
       caracteristicasSections(
         bases,
         editable ? (form) => <AutoavaluoSugeridoBoton declaracion={id} form={form} manual={manual} /> : undefined,
         manual,
-        leeAranceles ? { anio: anioDj } : undefined
+        leeAranceles ? { anio: anioEditado, guardado: { anio: anioDj, id_aranc: idArancDj, arancel: arancelDj } } : undefined
       ),
-    [bases, editable, id, manual, leeAranceles, anioDj]
+    [bases, editable, id, manual, leeAranceles, anioEditado, anioDj, idArancDj, arancelDj]
   )
   const seccionesUbicacion = useMemo(() => ubicacionSections(undefined, conInfluencia), [conInfluencia])
   // the wizard, right after presenting (?asistente): "Siguiente" walks the tabs in order, "Terminar" ends it
@@ -127,7 +136,6 @@ function DeclaracionPage({ id }: { id: string }) {
   const abrir = (tab: string, enAsistente = asistente) => setParams(enAsistente ? { tab, asistente: '1' } : { tab }, { replace: true })
 
   const grupo = useFormGroup(FORMULARIOS)
-  const comun = useSharedFields(COMUNES)
   const pendientes = grupo.pending.map(etiqueta)
   const salida = useUnsavedChanges(pendientes)
   // a save or a Cancelar starts the forms again, from the declaration as it is then
