@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { ApiError } from '@wasichai/core'
 import { renderWithProviders } from '@wasichai/testing'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SRTM_THEMES } from '../../themes'
@@ -116,6 +117,43 @@ describe('RecordForm: the theme hooks', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByTestId('app-alert')).toHaveTextContent('El servidor no responde')
+  })
+
+  const refused = (violations: { field: string; message: string }[]) => {
+    render(
+      <RecordForm
+        sections={SECTIONS}
+        options={{ sexo: ['HOMBRE', 'MUJER'] }}
+        initial={{ codigo: '', nombres: 'JUAN', sexo: 'HOMBRE', observacion: '', documentos: '' }}
+        submitLabel="Guardar"
+        onSubmit={async () => {
+          throw new ApiError(400, 'Invalid option', violations)
+        }}
+      />
+    )
+    return userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+  }
+
+  it('names a refused field the form does not have above the buttons, not just the detail', async () => {
+    await refused([{ field: 'motivo', message: 'Invalid option' }])
+    expect(await screen.findByRole('alert')).toHaveTextContent('motivo: Invalid option')
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Invalid option Invalid')
+  })
+
+  it('keeps a refused field of the form under that field', async () => {
+    await refused([{ field: 'nombres', message: 'Ya existe' }])
+    expect(await screen.findByText('Ya existe')).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /^Nombres/ })).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('shows both: the form field under it, the other above the buttons', async () => {
+    await refused([
+      { field: 'nombres', message: 'Ya existe' },
+      { field: 'motivo', message: 'Invalid option' }
+    ])
+    expect(await screen.findByRole('alert')).toHaveTextContent('motivo: Invalid option')
+    expect(screen.getByText('Ya existe')).toBeInTheDocument()
   })
 
   it('keeps aria-invalid on the fields it refuses', async () => {

@@ -92,14 +92,22 @@ export function RecordForm<T extends object>({
   // the backend names the field it rejects: its message goes under that field, or above the buttons when no control
   // shows it (a hidden field, a geometry, one its `when` hides): see the effect below
   const [fromServer, setFromServer] = useState<FieldViolation[]>([])
-  const showErrors = (e: unknown) => {
-    const known = e instanceof ApiError ? e.violations.filter((v) => fields.some((f) => f.name === v.field)) : []
+  const [outsideError, setOutsideError] = useState<string | null>(null)
+  // `alone`: the form is the whole screen (its own submit), so it tells the rest too; in a group each form only claims
+  // its own fields, and the caller (group.errors) decides where the rest go
+  const showErrors = (e: unknown, alone = false) => {
+    const all = e instanceof ApiError ? e.violations : []
+    const known = all.filter((v) => fields.some((f) => f.name === v.field))
     known.forEach((v) => setError(v.field, { type: 'server', message: v.message }))
     setFromServer(known)
-    return known.length > 0
+    // a field the form does not have (Rectificar's dialog refused on `motivo`): above the buttons, with its name
+    const outside = all.filter((v) => !known.includes(v))
+    setOutsideError(alone && outside.length > 0 ? outside.map((v) => `${v.field}: ${v.message}`).join(' · ') : null)
+    return alone ? all.length > 0 : known.length > 0
   }
   const start = () => {
     setFormError(null)
+    setOutsideError(null)
     setFromServer([])
   }
   // once rendered, the ones whose message no control of the form shows (a custom one that edits hidden fields shows
@@ -107,18 +115,19 @@ export function RecordForm<T extends object>({
   const formRef = useRef<HTMLFormElement>(null)
   useEffect(() => {
     const noControl = fromServer.filter((v) => !formRef.current?.querySelector(`[id="${fieldId(v.field)}-error"]`))
-    if (noControl.length === 0) return
-    form.clearErrors(noControl.map((v) => v.field))
-    setFormError(noControl.map((v) => `${fields.find((f) => f.name === v.field)?.label ?? v.field}: ${v.message}`).join(' · '))
+    if (noControl.length > 0) form.clearErrors(noControl.map((v) => v.field))
+    const shown = noControl.map((v) => `${fields.find((f) => f.name === v.field)?.label ?? v.field}: ${v.message}`)
+    const message = [...shown, ...(outsideError ? [outsideError] : [])].join(' · ')
+    if (message) setFormError(message)
     // only for a new refusal: the helpers above are new every render
-  }, [fromServer])
+  }, [fromServer, outsideError])
 
   const submit = handleSubmit(async (current) => {
     start()
     try {
       await onSubmit(output(current))
     } catch (e) {
-      if (!showErrors(e)) setFormError(errorMessage(e, texts.saveFailed))
+      if (!showErrors(e, true)) setFormError(errorMessage(e, texts.saveFailed))
     }
   })
 
