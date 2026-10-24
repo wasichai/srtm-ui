@@ -349,13 +349,14 @@ export interface CampoDeDatos {
 export type Valores = Record<string, string>
 
 // the backend's 400 by field (errors[].field), under each field; the rest above the buttons
-function porCampo(error: unknown, campos: CampoDeDatos[]): { campos: Record<string, string>; resto: boolean } {
+function porCampo(error: unknown, campos: CampoDeDatos[]): { campos: Record<string, string>; resto: boolean; fuera: { field: string; message: string }[] } {
   const violaciones = error instanceof ApiError ? error.violations : []
   const de = (field: string) => campos.find((c) => c.nombre === field || c.alias === field)
   const propias = violaciones.filter((v) => de(v.field))
   return {
     campos: Object.fromEntries(propias.map((v) => [de(v.field)!.nombre, v.message])),
-    resto: propias.length === 0 || propias.length < violaciones.length
+    resto: propias.length === 0 || propias.length < violaciones.length,
+    fuera: violaciones.filter((v) => !de(v.field))
   }
 }
 
@@ -384,7 +385,7 @@ export function DialogoDeDatos<T>({
   const base = useId()
   const visibles = campos(valores)
   const guardar = useMutation({ mutationFn: () => enviar(valores), onSuccess: onHecho })
-  const errores = guardar.isError ? porCampo(guardar.error, visibles) : { campos: {} as Record<string, string>, resto: false }
+  const errores = guardar.isError ? porCampo(guardar.error, visibles) : { campos: {} as Record<string, string>, resto: false, fuera: [] }
   // a number is checked here, before it goes: es-PE, a point before the decimals
   const noNumero = (c: CampoDeDatos) => c.tipo === 'numero' && (valores[c.nombre] ?? '').trim() !== '' && parseNumber(valores[c.nombre]) === null
   const completo = visibles.every((c) => (!c.requerido || (valores[c.nombre] ?? '').trim() !== '') && !noNumero(c))
@@ -443,7 +444,10 @@ export function DialogoDeDatos<T>({
           {guardar.isError && errores.resto && (
             <Alert tone="danger">
               {Object.keys(errores.campos).length > 0 ? (
-                errorMessage(guardar.error, 'No se pudo guardar')
+                <>
+                  {errorMessage(guardar.error, 'No se pudo guardar')}
+                  {errores.fuera.length > 0 && ` (${errores.fuera.map((v) => `${v.field}: ${v.message}`).join(' · ')})`}
+                </>
               ) : (
                 <MensajeDeError error={guardar.error} siFalla="No se pudo guardar" />
               )}

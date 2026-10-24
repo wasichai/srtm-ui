@@ -124,6 +124,22 @@ describe('rectificar una declaración jurada', () => {
     expect(window.location.pathname).toBe('/declaraciones/d1')
   })
 
+  it('names the field of the refusal when the dialog has no control for it', async () => {
+    start('/declaraciones/d1', [
+      { path: '/srtm/predios/p1/declaraciones', body: [fila(vigente)] },
+      {
+        method: 'POST',
+        path: '/srtm/declaraciones/d1/rectificar',
+        status: 400,
+        body: { title: 'Bad Request', detail: 'Invalid option', errors: [{ field: 'motivo', message: 'Invalid option' }] }
+      }
+    ])
+    await userEvent.click(await screen.findByRole('button', { name: 'Rectificar' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Rectificar' }))
+    expect(await within(dialog).findByText('motivo: Invalid option')).toBeInTheDocument()
+  })
+
   it('only reads a sustituida, and links the rectificatoria that replaced it', async () => {
     start('/declaraciones/d1', [
       { path: '/srtm/declaraciones/d1', body: ficha(sustituida) },
