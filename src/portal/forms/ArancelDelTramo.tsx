@@ -75,7 +75,7 @@ export function ArancelDelTramo({ form, anio, guardado }: { form: UseFormReturn<
             : undefined
     // what the tramo's VIGENTE arancel says of the figure shown: none in a new año is refused on save, so it is told
     // first; none in the stored año keeps the stored figure. another figure: in a new año the save takes it (the
-    // backend works the arancel out again when the año changes); in the stored one, Recalcular's to take
+    // backend works the arancel out again when the año changes); in the stored one, every save ends in the backend's recalcular, which takes it too
     const aviso =
       anio === null || !leido
         ? undefined
@@ -88,7 +88,7 @@ export function ArancelDelTramo({ form, anio, guardado }: { form: UseFormReturn<
           : delGuardado && arancel.valor_m2 !== cifraGuardada
             ? anioCambiado
               ? { tono: 'text-warning', texto: `Al guardar se tomará ${formatMoney(arancel.valor_m2)} (arancel vigente del tramo en ${anio})` }
-              : { tono: 'text-warning', texto: `El arancel vigente del tramo es ${formatMoney(arancel.valor_m2)}: use Recalcular para tomarlo` }
+              : { tono: 'text-warning', texto: `El arancel vigente del tramo es ${formatMoney(arancel.valor_m2)}: se tomará al guardar o con Recalcular` }
             : undefined
     return (
       <div className="space-y-1.5">
