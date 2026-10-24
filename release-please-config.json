@@ -7,7 +7,7 @@
             "package-name": "srtm-ui",
             "changelog-path": "CHANGELOG.md",
             "bump-minor-pre-major": true,
-            "release-as": "1.0.0"
+            "release-as": "2.0.0"
         }
     }
 }
