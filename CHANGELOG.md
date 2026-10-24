@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.0](https://github.com/wasichai/srtm-ui/compare/v1.0.0...v2.0.0) (2026-10-24)
+
+
+### Features
+
+* **normativa:** la DJ muestra su arancel guardado y el combobox usa el año editado ([#130](https://github.com/wasichai/srtm-ui/issues/130)) ([beeeee1](https://github.com/wasichai/srtm-ui/commit/beeeee12fe19b0ae29344eb94f90772cd84c5b15))
+* **normativa:** pantalla Normativa y arancel de la DJ por id_aranc ([#127](https://github.com/wasichai/srtm-ui/issues/127)) ([da58df0](https://github.com/wasichai/srtm-ui/commit/da58df0f8b73964ac8a5616732b04330bbe0f9f1))
+
+
+### Bug Fixes
+
+* **kit:** los errores de campos ajenos al formulario se muestran con su nombre ([#132](https://github.com/wasichai/srtm-ui/issues/132)) ([ac28ecd](https://github.com/wasichai/srtm-ui/commit/ac28ecdd1cdba8699b6f5701d840e86caf60ffa3))
+* **normativa:** avisos y refresco de la revisión final ([#131](https://github.com/wasichai/srtm-ui/issues/131)) ([41118df](https://github.com/wasichai/srtm-ui/commit/41118df93e30557c262fa36f75de379ab142e2b5))
+
 ## [1.0.0](https://github.com/wasichai/srtm-ui/compare/v0.5.0...v1.0.0) (2026-10-23)
 
 
