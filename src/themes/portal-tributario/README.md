@@ -393,14 +393,15 @@ menú de móvil.
 
 - **Riel**: `<nav id="sidebar" aria-label="Secciones">` de 104px (`w-26`) sobre `table-head`, con borde derecho
   `border`. Ítems de 100px apilados y centrados: un ícono de 20px sobre la etiqueta de 11.5px en `ink`. Primero
-  "Inicio" (`/`); luego un botón por grupo de `arbolPara(NAV_TREE, { isAdmin })`; al final, tras una línea de 1px,
+  "Inicio" (`/`); luego un botón por grupo de `arbolPara(NAV_TREE, { isAdmin, permissions })`; al final, tras una línea de 1px,
   las hojas de la raíz: Administración, solo para administradores, como enlace normal (`<a href="/admin">`, otra
   app).
 - **Íconos y etiquetas**: son datos de srtm. `GrupoNav` extiende el `NavTreeGroup` de core con `icon` (de lucide) y
   `corto` (la etiqueta del riel cuando la completa no cabe en 104px), y sus `children` son nodos de srtm:
   Contribuyentes (`Users`), Predios (`MapPinned`), Declaraciones (`FileText`), Catastro (`LandPlot`), Arbitrios
   (`Landmark`), Infracciones (`Gavel`, de "Infracciones administrativas"), Anuncios (`Megaphone`, de "Anuncios y
-  propaganda"), Emisión (`Printer`) y Fiscalización (`ChartColumn`).
+  propaganda"), Emisión (`Printer`), Fiscalización (`ChartColumn`) y Normativa (`Scale`). Una hoja con `lee` solo se
+  ve con lectura sobre alguno de esos objetos (`arbolPara(NAV_TREE, { isAdmin, permissions })`).
 - **Sección actual**: el grupo que tiene la hoja actual (`currentNavTreeLeaf` de core: su ruta, luego `alsoAt`, luego
   el inicio más largo) lleva `aria-current="true"`, borde izquierdo de 4px `link`, fondo `#E6E6E6`, texto e ícono
   `#0D4D80` y negrita; "Inicio", lo mismo en `/` (`aria-current="page"`). Una ruta hija marca su grupo

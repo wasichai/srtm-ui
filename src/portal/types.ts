@@ -264,6 +264,9 @@ export interface Declaracion {
   // a rectificatoria's: the id of the declaración it replaces. the sustituida's: when (srtm-backend#151)
   sustituye?: string | null
   fecha_sustitucion?: string | null
+  // the tramo de vía its predio fronts (srtm-backend#188): its arancel is then that tramo's VIGENTE valor_m2 in the
+  // DJ's año, Normativa's. the arancel itself is not in the dto; without id_aranc it stays as it is
+  id_aranc?: string | null
 }
 
 // the declaración jurada's lists. declaracion is the parent's id, set by the backend
@@ -1547,4 +1550,119 @@ export interface OrdenEnCaja {
 export interface EstadoCaja {
   ordenes: OrdenEnCaja[]
   saldo_a_favor: number
+}
+
+// Normativa (srtm-backend#186): the parámetros and aranceles the backend computes with, each written by one person
+// and verified by another (doble firma). a row with no estado is answered VIGENTE
+export type EstadoNormativa = 'POR_VERIFICAR' | 'VIGENTE' | 'ANULADO'
+
+// GET /normativa/tipos: the catalog of the tipos of parámetro, with the shape each asks for
+export interface TipoDeParametro {
+  tipo: string
+  etiqueta: string
+  usa_clave: boolean
+  valor: 'NUMERICO' | 'TEXTO'
+  unidad: string | null
+  modulo: string
+  admite_vacio: boolean
+}
+
+// what both share: the signatures, the estado and the anulación
+interface ConDobleFirma {
+  id: string
+  norma: string | null
+  fuente: string | null
+  transcribio: string | null
+  verifico: string | null
+  estado: EstadoNormativa
+  motivo_anulacion: string | null
+  anulado_por: string | null
+  anulado_en: string | null
+}
+
+export interface Parametro extends ConDobleFirma {
+  tipo: string
+  clave: string | null
+  vigencia_desde: string
+  vigencia_hasta: string | null
+  valor_numerico: number | null
+  texto: string | null
+}
+
+// what a new parámetro or a correction sends: estado and the signatures are the backend's
+export interface DatosDeParametro {
+  tipo?: string
+  clave?: string | null
+  vigencia_desde?: string
+  vigencia_hasta?: string | null
+  valor_numerico?: number | null
+  texto?: string | null
+  norma?: string | null
+  fuente?: string | null
+}
+
+export interface FiltrosParametros {
+  tipo?: string
+  estado?: EstadoNormativa
+  vigente_en?: string
+}
+
+// catastro's copy (srtm-backend#189): when it was last copied, or why it was not
+export interface Arancel extends ConDobleFirma {
+  clave: string
+  id_aranc: string
+  anio: number
+  valor_m2: number
+  cod_via: string | null
+  cuadra: string | null
+  lado: string | null
+  sincronizado_en: string | null
+  error_sincronizacion: string | null
+}
+
+export interface DatosDeArancel {
+  id_aranc?: string
+  anio?: number
+  valor_m2?: number
+  cod_via?: string | null
+  cuadra?: string | null
+  lado?: string | null
+  norma?: string | null
+  fuente?: string | null
+}
+
+export interface FiltrosAranceles {
+  anio?: number
+  q?: string
+  estado?: EstadoNormativa
+}
+
+// what the copy to catastro did after a write (srtm-backend#189): null, or absent, when the organization has no
+// catastro (or the backend does not copy yet)
+export interface Sincronizacion {
+  sincronizados: number
+  errores: { id: string; clave: string; error: string }[]
+}
+
+export interface ResultadoVerificacion {
+  verificados: string[]
+  rechazados: { id: string; motivo: string }[]
+  sincronizacion?: Sincronizacion | null
+}
+
+// a row of the csv as the import reads it: the parámetro's fields or the arancel's
+export interface FilaImportada {
+  fila: number
+  id: string | null
+  estado: string | null
+  [campo: string]: unknown
+}
+
+export interface ResultadoImportacion {
+  dry_run: boolean
+  crear: FilaImportada[]
+  actualizar: FilaImportada[]
+  iguales: number
+  rechazos: { fila: number; motivo: string }[]
+  sincronizacion?: Sincronizacion | null
 }

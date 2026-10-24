@@ -244,6 +244,26 @@ trabajo. Los componentes (`Card`, `Table`, `Tabs`, `Badge`, `Button`…) y los t
     maplibre sobre la propiedad `categoria`), con la leyenda encima. Los colores son los del tema (`--danger`,
     `--warning`, `--brand`, `--success`, `--ink-muted`, `--ink`) y se repintan al cambiar de tema.
   - Leer la brecha pide lectura sobre `brecha_corrida`.
+- **Normativa** (`/normativa`; grupo _Normativa_ del menú, y en el menú clásico; srtm-backend#186): los parámetros
+  tributarios y los aranceles con doble firma (`/api/srtm/normativa/**`). La entrada del menú se ve con lectura sobre
+  `parametro_tributario` o sobre `arancel`, y cada pestaña, con lectura sobre su objeto.
+  - **Parámetros**: filtros por tipo (del catálogo `/normativa/tipos`), estado y «vigente en»; valor con la unidad del
+    catálogo y vigencia «abierta» sin fecha de fin. «Nuevo parámetro» pide lo que el tipo usa (clave, valor numérico o
+    texto); un POR_VERIFICAR se edita o se borra (con su diálogo); un VIGENTE se anula con motivo y, con la vigencia
+    abierta, se cierra con su fecha hasta.
+  - **Aranceles**: año, búsqueda por id_aranc o vía y estado, paginados. La columna **Catastro** dice cómo está la
+    copia de catastro-backend (sincronizado con su fecha, error con el texto en el tooltip, pendiente).
+    «Sincronizar con catastro» reintenta el año (un 404 dice que aún no está disponible).
+  - En las dos, **Verificar** firma en lote lo marcado; la casilla de lo que transcribió el propio usuario está
+    deshabilitada («La doble firma pide otra persona») y cada rechazo se muestra con su motivo. **Importar CSV**
+    envía primero el archivo en seco (`dry_run=true`) y muestra qué crearía, actualizaría y rechazaría; solo
+    «Confirmar» lo escribe. Lo que la copia a catastro hizo tras verificar, anular o importar aranceles se avisa.
+  - Los botones que la cuenta no puede usar (creación, actualización o borrado sobre el objeto) se ven
+    deshabilitados y dicen por qué.
+  - En la DJ (Características, sección Valores), quien lee `arancel` elige el **tramo de vía** (`id_aranc`) en un
+    combobox de los aranceles VIGENTES del año de la DJ; el arancel queda de solo lectura con el valor del tramo
+    («del arancel …») y «Quitar tramo» lo vuelve manual. Cada guardado envía `id_aranc`, y el 400 del backend se
+    muestra en el campo.
 - **Otros:**
   - todas las listas de la ficha van paginadas, como en el SRTM;
   - el domicilio se ubica en el mapa ("Buscar dirección");

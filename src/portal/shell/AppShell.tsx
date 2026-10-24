@@ -1,9 +1,11 @@
+import { useAuth } from '@wasichai/core'
 import { cn } from '@wasichai/ui'
 import { Landmark, LogOut, Menu, Settings } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { useVarianteTema } from '../../themes'
 import { useSession } from '../auth/session'
+import { puedeLeerAlguno } from '../components/permisos'
 import { Breadcrumbs } from './Breadcrumbs'
 import { GlobalSearch, initials, NAV, useEntidad, type LateralProps, type PiezasShell } from './comun'
 import { usePanelLateral } from './panelLateral'
@@ -129,10 +131,11 @@ function SesionClasica() {
 }
 
 function LateralClasico({ abierto, onNavegar }: LateralProps) {
+  const { permissions } = useAuth()
   return (
     <nav id="sidebar" aria-label="Secciones" className={cn('w-60 shrink-0 bg-shell p-3 md:block', abierto ? 'block' : 'hidden')}>
       <ul className="space-y-1">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {NAV.filter(({ lee }) => puedeLeerAlguno(permissions, lee)).map(({ to, label, icon: Icon, end }) => (
           <li key={to}>
             <NavLink
               to={to}
