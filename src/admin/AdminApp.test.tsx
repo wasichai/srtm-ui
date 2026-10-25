@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock } from '@wasichai/testing'
@@ -122,5 +122,34 @@ describe('admin', () => {
     expect(screen.getByText('Lote')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Limpiar lote_geom' })).toBeInTheDocument()
     expect(screen.queryByDisplayValue(/no está disponible/)).not.toBeInTheDocument()
+  })
+
+  // a cashier in Lima types the hour on the wall clock: 22:00 there is 03:00 UTC of the next day, whatever the zone
+  // of the browser
+  it('writes a DATETIME as Lima wall time', async () => {
+    localStorage.setItem('srtm.token', 't')
+    localStorage.setItem('srtm.user', JSON.stringify(admin))
+    window.history.pushState({}, '', '/admin/data/objects/caja/records/new')
+    const caja = { ...predio, id: 'o-caja', name: 'caja', label: 'Caja', pluralLabel: 'Cajas', geometry: undefined }
+    fetch = mockFetch([
+      { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
+      { path: '/objects', body: [caja] },
+      { path: '/metadata/objects/caja', body: { ...caja, fields: [field('abierta_en', 'Abierta en', 'DATETIME')] } },
+      { method: 'POST', path: '/objects/caja/records', status: 201, body: { id: 'r1', attributes: {} } }
+    ])
+    render(<AdminApp workerUrl="/maplibre-gl-worker.js" />)
+    const abierta = await screen.findByLabelText('Abierta en')
+    expect(screen.getByText('Hora de America/Lima')).toBeInTheDocument()
+    fireEvent.change(abierta, { target: { value: '2026-10-19T22:00' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await vi.waitFor(() => expect(fetch!.calls.some((c) => c.method === 'POST' && c.path === '/objects/caja/records')).toBe(true))
+    const alta = fetch.calls.find((c) => c.method === 'POST' && c.path === '/objects/caja/records')!
+    expect((alta.body as { attributes: Record<string, unknown> }).attributes.abierta_en).toBe('2026-10-20T03:00:00.000Z')
+  })
+
+  it('says the model lives in the repository', async () => {
+    await signIn()
+    await userEvent.click(screen.getByRole('link', { name: 'Objetos' }))
+    expect(await screen.findByText(/La fuente de verdad de los objetos/)).toBeInTheDocument()
   })
 })

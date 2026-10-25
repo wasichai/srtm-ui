@@ -27,7 +27,13 @@ export function AdminApp({ workerUrl }: { workerUrl?: string }) {
         basename: '/admin',
         // the seed's admin, in development only (as the portal's LoginPage)
         defaultLoginEmail: import.meta.env.DEV ? 'admin@wasichai.local' : undefined,
-        themes: SRTM_THEMES
+        themes: SRTM_THEMES,
+        // the DATETIME fields are read and written as Lima wall time, whatever the browser's zone (a field's own
+        // timeZone still wins)
+        timeZone: 'America/Lima',
+        // srtm-backend's model lives in its repository (model/): the admin warns that what is changed here is not kept
+        // there and the next deployment may undo it
+        modelInRepository: true
       }}
       modules={[workflowModule(), pagesModule(), viewsModule(), formsModule(), documentsModule(), gisModule({ workerUrl })]}
     />
