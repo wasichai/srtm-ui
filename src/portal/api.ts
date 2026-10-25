@@ -512,8 +512,8 @@ export const rentas = {
   // what a TERMINADA corrida measured (the year's latest when not given): 404 when there is none
   panelBrecha: (anio: number, corrida?: string) => get<PanelBrecha>(`/srtm/brecha/${anio}/panel${query({ corrida })}`),
   // its rows sorted by catastro's code; 422 names a filter it cannot serve. sector is an exact match
-  prediosBrecha: (anio: number, { categoria, sector }: FiltrosBrecha, page: number, corrida?: string, size = PAGE_SIZE) =>
-    get<Pagina<PredioBrecha>>(`/srtm/brecha/${anio}/predios${query({ categoria, sector, page, size, corrida })}`),
+  prediosBrecha: (anio: number, { categoria, sector, confianza }: FiltrosBrecha, page: number, corrida?: string, size = PAGE_SIZE) =>
+    get<Pagina<PredioBrecha>>(`/srtm/brecha/${anio}/predios${query({ categoria, sector, confianza, page, size, corrida })}`),
   // the rows with a lote, each feature with its categoria, codigo and deltaImpuesto (EPSG:4326)
   lotesBrecha: (anio: number, corrida?: string) => get<FeatureCollection>(`/srtm/brecha/${anio}/lotes${query({ corrida })}`),
 
