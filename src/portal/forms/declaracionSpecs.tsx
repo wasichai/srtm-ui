@@ -331,7 +331,16 @@ export const NIVEL_SECTIONS: SectionSpec[] = [
       // no asterisk on page 16, but the model asks for it: the nivel's value is its area times its unit value
       { name: 'area_construida', label: 'Área construida (m2)', kind: 'decimal', required: true, span: 2 },
       { name: 'area_comun', label: 'Área común construida (m2)', kind: 'decimal', span: 2 },
-      { name: 'porcentaje_area_comun', label: '% área común construida', kind: 'decimal', span: 2 }
+      { name: 'porcentaje_area_comun', label: '% área común construida', kind: 'decimal', span: 2 },
+      // the RNT tabla it depreciates with (wasichai/srtm-ui#142): optional, as without it the declaración's or its
+      // uso's applies. NivelesPanel sends it only when the user changed it (clasificacionAlGuardar)
+      {
+        name: 'clasificacion',
+        label: 'Clasificación (tabla de depreciación)',
+        kind: 'enum',
+        span: 6,
+        hint: 'Opcional: sin ella, el nivel se deprecia con la clasificación de la DJ o con la de su uso'
+      }
     ]
   },
   {

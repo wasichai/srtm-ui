@@ -326,6 +326,9 @@ export interface NivelConstruccion {
   revestimientos: string | null
   banos: string | null
   instalaciones: string | null
+  // the RNT tabla de depreciación it depreciates with (enum clasificacion, srtm-backend#244): an external padrón's or
+  // the user's. none: the declaración's, else its uso's. "" in a PUT clears it, an absent one keeps it
+  clasificacion?: string | null
   estado?: string | null
 }
 

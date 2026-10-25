@@ -32,6 +32,8 @@ interface HijosPanelProps<T> {
   readOnly?: boolean
   // the srtm's niveles, obras and otros frentes list no estado (pages 17, 20 and 21)
   sinEstado?: boolean
+  // what is sent of the form's values, knowing the row edited (null: a new one): a field sent only when changed
+  alGuardar?: (editing: T | null, values: T) => T
 }
 
 type Hijo = { id?: string; estado?: string | null }
@@ -59,7 +61,8 @@ export function HijosPanel<T extends Hijo>({
   footer,
   wide,
   readOnly,
-  sinEstado
+  sinEstado,
+  alGuardar
 }: HijosPanelProps<T>) {
   const catalogos = useCatalogos()
   const refresh = useRefresh()
@@ -67,7 +70,10 @@ export function HijosPanel<T extends Hijo>({
     <EditableList<T>
       queryKey={[queryKey, parent]}
       load={() => api.listar(parent)}
-      save={(editing, values) => (editing?.id ? api.actualizar(editing.id, values) : api.agregar(parent, values))}
+      save={(editing, values) => {
+        const body = alGuardar ? alGuardar(editing, values) : values
+        return editing?.id ? api.actualizar(editing.id, body) : api.agregar(parent, body)
+      }}
       remove={async (row) => {
         if (row.id) await api.borrar(row.id)
       }}

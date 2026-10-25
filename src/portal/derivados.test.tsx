@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockFetch, type FetchMock, type MockRoute, type RecordedCall } from '@wasichai/testing'
+import { clasificacionAlGuardar } from './pages/DeclaracionListas'
 import { siguientePendiente } from './pages/DeclaracionPage'
 import { PortalApp } from './PortalApp'
 import type { Declaracion } from './types'
@@ -70,6 +71,9 @@ const nivel = {
   instalaciones: 'D',
   estado: 'ACTIVO'
 }
+// the RNT's tablas de depreciación 01 and 02: the enum clasificacion, the declaración's options
+const CASA = 'CASA HABITACION Y DEPARTAMENTOS PARA VIVIENDA'
+const TIENDAS = 'TIENDAS DEPOSITOS CENTROS DE RECREACION CLUBES E INSTITUCIONES'
 const frente = { id: 'f1', fila: '6f1c2c1e-0000-4000-8000-000000000002', declaracion: 'd1', tipo_via: 'AVENIDA', via: 'MARGINAL', frontis: 7, estado: 'ACTIVO' }
 
 const grupo = (d: object) => [{ declaracion: d, predio: null, contribuyente: juan }]
@@ -80,7 +84,15 @@ const routes: MockRoute[] = [
   { path: '/auth/me/preferences', body: { theme: 'system', locale: null } },
   {
     path: '/srtm/catalogos',
-    body: { nivel_construccion: { tipo_nivel: ['PISO'], material: ['LADRILLO'], estado_conservacion: ['BUENO'], estado: ['ACTIVO'] } }
+    body: {
+      nivel_construccion: {
+        tipo_nivel: ['PISO'],
+        material: ['LADRILLO'],
+        estado_conservacion: ['BUENO'],
+        estado: ['ACTIVO'],
+        clasificacion: [CASA, TIENDAS, 'CLINICAS HOSPITALES CINES INDUSTRIAS COLEGIOS TALLERES', 'EDIFICIO-OFICINAS']
+      }
+    }
   },
   { path: '/srtm/categorias-valor', body: [] },
   djRoute,
@@ -290,6 +302,100 @@ describe('after a write of the lists', () => {
     const otra = await formulario()
     await waitFor(() => expect(otra.getByLabelText('Longitud de frente (m)')).toHaveValue('8'))
     expect(otra.getByLabelText('Cant. de habitantes / Aforo')).toHaveValue('4')
+  })
+})
+
+// wasichai/srtm-ui#142 (srtm-backend#244): a nivel's own tabla de depreciación, optional. an edit that leaves it as
+// it was does not send it (the backend keeps the padrón's); one that clears it sends "" (null would keep it)
+describe('la clasificación del nivel', () => {
+  const editar = async (guardado: object) => {
+    start([
+      { path: '/srtm/declaraciones/d1/niveles', body: [{ ...nivel, ...guardado }] },
+      { method: 'PUT', path: '/srtm/niveles/n1', body: nivel }
+    ])
+    await formulario()
+    await userEvent.click(await screen.findByRole('cell', { name: 'LADRILLO' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Editar nivel de construcción' }))
+    return within(await screen.findByRole('dialog', { name: 'Editar nivel de construcción' }))
+  }
+  const grabar = async (dialog: ReturnType<typeof within>) => {
+    await userEvent.click(dialog.getByRole('button', { name: 'Grabar' }))
+    return called((c) => c.method === 'PUT' && c.path === '/srtm/niveles/n1')
+  }
+
+  it('lists it in the niveles table, with its accents', async () => {
+    start([{ path: '/srtm/declaraciones/d1/niveles', body: [{ ...nivel, clasificacion: CASA }] }])
+    await formulario()
+    expect(await screen.findByRole('columnheader', { name: 'Clasificación' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'CASA HABITACIÓN Y DEPARTAMENTOS PARA VIVIENDA' })).toBeInTheDocument()
+  })
+
+  it('offers the four tablas, optional, and sends the one picked', async () => {
+    const dialog = await editar({ clasificacion: null })
+    const select = dialog.getByLabelText('Clasificación (tabla de depreciación)')
+    expect(select).toHaveValue('')
+    expect(select).not.toBeRequired()
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((o) => o.textContent)
+    ).toEqual([
+      expect.any(String),
+      'CASA HABITACIÓN Y DEPARTAMENTOS PARA VIVIENDA',
+      'TIENDAS DEPÓSITOS CENTROS DE RECREACIÓN CLUBES E INSTITUCIONES',
+      'CLÍNICAS HOSPITALES CINES INDUSTRIAS COLEGIOS TALLERES',
+      'EDIFICIO-OFICINAS'
+    ])
+    await userEvent.selectOptions(select, TIENDAS)
+    expect((await grabar(dialog)).body).toMatchObject({ clasificacion: TIENDAS })
+  })
+
+  it('does not send it when the edit leaves it as it was', async () => {
+    const dialog = await editar({ clasificacion: CASA })
+    expect(dialog.getByLabelText('Clasificación (tabla de depreciación)')).toHaveValue(CASA)
+    await userEvent.clear(dialog.getByLabelText(/Área construida/))
+    await userEvent.type(dialog.getByLabelText(/Área construida/), '150')
+    const put = await grabar(dialog)
+    expect(put.body).toMatchObject({ area_construida: 150 })
+    expect(put.body).not.toHaveProperty('clasificacion')
+  })
+
+  it('sends "" when the user clears it', async () => {
+    const dialog = await editar({ clasificacion: CASA })
+    await userEvent.selectOptions(dialog.getByLabelText('Clasificación (tabla de depreciación)'), '')
+    expect((await grabar(dialog)).body).toMatchObject({ clasificacion: '' })
+  })
+
+  it('keeps showing, and does not send, a stored one the catalog does not offer', async () => {
+    const dialog = await editar({ clasificacion: 'GALPONES' })
+    expect(dialog.getByLabelText('Clasificación (tabla de depreciación)')).toHaveValue('GALPONES')
+    expect((await grabar(dialog)).body).not.toHaveProperty('clasificacion')
+  })
+
+  it("shows the backend's refusal under the select", async () => {
+    start([
+      {
+        method: 'PUT',
+        path: '/srtm/niveles/n1',
+        status: 400,
+        body: { title: 'Bad Request', errors: [{ field: 'clasificacion', message: 'no es una clasificación válida' }] }
+      }
+    ])
+    await formulario()
+    await userEvent.click(await screen.findByRole('cell', { name: 'LADRILLO' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Editar nivel de construcción' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Editar nivel de construcción' }))
+    await userEvent.selectOptions(dialog.getByLabelText('Clasificación (tabla de depreciación)'), TIENDAS)
+    await userEvent.click(dialog.getByRole('button', { name: 'Grabar' }))
+    await waitFor(() => expect(dialog.getByLabelText('Clasificación (tabla de depreciación)')).toHaveAccessibleDescription(/no es una clasificación válida/))
+  })
+
+  it('leaves it out of a new nivel without one', () => {
+    const nuevo = { ...nivel, id: undefined, clasificacion: null }
+    expect(clasificacionAlGuardar(null, nuevo)).not.toHaveProperty('clasificacion')
+    expect(clasificacionAlGuardar(null, { ...nuevo, clasificacion: CASA })).toMatchObject({ clasificacion: CASA })
+    // a stored nivel the backend answered without the field (before srtm-backend#244): left as it was
+    expect(clasificacionAlGuardar({ ...nivel }, { ...nivel, clasificacion: null })).not.toHaveProperty('clasificacion')
   })
 })
 
