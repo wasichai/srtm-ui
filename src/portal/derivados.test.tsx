@@ -227,6 +227,20 @@ describe('autoavalúo por revisar', () => {
     expect(await within(aviso).findByText(/catastro-backend no responde/)).toBeInTheDocument()
   })
 
+  it('says so when the recálculo could not value the DJ either, instead of a silent refresh', async () => {
+    const sigue = { ...declaracion, autoavaluo_por_revisar: true, autoavaluo_motivo: 'TABLA_DE_DEPRECIACION:' }
+    djRoute.body = ficha({ ...declaracion, autoavaluo_por_revisar: true, autoavaluo_motivo: 'El catastro no respondió: 500' })
+    start([{ method: 'POST', path: '/srtm/declaraciones/d1/recalcular', body: sigue }])
+    const aviso = await screen.findByRole('status', { name: 'Autoavalúo por revisar' })
+    djRoute.body = ficha(sigue)
+    await userEvent.click(within(aviso).getByRole('button', { name: 'Recalcular' }))
+    const fallo = await within(aviso).findByRole('alert')
+    expect(fallo).toHaveTextContent(
+      'El recálculo no pudo valorizar la DJ: Ningún piso tiene tabla de depreciación: ponle la clasificación al nivel o el uso a la DJ'
+    )
+    await waitFor(() => expect(aviso).toHaveTextContent('Autoavalúo por revisar: Ningún piso tiene tabla de depreciación'))
+  })
+
   it('is told, without Recalcular, on a declaración that is only read', async () => {
     djRoute.body = ficha({ ...declaracion, estado: 'SUSTITUIDA', autoavaluo_por_revisar: true, autoavaluo_motivo: 'AREA_TERRENO_FALTANTE' })
     start()
