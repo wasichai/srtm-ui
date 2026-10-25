@@ -73,6 +73,13 @@ describe('los avisos de la liquidación', () => {
     expect(within(items[1]).getByRole('link', { name: 'Declaración' })).toHaveAttribute('href', '/declaraciones/d2')
   })
 
+  it('says it in the singular for one DJ', async () => {
+    start([{ path: LIQUIDACION, body: liquidacion([{ declaracion: 'd1', predio: 'p1', predioCodigo: '01-01-0006', motivo: 'AREA_TERRENO_FALTANTE' }]) }])
+    const aviso = await screen.findByRole('region', { name: 'DJ por revisar en la liquidación' })
+    expect(aviso).toHaveTextContent(`La liquidación de ${year} usa el autoavalúo guardado de 1 DJ por revisar. Recalcúlala desde su declaración.`)
+    expect(aviso).toHaveTextContent('Predio 01-01-0006: Falta el área del terreno')
+  })
+
   it.each([
     ['no DJ is por revisar', { body: liquidacion([]) }],
     ['a backend before srtm-backend#242 answers no avisos', { body: { ...liquidacion([]), avisos: undefined } }],
@@ -81,6 +88,8 @@ describe('los avisos de la liquidación', () => {
     start([{ path: LIQUIDACION, ...respuesta }])
     expect(await screen.findByText('QUISPE MAMANI JUAN')).toBeInTheDocument()
     await waitFor(() => expect(fetch!.calls.some((c) => c.path.startsWith('/srtm/contribuyentes/c1/liquidacion'))).toBe(true))
+    // the answer read and rendered: the query settles a tick after the call
+    await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByRole('region', { name: 'DJ por revisar en la liquidación' })).not.toBeInTheDocument()
   })
 })

@@ -21,7 +21,9 @@ export function AvisosDeLiquidacion({ contribuyente, anio }: { contribuyente: st
     <section aria-label={titulo}>
       <Alert tone="warning" title={titulo}>
         <p>
-          La liquidación de {anio} usa el autoavalúo guardado de {avisos.length} DJ por revisar. Recalcula cada una desde su declaración.
+          {avisos.length === 1
+            ? `La liquidación de ${anio} usa el autoavalúo guardado de 1 DJ por revisar. Recalcúlala desde su declaración.`
+            : `La liquidación de ${anio} usa el autoavalúo guardado de ${avisos.length} DJ por revisar. Recalcula cada una desde su declaración.`}
         </p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           {avisos.map((a) => (
