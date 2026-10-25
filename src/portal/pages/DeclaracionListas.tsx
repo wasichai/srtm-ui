@@ -43,6 +43,14 @@ export function TransferentesPanel({ declaracion, readOnly }: { declaracion: str
   )
 }
 
+// the nivel's clasificación goes only when the user changed it (srtm-backend#244): an absent one keeps the stored one,
+// the padrón's that this form may not know of, and "" clears it (the form's blank is null, which would keep it)
+export function clasificacionAlGuardar(editing: NivelConstruccion | null, values: NivelConstruccion): NivelConstruccion {
+  const { clasificacion, ...resto } = values
+  if ((clasificacion ?? null) === (editing?.clasificacion ?? null)) return resto
+  return { ...resto, clasificacion: clasificacion ?? '' }
+}
+
 // origen: the valuación del padrón de origen of each nivel (srtm-backend#132), read-only columns when any has one.
 // modificada: the declaración changed since it was imported (srtm-backend#150), so they are the imported version's
 export function NivelesPanel({
@@ -69,6 +77,7 @@ export function NivelesPanel({
       catalog="nivel_construccion"
       wide
       sinEstado
+      alGuardar={clasificacionAlGuardar}
       aviso={
         deOrigen.length > 0
           ? () => (
@@ -102,6 +111,7 @@ export function NivelesPanel({
           className: 'text-center'
         })),
         { label: 'Conservación', render: (n) => celda('estado_conservacion', n.estado_conservacion) },
+        { label: 'Clasificación', render: (n) => <span className="line-clamp-2 min-w-48">{celda('clasificacion', n.clasificacion)}</span> },
         ...deOrigen
       ]}
     />
