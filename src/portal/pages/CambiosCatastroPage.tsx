@@ -1,7 +1,7 @@
 import { ApiError, EmptyState, LoadingState, QueryState, useAuth } from '@wasichai/core'
 import { Alert, Badge, Button, Card, CardBody, cn, Input, Pagination, Table, Td, Th } from '@wasichai/ui'
 import { ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '../../kit/ui/errorMessage'
 import { currentYear, formatMoney, formatText } from '../components/format'
@@ -33,6 +33,7 @@ export function CambiosCatastroPage() {
   const [anio, setAnio] = useState(currentYear)
   const [filtros, setFiltros] = useState<FiltrosCambiosBrecha>({})
   const [page, setPage] = useState(0)
+  const ayuda = useId()
   // the permissions come after the session, as in the brecha: until then neither "sin permiso" nor a request
   const auth = useAuth()
   const conPermisos = auth.permissions !== null || auth.permissionsError !== null
@@ -64,42 +65,44 @@ export function CambiosCatastroPage() {
       </div>
 
       <Card>
-        <CardBody className="flex flex-wrap items-end gap-6">
-          <YearSelect value={anio} onChange={elegirAnio} />
-          <Campo etiqueta="Desde">
-            {(id) => (
-              <>
-                <Input id={id} type="date" value={filtros.desde ?? ''} onChange={(e) => filtrar({ desde: e.target.value || null })} />
-                <p className="text-xs text-ink-muted">{`En blanco: el 1 de enero de ${anio}.`}</p>
-              </>
-            )}
-          </Campo>
-          <Campo etiqueta="Objeto">
-            {(id) => (
-              <select
-                id={id}
-                className={SELECT}
-                value={filtros.objeto ?? ''}
-                onChange={(e) => filtrar({ objeto: (e.target.value || null) as ObjetoCambioCatastro | null })}
-              >
-                <option value="">Todos</option>
-                {Object.entries(OBJETOS).map(([valor, texto]) => (
-                  <option key={valor} value={valor}>
-                    {texto}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Campo>
-          <label className="flex h-9 items-center gap-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              className="accent-brand"
-              checked={filtros.marca === 'SUPERA_5_UIT'}
-              onChange={(e) => filtrar({ marca: e.target.checked ? 'SUPERA_5_UIT' : null })}
-            />
-            Solo los que superan 5 UIT
-          </label>
+        {/* the controls on one line, their bottoms aligned as in the other year panels; the help under the row, so it
+            shifts none of them */}
+        <CardBody>
+          <div className="flex flex-wrap items-end gap-6">
+            <YearSelect value={anio} onChange={elegirAnio} />
+            <Campo etiqueta="Desde">
+              {(id) => (
+                <Input id={id} type="date" aria-describedby={ayuda} value={filtros.desde ?? ''} onChange={(e) => filtrar({ desde: e.target.value || null })} />
+              )}
+            </Campo>
+            <Campo etiqueta="Objeto">
+              {(id) => (
+                <select
+                  id={id}
+                  className={SELECT}
+                  value={filtros.objeto ?? ''}
+                  onChange={(e) => filtrar({ objeto: (e.target.value || null) as ObjetoCambioCatastro | null })}
+                >
+                  <option value="">Todos</option>
+                  {Object.entries(OBJETOS).map(([valor, texto]) => (
+                    <option key={valor} value={valor}>
+                      {texto}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Campo>
+            <label className="flex h-9 items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                className="accent-brand"
+                checked={filtros.marca === 'SUPERA_5_UIT'}
+                onChange={(e) => filtrar({ marca: e.target.checked ? 'SUPERA_5_UIT' : null })}
+              />
+              Solo los que superan 5 UIT
+            </label>
+          </div>
+          <p id={ayuda} className="mt-2 text-xs text-ink-muted">{`Desde en blanco: el 1 de enero de ${anio}.`}</p>
         </CardBody>
       </Card>
 
@@ -133,6 +136,7 @@ export function CambiosCatastroPage() {
                     <thead>
                       <tr>
                         <Th>Código</Th>
+                        <Th>Marca</Th>
                         <Th>Categoría</Th>
                         <Th {...NUMERICA}>Cambios</Th>
                         <Th>Objetos</Th>
@@ -141,7 +145,6 @@ export function CambiosCatastroPage() {
                         <Th {...NUMERICA}>Autoavalúo declarado</Th>
                         <Th {...NUMERICA}>Autoavalúo catastro</Th>
                         <Th {...NUMERICA}>Δ autoavalúo</Th>
-                        <Th>Marca</Th>
                       </tr>
                     </thead>
                     <tbody>
@@ -161,7 +164,8 @@ export function CambiosCatastroPage() {
   )
 }
 
-// a marked row (above 5 UIT) on a soft tint of the warning, its pill in the same tone
+// a marked row (above 5 UIT) on a soft tint of the warning, its pill in the same tone right after the code: the mark
+// that matters most is seen without scrolling the table
 function Fila({ fila }: { fila: CambioDelPredio }) {
   const codigo = fila.codigoPredio ?? fila.codigoMunicipal
   const marcada = fila.marca === 'SUPERA_5_UIT'
@@ -176,6 +180,13 @@ function Fila({ fila }: { fila: CambioDelPredio }) {
           formatText(codigo)
         )}
         {fila.codigoMunicipal !== codigo && <p className="text-xs font-normal text-ink-muted">Catastro {fila.codigoMunicipal}</p>}
+      </Td>
+      <Td>
+        {marcada && (
+          <Badge data-tono="ambar" className={cn('whitespace-nowrap', PILDORA.ambar)}>
+            Supera 5 UIT
+          </Badge>
+        )}
       </Td>
       <Td>
         {fila.categoria ? (
@@ -194,13 +205,6 @@ function Fila({ fila }: { fila: CambioDelPredio }) {
       <Td {...NUMERICA}>{formatMoney(fila.autoavaluoDeclarado)}</Td>
       <Td {...NUMERICA}>{formatMoney(fila.autoavaluoCatastro)}</Td>
       <Td {...NUMERICA}>{formatMoney(fila.deltaAutoavaluo)}</Td>
-      <Td>
-        {marcada && (
-          <Badge data-tono="ambar" className={cn('whitespace-nowrap', PILDORA.ambar)}>
-            Supera 5 UIT
-          </Badge>
-        )}
-      </Td>
     </tr>
   )
 }

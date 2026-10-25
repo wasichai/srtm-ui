@@ -112,7 +112,10 @@ describe('cambios en catastro', () => {
     expect(otra).toHaveTextContent('Titular')
     expect(within(otra).queryByText('Supera 5 UIT')).not.toBeInTheDocument()
     expect(otra).not.toHaveAttribute('data-marca')
-    expect(screen.getByText(/En blanco: el 1 de enero/)).toBeInTheDocument()
+    // the mark right after the code: seen without scrolling the table
+    const cabeceras = within(screen.getByRole('table', { name: 'Cambios en catastro' })).getAllByRole('columnheader')
+    expect(cabeceras.slice(0, 3).map((th) => th.textContent)).toEqual(['Código', 'Marca', 'Categoría'])
+    expect(screen.getByLabelText('Desde')).toHaveAccessibleDescription(`Desde en blanco: el 1 de enero de ${year}.`)
   })
 
   it('asks again from page 0 on each filter: desde, only those above 5 UIT, the objeto and the year', async () => {
@@ -139,6 +142,19 @@ describe('cambios en catastro', () => {
     await waitFor(() =>
       expect(fetch!.calls.at(-1)?.path).toBe(`/srtm/brecha/${year - 1}/cambios?desde=${year}-06-01&marca=SUPERA_5_UIT&objeto=construccion&page=0&size=20`)
     )
+  })
+
+  it('drops the marca and the objeto from the request when they are cleared', async () => {
+    start('/brecha/cambios')
+    await screen.findByRole('table', { name: 'Cambios en catastro' })
+    await userEvent.click(screen.getByLabelText('Solo los que superan 5 UIT'))
+    await userEvent.selectOptions(screen.getByLabelText('Objeto'), 'Titular')
+    await waitFor(() => expect(pedidos().at(-1)?.path).toBe(`/srtm/brecha/${year}/cambios?marca=SUPERA_5_UIT&objeto=titular_catastral&page=0&size=20`))
+
+    await userEvent.click(screen.getByLabelText('Solo los que superan 5 UIT'))
+    await waitFor(() => expect(pedidos().at(-1)?.path).toBe(`/srtm/brecha/${year}/cambios?objeto=titular_catastral&page=0&size=20`))
+    await userEvent.selectOptions(screen.getByLabelText('Objeto'), 'Todos')
+    await waitFor(() => expect(pedidos().at(-1)?.path).toBe(`/srtm/brecha/${year}/cambios?page=0&size=20`))
   })
 
   it('says when the year has no brecha yet, with the way to it', async () => {
