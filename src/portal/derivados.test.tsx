@@ -366,6 +366,30 @@ describe('la clasificación del nivel', () => {
     expect((await grabar(dialog)).body).toMatchObject({ clasificacion: '' })
   })
 
+  it('keeps showing, and does not send, a stored one the catalog does not offer', async () => {
+    const dialog = await editar({ clasificacion: 'GALPONES' })
+    expect(dialog.getByLabelText('Clasificación (tabla de depreciación)')).toHaveValue('GALPONES')
+    expect((await grabar(dialog)).body).not.toHaveProperty('clasificacion')
+  })
+
+  it("shows the backend's refusal under the select", async () => {
+    start([
+      {
+        method: 'PUT',
+        path: '/srtm/niveles/n1',
+        status: 400,
+        body: { title: 'Bad Request', errors: [{ field: 'clasificacion', message: 'no es una clasificación válida' }] }
+      }
+    ])
+    await formulario()
+    await userEvent.click(await screen.findByRole('cell', { name: 'LADRILLO' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Editar nivel de construcción' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Editar nivel de construcción' }))
+    await userEvent.selectOptions(dialog.getByLabelText('Clasificación (tabla de depreciación)'), TIENDAS)
+    await userEvent.click(dialog.getByRole('button', { name: 'Grabar' }))
+    await waitFor(() => expect(dialog.getByLabelText('Clasificación (tabla de depreciación)')).toHaveAccessibleDescription(/no es una clasificación válida/))
+  })
+
   it('leaves it out of a new nivel without one', () => {
     const nuevo = { ...nivel, id: undefined, clasificacion: null }
     expect(clasificacionAlGuardar(null, nuevo)).not.toHaveProperty('clasificacion')

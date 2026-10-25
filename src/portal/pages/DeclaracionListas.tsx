@@ -111,7 +111,15 @@ export function NivelesPanel({
           className: 'text-center'
         })),
         { label: 'Conservación', render: (n) => celda('estado_conservacion', n.estado_conservacion) },
-        { label: 'Clasificación', render: (n) => <span className="line-clamp-2 min-w-48">{celda('clasificacion', n.clasificacion)}</span> },
+        {
+          label: 'Clasificación',
+          // the long names cut to two lines: the whole one on hover
+          render: (n) => (
+            <span className="line-clamp-2 min-w-48" title={n.clasificacion ? celda('clasificacion', n.clasificacion) : undefined}>
+              {celda('clasificacion', n.clasificacion)}
+            </span>
+          )
+        },
         ...deOrigen
       ]}
     />
