@@ -244,8 +244,8 @@ export const clavesBrecha = {
   brecha: ['brecha'] as const,
   corridas: (anio: number) => ['brecha', 'corridas', anio] as const,
   panel: (anio: number, corrida: string) => ['brecha', 'panel', anio, corrida] as const,
-  predios: (anio: number, corrida: string, { categoria, sector }: FiltrosBrecha, page: number) =>
-    ['brecha', 'predios', anio, corrida, categoria ?? null, sector ?? null, page] as const,
+  predios: (anio: number, corrida: string, { categoria, sector, confianza }: FiltrosBrecha, page: number) =>
+    ['brecha', 'predios', anio, corrida, categoria ?? null, sector ?? null, confianza ?? null, page] as const,
   lotes: (anio: number, corrida: string) => ['brecha', 'lotes', anio, corrida] as const
 }
 
