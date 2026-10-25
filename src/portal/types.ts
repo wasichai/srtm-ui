@@ -1528,6 +1528,36 @@ export interface FiltrosBrecha {
   confianza?: Confianza | null
 }
 
+// what of catastro a cambio touched (srtm-backend#203): its table
+export type ObjetoCambioCatastro = 'predio_catastral' | 'construccion' | 'obra_complementaria' | 'titular_catastral'
+// SUPERA_5_UIT: its |Δ autoavalúo| is above 5 UIT of the 1st of January of the year
+export type MarcaCambio = 'SUPERA_5_UIT'
+
+// a row of GET /srtm/brecha/{anio}/cambios (#203): a predio catastro changed since desde, how many cambios, their
+// objetos and entregas, and the latest; its Δ autoavalúo from the corrida (null without one). predio is srtm's (null
+// when catastro's code matches none)
+export interface CambioDelPredio {
+  codigoMunicipal: string
+  predio: string | null
+  codigoPredio: string | null
+  categoria: CategoriaBrecha | null
+  cambios: number
+  objetos: ObjetoCambioCatastro[]
+  entregas: string[]
+  ultimoCambio: string | null
+  autoavaluoDeclarado: number | null
+  autoavaluoCatastro: number | null
+  deltaAutoavaluo: number | null
+  marca: MarcaCambio | null
+}
+
+// desde AAAA-MM-DD; none: the 1st of January of the year (the backend's)
+export interface FiltrosCambiosBrecha {
+  desde?: string | null
+  marca?: MarcaCambio | null
+  objeto?: ObjetoCambioCatastro | null
+}
+
 // what a redeterminación of a predio's arbitrios did (wasichai/srtm-backend#158): the cuotas written again and the ones
 // annulled, and why one could not be done (null when every one could). the answer of POST …/arbitrios/redeterminacion,
 // and the Srtm-Arbitrios header of a write of a declaración
