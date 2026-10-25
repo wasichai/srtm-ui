@@ -8,6 +8,7 @@ import {
   CircleMinus,
   Coins,
   FileQuestion,
+  History,
   Landmark,
   Loader2,
   MapPinned,
@@ -123,11 +124,20 @@ export function BrechaPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">Brecha de recaudación</h1>
-        <p className="text-sm text-ink-muted">
-          El autoavalúo y el impuesto declarados en el padrón frente a la valorización del catastro de los mismos predios.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Brecha de recaudación</h1>
+          <p className="text-sm text-ink-muted">
+            El autoavalúo y el impuesto declarados en el padrón frente a la valorización del catastro de los mismos predios.
+          </p>
+        </div>
+        {/* fiscalización's work list: the predios catastro changed, against this brecha */}
+        <Button asChild variant="secondary">
+          <Link to="/brecha/cambios">
+            <History className="size-4" />
+            Cambios en catastro
+          </Link>
+        </Button>
       </div>
 
       <Card>
@@ -292,7 +302,7 @@ function Kpis({ panel, mensaje }: { panel: PanelBrecha; mensaje: string | null }
 }
 
 // a swatch of a categoría's colour: the map's, in the legend and the tables
-function Muestra({ categoria }: { categoria: CategoriaBrecha }) {
+export function Muestra({ categoria }: { categoria: CategoriaBrecha }) {
   return <span aria-hidden className="inline-block size-3 shrink-0 rounded-sm" style={{ backgroundColor: CATEGORIAS[categoria]?.color }} />
 }
 

@@ -104,7 +104,7 @@ describe('NAV_TREE', () => {
       ],
       ['Anuncios y propaganda', ['Padrón de anuncios /anuncios', 'Nuevo anuncio /anuncios/nuevo', 'Tasas de anuncios /anuncios/tasas']],
       ['Emisión', ['Emisión masiva /emisiones']],
-      ['Fiscalización', ['Brecha de recaudación /brecha']],
+      ['Fiscalización', ['Brecha de recaudación /brecha', 'Cambios en catastro /brecha/cambios']],
       ['Normativa', ['Parámetros y aranceles /normativa']],
       'Administración /admin'
     ])
@@ -153,6 +153,7 @@ describe('NAV_TREE', () => {
     ['/catastro/l1', undefined],
     ['/emisiones', 'Emisión masiva'],
     ['/brecha', 'Brecha de recaudación'],
+    ['/brecha/cambios', 'Cambios en catastro'],
     ['/arbitrios', 'Consulta de cuotas'],
     ['/arbitrios/tasas', 'Tasas del año'],
     ['/arbitrios/determinaciones', 'Determinación masiva'],
@@ -228,7 +229,8 @@ describe('portal-tributario rail', () => {
     ['/predios/p1', 'Predios'],
     ['/declaraciones/d1', undefined],
     ['/infracciones/cuis', 'Infracciones'],
-    ['/anuncios/nuevo', 'Anuncios']
+    ['/anuncios/nuevo', 'Anuncios'],
+    ['/brecha/cambios', 'Fiscalización']
   ])('on %s marks %s, the group of the current leaf', async (path, label) => {
     start('portal-tributario', { path })
     await listo()
@@ -337,7 +339,9 @@ describe('portal-tributario rail', () => {
   it.each([
     ['/contribuyentes/123', 'Contribuyentes', 'Buscar contribuyentes'],
     ['/contribuyentes/nuevo', 'Contribuyentes', 'Nuevo contribuyente'],
-    ['/predios/p1', 'Predios', 'Buscar predios']
+    ['/predios/p1', 'Predios', 'Buscar predios'],
+    ['/brecha', 'Fiscalización', 'Brecha de recaudación'],
+    ['/brecha/cambios', 'Fiscalización', 'Cambios en catastro']
   ])('on %s marks %s and, in its panel, %s', async (path, nombre, hoja) => {
     start('portal-tributario', { path })
     await listo()
