@@ -78,7 +78,19 @@ const VALUADA = {
         tabla_depreciacion: '01',
         antiguedad: 10,
         porcentaje_depreciacion: 5,
-        valor: 8870.61
+        valor: 8870.61,
+        descripcion: null
+      },
+      {
+        codigo_vu: null,
+        descripcion: 'Obras del padrón de origen',
+        cantidad: 1,
+        valor_unitario: 500,
+        factor_oficializacion: 1,
+        tabla_depreciacion: null,
+        antiguedad: null,
+        porcentaje_depreciacion: null,
+        valor: 500
       }
     ]
   }
@@ -158,6 +170,8 @@ describe('autoavalúo sugerido', () => {
     const obras = within(dialog).getByRole('table', { name: 'Obras complementarias' })
     expect(obras).toHaveTextContent('MUROS PERIMETRICOS O CERCOS|1')
     expect(obras).toHaveTextContent('S/ 8,870.61')
+    // an obra of the padrón de origen has no codigo_vu: it shows its descripcion
+    expect(obras).toHaveTextContent('Obras del padrón de origen')
 
     await userEvent.click(within(dialog).getByRole('button', { name: 'Usar este valor' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())

@@ -206,7 +206,7 @@ function DialogoSugerido({ sugerido: s, onUsar, onClose }: { sugerido: Autoavalu
                     <tbody>
                       {s.detalle!.obras.map((o, i) => (
                         <tr key={i}>
-                          <Td>{formatText(o.codigo_vu)}</Td>
+                          <Td>{formatText(o.codigo_vu ?? o.descripcion)}</Td>
                           <Td {...NUMERICA}>{formatNumber(o.cantidad)}</Td>
                           <Td {...NUMERICA}>{formatMoney(o.valor_unitario)}</Td>
                           <Td {...NUMERICA}>{formatNumber(o.factor_oficializacion)}</Td>

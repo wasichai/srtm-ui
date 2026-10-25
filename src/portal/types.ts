@@ -490,6 +490,8 @@ export interface PisoSugerido {
 
 export interface ObraSugerida {
   codigo_vu: string | null
+  // set on the obras of the padrón de origen, which have no codigo_vu
+  descripcion?: string | null
   cantidad: number | null
   valor_unitario: number | null
   factor_oficializacion: number | null
