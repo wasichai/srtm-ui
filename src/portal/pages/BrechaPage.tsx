@@ -4,9 +4,11 @@ import { Alert, Badge, Button, Card, CardBody, CardHeader, CardTitle, cn, Pagina
 import {
   Calculator,
   CircleCheck,
+  CircleDashed,
   CircleMinus,
   Coins,
   FileQuestion,
+  History,
   Landmark,
   Loader2,
   MapPinned,
@@ -29,7 +31,7 @@ import { NUMERICA } from '../components/tabla'
 import type { Tono } from '../components/tono'
 import { YearSelect } from '../components/YearSelect'
 import { clavesBrecha, corridaActiva, useCorridasBrecha, useLotesBrecha, usePanelBrecha, usePrediosBrecha } from '../queries'
-import type { CategoriaBrecha, CorridaBrecha, EstadoCorridaBrecha, FiltrosBrecha, PanelBrecha } from '../types'
+import type { CategoriaBrecha, Confianza, CorridaBrecha, EstadoCorridaBrecha, FiltrosBrecha, OrigenCorrida, PanelBrecha } from '../types'
 import { formatInstante, PILDORA } from './EmisionesPage'
 
 // the brecha de recaudación of a year: what the padrón declares against what catastro values for the same predios.
@@ -39,15 +41,30 @@ import { formatInstante, PILDORA } from './EmisionesPage'
 
 // the categorías in the order the panel lists them, with the theme's status colours: the legend and the map's lotes
 // use the same var(), so both follow the active theme (light, dark, portal-tributario). the two that are not compared
-// (no catastro, no value) are greys, the ink darker than the muted one
+// (no catastro, no value) are greys, the ink darker than the muted one. no token of the themes is left that differs
+// from those six in all three (notice is warning's hue, shell is the ink, shell-muted the muted ink in dark,
+// map-selected the map's selection), so the fichas sin levantar take a mix of two of them: brand and danger, halfway
+// in oklch, a violet in every theme
 export const CATEGORIAS: Record<CategoriaBrecha, { plural: string; singular: string; color: string }> = {
   OMISO: { plural: 'Omisos', singular: 'Omiso', color: 'var(--danger)' },
   SIN_CATASTRO: { plural: 'Sin catastro', singular: 'Sin catastro', color: 'var(--ink-muted)' },
   SIN_VALOR: { plural: 'Sin valor', singular: 'Sin valor', color: 'var(--ink)' },
   SUBVALUADO: { plural: 'Subvaluados', singular: 'Subvaluado', color: 'var(--warning)' },
   SOBREVALUADO: { plural: 'Sobrevaluados', singular: 'Sobrevaluado', color: 'var(--brand)' },
-  COINCIDE: { plural: 'Coinciden', singular: 'Coincide', color: 'var(--success)' }
+  COINCIDE: { plural: 'Coinciden', singular: 'Coincide', color: 'var(--success)' },
+  SIN_LEVANTAR: { plural: 'Sin levantar', singular: 'Sin levantar', color: 'color-mix(in oklch, var(--brand), var(--danger))' }
 }
+
+// the confianzas in the backend's order, with what each means and its tone. the confiable one is the brecha that can
+// be defended: the panel puts it first and highlights it
+export const CONFIANZAS: Record<Confianza, { nombre: string; descripcion: string; tono: Tono }> = {
+  CONFIABLE: { nombre: 'Confiable', descripcion: 'Vínculo por código de rentas, manual revisado o titular coincidente', tono: 'verde' },
+  DUDOSO: { nombre: 'Dudoso', descripcion: 'Sin vínculo confirmado', tono: 'ambar' },
+  SIN_LEVANTAR: { nombre: 'Sin levantar', descripcion: 'Ficha del catastro sin levantamiento', tono: '' }
+}
+
+// a corrida started on its own says so; a manual one (or one from before the field) says nothing
+const ORIGENES: Partial<Record<OrigenCorrida, string>> = { CAMBIOS: 'Automática (cambios del catastro)', SEMANAL: 'Automática (semanal)' }
 
 const COLOR_POR: ColorPor = {
   propiedad: 'categoria',
@@ -107,11 +124,20 @@ export function BrechaPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">Brecha de recaudación</h1>
-        <p className="text-sm text-ink-muted">
-          El autoavalúo y el impuesto declarados en el padrón frente a la valorización del catastro de los mismos predios.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Brecha de recaudación</h1>
+          <p className="text-sm text-ink-muted">
+            El autoavalúo y el impuesto declarados en el padrón frente a la valorización del catastro de los mismos predios.
+          </p>
+        </div>
+        {/* fiscalización's work list: the predios catastro changed, against this brecha */}
+        <Button asChild variant="secondary">
+          <Link to="/brecha/cambios">
+            <History className="size-4" />
+            Cambios en catastro
+          </Link>
+        </Button>
       </div>
 
       <Card>
@@ -178,6 +204,7 @@ function EstadoCorrida({ corrida }: { corrida: CorridaBrecha }) {
         <span>Iniciada {formatInstante(corrida.iniciado)}</span>
         {corrida.terminado && <span>Terminada {formatInstante(corrida.terminado)}</span>}
         {corrida.versionCatastro && <span>Catastro {corrida.versionCatastro}</span>}
+        {corrida.origen && ORIGENES[corrida.origen] && <span>{ORIGENES[corrida.origen]}</span>}
       </div>
       {estado !== 'TERMINADA' && (
         <div className="max-w-md space-y-1">
@@ -216,6 +243,7 @@ function Resultados({ anio, corrida }: { anio: number; corrida: CorridaBrecha })
       {(p) => (
         <div className="space-y-5">
           <Kpis panel={p} mensaje={corrida.mensaje} />
+          {p.porConfianza && <PorConfianza porConfianza={p.porConfianza} activa={filtros.confianza ?? null} onElegir={(confianza) => filtrar({ confianza })} />}
           <div className="grid gap-5 xl:grid-cols-2">
             <PorCategoria panel={p} activa={filtros.categoria ?? null} onElegir={(categoria) => filtrar({ categoria })} />
             <PorSector panel={p} activo={filtros.sector ?? null} onElegir={(sector) => filtrar({ sector })} />
@@ -243,6 +271,9 @@ function Kpis({ panel, mensaje }: { panel: PanelBrecha; mensaje: string | null }
       <StatCard icon={CircleCheck} label="Coinciden" value={cifra(kpis.coinciden)} nota="Diferencia de hasta 5 %" />
       <StatCard icon={CircleMinus} label="Sin catastro" value={cifra(kpis.sinCatastro)} nota="En el padrón, no en el catastro" />
       <StatCard icon={CircleMinus} label="Sin valor" value={cifra(kpis.sinValor)} nota="El catastro no pudo valorizarlos" />
+      {kpis.sinLevantar !== undefined && (
+        <StatCard icon={CircleDashed} label="Sin levantar" value={cifra(kpis.sinLevantar)} nota={CONFIANZAS.SIN_LEVANTAR.descripcion} />
+      )}
       <StatCard
         icon={Landmark}
         label="Δ autoavalúo"
@@ -271,7 +302,7 @@ function Kpis({ panel, mensaje }: { panel: PanelBrecha; mensaje: string | null }
 }
 
 // a swatch of a categoría's colour: the map's, in the legend and the tables
-function Muestra({ categoria }: { categoria: CategoriaBrecha }) {
+export function Muestra({ categoria }: { categoria: CategoriaBrecha }) {
   return <span aria-hidden className="inline-block size-3 shrink-0 rounded-sm" style={{ backgroundColor: CATEGORIAS[categoria]?.color }} />
 }
 
@@ -286,6 +317,52 @@ function Filtro({ activo, onClick, children }: { activo: boolean; onClick: () =>
     >
       {children}
     </button>
+  )
+}
+
+// the brecha of each confianza, each filtering the predios below. the confiable one first and wider, on the brand's
+// soft tint: it is the figure that can be defended
+function PorConfianza({
+  porConfianza,
+  activa,
+  onElegir
+}: {
+  porConfianza: NonNullable<PanelBrecha['porConfianza']>
+  activa: Confianza | null
+  onElegir: (confianza: Confianza | null) => void
+}) {
+  return (
+    <section aria-label="Brecha por confianza">
+      <Card>
+        <CardHeader>
+          <CardTitle>Por confianza</CardTitle>
+        </CardHeader>
+        <CardBody className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {(Object.keys(CONFIANZAS) as Confianza[]).map((confianza) => {
+            const cifras = porConfianza[confianza]
+            if (!cifras) return null
+            const destacada = confianza === 'CONFIABLE'
+            const { nombre, descripcion } = CONFIANZAS[confianza]
+            return (
+              <article
+                key={confianza}
+                data-destacada={destacada || undefined}
+                className={cn('space-y-1 rounded-card border p-4', destacada ? 'border-brand bg-brand-soft sm:col-span-2' : 'border-border bg-surface')}
+              >
+                <Filtro activo={activa === confianza} onClick={() => onElegir(activa === confianza ? null : confianza)}>
+                  {nombre}
+                </Filtro>
+                <p className="text-xs text-ink-muted">{descripcion}</p>
+                <p className={cn('font-semibold break-words text-ink tabular-nums', destacada ? 'text-2xl' : 'text-lg')}>{formatMoney(cifras.deltaImpuesto)}</p>
+                <p className="text-xs text-ink-muted tabular-nums">
+                  {`Δ impuesto de ${cifra(cifras.predios)} ${cifras.predios === 1 ? 'predio' : 'predios'} · Δ autoavalúo ${formatMoney(cifras.deltaAutoavaluo)}`}
+                </p>
+              </article>
+            )
+          })}
+        </CardBody>
+      </Card>
+    </section>
   )
 }
 
@@ -421,7 +498,7 @@ function Predios({
   onFiltrar: (cambio: FiltrosBrecha) => void
 }) {
   const predios = usePrediosBrecha(anio, corrida, filtros, page)
-  const { categoria, sector } = filtros
+  const { categoria, sector, confianza } = filtros
   return (
     <Card>
       <CardHeader className="flex flex-wrap items-center gap-3">
@@ -443,6 +520,17 @@ function Predios({
             <X className="size-4" />
           </Button>
         )}
+        {confianza && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onFiltrar({ confianza: null })}
+            aria-label={`Quitar el filtro de confianza ${CONFIANZAS[confianza]?.nombre ?? confianza}`}
+          >
+            {CONFIANZAS[confianza]?.nombre ?? confianza}
+            <X className="size-4" />
+          </Button>
+        )}
       </CardHeader>
       <QueryState query={predios}>
         {(resultado) =>
@@ -455,6 +543,7 @@ function Predios({
                   <tr>
                     <Th>Código</Th>
                     <Th>Categoría</Th>
+                    <Th>Confianza</Th>
                     <Th>Sector</Th>
                     <Th {...NUMERICA}>Autoavalúo declarado</Th>
                     <Th {...NUMERICA}>Autoavalúo catastro</Th>
@@ -485,6 +574,9 @@ function Predios({
                             {CATEGORIAS[fila.categoria]?.singular ?? fila.categoria}
                           </span>
                         </Td>
+                        <Td>
+                          <ConfianzaDe confianza={fila.confianza} motivo={fila.confianzaMotivo} />
+                        </Td>
                         <Td className="whitespace-nowrap">{ubicacion(fila)}</Td>
                         <Td {...NUMERICA}>{formatMoney(fila.autoavaluoDeclarado)}</Td>
                         <Td {...NUMERICA}>{formatMoney(fila.autoavaluoCatastro)}</Td>
@@ -504,5 +596,19 @@ function Predios({
         }
       </QueryState>
     </Card>
+  )
+}
+
+// a row's confianza as a pill in its tone, and why under it; a row from before #204 has none
+function ConfianzaDe({ confianza, motivo }: { confianza: Confianza | null | undefined; motivo: string | null | undefined }) {
+  if (!confianza) return <span className="text-ink-muted">—</span>
+  const tono = CONFIANZAS[confianza]?.tono ?? ''
+  return (
+    <>
+      <Badge data-tono={tono} className={cn('whitespace-nowrap', PILDORA[tono])}>
+        {CONFIANZAS[confianza]?.nombre ?? confianza}
+      </Badge>
+      {motivo && <p className="mt-1 min-w-40 text-xs text-ink-muted">{motivo}</p>}
+    </>
   )
 }

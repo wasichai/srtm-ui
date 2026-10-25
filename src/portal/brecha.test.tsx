@@ -64,6 +64,7 @@ const panel = {
     coinciden: 1,
     sinCatastro: 1,
     sinValor: 0,
+    sinLevantar: 1,
     autoavaluoDeclarado: 180000,
     autoavaluoCatastro: 270000,
     deltaAutoavaluo: 90000,
@@ -79,8 +80,14 @@ const panel = {
     fila('SIN_VALOR', 0, null),
     fila('SUBVALUADO', 1, 994.56),
     fila('SOBREVALUADO', 0, 0),
-    fila('COINCIDE', 1, 0)
+    fila('COINCIDE', 1, 0),
+    fila('SIN_LEVANTAR', 1, 0)
   ],
+  porConfianza: {
+    CONFIABLE: { predios: 2, deltaImpuesto: 994.56, deltaAutoavaluo: 50000 },
+    DUDOSO: { predios: 1, deltaImpuesto: 240, deltaAutoavaluo: 40000 },
+    SIN_LEVANTAR: { predios: 1, deltaImpuesto: 0, deltaAutoavaluo: 0 }
+  },
   porSector: [
     { sector: '01', predios: 3, deltaImpuesto: 1234.56, deltaArbitrios: null, omisos: 1, subvaluados: 1 },
     { sector: null, predios: 1, deltaImpuesto: null, deltaArbitrios: null, omisos: 0, subvaluados: 0 }
@@ -107,7 +114,9 @@ const predios = {
       deltaImpuesto: 300,
       deltaArbitrios: 42,
       estimado: false,
-      motivo: null
+      motivo: null,
+      confianza: 'CONFIABLE',
+      confianzaMotivo: 'Vínculo por código de rentas'
     },
     {
       id: 'b2',
@@ -127,7 +136,9 @@ const predios = {
       deltaImpuesto: 240,
       deltaArbitrios: null,
       estimado: true,
-      motivo: null
+      motivo: null,
+      confianza: 'SIN_LEVANTAR',
+      confianzaMotivo: 'Ficha sin levantar (entrega E3)'
     }
   ],
   page: 0,
@@ -229,6 +240,8 @@ describe('brecha de recaudación', () => {
     expect(tarjeta('Omisos')).toHaveTextContent('1')
     expect(tarjeta('Sobrevaluados')).toHaveTextContent('0')
     expect(tarjeta('Sin catastro')).toHaveTextContent('1')
+    expect(tarjeta('Sin levantar')).toHaveTextContent('1')
+    expect(tarjeta('Sin levantar')).toHaveTextContent('Ficha del catastro sin levantamiento')
     expect(tarjeta('Δ autoavalúo')).toHaveTextContent('S/ 90,000.00')
     // the three figures reconcile: 180,000 + 90,000 = 270,000
     expect(tarjeta('Δ autoavalúo')).toHaveTextContent('Declarado S/ 180,000.00 · catastro S/ 270,000.00 (predios comparados y omisos)')
@@ -239,7 +252,15 @@ describe('brecha de recaudación', () => {
     expect(tarjeta('Δ arbitrios')).toHaveTextContent('faltan Ordenanza de arbitrios')
 
     const categorias = filasDe('Brecha por categoría')
-    expect(categorias.map((f) => f.cells[0].textContent)).toEqual(['Omisos', 'Sin catastro', 'Sin valor', 'Subvaluados', 'Sobrevaluados', 'Coinciden'])
+    expect(categorias.map((f) => f.cells[0].textContent)).toEqual([
+      'Omisos',
+      'Sin catastro',
+      'Sin valor',
+      'Subvaluados',
+      'Sobrevaluados',
+      'Coinciden',
+      'Sin levantar'
+    ])
     expect(categorias[3]).toHaveTextContent('S/ 994.56')
     expect(categorias[1].cells[3]).toHaveTextContent('—')
 
@@ -272,14 +293,73 @@ describe('brecha de recaudación', () => {
         SIN_VALOR: 'var(--ink)',
         SUBVALUADO: 'var(--warning)',
         SOBREVALUADO: 'var(--brand)',
-        COINCIDE: 'var(--success)'
+        COINCIDE: 'var(--success)',
+        SIN_LEVANTAR: 'color-mix(in oklch, var(--brand), var(--danger))'
       }
     })
     expect(
       within(screen.getByRole('list', { name: 'Leyenda' }))
         .getAllByRole('listitem')
         .map((li) => li.textContent)
-    ).toEqual(['Omisos', 'Sin catastro', 'Sin valor', 'Subvaluados', 'Sobrevaluados', 'Coinciden'])
+    ).toEqual(['Omisos', 'Sin catastro', 'Sin valor', 'Subvaluados', 'Sobrevaluados', 'Coinciden', 'Sin levantar'])
+  })
+
+  it('shows the brecha by confianza, the confiable one first and highlighted, and each row its confianza', async () => {
+    start('/brecha', { path: '/srtm/brecha/corridas', body: [terminada] })
+    const seccion = await screen.findByRole('region', { name: 'Brecha por confianza' })
+    const confianzas = within(seccion).getAllByRole('article')
+    expect(confianzas.map((c) => within(c).getByRole('button').textContent)).toEqual(['Confiable', 'Dudoso', 'Sin levantar'])
+
+    // the confiable figure is the one that can be defended: first, and marked as such
+    const [confiable, dudoso, sinLevantar] = confianzas
+    expect(confiable).toHaveAttribute('data-destacada', 'true')
+    expect(dudoso).not.toHaveAttribute('data-destacada')
+    expect(confiable).toHaveTextContent('Vínculo por código de rentas, manual revisado o titular coincidente')
+    expect(confiable).toHaveTextContent('2 predios')
+    expect(confiable).toHaveTextContent('S/ 994.56')
+    expect(confiable).toHaveTextContent('Δ autoavalúo S/ 50,000.00')
+    expect(dudoso).toHaveTextContent('Sin vínculo confirmado')
+    expect(dudoso).toHaveTextContent('1 predio')
+    expect(dudoso).toHaveTextContent('S/ 240.00')
+    expect(sinLevantar).toHaveTextContent('Ficha del catastro sin levantamiento')
+
+    await screen.findByRole('table', { name: 'Predios de la brecha' })
+    const [primera, segunda] = filasDe('Predios de la brecha')
+    expect(within(primera).getByText('Confiable')).toBeInTheDocument()
+    expect(primera).toHaveTextContent('Vínculo por código de rentas')
+    expect(within(segunda).getByText('Sin levantar')).toBeInTheDocument()
+    expect(segunda).toHaveTextContent('Ficha sin levantar (entrega E3)')
+  })
+
+  it('filters the predios by a confianza, and clears it', async () => {
+    start('/brecha', { path: '/srtm/brecha/corridas', body: [terminada] })
+    const seccion = await screen.findByRole('region', { name: 'Brecha por confianza' })
+    await screen.findByRole('table', { name: 'Predios de la brecha' })
+
+    await userEvent.click(within(seccion).getByRole('button', { name: 'Dudoso' }))
+    await waitFor(() =>
+      expect(llamadas('GET', `/srtm/brecha/${year}/predios`).at(-1)?.path).toBe(`/srtm/brecha/${year}/predios?confianza=DUDOSO&page=0&size=20&corrida=c1`)
+    )
+    expect(within(seccion).getByRole('button', { name: 'Dudoso' })).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el filtro de confianza Dudoso' }))
+    await waitFor(() => expect(llamadas('GET', `/srtm/brecha/${year}/predios`).at(-1)?.path).toBe(`/srtm/brecha/${year}/predios?page=0&size=20&corrida=c1`))
+    expect(within(seccion).getByRole('button', { name: 'Dudoso' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('shows a panel from before the confianza without its section', async () => {
+    const { porConfianza: _, ...anterior } = panel
+    const { sinLevantar: __, ...kpis } = panel.kpis
+    start('/brecha', { path: '/srtm/brecha/corridas', body: [terminada] }, [{ path: `/srtm/brecha/${year}/panel`, body: { ...anterior, kpis } }])
+    expect(await screen.findByRole('region', { name: 'Indicadores de la brecha' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Brecha por confianza' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Sin levantar', { selector: 'p' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('table', { name: 'Brecha por categoría' })).toBeInTheDocument()
+  })
+
+  it('says how the latest corrida was started', async () => {
+    start('/brecha', { path: '/srtm/brecha/corridas', body: [{ ...terminada, origen: 'CAMBIOS' }] })
+    expect(await screen.findByRole('region', { name: 'Última corrida' })).toHaveTextContent('Automática (cambios del catastro)')
   })
 
   it('filters the predios by a categoría and a sector picked in the tables, and clears them', async () => {

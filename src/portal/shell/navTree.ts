@@ -91,8 +91,16 @@ export const NAV_TREE: NodoNav[] = [
   },
   // the HR and PU of a whole year, in the background
   { label: 'Emisión', icon: Printer, children: [{ label: 'Emisión masiva', to: '/emisiones' }] },
-  // the padrón against catastro's valuation of the same predios: what the municipality fails to collect
-  { label: 'Fiscalización', icon: ChartColumn, children: [{ label: 'Brecha de recaudación', to: '/brecha' }] },
+  // the padrón against catastro's valuation of the same predios: what the municipality fails to collect, and the work
+  // list of the predios catastro changed since a date, with their Δ in that brecha
+  {
+    label: 'Fiscalización',
+    icon: ChartColumn,
+    children: [
+      { label: 'Brecha de recaudación', to: '/brecha' },
+      { label: 'Cambios en catastro', to: '/brecha/cambios' }
+    ]
+  },
   // the parámetros and aranceles the backend computes with, with their double signature (srtm-backend#186)
   { label: 'Normativa', icon: Scale, children: [{ label: 'Parámetros y aranceles', to: '/normativa', lee: NORMATIVA_LEE }] },
   { label: 'Administración', to: '/admin', external: true, soloAdmin: true, icon: Settings }

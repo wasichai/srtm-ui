@@ -14,6 +14,7 @@ import { ContribuyenteRoute } from './pages/ContribuyentePage'
 import { DeclaracionRoute } from './pages/DeclaracionPage'
 import { ConsultaArbitriosPage, TasasArbitriosPage } from './pages/ArbitriosPages'
 import { BrechaPage } from './pages/BrechaPage'
+import { CambiosCatastroPage } from './pages/CambiosCatastroPage'
 import { DeterminacionesPage } from './pages/DeterminacionesPage'
 import { EmisionesPage } from './pages/EmisionesPage'
 import { CuisPage } from './pages/CuisPage'
@@ -72,6 +73,7 @@ const rutas = createRoutesFromElements(
         <Route path="catastro/:id" element={<LoteCatastroRoute />} />
         <Route path="emisiones" element={<EmisionesPage />} />
         <Route path="brecha" element={<BrechaPage />} />
+        <Route path="brecha/cambios" element={<CambiosCatastroPage />} />
         <Route path="arbitrios" element={<ConsultaArbitriosPage />} />
         <Route path="arbitrios/tasas" element={<TasasArbitriosPage />} />
         <Route path="arbitrios/determinaciones" element={<DeterminacionesPage />} />

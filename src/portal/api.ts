@@ -82,8 +82,10 @@ import type {
   NotificacionVencida,
   PanelInfracciones,
   PlazosInfracciones,
+  CambioDelPredio,
   CorridaBrecha,
   FiltrosBrecha,
+  FiltrosCambiosBrecha,
   PanelBrecha,
   PredioBrecha,
   ResultadoRedeterminacion,
@@ -512,10 +514,14 @@ export const rentas = {
   // what a TERMINADA corrida measured (the year's latest when not given): 404 when there is none
   panelBrecha: (anio: number, corrida?: string) => get<PanelBrecha>(`/srtm/brecha/${anio}/panel${query({ corrida })}`),
   // its rows sorted by catastro's code; 422 names a filter it cannot serve. sector is an exact match
-  prediosBrecha: (anio: number, { categoria, sector }: FiltrosBrecha, page: number, corrida?: string, size = PAGE_SIZE) =>
-    get<Pagina<PredioBrecha>>(`/srtm/brecha/${anio}/predios${query({ categoria, sector, page, size, corrida })}`),
+  prediosBrecha: (anio: number, { categoria, sector, confianza }: FiltrosBrecha, page: number, corrida?: string, size = PAGE_SIZE) =>
+    get<Pagina<PredioBrecha>>(`/srtm/brecha/${anio}/predios${query({ categoria, sector, confianza, page, size, corrida })}`),
   // the rows with a lote, each feature with its categoria, codigo and deltaImpuesto (EPSG:4326)
   lotesBrecha: (anio: number, corrida?: string) => get<FeatureCollection>(`/srtm/brecha/${anio}/lotes${query({ corrida })}`),
+  // the predios catastro changed since desde (the 1st of January when not given), with the Δ autoavalúo of the year's
+  // latest TERMINADA corrida, the marked ones first: 404 without one, 422 a filter it cannot serve or no UIT of the year
+  cambiosBrecha: (anio: number, { desde, marca, objeto }: FiltrosCambiosBrecha, page: number, size = PAGE_SIZE) =>
+    get<Pagina<CambioDelPredio>>(`/srtm/brecha/${anio}/cambios${query({ desde, marca, objeto, page, size })}`),
 
   // the tasa de anuncios y propaganda (SPEC §7, Anuncios). the padrón with each anuncio's estado and vigencia at
   // vigentes_a (today when not given): 422 names a filter it cannot read (an estado out of VIGENTE, VENCIDO, CESADO,

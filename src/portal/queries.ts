@@ -9,6 +9,7 @@ import type {
   Emision,
   FiltrosActas,
   FiltrosBrecha,
+  FiltrosCambiosBrecha,
   FiltrosAnuncios,
   FiltrosCuis,
   FiltrosAranceles,
@@ -244,9 +245,11 @@ export const clavesBrecha = {
   brecha: ['brecha'] as const,
   corridas: (anio: number) => ['brecha', 'corridas', anio] as const,
   panel: (anio: number, corrida: string) => ['brecha', 'panel', anio, corrida] as const,
-  predios: (anio: number, corrida: string, { categoria, sector }: FiltrosBrecha, page: number) =>
-    ['brecha', 'predios', anio, corrida, categoria ?? null, sector ?? null, page] as const,
-  lotes: (anio: number, corrida: string) => ['brecha', 'lotes', anio, corrida] as const
+  predios: (anio: number, corrida: string, { categoria, sector, confianza }: FiltrosBrecha, page: number) =>
+    ['brecha', 'predios', anio, corrida, categoria ?? null, sector ?? null, confianza ?? null, page] as const,
+  lotes: (anio: number, corrida: string) => ['brecha', 'lotes', anio, corrida] as const,
+  cambios: (anio: number, { desde, marca, objeto }: FiltrosCambiosBrecha, page: number) =>
+    ['brecha', 'cambios', anio, desde ?? null, marca ?? null, objeto ?? null, page] as const
 }
 
 // a corrida still to end: the backend moves it on its own
@@ -272,6 +275,16 @@ export function usePrediosBrecha(anio: number, corrida: string | undefined, filt
     queryKey: clavesBrecha.predios(anio, corrida ?? '', filtros, page),
     queryFn: () => rentas.prediosBrecha(anio, filtros, page, corrida),
     enabled: Boolean(corrida),
+    placeholderData: keepPreviousData
+  })
+}
+
+// the predios catastro changed, against the year's latest corrida (the backend picks it)
+export function useCambiosBrecha(anio: number, filtros: FiltrosCambiosBrecha, page: number, enabled = true) {
+  return useQuery({
+    queryKey: clavesBrecha.cambios(anio, filtros, page),
+    queryFn: () => rentas.cambiosBrecha(anio, filtros, page),
+    enabled,
     placeholderData: keepPreviousData
   })
 }

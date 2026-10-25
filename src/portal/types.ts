@@ -490,6 +490,8 @@ export interface PisoSugerido {
 
 export interface ObraSugerida {
   codigo_vu: string | null
+  // set on the obras of the padrón de origen, which have no codigo_vu
+  descripcion?: string | null
   cantidad: number | null
   valor_unitario: number | null
   factor_oficializacion: number | null
@@ -1425,7 +1427,14 @@ export interface AnunciosDe {
 // the same predios, measured by a corrida the backend runs in the background. its fields are camelCase, as the backend
 // sends them; every figure is the backend's, never computed here. money a number (S/), null when not known
 export type EstadoCorridaBrecha = 'PENDIENTE' | 'EN_CURSO' | 'TERMINADA' | 'FALLIDA'
-export type CategoriaBrecha = 'OMISO' | 'SIN_CATASTRO' | 'SIN_VALOR' | 'SUBVALUADO' | 'SOBREVALUADO' | 'COINCIDE'
+// SIN_LEVANTAR (srtm-backend#204): a ficha of catastro not surveyed, crossed or not, with no difference
+export type CategoriaBrecha = 'OMISO' | 'SIN_CATASTRO' | 'SIN_VALOR' | 'SUBVALUADO' | 'SOBREVALUADO' | 'COINCIDE' | 'SIN_LEVANTAR'
+// how sure a row's cruce is (srtm-backend#204): CONFIABLE its vínculo is confirmed, DUDOSO it is not, SIN_LEVANTAR its
+// ficha has no levantamiento
+export type Confianza = 'CONFIABLE' | 'DUDOSO' | 'SIN_LEVANTAR'
+// how a corrida was started: by hand, or on its own on catastro's changes or every week. null: a MANUAL one from
+// before the field
+export type OrigenCorrida = 'MANUAL' | 'CAMBIOS' | 'SEMANAL'
 
 // POST /srtm/brecha/corridas, GET /srtm/brecha/corridas[/{id}]. totalPredios is 0 until the measurement is done;
 // mensaje says why a FALLIDA failed, or what a TERMINADA could not compute (Δ arbitrios without an ordinance)
@@ -1443,6 +1452,14 @@ export interface CorridaBrecha {
   catastro: number | null
   deltaImpuesto: number | null
   deltaArbitrios: number | null
+  // a TERMINADA one's predios and Δ impuesto by confianza (#204); absent or null before it was measured
+  prediosConfiables?: number | null
+  prediosDudosos?: number | null
+  prediosSinLevantar?: number | null
+  deltaImpuestoConfiable?: number | null
+  deltaImpuestoDudoso?: number | null
+  deltaImpuestoSinLevantar?: number | null
+  origen?: OrigenCorrida | null
 }
 
 export interface KpisBrecha {
@@ -1454,6 +1471,8 @@ export interface KpisBrecha {
   coinciden: number
   sinCatastro: number
   sinValor: number
+  // the fichas sin levantar, crossed or not: absent in a panel from before #204
+  sinLevantar?: number
   // over the same predios (compared on both sides, and the omisos): declarado + Δ = catastro
   autoavaluoDeclarado: number | null
   autoavaluoCatastro: number | null
@@ -1468,16 +1487,18 @@ export interface KpisBrecha {
   autoavaluoCatastroTotal?: number | null
 }
 
-// GET /srtm/brecha/{anio}/panel: the six categorías always, in the backend's order; the sectores sorted, null last
+// GET /srtm/brecha/{anio}/panel: every categoría, in the backend's order; the sectores sorted, null last. porConfianza
+// has the three confianzas, in their order; absent in a panel from before #204
 export interface PanelBrecha {
   corrida: { id: string; terminado: string | null; versionCatastro: string | null }
   kpis: KpisBrecha
   porCategoria: { categoria: CategoriaBrecha; predios: number; deltaAutoavaluo: number | null; deltaImpuesto: number | null; deltaArbitrios: number | null }[]
+  porConfianza?: Record<Confianza, { predios: number; deltaImpuesto: number | null; deltaAutoavaluo: number | null }>
   porSector: { sector: string | null; predios: number; deltaImpuesto: number | null; deltaArbitrios: number | null; omisos: number; subvaluados: number }[]
 }
 
 // a row of GET /srtm/brecha/{anio}/predios. predio is srtm's (null for an omiso); estimado: its Δ impuesto is an
-// estimate (an omiso's); motivo why catastro could not value it
+// estimate (an omiso's); motivo why catastro could not value it; confianza how sure its cruce is, and why (#204)
 export interface PredioBrecha {
   id: string
   predio: string | null
@@ -1497,11 +1518,44 @@ export interface PredioBrecha {
   deltaArbitrios: number | null
   estimado: boolean
   motivo: string | null
+  confianza?: Confianza | null
+  confianzaMotivo?: string | null
 }
 
 export interface FiltrosBrecha {
   categoria?: CategoriaBrecha | null
   sector?: string | null
+  confianza?: Confianza | null
+}
+
+// what of catastro a cambio touched (srtm-backend#203): its table
+export type ObjetoCambioCatastro = 'predio_catastral' | 'construccion' | 'obra_complementaria' | 'titular_catastral'
+// SUPERA_5_UIT: its |Δ autoavalúo| is above 5 UIT of the 1st of January of the year
+export type MarcaCambio = 'SUPERA_5_UIT'
+
+// a row of GET /srtm/brecha/{anio}/cambios (#203): a predio catastro changed since desde, how many cambios, their
+// objetos and entregas, and the latest; its Δ autoavalúo from the corrida (null without one). predio is srtm's (null
+// when catastro's code matches none)
+export interface CambioDelPredio {
+  codigoMunicipal: string
+  predio: string | null
+  codigoPredio: string | null
+  categoria: CategoriaBrecha | null
+  cambios: number
+  objetos: ObjetoCambioCatastro[]
+  entregas: string[]
+  ultimoCambio: string | null
+  autoavaluoDeclarado: number | null
+  autoavaluoCatastro: number | null
+  deltaAutoavaluo: number | null
+  marca: MarcaCambio | null
+}
+
+// desde AAAA-MM-DD; none: the 1st of January of the year (the backend's)
+export interface FiltrosCambiosBrecha {
+  desde?: string | null
+  marca?: MarcaCambio | null
+  objeto?: ObjetoCambioCatastro | null
 }
 
 // what a redeterminación of a predio's arbitrios did (wasichai/srtm-backend#158): the cuotas written again and the ones
