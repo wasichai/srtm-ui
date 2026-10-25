@@ -31,6 +31,8 @@ const LLAVES: Partial<Record<string, (resto: string[]) => string>> = {
   ESTADO_FALTANTE: () => 'Un nivel u obra no declara estado de conservación',
   OBRA_CANTIDAD_FALTANTE: () => 'Una obra no declara cantidad',
   CATEGORIA_FALTANTE: (resto) => `Falta la categoría ${resto.join(':')} de un nivel`,
+  // D1: without uso, a nivel without clasificación has no RNT tabla to depreciate with (srtm-backend#240)
+  TABLA_DE_DEPRECIACION: () => 'Ningún piso tiene tabla de depreciación: ponle la clasificación al nivel o el uso a la DJ',
   DEPRECIACION_FALTANTE: (resto) => `Catastro no tiene la depreciación ${resto.join(' / ')}`,
   VU_SIN_VALOR: (resto) => `Catastro no tiene valor unitario para ${resto.join(' ')}`
 }
@@ -43,7 +45,8 @@ export function motivoLegible(llave: string | null | undefined): string | null {
 }
 
 // the catastro could not value the declaración (srtm-backend#156): the backend kept the autoavalúo before and says why.
-// Recalcular values it again, once the catastro answers or has what it lacked; a declaración only read is only told
+// Recalcular values it again, once the catastro answers or has what it lacked; a declaración only read is only told.
+// a recálculo the catastro still cannot value answers 200 with the DJ still por revisar: said, not a silent refresh
 export function AutoavaluoPorRevisar({ declaracion, soloLectura }: { declaracion: Declaracion; soloLectura?: boolean }) {
   const refresh = useRefresh()
   const [recalculando, setRecalculando] = useState(false)
@@ -53,8 +56,10 @@ export function AutoavaluoPorRevisar({ declaracion, soloLectura }: { declaracion
     setError(null)
     setRecalculando(true)
     try {
-      await rentas.recalcularDeclaracion(declaracion.id!)
+      const recalculada = await rentas.recalcularDeclaracion(declaracion.id!)
       await refresh()
+      if (recalculada?.autoavaluo_por_revisar)
+        setError(`El recálculo no pudo valorizar la DJ: ${motivoLegible(recalculada.autoavaluo_motivo) ?? 'el catastro no valuó la declaración'}`)
     } catch (e) {
       setError(errorMessage(e, 'No se pudo recalcular el autoavalúo'))
     } finally {
@@ -76,7 +81,11 @@ export function AutoavaluoPorRevisar({ declaracion, soloLectura }: { declaracion
             </Button>
           )}
         </div>
-        {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-2 text-xs text-danger">
+            {error}
+          </p>
+        )}
       </Alert>
     </div>
   )

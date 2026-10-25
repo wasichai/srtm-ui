@@ -220,6 +220,8 @@ describe('motivoLegible', () => {
     expect(motivoLegible('PARAMETRO_FALTANTE:PORCENTAJE_ACTUALIZACION:2027')).toBe('No hay tablas de 2027 en catastro')
     expect(motivoLegible('OBRA_DESCONOCIDA:PISCINA|9')).toBe('Catastro no conoce la obra PISCINA|9')
     expect(motivoLegible('AREA_TERRENO_FALTANTE')).toBe('Falta el área del terreno')
+    // D1: without uso, a nivel without clasificación has no tabla to depreciate with (srtm-backend#240)
+    expect(motivoLegible('TABLA_DE_DEPRECIACION:')).toBe('Ningún piso tiene tabla de depreciación: ponle la clasificación al nivel o el uso a la DJ')
     expect(motivoLegible('ALGO_NUEVO:X')).toBe('ALGO_NUEVO:X')
     expect(motivoLegible(null)).toBeNull()
   })

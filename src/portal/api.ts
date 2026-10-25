@@ -32,6 +32,7 @@ import type {
   FiltrosCuis,
   FiltrosNotificaciones,
   FiltrosPredio,
+  Liquidacion,
   Domicilio,
   Emision,
   FormatoEmision,
@@ -331,6 +332,7 @@ export const rentas = {
 
   contribuyentes: (q: string, page: number, size = PAGE_SIZE) => get<Pagina<Contribuyente>>(`/srtm/contribuyentes${query({ q, page, size })}`),
   contribuyente: (id: string, anio: number) => get<ContribuyenteFicha>(`/srtm/contribuyentes/${id}${query({ anio })}`),
+  liquidacion: (id: string, anio: number) => get<Liquidacion>(`/srtm/contribuyentes/${id}/liquidacion${query({ anio })}`),
   declaracionesDeContribuyente: (id: string, anio?: number) => get<DeclaracionDetalle[]>(`/srtm/contribuyentes/${id}/declaraciones${query({ anio })}`),
   inscribirContribuyente: (body: Contribuyente) => send<Contribuyente>('POST', '/srtm/contribuyentes', body),
   actualizarContribuyente: (id: string, body: Contribuyente) => send<Contribuyente>('PUT', `/srtm/contribuyentes/${id}`, body),

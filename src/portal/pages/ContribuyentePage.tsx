@@ -18,6 +18,7 @@ import { useWorkspaceTab } from '../shell/WorkspaceTabs'
 import type { Totales } from '../types'
 import { DomiciliosPanel, esFiscalActivo, MediosContactoPanel, RelacionadosPanel, SustentosPanel } from './ContribuyenteListas'
 import { AnunciosDe } from './AnunciosPages'
+import { AvisosDeLiquidacion } from './AvisosDeLiquidacion'
 import { ArbitriosDelContribuyente } from './Arbitrios'
 import { usePuede } from '../components/permisos'
 import { CajaDelContribuyente } from './CajaDelContribuyente'
@@ -119,6 +120,7 @@ function ContribuyentePage({ id }: { id: string }) {
               </div>
             }
           />
+          <AvisosDeLiquidacion contribuyente={id} anio={anio} />
           {!portal && (
             <div className="grid gap-4 sm:grid-cols-3">
               {cifrasDelAnio(predios, totales).map((cifra) => (

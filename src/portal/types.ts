@@ -554,6 +554,26 @@ export interface Totales {
   valor_afecto: number
 }
 
+// a DJ of the liquidación's base whose autoavalúo catastro did not value (srtm-backend#242): it is liquidated all the
+// same, on the valor_autoavaluo stored. predioCodigo is null when the predio is not found; motivo is catastro's
+export interface AvisoLiquidacion {
+  declaracion: string
+  predio: string | null
+  predioCodigo: string | null
+  motivo: string
+}
+
+// GET /srtm/contribuyentes/{id}/liquidacion: the impuesto predial of the year. only what the portal reads of it, the
+// figures are the HR's
+export interface Liquidacion {
+  anio: number
+  base: number
+  impuestoAnual: number | null
+  faltan: string[]
+  // absent from a backend before srtm-backend#242
+  avisos?: AvisoLiquidacion[]
+}
+
 export interface ContribuyenteFicha {
   contribuyente: Contribuyente
   anio: number
