@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/wasichai/srtm-ui/compare/v2.0.0...v2.1.0) (2026-10-25)
+
+
+### Features
+
+* **admin:** los DATETIME en hora de Lima y el aviso de modelo en el repositorio ([#146](https://github.com/wasichai/srtm-ui/issues/146)) ([d217ca4](https://github.com/wasichai/srtm-ui/commit/d217ca49156160a587f5b23e041f0fde00c692bb)), closes [#145](https://github.com/wasichai/srtm-ui/issues/145)
+* **brecha:** la brecha por confianza del cruce ([#136](https://github.com/wasichai/srtm-ui/issues/136)) ([#138](https://github.com/wasichai/srtm-ui/issues/138)) ([f182341](https://github.com/wasichai/srtm-ui/commit/f18234109b7f0de092cebe86f8b1e8000787e0e9))
+* **brecha:** la pantalla de cambios en catastro ([#136](https://github.com/wasichai/srtm-ui/issues/136)) ([#139](https://github.com/wasichai/srtm-ui/issues/139)) ([619c2a3](https://github.com/wasichai/srtm-ui/commit/619c2a304375c43d9878ef065ff84e8845a0f09e))
+* **declaracion:** avisa cuando «Recalcular» no valoriza la DJ ([#142](https://github.com/wasichai/srtm-ui/issues/142)) ([#148](https://github.com/wasichai/srtm-ui/issues/148)) ([170c2be](https://github.com/wasichai/srtm-ui/commit/170c2be5d2583cf2dda9bc3e2dab3186ebe0a19f))
+* **declaracion:** la clasificación del nivel en su formulario ([#142](https://github.com/wasichai/srtm-ui/issues/142)) ([#147](https://github.com/wasichai/srtm-ui/issues/147)) ([7dd8dd0](https://github.com/wasichai/srtm-ui/commit/7dd8dd0facc022b7fb0421c76b818bcf04a6cdf9))
+* **valuacion:** las obras sin código muestran su descripción ([#136](https://github.com/wasichai/srtm-ui/issues/136)) ([#137](https://github.com/wasichai/srtm-ui/issues/137)) ([11c2515](https://github.com/wasichai/srtm-ui/commit/11c25159c3347513f70f999a15a515b752720c48))
+
 ## [2.0.0](https://github.com/wasichai/srtm-ui/compare/v1.0.0...v2.0.0) (2026-10-24)
 
 
