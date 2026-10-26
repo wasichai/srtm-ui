@@ -1,5 +1,5 @@
 import { cn } from '@wasichai/ui'
-import { ChartColumn, Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Scale, Search, Users, type LucideIcon } from 'lucide-react'
+import { ChartColumn, FileChartColumn, Gavel, Home, Landmark, MapPinned, Megaphone, Printer, Scale, Search, Users, type LucideIcon } from 'lucide-react'
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useMunicipalidad } from '../queries'
@@ -30,6 +30,8 @@ export const NAV: { to: string; label: string; icon: LucideIcon; end: boolean; l
   { to: '/emisiones', label: 'Emisión masiva', icon: Printer, end: false },
   // the padrón against catastro (the brecha de recaudación), next to the other panels of a year
   { to: '/brecha', label: 'Brecha de recaudación', icon: ChartColumn, end: false },
+  // rentas' reading of the brecha: its tablero and lists
+  { to: '/reportes', label: 'Reportes de brechas', icon: FileChartColumn, end: false, lee: ['brecha_corrida'] },
   { to: '/normativa', label: 'Normativa', icon: Scale, end: false, lee: NORMATIVA_LEE }
 ]
 

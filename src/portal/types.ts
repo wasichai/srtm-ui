@@ -1551,6 +1551,126 @@ export interface FiltrosBrecha {
   confianza?: Confianza | null
 }
 
+// the reportes de brechas (srtm-backend#248, /srtm/reportes): rentas' reading of a TERMINADA corrida, its aggregates
+// and its lists. every figure is the backend's; money a number (S/), null when not known
+
+// the reports the backend serves: each a list of predios but contribuyentes (a row per contribuyente)
+export type ClaveReporte =
+  'subvaluados' | 'sobrevaluados' | 'omisos' | 'sin-catastro' | 'sin-levantar' | 'sin-valor' | 'terreno' | 'construccion' | 'contribuyentes' | 'mayores-5-uit'
+
+// the estado of catastro's decision_brecha on a predio (catastro-ui's)
+export type DecisionBrecha = 'PENDIENTE' | 'A_INSPECCIONAR' | 'INSPECCIONADO' | 'A_FISCALIZAR' | 'DESCARTADO'
+
+// a share of the corrida: how many and their Δ
+export interface CuentaReporte {
+  predios: number
+  deltaAutoavaluo: number | null
+  deltaImpuesto: number | null
+}
+
+// desde/hasta S/ of Δ autoavalúo; null an open end
+export interface TramoHistograma {
+  desde: number | null
+  hasta: number | null
+  predios: number
+}
+
+export interface AreasReporte {
+  terrenoConDiferencia: number
+  terrenoCatastralMayor: number
+  nivelesComparados: number
+  prediosConNivelMayor: number
+  deltaM2Terreno: number | null
+  deltaM2Niveles: number | null
+}
+
+// GET /srtm/reportes/resumen. decisiones null: catastro could not be read (avisos says so)
+export interface ResumenReportes {
+  corrida: { id: string; anio: number; terminado: string | null; versionCatastro: string | null }
+  kpis: KpisBrecha
+  porCategoria: ({ categoria: CategoriaBrecha } & CuentaReporte)[]
+  porConfianza: ({ confianza: Confianza } & CuentaReporte)[]
+  porSector: ({ sector: string | null } & CuentaReporte)[]
+  porUso: ({ uso: string | null; descripcion?: string | null } & CuentaReporte)[]
+  // the top 20 by Δ impuesto
+  porManzana: ({ sector: string | null; manzana: string | null } & CuentaReporte)[]
+  histogramaDeltaAutoavaluo: TramoHistograma[]
+  areas: AreasReporte
+  decisiones: Partial<Record<DecisionBrecha, number>> | null
+  avisos: string[]
+}
+
+// GET /srtm/reportes: a report with its count (predios, or contribuyentes in that one) and Δ
+export interface ReporteBrecha {
+  clave: ClaveReporte
+  titulo: string
+  descripcion: string
+  predios: number
+  deltaImpuesto: number | null
+  deltaAutoavaluo: number | null
+}
+
+// a row of GET /srtm/reportes/{clave}: a predio of the corrida. predio, declaracion and contribuyente are srtm's ids
+// (null for an omiso); decision catastro's, null without one
+export interface FilaReportePredio {
+  id: string
+  predio: string | null
+  codigoPredio: string | null
+  codigoCatastro: string | null
+  contribuyente: string | null
+  codigoContribuyente: string | null
+  nombreContribuyente: string | null
+  declaracion: string | null
+  sector: string | null
+  manzana: string | null
+  lote: string | null
+  uso: string | null
+  usoDescripcion?: string | null
+  categoria: CategoriaBrecha
+  confianza: Confianza | null
+  autoavaluoDeclarado: number | null
+  autoavaluoCatastro: number | null
+  deltaAutoavaluo: number | null
+  impuestoDeclarado: number | null
+  impuestoCatastro: number | null
+  deltaImpuesto: number | null
+  areaTerrenoDeclarada: number | null
+  areaTerrenoCatastro: number | null
+  areaConstruidaDeclarada: number | null
+  areaConstruidaCatastro: number | null
+  decision: DecisionBrecha | null
+}
+
+// a row of GET /srtm/reportes/contribuyentes: the sum of the Δ of its predios
+export interface FilaReporteContribuyente {
+  contribuyente: string | null
+  codigoContribuyente: string | null
+  nombreContribuyente: string | null
+  predios: number
+  deltaAutoavaluo: number | null
+  deltaImpuesto: number | null
+}
+
+export interface PaginaReporte<T> {
+  page: number
+  size: number
+  total: number
+  items: T[]
+}
+
+export type OrdenReporte = 'deltaImpuesto' | 'deltaAutoavaluo' | 'areaTerreno' | 'areaConstruida' | 'codigo'
+
+// what a report is asked with besides the year and corrida
+export interface FiltrosReporte {
+  sector?: string | null
+  manzana?: string | null
+  uso?: string | null
+  confianza?: Confianza | null
+  q?: string | null
+  orden?: OrdenReporte | null
+  dir?: 'asc' | 'desc' | null
+}
+
 // what of catastro a cambio touched (srtm-backend#203): its table
 export type ObjetoCambioCatastro = 'predio_catastral' | 'construccion' | 'obra_complementaria' | 'titular_catastral'
 // SUPERA_5_UIT: its |Δ autoavalúo| is above 5 UIT of the 1st of January of the year
