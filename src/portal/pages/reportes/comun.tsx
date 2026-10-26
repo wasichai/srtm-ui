@@ -56,6 +56,8 @@ export function SelectorCorrida({ puedeLeer }: { puedeLeer: boolean }) {
         Corrida
         <select value={corrida} onChange={(e) => setParams({ anio: String(anio), ...(e.target.value ? { corrida: e.target.value } : {}) })} className={SELECT}>
           <option value="">Última terminada</option>
+          {/* a corrida of the url not among the TERMINADA ones (or while they load) */}
+          {corrida && !terminadas.some((c) => c.id === corrida) && <option value={corrida}>{corrida}</option>}
           {terminadas.map((c) => (
             <option key={c.id} value={c.id}>
               {[formatInstante(c.terminado), c.versionCatastro].filter(Boolean).join(' · ')}

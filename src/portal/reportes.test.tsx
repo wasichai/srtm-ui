@@ -475,6 +475,28 @@ describe('página de un reporte', () => {
     expect(llamadas(`/srtm/brecha/${year}/lotes`)[0]).toBe(`/srtm/brecha/${year}/lotes?corrida=c2`)
   })
 
+  it('says a report the catalog does not have is not there, not that the brecha is not calculated', async () => {
+    start(`/reportes/foo?anio=${year}`, [{ path: '/srtm/reportes/foo', status: 404, body: { title: 'Not Found', status: 404 } }])
+    expect(await screen.findByText('Reporte no encontrado')).toBeInTheDocument()
+    expect(screen.queryByText(`Aún no se ha calculado la brecha de ${year}`)).not.toBeInTheDocument()
+  })
+
+  it('keeps what was typed in the filters when sorting, and takes a page size it offers', async () => {
+    start(`/reportes/subvaluados?anio=${year}&size=100000`)
+    await screen.findByRole('table', { name: 'Predios subvaluados' })
+    expect(llamadas('/srtm/reportes/subvaluados')[0]).toBe(`/srtm/reportes/subvaluados?anio=${year}&page=0&size=20`)
+    await userEvent.type(screen.getByRole('textbox', { name: 'Manzana' }), 'B')
+    await userEvent.click(within(screen.getByRole('columnheader', { name: /Δ impuesto/ })).getByRole('button'))
+    await waitFor(() => expect(llamadas('/srtm/reportes/subvaluados').at(-1)).toContain('orden=deltaImpuesto'))
+    expect(screen.getByRole('textbox', { name: 'Manzana' })).toHaveValue('B')
+  })
+
+  it('shows a sector of the url the resumen does not list', async () => {
+    start(`/reportes/subvaluados?anio=${year}&sector=09`)
+    await screen.findByRole('table', { name: 'Predios subvaluados' })
+    expect(screen.getByRole('combobox', { name: 'Sector' })).toHaveValue('09')
+  })
+
   it('lists the contribuyentes, each with the sum of its predios', async () => {
     start(`/reportes/contribuyentes?anio=${year}`)
     await screen.findByRole('table', { name: 'Contribuyentes con mayor brecha' })

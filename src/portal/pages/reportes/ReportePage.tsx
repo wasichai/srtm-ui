@@ -37,6 +37,10 @@ const TITULOS: Record<string, string> = {
 }
 
 const TAMANOS = [20, 50, 100] as const
+const CAMPOS_FILTRO = ['sector', 'manzana', 'uso', 'confianza', 'q'] as const
+
+// the options of a select, with the url's value when they lack it (a link handed over, or while they load)
+const conActual = (opciones: string[], actual: string) => (actual && !opciones.includes(actual) ? [actual, ...opciones] : opciones)
 const SELECT = 'h-9 rounded-md border border-border bg-surface px-2 text-sm text-ink'
 const ORDENES: OrdenReporte[] = ['deltaImpuesto', 'deltaAutoavaluo', 'areaTerreno', 'areaConstruida', 'codigo']
 
@@ -44,6 +48,8 @@ const COLOR_POR: ColorPor = {
   propiedad: 'categoria',
   colores: Object.fromEntries(Object.entries(CATEGORIAS).map(([categoria, { color }]) => [categoria, color]))
 }
+
+const noHay = (error: unknown) => error instanceof ApiError && error.status === 404
 
 // sector-manzana-lote, as far as the row has them
 const ubicacion = ({ sector, manzana, lote }: { sector: string | null; manzana: string | null; lote: string | null }) =>
@@ -76,8 +82,13 @@ export function ReportePage() {
 
   const filtros = useMemo(() => filtrosDe(params), [params])
   const page = Math.max(0, Number(params.get('page')) || 0)
-  const size = Number(params.get('size')) || TAMANOS[0]
+  // a size it does not offer (a link edited by hand) is its first one
+  const pedido = Number(params.get('size'))
+  const size = (TAMANOS as readonly number[]).includes(pedido) ? pedido : TAMANOS[0]
   const filas = useReporte<FilaReportePredio | FilaReporteContribuyente>(clave, anio, corrida, filtros, page, size, puedeLeer)
+  // a 404 of the rows is the brecha not calculated when the resumen says so too; else a report that is not there
+  const sinCorrida = noHay(resumen.error)
+  const noEncontrado = !sinCorrida && (noHay(filas.error) || (catalogo.data !== undefined && !reporte))
 
   // a change of the url's params: a filter (or the order, or the size) goes back to the first page
   const cambiar = (cambio: Record<string, string | number | null>, primera = true) => {
@@ -107,7 +118,8 @@ export function ReportePage() {
         <CardBody className="space-y-4">
           <SelectorCorrida puedeLeer={puedeLeer} />
           <Filtros
-            key={params.toString()}
+            // a new filter of the url (not a sort or a page) starts the form again: what is typed stays otherwise
+            key={CAMPOS_FILTRO.map((campo) => params.get(campo) ?? '').join('|')}
             filtros={filtros}
             sectores={resumen.data?.porSector.map((s) => s.sector).filter((s): s is string => s !== null) ?? []}
             usos={resumen.data?.porUso.filter((u) => u.uso !== null).map((u) => ({ uso: u.uso!, nombre: u.descripcion ?? u.uso! })) ?? []}
@@ -122,7 +134,17 @@ export function ReportePage() {
         <LoadingState />
       ) : !puedeLeer ? (
         <Alert tone="notice">Sin permiso para ver los reportes: pide lectura sobre las corridas de brecha.</Alert>
-      ) : filas.error instanceof ApiError && filas.error.status === 404 ? (
+      ) : noEncontrado ? (
+        <Card>
+          <EmptyState title="Reporte no encontrado">
+            <p>
+              <Link to={`/reportes?${conservar}`} className="text-link hover:underline">
+                Volver a los reportes
+              </Link>
+            </p>
+          </EmptyState>
+        </Card>
+      ) : sinCorrida || noHay(filas.error) ? (
         <Card>
           <EmptyState title={`Aún no se ha calculado la brecha de ${anio}`}>
             <p>
@@ -210,7 +232,7 @@ function Filtros({
         {(id) => (
           <select id={id} className={SELECT} value={borrador.sector} onChange={(e) => setBorrador({ ...borrador, sector: e.target.value })}>
             <option value="">Todos</option>
-            {sectores.map((s) => (
+            {conActual(sectores, borrador.sector).map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -225,7 +247,7 @@ function Filtros({
         {(id) => (
           <select id={id} className={cn(SELECT, 'max-w-56')} value={borrador.uso} onChange={(e) => setBorrador({ ...borrador, uso: e.target.value })}>
             <option value="">Todos</option>
-            {usos.map((u) => (
+            {(borrador.uso && !usos.some((u) => u.uso === borrador.uso) ? [{ uso: borrador.uso, nombre: borrador.uso }, ...usos] : usos).map((u) => (
               <option key={u.uso} value={u.uso}>
                 {u.nombre}
               </option>

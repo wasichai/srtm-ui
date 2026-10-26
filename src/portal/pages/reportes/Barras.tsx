@@ -1,11 +1,11 @@
 import { Card, CardBody, CardHeader, CardTitle } from '@wasichai/ui'
 import type { ReactNode } from 'react'
 import { formatMoney } from '../../components/format'
+import type { TramoHistograma } from '../../types'
 
 // m² with two decimals, as catastro writes them
 const M2 = new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 export const formatM2 = (n: number | null | undefined) => (n === null || n === undefined ? '—' : M2.format(n))
-import type { TramoHistograma } from '../../types'
 
 export interface Barra {
   clave: string
