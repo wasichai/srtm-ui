@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/wasichai/srtm-ui/compare/v2.1.0...v2.2.0) (2026-10-27)
+
+
+### Features
+
+* **reportes:** tablero de reportes de brechas y páginas de reporte con exportación ([#151](https://github.com/wasichai/srtm-ui/issues/151)) ([d9ec744](https://github.com/wasichai/srtm-ui/commit/d9ec7448e993550c714edf75ae8ee4abf4cb2802))
+
 ## [2.1.0](https://github.com/wasichai/srtm-ui/compare/v2.0.0...v2.1.0) (2026-10-25)
 
 
