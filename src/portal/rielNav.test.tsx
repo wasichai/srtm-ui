@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { currentNavTreeLeaf } from '@wasichai/core'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
-import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Scale, Users } from 'lucide-react'
+import { ChartColumn, FileChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Scale, Users } from 'lucide-react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortalApp } from './PortalApp'
 import { arbolPara, NAV_TREE, type GrupoNav, type NodoNav } from './shell/navTree'
@@ -105,6 +105,7 @@ describe('NAV_TREE', () => {
       ['Anuncios y propaganda', ['Padrón de anuncios /anuncios', 'Nuevo anuncio /anuncios/nuevo', 'Tasas de anuncios /anuncios/tasas']],
       ['Emisión', ['Emisión masiva /emisiones']],
       ['Fiscalización', ['Brecha de recaudación /brecha', 'Cambios en catastro /brecha/cambios']],
+      ['Reportes', ['Reportes de brechas /reportes']],
       ['Normativa', ['Parámetros y aranceles /normativa']],
       'Administración /admin'
     ])
@@ -116,6 +117,9 @@ describe('NAV_TREE', () => {
       expect(ver(arbolPara(NAV_TREE, { isAdmin: false, permissions: lee(objeto) }))).toContainEqual(['Normativa', ['Parámetros y aranceles /normativa']])
     }
     expect(arbolPara(NAV_TREE, { isAdmin: false, permissions: { admin: false, objects: { arancel: ['CREATE'] } } })).toHaveLength(9)
+    // Reportes only for who may read the corridas de brecha
+    expect(ver(arbolPara(NAV_TREE, { isAdmin: false, permissions: lee('brecha_corrida') }))).toContainEqual(['Reportes', ['Reportes de brechas /reportes']])
+    expect(arbolPara(NAV_TREE, { isAdmin: false, permissions: { admin: false, objects: { brecha_corrida: ['CREATE'] } } })).toHaveLength(9)
   })
 
   // what the rail draws of each group: its icon and, when the full label does not fit 104px, a short one
@@ -131,6 +135,7 @@ describe('NAV_TREE', () => {
       ['Anuncios', Megaphone],
       ['Emisión', Printer],
       ['Fiscalización', ChartColumn],
+      ['Reportes', FileChartColumn],
       ['Normativa', Scale]
     ])
   })
@@ -168,6 +173,8 @@ describe('NAV_TREE', () => {
     ['/anuncios/nuevo', 'Nuevo anuncio'],
     ['/anuncios/tasas', 'Tasas de anuncios'],
     ['/normativa', 'Parámetros y aranceles'],
+    ['/reportes', 'Reportes de brechas'],
+    ['/reportes/subvaluados', 'Reportes de brechas'],
     ['/contribuyentesx', undefined],
     ['/admin', undefined]
   ])('on %s the current leaf is %s', (path, label) => {
@@ -196,6 +203,7 @@ describe('portal-tributario rail', () => {
       ['BUTTON', 'Anuncios'],
       ['BUTTON', 'Emisión'],
       ['BUTTON', 'Fiscalización'],
+      ['BUTTON', 'Reportes'],
       ['BUTTON', 'Normativa'],
       ['A', 'Administración']
     ])
@@ -409,7 +417,18 @@ describe('portal-tributario rail', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent)
-    ).toEqual(['Inicio', 'Contribuyentes', 'Predios', 'Arbitrios', 'Infracciones', 'Anuncios', 'Emisión masiva', 'Brecha de recaudación', 'Normativa'])
+    ).toEqual([
+      'Inicio',
+      'Contribuyentes',
+      'Predios',
+      'Arbitrios',
+      'Infracciones',
+      'Anuncios',
+      'Emisión masiva',
+      'Brecha de recaudación',
+      'Reportes de brechas',
+      'Normativa'
+    ])
     expect(nav.querySelector('[data-ui="riel-item"]')).toBeNull()
     const menu = within(screen.getByRole('banner')).getByRole('button', { name: 'Menú' })
     expect(menu).toHaveClass('md:hidden')

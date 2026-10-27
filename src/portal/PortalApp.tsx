@@ -34,6 +34,8 @@ import { ContribuyentesPage, PrediosPage } from './pages/Listas'
 import { NuevoContribuyentePage } from './pages/NuevoContribuyentePage'
 import { NuevoPredioPage } from './pages/Nuevos'
 import { PredioRoute } from './pages/PredioPage'
+import { ReportePage } from './pages/reportes/ReportePage'
+import { ReportesPage } from './pages/reportes/ReportesPage'
 import { AppShell } from './shell/AppShell'
 import { ErrorDeRuta, PaginaNoEncontrada } from './shell/ErroresDeRuta'
 import { PestanasDeLaSesion } from './shell/WorkspaceTabs'
@@ -74,6 +76,8 @@ const rutas = createRoutesFromElements(
         <Route path="emisiones" element={<EmisionesPage />} />
         <Route path="brecha" element={<BrechaPage />} />
         <Route path="brecha/cambios" element={<CambiosCatastroPage />} />
+        <Route path="reportes" element={<ReportesPage />} />
+        <Route path="reportes/:clave" element={<ReportePage />} />
         <Route path="arbitrios" element={<ConsultaArbitriosPage />} />
         <Route path="arbitrios/tasas" element={<TasasArbitriosPage />} />
         <Route path="arbitrios/determinaciones" element={<DeterminacionesPage />} />

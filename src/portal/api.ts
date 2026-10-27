@@ -32,6 +32,10 @@ import type {
   FiltrosCuis,
   FiltrosNotificaciones,
   FiltrosPredio,
+  FiltrosReporte,
+  PaginaReporte,
+  ReporteBrecha,
+  ResumenReportes,
   Liquidacion,
   Domicilio,
   Emision,
@@ -524,6 +528,15 @@ export const rentas = {
   // latest TERMINADA corrida, the marked ones first: 404 without one, 422 a filter it cannot serve or no UIT of the year
   cambiosBrecha: (anio: number, { desde, marca, objeto }: FiltrosCambiosBrecha, page: number, size = PAGE_SIZE) =>
     get<Pagina<CambioDelPredio>>(`/srtm/brecha/${anio}/cambios${query({ desde, marca, objeto, page, size })}`),
+
+  // the reportes de brechas (srtm-backend#248): of the year's latest TERMINADA corrida when none is given, 404 without
+  // one. the export takes the same filters and every row of them (no page): a path for rentas.blob
+  resumenReportes: (anio: number, corrida?: string | null) => get<ResumenReportes>(`/srtm/reportes/resumen${query({ anio, corrida })}`),
+  reportes: (anio: number, corrida?: string | null) => get<ReporteBrecha[]>(`/srtm/reportes${query({ anio, corrida })}`),
+  reporte: <T>(clave: string, anio: number, corrida: string | null | undefined, filtros: FiltrosReporte, page: number, size = PAGE_SIZE) =>
+    get<PaginaReporte<T>>(`/srtm/reportes/${clave}${query({ anio, corrida, ...filtros, page, size })}`),
+  exportacionReporte: (clave: string, formato: 'xlsx' | 'csv', anio: number, corrida: string | null | undefined, filtros: FiltrosReporte) =>
+    `/srtm/reportes/${clave}.${formato}${query({ anio, corrida, ...filtros })}`,
 
   // the tasa de anuncios y propaganda (SPEC §7, Anuncios). the padrón with each anuncio's estado and vigencia at
   // vigentes_a (today when not given): 422 names a filter it cannot read (an estado out of VIGENTE, VENCIDO, CESADO,

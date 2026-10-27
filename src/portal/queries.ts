@@ -15,6 +15,7 @@ import type {
   FiltrosAranceles,
   FiltrosNotificaciones,
   FiltrosParametros,
+  FiltrosReporte,
   ParametroTributario
 } from './types'
 
@@ -291,6 +292,31 @@ export function useCambiosBrecha(anio: number, filtros: FiltrosCambiosBrecha, pa
 
 export function useLotesBrecha(anio: number, corrida: string | undefined) {
   return useQuery({ queryKey: clavesBrecha.lotes(anio, corrida ?? ''), queryFn: () => rentas.lotesBrecha(anio, corrida), enabled: Boolean(corrida) })
+}
+
+// the reportes de brechas (srtm-backend#248): keyed by year and corrida ('' the latest TERMINADA, the backend's pick)
+export const clavesReportes = {
+  resumen: (anio: number, corrida: string) => ['reportes', 'resumen', anio, corrida] as const,
+  catalogo: (anio: number, corrida: string) => ['reportes', 'catalogo', anio, corrida] as const,
+  reporte: (clave: string, anio: number, corrida: string, filtros: FiltrosReporte, page: number, size: number) =>
+    ['reportes', clave, anio, corrida, filtros, page, size] as const
+}
+
+export function useResumenReportes(anio: number, corrida: string, enabled = true) {
+  return useQuery({ queryKey: clavesReportes.resumen(anio, corrida), queryFn: () => rentas.resumenReportes(anio, corrida), enabled })
+}
+
+export function useCatalogoReportes(anio: number, corrida: string, enabled = true) {
+  return useQuery({ queryKey: clavesReportes.catalogo(anio, corrida), queryFn: () => rentas.reportes(anio, corrida), enabled })
+}
+
+export function useReporte<T>(clave: string, anio: number, corrida: string, filtros: FiltrosReporte, page: number, size: number, enabled = true) {
+  return useQuery({
+    queryKey: clavesReportes.reporte(clave, anio, corrida, filtros, page, size),
+    queryFn: () => rentas.reporte<T>(clave, anio, corrida, filtros, page, size),
+    enabled,
+    placeholderData: keepPreviousData
+  })
 }
 
 // Normativa (srtm-backend#186): every write asks the whole of it again (queryKey: clavesNormativa.todo); the DJ's

@@ -1,5 +1,19 @@
 import { isNavTreeGroup, type CallerPermissions, type NavTreeGroup, type NavTreeLeaf } from '@wasichai/core'
-import { ChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Scale, Settings, Users, type LucideIcon } from 'lucide-react'
+import {
+  ChartColumn,
+  FileChartColumn,
+  FileText,
+  Gavel,
+  Landmark,
+  LandPlot,
+  MapPinned,
+  Megaphone,
+  Printer,
+  Scale,
+  Settings,
+  Users,
+  type LucideIcon
+} from 'lucide-react'
 import { puedeLeerAlguno } from '../components/permisos'
 
 // the tree menu of the portal (portal-tributario theme): what a clerk does, grouped by what it is done on. the rail
@@ -100,6 +114,13 @@ export const NAV_TREE: NodoNav[] = [
       { label: 'Brecha de recaudación', to: '/brecha' },
       { label: 'Cambios en catastro', to: '/brecha/cambios' }
     ]
+  },
+  // rentas' reading of the brecha (srtm-backend#248): the tablero of a corrida and its lists, exportable. a report's
+  // page (/reportes/:clave) is under it
+  {
+    label: 'Reportes',
+    icon: FileChartColumn,
+    children: [{ label: 'Reportes de brechas', to: '/reportes', lee: ['brecha_corrida'] }]
   },
   // the parámetros and aranceles the backend computes with, with their double signature (srtm-backend#186)
   { label: 'Normativa', icon: Scale, children: [{ label: 'Parámetros y aranceles', to: '/normativa', lee: NORMATIVA_LEE }] },
