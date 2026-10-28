@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { currentNavTreeLeaf } from '@wasichai/core'
+import { currentNavTreeLeaf, type CallerPermissions } from '@wasichai/core'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { ChartColumn, FileChartColumn, FileText, Gavel, Landmark, LandPlot, MapPinned, Megaphone, Printer, Scale, Users } from 'lucide-react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -104,7 +104,7 @@ describe('NAV_TREE', () => {
       ],
       ['Anuncios y propaganda', ['Padrón de anuncios /anuncios', 'Nuevo anuncio /anuncios/nuevo', 'Tasas de anuncios /anuncios/tasas']],
       ['Emisión', ['Emisión masiva /emisiones']],
-      ['Fiscalización', ['Brecha de recaudación /brecha', 'Cambios en catastro /brecha/cambios']],
+      ['Fiscalización', ['Brecha de recaudación /brecha', 'Cambios en catastro /brecha/cambios', 'Visor de brechas /brecha/visor']],
       ['Reportes', ['Reportes de brechas /reportes']],
       ['Normativa', ['Parámetros y aranceles /normativa']],
       'Administración /admin'
@@ -120,6 +120,16 @@ describe('NAV_TREE', () => {
     // Reportes only for who may read the corridas de brecha
     expect(ver(arbolPara(NAV_TREE, { isAdmin: false, permissions: lee('brecha_corrida') }))).toContainEqual(['Reportes', ['Reportes de brechas /reportes']])
     expect(arbolPara(NAV_TREE, { isAdmin: false, permissions: { admin: false, objects: { brecha_corrida: ['CREATE'] } } })).toHaveLength(9)
+    // the visor de brechas too, under Fiscalización, whose other trámites anyone sees
+    const fiscalizacion = (permissions: CallerPermissions) => ver(arbolPara(NAV_TREE, { isAdmin: false, permissions }))
+    expect(fiscalizacion(lee('brecha_corrida'))).toContainEqual([
+      'Fiscalización',
+      ['Brecha de recaudación /brecha', 'Cambios en catastro /brecha/cambios', 'Visor de brechas /brecha/visor']
+    ])
+    expect(fiscalizacion({ admin: false, objects: {} })).toContainEqual([
+      'Fiscalización',
+      ['Brecha de recaudación /brecha', 'Cambios en catastro /brecha/cambios']
+    ])
   })
 
   // what the rail draws of each group: its icon and, when the full label does not fit 104px, a short one
@@ -159,6 +169,7 @@ describe('NAV_TREE', () => {
     ['/emisiones', 'Emisión masiva'],
     ['/brecha', 'Brecha de recaudación'],
     ['/brecha/cambios', 'Cambios en catastro'],
+    ['/brecha/visor', 'Visor de brechas'],
     ['/arbitrios', 'Consulta de cuotas'],
     ['/arbitrios/tasas', 'Tasas del año'],
     ['/arbitrios/determinaciones', 'Determinación masiva'],
@@ -238,7 +249,8 @@ describe('portal-tributario rail', () => {
     ['/declaraciones/d1', undefined],
     ['/infracciones/cuis', 'Infracciones'],
     ['/anuncios/nuevo', 'Anuncios'],
-    ['/brecha/cambios', 'Fiscalización']
+    ['/brecha/cambios', 'Fiscalización'],
+    ['/brecha/visor', 'Fiscalización']
   ])('on %s marks %s, the group of the current leaf', async (path, label) => {
     start('portal-tributario', { path })
     await listo()
@@ -349,7 +361,8 @@ describe('portal-tributario rail', () => {
     ['/contribuyentes/nuevo', 'Contribuyentes', 'Nuevo contribuyente'],
     ['/predios/p1', 'Predios', 'Buscar predios'],
     ['/brecha', 'Fiscalización', 'Brecha de recaudación'],
-    ['/brecha/cambios', 'Fiscalización', 'Cambios en catastro']
+    ['/brecha/cambios', 'Fiscalización', 'Cambios en catastro'],
+    ['/brecha/visor', 'Fiscalización', 'Visor de brechas']
   ])('on %s marks %s and, in its panel, %s', async (path, nombre, hoja) => {
     start('portal-tributario', { path })
     await listo()
