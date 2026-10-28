@@ -39,12 +39,15 @@ export interface PanelVisor {
   top_sectores: { sector: string | null; fichas: number; delta_impuesto: Decimal }[]
 }
 
-// a row of GET /predios: a brecha_predio of the corrida with catastro's decision on it. predio and declaracion are
-// srtm's ids (null for an omiso, which has neither)
+// a row of GET /predios: a brecha_predio of the corrida with catastro's decision on it. predio, declaracion and
+// contribuyente are srtm's ids (null for an omiso, which has none); contribuyente_nombre is null when the user may not
+// read contribuyentes (srtm-backend#270)
 export interface FilaVisor {
   id: string
   predio: string | null
   declaracion?: string | null
+  contribuyente?: string | null
+  contribuyente_nombre?: string | null
   codigo_predio: string | null
   codigo_catastro: string | null
   sector: string | null

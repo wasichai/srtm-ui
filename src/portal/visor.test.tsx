@@ -77,6 +77,8 @@ const fila = (valores: Record<string, unknown>) => ({
   predio: 'p1',
   declaracion: 'd1',
   codigo_predio: '01-01-0001',
+  contribuyente: 'c1',
+  contribuyente_nombre: 'QUISPE MAMANI JUAN',
   codigo_catastro: 'PM-1',
   sector: '01',
   manzana: 'A',
@@ -103,6 +105,8 @@ const predios = {
       predio: null,
       declaracion: null,
       codigo_predio: null,
+      contribuyente: null,
+      contribuyente_nombre: null,
       codigo_catastro: 'PM-2',
       categoria: 'OMISO',
       confianza: 'DUDOSO',
@@ -273,10 +277,11 @@ describe('visor de brechas', () => {
     expect(llamadas('/srtm/visor/predios')[0]).toBe(`/srtm/visor/predios?anio=${year}&orden=delta_desc&page=0&size=50`)
     const [primera, segunda] = filas()
     const texto = (f: HTMLTableRowElement) => Array.from(f.cells).map((c) => c.textContent?.replace(/ /g, ' '))
-    expect(texto(primera).slice(0, 13)).toEqual([
+    expect(texto(primera).slice(0, 14)).toEqual([
       '01-01-0001',
       'PM-1',
       '01-A-1',
+      'QUISPE MAMANI JUAN',
       '010101',
       'Subvaluado',
       'Confiable',
@@ -292,12 +297,32 @@ describe('visor de brechas', () => {
     expect(within(primera).getByRole('link', { name: 'Declaración de 01-01-0001' })).toHaveAttribute('href', '/declaraciones/d1')
     // an omiso has neither predio nor DJ in srtm; no decision read is said so, never a «Pendiente»
     expect(within(segunda).queryAllByRole('link')).toHaveLength(0)
-    expect(texto(segunda)[8]).toBe('+S/ 240.00(estimado)')
-    expect(texto(segunda)[11]).toBe('Sin dato')
+    expect(texto(segunda)[9]).toBe('+S/ 240.00(estimado)')
+    expect(texto(segunda)[12]).toBe('Sin dato')
     expect(within(segunda).getByRole('img', { name: 'Sin geometría: el lote no aparece en el mapa' })).toBeInTheDocument()
     // nothing that writes: no decision, no selection
     expect(screen.queryByRole('button', { name: /Decidir/ })).not.toBeInTheDocument()
     expect(screen.queryAllByRole('checkbox', { name: /Elegir/ })).toHaveLength(0)
+  })
+
+  it('links the contribuyente of each row: its name, «Contribuyente» without it, «—» without one', async () => {
+    const tres = [
+      fila({}),
+      // the user may not read contribuyentes: the id comes, the name does not
+      fila({ id: 'b3', predio: 'p3', codigo_predio: '01-01-0003', contribuyente: 'c3', contribuyente_nombre: null }),
+      fila({ id: 'b4', predio: 'p4', codigo_predio: '01-01-0004', contribuyente: null, contribuyente_nombre: null })
+    ]
+    start('/brecha/visor', [{ path: '/srtm/visor/predios', body: { ...predios, content: tres, totalElements: 3 } }])
+    await waitFor(() => expect(filas()).toHaveLength(3))
+    const columna = Array.from(within(screen.getByRole('table', { name: 'Predios de la brecha' })).getAllByRole('columnheader')).map((th) => th.textContent)
+    expect(columna[3]).toBe('Contribuyente')
+    const [conNombre, sinNombre, sinContribuyente] = filas().map((f) => f.cells[3])
+    expect(within(conNombre).getByRole('link', { name: 'QUISPE MAMANI JUAN' })).toHaveAttribute('href', '/contribuyentes/c1')
+    const anonimo = within(sinNombre).getByRole('link', { name: 'Contribuyente de 01-01-0003' })
+    expect(anonimo).toHaveTextContent(/^Contribuyente$/)
+    expect(anonimo).toHaveAttribute('href', '/contribuyentes/c3')
+    expect(within(sinContribuyente).queryByRole('link')).not.toBeInTheDocument()
+    expect(sinContribuyente).toHaveTextContent(/^—$/)
   })
 
   it('filters the rows and the lotes alike, and goes back to the first page', async () => {
