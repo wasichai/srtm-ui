@@ -1,7 +1,10 @@
 import { MapLegend, type LegendItem } from '@wasichai/gis'
 import { ApiError } from '@wasichai/core'
+import { Layers } from 'lucide-react'
+import { useId, useState } from 'react'
 import { useVisorCapas } from '../../queries'
 import { COLOREAR, type Colorear } from './colores'
+import { usePantallaAncha } from './pantalla'
 import type { CapaVisor, CapaWmsActiva } from './tipos'
 
 export const CONTROL = 'h-8 max-w-full rounded-md border border-border bg-surface px-2 text-sm text-ink'
@@ -103,15 +106,36 @@ export function CapasVisor({ colorear, onColorear, mostrarVias, onMostrarVias, a
   )
 }
 
-// the legend of the lotes (and of the vías when they are on), with the colours the map paints
+// the legend of the lotes (and of the vías when they are on), with the colours the map paints. on a wide screen it is
+// always open; below md it would cover half the map, so it folds behind a «Leyenda» button, closed at first
 export function Leyenda({ colorear, clases, vias, anio }: { colorear: Colorear; clases: LegendItem[]; vias: LegendItem[] | null; anio: number }) {
+  const ancha = usePantallaAncha()
+  const [abierta, setAbierta] = useState(false)
+  const id = useId()
+  const visible = ancha || abierta
   return (
-    <section
-      aria-label="Leyenda"
-      className="absolute bottom-8 left-2 max-h-[70%] max-w-[calc(100%-1rem)] space-y-2 overflow-y-auto rounded-md border border-border bg-surface/95 p-2 text-xs text-ink shadow"
-    >
-      <MapLegend title={COLOREAR[colorear]} items={clases} showOther={false} className="text-xs" />
-      {vias && <MapLegend title={`Vías: valor por m² (${anio})`} items={vias} showOther={false} className="text-xs" />}
-    </section>
+    <>
+      {!ancha && (
+        <button
+          type="button"
+          aria-expanded={abierta}
+          aria-controls={id}
+          onClick={() => setAbierta((a) => !a)}
+          className="absolute bottom-8 left-2 flex items-center gap-1 rounded-md border border-border bg-surface/95 px-2 py-1 text-xs font-medium text-ink shadow"
+        >
+          <Layers aria-hidden className="size-3.5" />
+          Leyenda
+        </button>
+      )}
+      <section
+        id={id}
+        aria-label="Leyenda"
+        hidden={!visible}
+        className={`absolute left-2 max-h-[70%] max-w-[calc(100%-1rem)] space-y-2 overflow-y-auto rounded-md border border-border bg-surface/95 p-2 text-xs text-ink shadow ${ancha ? 'bottom-8' : 'bottom-16 max-h-[60%]'}`}
+      >
+        <MapLegend title={COLOREAR[colorear]} items={clases} showOther={false} className="text-xs" />
+        {vias && <MapLegend title={`Vías: valor por m² (${anio})`} items={vias} showOther={false} className="text-xs" />}
+      </section>
+    </>
   )
 }

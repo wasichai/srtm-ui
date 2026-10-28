@@ -377,6 +377,30 @@ describe('visor de brechas', () => {
     expect(texto).toContain('Menos de −S/ 500')
   })
 
+  it('folds the legend behind a button on a narrow screen, closed at first', async () => {
+    pantalla(390)
+    start('/brecha/visor')
+    const boton = await screen.findByRole('button', { name: 'Leyenda' })
+    const leyenda = document.getElementById(boton.getAttribute('aria-controls')!)!
+    expect(leyenda).toHaveAttribute('aria-label', 'Leyenda')
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
+    expect(leyenda).not.toBeVisible()
+    expect(screen.queryByRole('region', { name: 'Leyenda' })).not.toBeInTheDocument()
+    await userEvent.click(boton)
+    expect(boton).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('region', { name: 'Leyenda' })).toHaveTextContent('Omiso')
+    await userEvent.click(boton)
+    expect(boton).toHaveAttribute('aria-expanded', 'false')
+    expect(leyenda).not.toBeVisible()
+  })
+
+  it('keeps the legend open, with no button, on a wide screen', async () => {
+    pantalla(1280)
+    start('/brecha/visor')
+    expect(await screen.findByRole('region', { name: 'Leyenda' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Leyenda' })).not.toBeInTheDocument()
+  })
+
   it('turns catastro’s WMS layers on with an opacity of 70 %, in steps of 5', async () => {
     start('/brecha/visor')
     const lista = await screen.findByRole('list', { name: 'Capas WMS' })
