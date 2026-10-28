@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.0](https://github.com/wasichai/srtm-ui/compare/v2.2.0...v2.3.0) (2026-10-28)
+
+
+### Features
+
+* **brecha:** visor de brechas de solo lectura con MapLibre ([#155](https://github.com/wasichai/srtm-ui/issues/155)) ([095d1a6](https://github.com/wasichai/srtm-ui/commit/095d1a6277dc6cb619e0e68efaab985f7bc94430))
+* **visor:** columna «Contribuyente» en la tabla del visor ([#160](https://github.com/wasichai/srtm-ui/issues/160)) ([eef38e3](https://github.com/wasichai/srtm-ui/commit/eef38e3939e5ae80c178405ed9affab8e792fbb5)), closes [#159](https://github.com/wasichai/srtm-ui/issues/159)
+* **visor:** popup con enlaces, visor en pestaña de trabajo y mapa a pantalla completa ([#158](https://github.com/wasichai/srtm-ui/issues/158)) ([6867d12](https://github.com/wasichai/srtm-ui/commit/6867d120a2d01be30b035a03da9ed96f1fca2457)), closes [#157](https://github.com/wasichai/srtm-ui/issues/157)
+
 ## [2.2.0](https://github.com/wasichai/srtm-ui/compare/v2.1.0...v2.2.0) (2026-10-27)
 
 
