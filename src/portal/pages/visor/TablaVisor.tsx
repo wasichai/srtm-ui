@@ -188,7 +188,7 @@ export interface TablaVisorProps {
 }
 
 // the rows of the corrida, a page at a time, with catastro's decision on each, read only. the código opens srtm's
-// predio, and the DJ the declaración it was compared with
+// predio, the contribuyente its ficha, and the DJ the declaración it was compared with, each in its workspace tab
 export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: TablaVisorProps) {
   const filas = pagina?.content ?? []
   return (
@@ -200,6 +200,7 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
               <Th>Código</Th>
               <Th>Código catastral</Th>
               <Th>Sector-Mz-Lote</Th>
+              <Th>Contribuyente</Th>
               <Th>Uso</Th>
               <Th>Categoría</Th>
               <Th>Confianza</Th>
@@ -219,7 +220,7 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
           <tbody>
             {filas.length === 0 && (
               <tr>
-                <Td colSpan={14} className="text-center text-ink-muted">
+                <Td colSpan={15} className="text-center text-ink-muted">
                   {pagina ? 'Ningún predio cumple los filtros.' : 'Cargando…'}
                 </Td>
               </tr>
@@ -228,7 +229,7 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
               <tr key={f.id}>
                 <Td className="font-mono text-xs whitespace-nowrap">
                   {f.predio ? (
-                    <Link to={`/predios/${f.predio}`} className="text-link hover:underline">
+                    <Link to={`/predios/${encodeURIComponent(f.predio)}`} className="text-link hover:underline">
                       {f.codigo_predio ?? 'Ver predio'}
                     </Link>
                   ) : (
@@ -246,6 +247,21 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
                   </span>
                 </Td>
                 <Td className="whitespace-nowrap">{ubicacion(f)}</Td>
+                <Td className="min-w-40">
+                  {/* the router's link, as in the popup: it opens or focuses the contribuyente's tab. no name: the user may
+                      not read contribuyentes */}
+                  {f.contribuyente ? (
+                    <Link
+                      to={`/contribuyentes/${encodeURIComponent(f.contribuyente)}`}
+                      className="text-link hover:underline"
+                      aria-label={f.contribuyente_nombre ? undefined : `Contribuyente de ${nombreDeFila(f)}`}
+                    >
+                      {f.contribuyente_nombre ?? 'Contribuyente'}
+                    </Link>
+                  ) : (
+                    '—'
+                  )}
+                </Td>
                 <Td>{f.uso ?? '—'}</Td>
                 <Td>
                   <Badge className="gap-1 whitespace-nowrap" title={f.motivo ?? undefined}>

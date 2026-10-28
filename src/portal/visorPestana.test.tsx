@@ -156,6 +156,44 @@ const predio = {
   ubicacion_area_verde: null
 }
 const totales = { declaraciones: 0, autoavaluo: 0, valor_afecto: 0 }
+const contribuyente = {
+  id: 'c1',
+  tipo_persona: 'NATURAL',
+  tipo_contribuyente: 'PERSONA NATURAL',
+  tipo_documento: 'DNI',
+  numero_documento: '43554564',
+  nombre_completo: 'QUISPE MAMANI JUAN',
+  apellido_paterno: 'QUISPE',
+  apellido_materno: 'MAMANI',
+  nombres: 'JUAN',
+  codigo: '000013',
+  domicilio_fiscal: null
+}
+
+// a row of the table under the map (GET /predios), with its contribuyente (srtm-backend#270)
+const filaDeTabla = {
+  id: 'b1',
+  predio: 'p1',
+  declaracion: 'd1',
+  codigo_predio: '01-01-0001',
+  contribuyente: 'c1',
+  contribuyente_nombre: 'QUISPE MAMANI JUAN',
+  codigo_catastro: 'PC-1',
+  sector: '01',
+  manzana: '01',
+  lote: '1',
+  uso: null,
+  categoria: 'SUBVALUADO',
+  confianza: 'CONFIABLE',
+  impuesto_declarado: 330,
+  impuesto_catastro: 630,
+  delta_impuesto: 300,
+  delta_arbitrios: null,
+  supera_5_uit: false,
+  estado: 'PENDIENTE',
+  con_geometria: true
+}
+const conFilas: MockRoute[] = [{ path: '/srtm/visor/predios', body: { content: [filaDeTabla], page: 0, size: 50, totalElements: 1, totalPages: 1 } }]
 
 const rutas: MockRoute[] = [
   { path: '/auth/me/permissions', body: { admin: true, objects: {} } },
@@ -174,7 +212,13 @@ const rutas: MockRoute[] = [
   { path: '/srtm/visor/capas', body: [{ layerName: 'predio_catastral__0a1b2c3d__geom', label: 'Predios' }] },
   { path: '/srtm/visor/vias', body: { type: 'FeatureCollection', features: [] } },
   { path: '/srtm/predios/p1', body: { predio, anio: year, titulares: 1, totales } },
-  { path: '/srtm/predios/p1/declaraciones', body: [] }
+  { path: '/srtm/predios/p1/declaraciones', body: [] },
+  { path: '/srtm/contribuyentes/c1', body: { contribuyente, anio: year, predios: 1, totales } },
+  { path: '/srtm/contribuyentes/c1/domicilios', body: [] },
+  { path: '/srtm/contribuyentes/c1/relacionados', body: [] },
+  { path: '/srtm/contribuyentes/c1/medios-contacto', body: [] },
+  { path: '/srtm/contribuyentes/c1/sustentos', body: [] },
+  { path: '/srtm/contribuyentes/c1/declaraciones', body: [] }
 ]
 
 let fetch: FetchMock | null = null
@@ -201,11 +245,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function start(path: string) {
+function start(path: string, extra: MockRoute[] = []) {
   localStorage.setItem('srtm.token', 't')
   localStorage.setItem('srtm.user', JSON.stringify(admin))
   window.history.pushState({}, '', path)
-  fetch = mockFetch(rutas)
+  fetch = mockFetch([...extra, ...rutas])
   render(<PortalApp />)
 }
 
@@ -250,6 +294,44 @@ describe('el popup de un lote', () => {
     expect(await pestanas().findByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
     expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).not.toHaveAttribute('aria-current')
     expect(fake.FakeMap.all[0].remove).toHaveBeenCalled()
+  })
+})
+
+describe('la tabla del visor', () => {
+  // the contribuyente's tab: its document and its name
+  const PESTANA_QUISPE = '43554564 QUISPE MAMANI JUAN'
+  const tabla = () => within(screen.getByRole('table', { name: 'Predios de la brecha' }))
+
+  it('opens the contribuyente of a row in its tab, and focuses it when it is open', async () => {
+    start('/brecha/visor', conFilas)
+    await mapaListo()
+    await userEvent.click(await tabla().findByRole('link', { name: 'QUISPE MAMANI JUAN' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/contribuyentes/c1'))
+    expect(await pestanas().findByRole('link', { name: PESTANA_QUISPE })).toHaveAttribute('aria-current', 'page')
+    expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).not.toHaveAttribute('aria-current')
+
+    // back to the visor and the same link again: the same tab, focused, not a second one
+    await userEvent.click(pestanas().getByRole('link', { name: 'Visor de brechas' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/brecha/visor'))
+    await userEvent.click(await tabla().findByRole('link', { name: 'QUISPE MAMANI JUAN' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/contribuyentes/c1'))
+    expect(pestanas().getAllByRole('link', { name: PESTANA_QUISPE })).toHaveLength(1)
+    expect(pestanas().getByRole('link', { name: PESTANA_QUISPE })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('opens the predio of a row in its tab, and focuses it when it is open', async () => {
+    start('/brecha/visor', conFilas)
+    await mapaListo()
+    await userEvent.click(await tabla().findByRole('link', { name: '01-01-0001' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/predios/p1'))
+    expect(await pestanas().findByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
+
+    await userEvent.click(pestanas().getByRole('link', { name: 'Visor de brechas' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/brecha/visor'))
+    await userEvent.click(await tabla().findByRole('link', { name: '01-01-0001' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/predios/p1'))
+    expect(pestanas().getAllByRole('link', { name: '01-01-0001' })).toHaveLength(1)
+    expect(pestanas().getByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
   })
 })
 
