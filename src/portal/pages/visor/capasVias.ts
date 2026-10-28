@@ -47,3 +47,7 @@ export function pintarVias(m: Map, fuente: string, clases: StyleClasses | undefi
 export function verVias(m: Map, fuente: string, visibles: boolean) {
   for (const capa of capasDeVias(fuente)) m.setLayoutProperty(capa, 'visibility', visibles ? 'visible' : 'none')
 }
+
+export function opacarVias(m: Map, fuente: string, opacidad: number) {
+  for (const capa of capasDeVias(fuente)) m.setPaintProperty(capa, 'line-opacity', opacidad)
+}

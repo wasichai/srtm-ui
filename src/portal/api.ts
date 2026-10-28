@@ -116,6 +116,7 @@ import type {
   Orden as OrdenVisor,
   PaginaVisor,
   PanelVisor,
+  PredioDeLote,
   TramosCollection
 } from './pages/visor/tipos'
 
@@ -576,6 +577,9 @@ export const rentas = {
     get<LotesVisor>(`/srtm/visor/lotes${query({ anio, corrida, ...filtrosVisor(filtros) })}`),
   exportacionVisor: (anio: number, corrida: string | null | undefined, filtros: FiltrosVisor, orden: OrdenVisor) =>
     `/srtm/visor/predios.csv${query({ anio, corrida, ...filtrosVisor(filtros), orden })}`,
+  // the predios of a lote of the map (srtm-backend#265), by its feature's codigo; 404 when the lote is not in the corrida
+  visorPrediosDeLote: (codigo: string, anio: number, corrida?: string | null) =>
+    get<PredioDeLote[]>(`/srtm/visor/lotes/${encodeURIComponent(codigo)}/predios${query({ anio, corrida })}`),
   visorVias: (anio: number) => get<TramosCollection>(`/srtm/visor/vias${query({ anio })}`),
   visorCapas: () => get<CapaVisor[]>('/srtm/visor/capas'),
 

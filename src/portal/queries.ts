@@ -329,6 +329,7 @@ export const clavesVisor = {
   predios: (anio: number, corrida: string, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number) =>
     ['visor', 'predios', anio, corrida, filtros, orden, page, size] as const,
   niveles: (id: string) => ['visor', 'niveles', id] as const,
+  prediosDeLote: (codigo: string, anio: number, corrida: string) => ['visor', 'lote', codigo, anio, corrida] as const,
   lotes: (anio: number, corrida: string, filtros: FiltrosVisor) => ['visor', 'lotes', anio, corrida, filtros] as const,
   vias: (anio: number) => ['visor', 'vias', anio] as const,
   capas: ['visor', 'capas'] as const
@@ -365,6 +366,16 @@ export function useVisorLotes(anio: number, corrida: string, filtros: FiltrosVis
 
 export function useVisorNiveles(id: string | null) {
   return useQuery({ queryKey: clavesVisor.niveles(id ?? ''), queryFn: () => rentas.visorNiveles(id!), enabled: Boolean(id) })
+}
+
+// the predios of the lote clicked, asked when its popup opens. a 404 (the lote is not in the corrida) will not change
+export function useVisorPrediosDeLote(codigo: string | null, anio: number, corrida: string) {
+  return useQuery({
+    queryKey: clavesVisor.prediosDeLote(codigo ?? '', anio, corrida),
+    queryFn: () => rentas.visorPrediosDeLote(codigo!, anio, corrida),
+    enabled: Boolean(codigo),
+    staleTime: 5 * 60_000
+  })
 }
 
 // what comes from catastro through srtm fails at once (502 when catastro does not answer, 409 when it is not
