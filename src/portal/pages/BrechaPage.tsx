@@ -11,6 +11,7 @@ import {
   History,
   Landmark,
   Loader2,
+  Map as MapIcon,
   MapPinned,
   Receipt,
   TrendingDown,
@@ -131,13 +132,24 @@ export function BrechaPage() {
             El autoavalúo y el impuesto declarados en el padrón frente a la valorización del catastro de los mismos predios.
           </p>
         </div>
-        {/* fiscalización's work list: the predios catastro changed, against this brecha */}
-        <Button asChild variant="secondary">
-          <Link to="/brecha/cambios">
-            <History className="size-4" />
-            Cambios en catastro
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {/* fiscalización's work list: the predios catastro changed, against this brecha */}
+          <Button asChild variant="secondary">
+            <Link to="/brecha/cambios">
+              <History className="size-4" />
+              Cambios en catastro
+            </Link>
+          </Button>
+          {/* the corrida on the map, with catastro's decisions (read only): for who may read it, as its menu entry */}
+          {puedeLeer && (
+            <Button asChild variant="secondary">
+              <Link to="/brecha/visor">
+                <MapIcon className="size-4" />
+                Visor de brechas
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

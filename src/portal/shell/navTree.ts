@@ -105,14 +105,16 @@ export const NAV_TREE: NodoNav[] = [
   },
   // the HR and PU of a whole year, in the background
   { label: 'Emisión', icon: Printer, children: [{ label: 'Emisión masiva', to: '/emisiones' }] },
-  // the padrón against catastro's valuation of the same predios: what the municipality fails to collect, and the work
-  // list of the predios catastro changed since a date, with their Δ in that brecha
+  // the padrón against catastro's valuation of the same predios: what the municipality fails to collect, the work
+  // list of the predios catastro changed since a date, with their Δ in that brecha, and the visor of a corrida on the
+  // map with catastro's decisions (read only, wasichai/srtm-ui#154)
   {
     label: 'Fiscalización',
     icon: ChartColumn,
     children: [
       { label: 'Brecha de recaudación', to: '/brecha' },
-      { label: 'Cambios en catastro', to: '/brecha/cambios' }
+      { label: 'Cambios en catastro', to: '/brecha/cambios' },
+      { label: 'Visor de brechas', to: '/brecha/visor', lee: ['brecha_corrida'] }
     ]
   },
   // rentas' reading of the brecha (srtm-backend#248): the tablero of a corrida and its lists, exportable. a report's

@@ -18,6 +18,7 @@ import type {
   FiltrosReporte,
   ParametroTributario
 } from './types'
+import type { Filtros as FiltrosVisor, Orden as OrdenVisor } from './pages/visor/tipos'
 
 // the user's organization as the portal shows it (srtm-backend's GET /srtm/municipalidad): its name and escudo in the
 // shell, where its lotes are for the map, and the place a new address starts on. asked once per sign-in (LoginPage
@@ -317,6 +318,63 @@ export function useReporte<T>(clave: string, anio: number, corrida: string, filt
     enabled,
     placeholderData: keepPreviousData
   })
+}
+
+// the visor de brechas (wasichai/srtm-ui#154): keyed by year and corrida ('' the latest TERMINADA, the backend's
+// pick), as the reportes. the rows and the lotes keep the last data on screen while the next filter loads, but only
+// within the same year and corrida
+export const clavesVisor = {
+  todo: ['visor'] as const,
+  panel: (anio: number, corrida: string) => ['visor', 'panel', anio, corrida] as const,
+  predios: (anio: number, corrida: string, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number) =>
+    ['visor', 'predios', anio, corrida, filtros, orden, page, size] as const,
+  niveles: (id: string) => ['visor', 'niveles', id] as const,
+  lotes: (anio: number, corrida: string, filtros: FiltrosVisor) => ['visor', 'lotes', anio, corrida, filtros] as const,
+  vias: (anio: number) => ['visor', 'vias', anio] as const,
+  capas: ['visor', 'capas'] as const
+}
+
+const deLaMismaCorrida =
+  <T>(anio: number, corrida: string) =>
+  (anterior: T | undefined, consulta: { queryKey: readonly unknown[] } | undefined) =>
+    consulta?.queryKey[2] === anio && consulta?.queryKey[3] === corrida ? anterior : undefined
+
+export function useVisorPanel(anio: number, corrida: string, enabled = true) {
+  return useQuery({ queryKey: clavesVisor.panel(anio, corrida), queryFn: () => rentas.visorPanel(anio, corrida), enabled })
+}
+
+export function useVisorPredios(anio: number, corrida: string, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number, enabled = true) {
+  return useQuery({
+    queryKey: clavesVisor.predios(anio, corrida, filtros, orden, page, size),
+    queryFn: () => rentas.visorPredios(anio, corrida, filtros, orden, page, size),
+    enabled,
+    placeholderData: deLaMismaCorrida(anio, corrida)
+  })
+}
+
+// a filter seen before comes from the cache: the lotes of a corrida do not change
+export function useVisorLotes(anio: number, corrida: string, filtros: FiltrosVisor, enabled = true) {
+  return useQuery({
+    queryKey: clavesVisor.lotes(anio, corrida, filtros),
+    queryFn: () => rentas.visorLotes(anio, corrida, filtros),
+    enabled,
+    staleTime: 5 * 60_000,
+    placeholderData: deLaMismaCorrida(anio, corrida)
+  })
+}
+
+export function useVisorNiveles(id: string | null) {
+  return useQuery({ queryKey: clavesVisor.niveles(id ?? ''), queryFn: () => rentas.visorNiveles(id!), enabled: Boolean(id) })
+}
+
+// what comes from catastro through srtm fails at once (502 when catastro does not answer, 409 when it is not
+// configured): the rest of the visor does not wait for it. the map keeps the last year's vías while the new one loads
+export function useVisorVias(anio: number, enabled: boolean) {
+  return useQuery({ queryKey: clavesVisor.vias(anio), queryFn: () => rentas.visorVias(anio), enabled, placeholderData: keepPreviousData, retry: false })
+}
+
+export function useVisorCapas(enabled = true) {
+  return useQuery({ queryKey: clavesVisor.capas, queryFn: rentas.visorCapas, enabled, staleTime: 10 * 60_000, retry: false })
 }
 
 // Normativa (srtm-backend#186): every write asks the whole of it again (queryKey: clavesNormativa.todo); the DJ's

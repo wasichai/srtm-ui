@@ -52,8 +52,8 @@ export function LotesMap({ className, ...props }: LotesMapProps) {
 
 // a map that cannot be drawn (a machine without webgl, a remote desktop; its chunk gone after a deploy) says so in its
 // place, and only there: the form or the dialog around it, and whatever the clerk typed, stay and can be saved. trying
-// again would fail the same way, so it offers nothing to click
-class SinMapa extends Component<{ children: ReactNode }, { fallo: boolean }> {
+// again would fail the same way, so it offers nothing to click. aviso: what the rest of the page still offers
+export class SinMapa extends Component<{ children: ReactNode; aviso?: ReactNode }, { fallo: boolean }> {
   state = { fallo: false }
 
   static getDerivedStateFromError() {
@@ -66,7 +66,7 @@ class SinMapa extends Component<{ children: ReactNode }, { fallo: boolean }> {
       <div role="alert" className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-ink-muted">
         <MapPinOff className="size-6" />
         <p className="font-medium text-ink">No se pudo mostrar el mapa en este equipo.</p>
-        <p>El resto del formulario sigue disponible: puede continuar y guardar sin él.</p>
+        <p>{this.props.aviso ?? 'El resto del formulario sigue disponible: puede continuar y guardar sin él.'}</p>
       </div>
     )
   }

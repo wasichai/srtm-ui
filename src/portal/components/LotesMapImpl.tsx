@@ -1,10 +1,11 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { GeoJSONSource, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapLayerMouseEvent, type StyleSpecification } from 'maplibre-gl'
+import { GeoJSONSource, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapLayerMouseEvent } from 'maplibre-gl'
 import { useEffect, useRef, useState } from 'react'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { colorDeLote, IS_SELECTED, opacidadDeLote } from './colorDeLotes'
 import { boundsOf, recordIdOf, vistaInicial, type Geometry } from './geo'
+import { ESTILO_BASE } from './mapaBase'
 import type { LotesMapProps } from './LotesMap'
 import { mapWorkerUrl } from './mapWorker'
 import { mapColors, toRgb, watchTheme } from './themeColors'
@@ -13,15 +14,6 @@ const LOTES = 'srtm-lotes'
 const FILL = 'srtm-lotes-fill'
 const LINE = 'srtm-lotes-line'
 const PUNTO = 'srtm-punto'
-
-// the OpenStreetMap raster tiles: needs internet. a municipal WMS/WMTS can replace it here
-const STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors' }
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-}
 
 // the lotes, the selected one in another colour; a point; drawing through terra-draw. one map per mount
 export default function LotesMapImpl({ features, selectedId, onSelect, onBounds, draw, point, onCapture, label, colorPor, vista }: LotesMapProps) {
@@ -41,7 +33,7 @@ export default function LotesMapImpl({ features, selectedId, onSelect, onBounds,
     const inicial = vista ?? vistaInicial(null)
     const instance = new MapLibreMap({
       container: container.current,
-      style: STYLE,
+      style: ESTILO_BASE,
       center: inicial.center,
       zoom: inicial.zoom,
       ...(inicial.bounds ? { bounds: inicial.bounds, fitBoundsOptions: { padding: 40, maxZoom: 16 } } : {}),

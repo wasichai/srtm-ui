@@ -107,6 +107,17 @@ import type {
   Sincronizacion,
   TipoDeParametro
 } from './types'
+import type {
+  CapaVisor,
+  FilaVisor,
+  Filtros as FiltrosVisor,
+  LotesVisor,
+  NivelVisor,
+  Orden as OrdenVisor,
+  PaginaVisor,
+  PanelVisor,
+  TramosCollection
+} from './pages/visor/tipos'
 
 // same base url and storage prefix as the admin: the token one signs in with is the other's too
 const base = createApiClient({ baseUrl: '/api', storagePrefix: 'srtm' })
@@ -264,6 +275,21 @@ function query(params: Record<string, string | number | null | undefined>): stri
 }
 
 export const PAGE_SIZE = 20
+
+// the visor's filters as the API takes them: the multi-valued ones comma-separated, only the ones set (query drops
+// the empty ones), the minimum difference only when it is a number of 0 or more (the API refuses a negative one)
+function filtrosVisor(f: FiltrosVisor): Record<string, string> {
+  const minimo = f.min_delta.trim()
+  const valido = minimo !== '' && Number.isFinite(Number(minimo)) && Number(minimo) >= 0
+  return {
+    categoria: f.categoria.join(','),
+    confianza: f.confianza.join(','),
+    estado: f.estado.join(','),
+    sector: f.sector.trim(),
+    supera_5_uit: f.supera_5_uit,
+    min_delta: valido ? minimo : ''
+  }
+}
 
 // a list that hangs from a record (a contribuyente, a declaración): listed and added under it, changed and removed
 // by its own id
@@ -537,6 +563,21 @@ export const rentas = {
     get<PaginaReporte<T>>(`/srtm/reportes/${clave}${query({ anio, corrida, ...filtros, page, size })}`),
   exportacionReporte: (clave: string, formato: 'xlsx' | 'csv', anio: number, corrida: string | null | undefined, filtros: FiltrosReporte) =>
     `/srtm/reportes/${clave}.${formato}${query({ anio, corrida, ...filtros })}`,
+
+  // the visor de brechas (wasichai/srtm-ui#154): the same corrida as the reportes ('' the year's latest TERMINADA, the
+  // backend's pick, 404 without one), its rows with catastro's decision, read only. the filters are the same for the
+  // predios, the lotes and the export. vias and capas come from catastro through srtm: 409 when catastro is not
+  // configured, 502 when it does not answer (the rest of the visor goes on)
+  visorPanel: (anio: number, corrida?: string | null) => get<PanelVisor>(`/srtm/visor/panel${query({ anio, corrida })}`),
+  visorPredios: (anio: number, corrida: string | null | undefined, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number) =>
+    get<PaginaVisor<FilaVisor>>(`/srtm/visor/predios${query({ anio, corrida, ...filtrosVisor(filtros), orden, page, size })}`),
+  visorNiveles: (id: string) => get<NivelVisor[]>(`/srtm/visor/predios/${encodeURIComponent(id)}/niveles`),
+  visorLotes: (anio: number, corrida: string | null | undefined, filtros: FiltrosVisor) =>
+    get<LotesVisor>(`/srtm/visor/lotes${query({ anio, corrida, ...filtrosVisor(filtros) })}`),
+  exportacionVisor: (anio: number, corrida: string | null | undefined, filtros: FiltrosVisor, orden: OrdenVisor) =>
+    `/srtm/visor/predios.csv${query({ anio, corrida, ...filtrosVisor(filtros), orden })}`,
+  visorVias: (anio: number) => get<TramosCollection>(`/srtm/visor/vias${query({ anio })}`),
+  visorCapas: () => get<CapaVisor[]>('/srtm/visor/capas'),
 
   // the tasa de anuncios y propaganda (SPEC §7, Anuncios). the padrón with each anuncio's estado and vigencia at
   // vigentes_a (today when not given): 422 names a filter it cannot read (an estado out of VIGENTE, VENCIDO, CESADO,
