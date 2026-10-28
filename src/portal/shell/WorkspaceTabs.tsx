@@ -8,8 +8,14 @@ import { TABS_KEY, TABS_USER_KEY, useSession } from '../auth/session'
 export interface WorkspaceTab {
   path: string
   label: string
-  kind: 'contribuyente' | 'predio' | 'declaracion' | 'lote' | 'expediente'
+  kind: 'contribuyente' | 'predio' | 'declaracion' | 'lote' | 'expediente' | 'visor'
+  // the query the tab goes back to: a screen whose state lives in the url (the visor's filters, layers and view)
+  // keeps it here as it changes, so coming back through the tab finds it as it was left
+  search?: string
 }
+
+// where a tab takes the clerk: its path, with the query it was left on
+export const destino = (tab: WorkspaceTab) => tab.path + (tab.search ?? '')
 
 interface WorkspaceTabs {
   tabs: WorkspaceTab[]
@@ -21,7 +27,14 @@ const Context = createContext<WorkspaceTabs | null>(null)
 
 const esPestana = (valor: unknown): valor is WorkspaceTab => {
   const t = valor as Partial<WorkspaceTab> | null
-  return typeof t === 'object' && t !== null && typeof t.path === 'string' && typeof t.label === 'string' && typeof t.kind === 'string'
+  return (
+    typeof t === 'object' &&
+    t !== null &&
+    typeof t.path === 'string' &&
+    typeof t.label === 'string' &&
+    typeof t.kind === 'string' &&
+    (t.search === undefined || typeof t.search === 'string')
+  )
 }
 
 // the tabs kept for this browser tab, if they are `usuario`'s: a session that ended without signing out here (it
@@ -57,7 +70,7 @@ export function WorkspaceTabsProvider({ usuario, children }: { usuario?: string;
     setTabs((current) => {
       const index = current.findIndex((t) => t.path === tab.path)
       if (index === -1) return [...current, tab]
-      if (current[index].label === tab.label) return current
+      if (current[index].label === tab.label && current[index].search === tab.search) return current
       return current.map((t, i) => (i === index ? tab : t))
     })
   }, [])
@@ -69,7 +82,8 @@ export function WorkspaceTabsProvider({ usuario, children }: { usuario?: string;
       const index = tabs.findIndex((t) => t.path === path)
       if (index === -1) return
       const rest = tabs.filter((t) => t.path !== path)
-      if (location.pathname === path) navigate(rest[index]?.path ?? rest[index - 1]?.path ?? '/', { state: { cerrar: path } })
+      const vecina = rest[index] ?? rest[index - 1]
+      if (location.pathname === path) navigate(vecina ? destino(vecina) : '/', { state: { cerrar: path } })
       else setTabs(rest)
     },
     [tabs, location.pathname, navigate]
@@ -109,7 +123,8 @@ export function useWorkspaceTab(tab: WorkspaceTab | null) {
   const path = tab?.path
   const label = tab?.label
   const kind = tab?.kind
+  const search = tab?.search
   useEffect(() => {
-    if (path && label && kind) open({ path, label, kind })
-  }, [open, path, label, kind])
+    if (path && label && kind) open({ path, label, kind, ...(search ? { search } : {}) })
+  }, [open, path, label, kind, search])
 }

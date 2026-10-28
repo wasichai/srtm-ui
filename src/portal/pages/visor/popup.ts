@@ -1,9 +1,9 @@
 import { soles } from './formato'
-import { etiquetaCategoria, etiquetaConfianza, etiquetaEstado } from './colores'
-import type { Asignacion, LoteVisorProps, TramoProps } from './tipos'
+import type { Asignacion, TramoProps } from './tipos'
 
-// the markup of the visor's popups (catastro-ui's): a bold title and one muted-key / value row per entry, in the
-// light theme's tokens (maplibre's popup is white in every theme). everything is escaped
+// the markup of the visor's vía popups (catastro-ui's; a lote's is PopupLote, with its predios): a bold title and one
+// muted-key / value row per entry, in the light theme's tokens (maplibre's popup is white in every theme). everything
+// is escaped
 export const escapar = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 export function popupDeFilas(titulo: string, filas: ([string, string] | null)[]): string {
@@ -15,21 +15,6 @@ export function popupDeFilas(titulo: string, filas: ([string, string] | null)[])
     filas.flatMap((f) => (f ? [fila(f)] : [])).join('') +
     `</div>`
   )
-}
-
-const siNo = (v: boolean | null | undefined) => (v === null || v === undefined ? '—' : v ? 'Sí' : 'No')
-
-// the popup of a lote: its codes, the difference and catastro's decision. maplibre drops null properties: they
-// arrive as undefined
-export function popupLote(p: LoteVisorProps): string {
-  return popupDeFilas(p.codigo ?? 'Sin código', [
-    p.codigo_catastro ? ['Código catastral', p.codigo_catastro] : null,
-    ['Categoría', etiquetaCategoria(p.categoria)],
-    ['Confianza', etiquetaConfianza(p.confianza)],
-    ['Diferencia de impuesto', soles(p.delta_impuesto, { signo: true })],
-    ['Supera 5 UIT', siNo(p.supera_5_uit)],
-    ['Estado', etiquetaEstado(p.estado)]
-  ])
 }
 
 const ASIGNACION: Record<Asignacion, string> = {

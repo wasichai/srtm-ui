@@ -21,6 +21,30 @@ export interface CapasVisorProps {
   errorVias?: string | null
   wms: CapaWmsActiva[]
   onWms: (capas: CapaWmsActiva[]) => void
+  // the opacity of the lotes and of the vías, 0 to 1: a slider each when it is handed its change
+  opacidadLotes?: number
+  onOpacidadLotes?: (o: number) => void
+  opacidadVias?: number
+  onOpacidadVias?: (o: number) => void
+}
+
+// an opacity in steps of 5 %
+function Opacidad({ nombre, valor, onCambio, disabled }: { nombre: string; valor: number; onCambio: (o: number) => void; disabled?: boolean }) {
+  const porciento = Math.round(valor * 100)
+  return (
+    <input
+      type="range"
+      min={0}
+      max={100}
+      step={5}
+      aria-label={`Opacidad de ${nombre}`}
+      disabled={disabled}
+      value={porciento}
+      aria-valuetext={`${porciento} %`}
+      onChange={(e) => onCambio(Number(e.target.value) / 100)}
+      className="w-full"
+    />
+  )
 }
 
 // why catastro's layers are not offered: catastro not configured for the organization, or not answering
@@ -30,7 +54,20 @@ export function sinCatastro(error: unknown, que: string): string {
 }
 
 // what the map draws: the colouring of the lotes, the vías with their arancel and the layers catastro publishes
-export function CapasVisor({ colorear, onColorear, mostrarVias, onMostrarVias, anio, errorVias, wms, onWms }: CapasVisorProps) {
+export function CapasVisor({
+  colorear,
+  onColorear,
+  mostrarVias,
+  onMostrarVias,
+  anio,
+  errorVias,
+  wms,
+  onWms,
+  opacidadLotes,
+  onOpacidadLotes,
+  opacidadVias,
+  onOpacidadVias
+}: CapasVisorProps) {
   const capas = useVisorCapas()
   const prendida = (layerName: string) => wms.find((c) => c.layerName === layerName)
   const nombre = (c: CapaVisor) => c.label || c.layerName
@@ -46,6 +83,14 @@ export function CapasVisor({ colorear, onColorear, mostrarVias, onMostrarVias, a
           ))}
         </select>
       </label>
+      {onOpacidadLotes && (
+        <div className="space-y-1">
+          <span aria-hidden className="text-xs text-ink-muted">
+            Opacidad de los lotes
+          </span>
+          <Opacidad nombre="los lotes" valor={opacidadLotes ?? 0.6} onCambio={onOpacidadLotes} />
+        </div>
+      )}
       <fieldset className="space-y-1">
         <legend className="text-xs font-medium text-ink-muted">Capas</legend>
         <label className="flex items-center gap-2 text-ink">
@@ -53,6 +98,7 @@ export function CapasVisor({ colorear, onColorear, mostrarVias, onMostrarVias, a
           Vías con arancel
           <span className="text-xs text-ink-muted">({anio})</span>
         </label>
+        {onOpacidadVias && <Opacidad nombre="las vías" valor={opacidadVias ?? 1} onCambio={onOpacidadVias} disabled={!mostrarVias} />}
         {mostrarVias && errorVias && <p className="text-xs text-danger">{errorVias}</p>}
       </fieldset>
       <fieldset className="space-y-2">
@@ -67,7 +113,6 @@ export function CapasVisor({ colorear, onColorear, mostrarVias, onMostrarVias, a
           <ul aria-label="Capas WMS" className="space-y-2">
             {capas.data.map((c) => {
               const on = prendida(c.layerName)
-              const opacidad = Math.round((on?.opacity ?? OPACIDAD_INICIAL) * 100)
               return (
                 <li key={c.layerName} className="space-y-1">
                   <label className="flex min-w-0 items-center gap-2 text-ink">
@@ -84,17 +129,11 @@ export function CapasVisor({ colorear, onColorear, mostrarVias, onMostrarVias, a
                       {nombre(c)}
                     </span>
                   </label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={5}
-                    aria-label={`Opacidad de ${nombre(c)}`}
+                  <Opacidad
+                    nombre={nombre(c)}
+                    valor={on?.opacity ?? OPACIDAD_INICIAL}
                     disabled={!on}
-                    value={opacidad}
-                    aria-valuetext={`${opacidad} %`}
-                    onChange={(e) => onWms(wms.map((w) => (w.layerName === c.layerName ? { ...w, opacity: Number(e.target.value) / 100 } : w)))}
-                    className="w-full"
+                    onCambio={(o) => onWms(wms.map((w) => (w.layerName === c.layerName ? { ...w, opacity: o } : w)))}
                   />
                 </li>
               )

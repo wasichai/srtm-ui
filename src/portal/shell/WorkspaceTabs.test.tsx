@@ -62,3 +62,20 @@ describe('WorkspaceTabsProvider: what is stored', () => {
     ).toEqual(['Inicio', 'QUISPE MAMANI JUAN'])
   })
 })
+
+describe('WorkspaceTabsProvider: a tab with its query', () => {
+  const VISOR = { path: '/brecha/visor', label: 'Visor de brechas', kind: 'visor', search: '?anio=2026&colorear=delta&c=-75.7,-14.06&z=17' }
+
+  it('goes back to the query it was left on, with the visor’s icon', () => {
+    sessionStorage.setItem(TABS_KEY, JSON.stringify([VISOR, QUISPE]))
+    const barra = montar()
+    const visor = barra.getByRole('link', { name: 'Visor de brechas' })
+    expect(visor).toHaveAttribute('href', `/brecha/visor${VISOR.search}`)
+    expect(visor.querySelector('svg')).toHaveClass('lucide-map')
+  })
+
+  it('leaves out a stored tab whose query is not text', () => {
+    sessionStorage.setItem(TABS_KEY, JSON.stringify([{ ...VISOR, search: 3 }, QUISPE]))
+    expect(montar().queryByRole('link', { name: 'Visor de brechas' })).toBeNull()
+  })
+})

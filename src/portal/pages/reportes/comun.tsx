@@ -44,9 +44,15 @@ export function usePermisoReportes() {
 
 const SELECT = 'h-8 max-w-full rounded-md border border-border bg-surface px-2 text-sm text-ink'
 
-// the year and, of its TERMINADA corridas, the one read; a new year goes back to its latest one
-export function SelectorCorrida({ puedeLeer }: { puedeLeer: boolean }) {
-  const { anio, corrida, setParams } = useAnioYCorrida()
+// the year and, of its TERMINADA corridas, the one read; a new year goes back to its latest one. the other keys of the
+// url go, unless they are in `conservar` (the visor's view: its filters, layers and map stay)
+export function SelectorCorrida({ puedeLeer, conservar = [] }: { puedeLeer: boolean; conservar?: readonly string[] }) {
+  const { anio, corrida, params, setParams: poner } = useAnioYCorrida()
+  const setParams = (nuevos: Record<string, string>) => {
+    const p = new URLSearchParams(nuevos)
+    for (const k of conservar) for (const v of params.getAll(k)) p.append(k, v)
+    poner(p)
+  }
   const corridas = useCorridasBrecha(anio, puedeLeer)
   const terminadas = (corridas.data ?? []).filter((c) => c.estado === 'TERMINADA')
   return (

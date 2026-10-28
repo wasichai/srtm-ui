@@ -95,6 +95,22 @@ export interface LoteVisorProps {
   supera_5_uit: boolean | null
 }
 
+// GET /lotes/{codigo}/predios (srtm-backend#265): the predios of a lote with their DJ, their contribuyente and their row
+// of the corrida. predio, declaracion and contribuyente are srtm's ids; contribuyente_nombre is null when the user may
+// not read contribuyentes
+export interface PredioDeLote {
+  id: string
+  predio: string | null
+  codigo_predio: string | null
+  declaracion: string | null
+  contribuyente: string | null
+  contribuyente_nombre: string | null
+  categoria: CategoriaBrecha
+  confianza: Confianza | null
+  delta_impuesto: Decimal
+  estado: DecisionBrecha | null
+}
+
 export interface LotesVisor {
   type: 'FeatureCollection'
   features: { type: 'Feature'; id?: string | number; geometry: { type: string; coordinates: unknown }; properties: LoteVisorProps }[]

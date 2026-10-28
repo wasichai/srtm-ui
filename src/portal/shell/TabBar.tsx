@@ -1,7 +1,7 @@
 import { cn } from '@wasichai/ui'
-import { FileText, Gavel, Home, LandPlot, MapPinned, User, X, type LucideIcon } from 'lucide-react'
+import { FileText, Gavel, Home, LandPlot, Map as MapIcon, MapPinned, User, X, type LucideIcon } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
-import { useWorkspaceTabs, type WorkspaceTab } from './WorkspaceTabs'
+import { destino, useWorkspaceTabs, type WorkspaceTab } from './WorkspaceTabs'
 
 // every kind of ficha has its icon: a new kind does not compile without one
 const ICONOS: Record<WorkspaceTab['kind'], LucideIcon> = {
@@ -9,7 +9,8 @@ const ICONOS: Record<WorkspaceTab['kind'], LucideIcon> = {
   predio: MapPinned,
   declaracion: FileText,
   lote: LandPlot,
-  expediente: Gavel
+  expediente: Gavel,
+  visor: MapIcon
 }
 
 // folder tabs over the content: Inicio always first and never closes, then one per open ficha. in the portal's brand
@@ -46,7 +47,7 @@ export function TabBar({ ubicacion }: { ubicacion?: 'cabecera' }) {
           const Icon = ICONOS[tab.kind] ?? User
           return (
             <li key={tab.path} data-ui="workspace-tab" className={tabClass(active)}>
-              <Link to={tab.path} aria-current={active ? 'page' : undefined} className="flex max-w-56 items-center gap-1.5 py-1.5 pr-1 pl-3">
+              <Link to={destino(tab)} aria-current={active ? 'page' : undefined} className="flex max-w-56 items-center gap-1.5 py-1.5 pr-1 pl-3">
                 <Icon className="size-3.5 shrink-0" />
                 <span className="truncate">{tab.label}</span>
               </Link>

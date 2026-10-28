@@ -1,22 +1,22 @@
-import { legendItems } from '@wasichai/gis'
 import { ApiError, EmptyState, LoadingState } from '@wasichai/core'
 import { Alert, Button, Card, CardBody } from '@wasichai/ui'
-import { Download, Loader2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Download, Loader2, Maximize2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '../../../kit/ui/errorMessage'
 import { rentas } from '../../api'
 import { guardarArchivo } from '../../components/descarga'
-import { useVisorLotes, useVisorPanel, useVisorPredios, useVisorVias } from '../../queries'
+import { useVisorPredios } from '../../queries'
 import { formatInstante } from '../EmisionesPage'
-import { SelectorCorrida, useAnioYCorrida, usePermisoReportes } from '../reportes/comun'
+import { SelectorCorrida } from '../reportes/comun'
 import { CapasVisor, Leyenda, sinCatastro } from './CapasVisor'
-import { clasesPorValor, leyendaDe, valoresDe, type Colorear } from './colores'
 import { DetalleNiveles } from './DetalleNiveles'
+import { CLAVES_VISOR } from './estado'
 import { Indicadores } from './Indicadores'
 import { MapaVisor } from './MapaVisor'
 import { FiltrosVisor, TablaVisor } from './TablaVisor'
-import type { CapaWmsActiva, FilaVisor, Filtros, Orden } from './tipos'
+import type { FilaVisor, Filtros, Orden } from './tipos'
+import { RUTA_PANTALLA, useVisor } from './useVisor'
 
 export const FILTROS_VACIOS: Filtros = { categoria: [], confianza: [], estado: [], sector: '', supera_5_uit: '', min_delta: '' }
 
@@ -25,27 +25,15 @@ const noHay = (error: unknown) => error instanceof ApiError && error.status === 
 // «Visor de brechas»: catastro-ui's panel of Brechas over srtm's own corrida, read only. the indicators, the lotes on a
 // map coloured by categoría, Δ, confianza or catastro's decision, the vías and catastro's WMS layers, and the rows
 // with their niveles. srtm decides nothing here: catastro keeps the decisions, srtm shows them
+// its filters, colouring, layers and view are in the url (useEstadoVisor): its workspace tab and its full page come
+// back to them
 export function VisorPage() {
-  const { anio, corrida } = useAnioYCorrida()
-  const { conPermisos, puedeLeer } = usePermisoReportes()
-  const [filtros, setFiltros] = useState<Filtros>(FILTROS_VACIOS)
-  const [orden, setOrden] = useState<Orden>('delta_desc')
+  const { anio, corrida, conPermisos, puedeLeer, estado, panel, hay, lotes, vias, clases, clasesVias, leyendaVias } = useVisor()
+  const { filtros, orden, colorear, mostrarVias, wms, cambiar } = estado
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(50)
-  const [colorear, setColorear] = useState<Colorear>('categoria')
-  const [mostrarVias, setMostrarVias] = useState(false)
-  const [wms, setWms] = useState<CapaWmsActiva[]>([])
   const [viendo, setViendo] = useState<FilaVisor | null>(null)
-
-  const panel = useVisorPanel(anio, corrida, puedeLeer)
-  // the rows and the lotes once the corrida is there: without one the panel's 404 says so, once
-  const hay = puedeLeer && panel.isSuccess
   const predios = useVisorPredios(anio, corrida, filtros, orden, page, size, hay)
-  const lotes = useVisorLotes(anio, corrida, filtros, hay)
-  const vias = useVisorVias(anio, hay && mostrarVias)
-
-  const clases = useMemo(() => leyendaDe(colorear), [colorear])
-  const clasesVias = useMemo(() => clasesPorValor(valoresDe(vias.data?.features ?? [])), [vias.data])
 
   // another year or corrida starts on its first page
   useEffect(() => setPage(0), [anio, corrida])
@@ -56,7 +44,7 @@ export function VisorPage() {
   }, [totalPaginas, page])
 
   const cambiarFiltros = (f: Filtros) => {
-    setFiltros(f)
+    cambiar({ filtros: f })
     setPage(0)
   }
   const cargando = panel.isFetching || predios.isFetching || lotes.isFetching
@@ -72,10 +60,21 @@ export function VisorPage() {
 
       <Card>
         <CardBody className="flex flex-wrap items-end justify-between gap-3">
-          <SelectorCorrida puedeLeer={puedeLeer} />
-          <span role="status" className="text-sm text-ink-muted">
-            {cargando ? 'Cargando…' : ''}
-          </span>
+          <SelectorCorrida puedeLeer={puedeLeer} conservar={CLAVES_VISOR} />
+          <div className="flex flex-wrap items-center gap-3">
+            <span role="status" className="text-sm text-ink-muted">
+              {cargando ? 'Cargando…' : ''}
+            </span>
+            {puedeLeer && (
+              <Link
+                to={{ pathname: RUTA_PANTALLA, search: estado.search }}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-muted"
+              >
+                <Maximize2 aria-hidden className="size-4" />
+                Mapa a pantalla completa
+              </Link>
+            )}
+          </div>
         </CardBody>
       </Card>
 
@@ -112,23 +111,30 @@ export function VisorPage() {
           <section aria-label="Visor" className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[16rem_minmax(0,1fr)]">
             <CapasVisor
               colorear={colorear}
-              onColorear={setColorear}
+              onColorear={(c) => cambiar({ colorear: c })}
               mostrarVias={mostrarVias}
-              onMostrarVias={setMostrarVias}
+              onMostrarVias={(v) => cambiar({ mostrarVias: v })}
               anio={anio}
               errorVias={vias.isError ? sinCatastro(vias.error, 'las vías') : null}
               wms={wms}
-              onWms={setWms}
+              onWms={(w) => cambiar({ wms: w })}
             />
             <div className="relative h-[32rem] overflow-hidden rounded-md border border-border bg-surface-muted">
               <MapaVisor
                 clave={`${anio}|${corrida}`}
+                anio={anio}
+                corrida={corrida}
                 lotes={lotes.data}
                 colorear={colorear}
                 vias={vias.data}
                 mostrarVias={mostrarVias}
                 clasesVias={clasesVias}
                 wms={wms}
+                opacidadLotes={estado.opacidadLotes}
+                opacidadVias={estado.opacidadVias}
+                base={estado.base}
+                camara={estado.camara}
+                onCamara={(c) => cambiar({ camara: c })}
               />
               {lotes.isError && (
                 <Alert tone="danger" className="absolute inset-x-2 top-2">
@@ -140,12 +146,12 @@ export function VisorPage() {
                   </span>
                 </Alert>
               )}
-              <Leyenda colorear={colorear} clases={clases} vias={mostrarVias && vias.data ? legendItems(clasesVias) : null} anio={anio} />
+              <Leyenda colorear={colorear} clases={clases} vias={leyendaVias} anio={anio} />
             </div>
           </section>
 
           <section aria-label="Predios" className="space-y-3">
-            <FiltrosVisor filtros={filtros} onCambio={cambiarFiltros} orden={orden} onOrden={(o) => (setOrden(o), setPage(0))} />
+            <FiltrosVisor filtros={filtros} onCambio={cambiarFiltros} orden={orden} onOrden={(o) => (cambiar({ orden: o }), setPage(0))} />
             <ExportarCsv anio={anio} corrida={corrida} filtros={filtros} orden={orden} />
             {predios.isError ? (
               <Alert tone="danger">{errorMessage(predios.error, 'No se pudieron leer los predios')}</Alert>

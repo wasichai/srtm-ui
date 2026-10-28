@@ -1,4 +1,8 @@
-import { act, render } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, render, screen, within } from '@testing-library/react'
+import { mockFetch, type FetchMock } from '@wasichai/testing'
+import type { ReactNode } from 'react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { client } from './api'
 import type { VisorMapaProps } from './pages/visor/VisorMapa'
@@ -22,16 +26,25 @@ const fake = vi.hoisted(() => {
     setData = vi.fn()
     fitBounds = vi.fn()
     remove = vi.fn()
+    getCenter = vi.fn(() => ({ lng: -75.73, lat: -14.07 }))
+    getZoom = vi.fn(() => 15)
     queryRenderedFeatures = vi.fn(() => [] as unknown[])
     constructor(options: Record<string, unknown>) {
       this.options = options
+      // the basemap's layers, from the style
+      this.layers = [...((options.style as { layers?: Capa[] } | undefined)?.layers ?? [])].map((l) => ({ ...l }))
       FakeMap.all.push(this)
     }
     on(event: string, ...rest: unknown[]) {
       if (event === 'load') this.onLoad = rest[0] as () => void
       else if (rest.length === 2) (this.handlers[`${event} ${rest[0] as string}`] ??= []).push(rest[1] as (e: unknown) => void)
+      else (this.handlers[event] ??= []).push(rest[0] as (e: unknown) => void)
     }
     addControl() {}
+    once() {}
+    isMoving() {
+      return false
+    }
     addSource(id: string, source: Record<string, unknown>) {
       this.sources.set(id, { ...source, setData: this.setData })
     }
@@ -67,20 +80,41 @@ const fake = vi.hoisted(() => {
       return document.createElement('canvas')
     }
     resize() {}
-    fire(event: string, capa: string, e: unknown) {
-      for (const h of this.handlers[`${event} ${capa}`] ?? []) h(e)
+    fire(event: string, capa: string | null, e: unknown) {
+      for (const h of this.handlers[capa ? `${event} ${capa}` : event] ?? []) h(e)
     }
   }
+  // a lote's popup is a node React draws in (setDOMContent), a vía's is markup (setHTML); both go in the document
   class FakePopup {
     static html: string[] = []
-    setLngLat() {
+    static nodos: HTMLElement[] = []
+    static lngLat: unknown[] = []
+    cerrar: (() => void)[] = []
+    nodo: HTMLElement | null = null
+    setLngLat(lngLat: unknown) {
+      FakePopup.lngLat.push(lngLat)
       return this
     }
     setHTML(html: string) {
       FakePopup.html.push(html)
       return this
     }
+    setDOMContent(nodo: HTMLElement) {
+      this.nodo = nodo
+      FakePopup.nodos.push(nodo)
+      return this
+    }
+    on(event: string, h: () => void) {
+      if (event === 'close') this.cerrar.push(h)
+      return this
+    }
     addTo() {
+      if (this.nodo) document.body.append(this.nodo)
+      return this
+    }
+    remove() {
+      this.nodo?.remove()
+      for (const h of this.cerrar) h()
       return this
     }
   }
@@ -137,6 +171,8 @@ const VIAS: TramosCollection = {
 const props = (cambios: Partial<VisorMapaProps> = {}): VisorMapaProps => ({
   vista: { center: [-75.73, -14.07], zoom: 14 },
   clave: '2026|',
+  anio: 2026,
+  corrida: '',
   lotes: LOTES,
   colorear: 'categoria',
   vias: undefined,
@@ -146,12 +182,21 @@ const props = (cambios: Partial<VisorMapaProps> = {}): VisorMapaProps => ({
   ...cambios
 })
 
+// the popup asks the predios of its lote: the map lives under the router and the queries
 function montar(inicial: Partial<VisorMapaProps> = {}) {
-  const vista = render(<VisorMapa {...props(inicial)} />)
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const con = (hijo: ReactNode) => (
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{hijo}</MemoryRouter>
+    </QueryClientProvider>
+  )
+  const vista = render(con(<VisorMapa {...props(inicial)} />))
   const mapa = fake.FakeMap.all.at(-1)!
   act(() => mapa.onLoad?.())
-  return { ...vista, mapa, cambiar: (cambios: Partial<VisorMapaProps>) => vista.rerender(<VisorMapa {...props({ ...inicial, ...cambios })} />) }
+  return { ...vista, mapa, cambiar: (cambios: Partial<VisorMapaProps>) => vista.rerender(con(<VisorMapa {...props({ ...inicial, ...cambios })} />)) }
 }
+
+let fetch: FetchMock | null = null
 
 const pintura = (mapa: InstanceType<typeof fake.FakeMap>, id: string) => mapa.getLayer(id)?.paint
 
@@ -166,9 +211,14 @@ beforeEach(() => {
   client.setToken('tok')
 })
 afterEach(() => {
+  fetch?.restore()
+  fetch = null
+  for (const nodo of fake.FakePopup.nodos) nodo.remove()
   client.setToken(null)
   fake.FakeMap.all = []
   fake.FakePopup.html = []
+  fake.FakePopup.nodos = []
+  fake.FakePopup.lngLat = []
   vi.unstubAllGlobals()
 })
 
@@ -239,15 +289,102 @@ describe('el mapa del visor', () => {
     expect(JSON.stringify(pintura(mapa, 'visor-lotes-relleno')?.['fill-color'])).toContain('"A_FISCALIZAR","#e15759"')
   })
 
-  it('opens a read-only popup on a lote', () => {
+  it('opens a read-only popup on a lote, and asks its predios only then', async () => {
+    fetch = mockFetch([
+      {
+        path: '/srtm/visor/lotes/01-01-0002/predios',
+        body: [
+          {
+            id: 'b2',
+            predio: 'p2',
+            codigo_predio: '01-01-0002',
+            declaracion: 'd2',
+            contribuyente: 'c2',
+            contribuyente_nombre: 'QUISPE MAMANI JUAN',
+            categoria: 'OMISO',
+            confianza: 'CONFIABLE',
+            delta_impuesto: 120,
+            estado: 'A_FISCALIZAR'
+          },
+          {
+            id: 'b3',
+            predio: 'p3',
+            codigo_predio: '01-01-0002-1',
+            declaracion: null,
+            contribuyente: 'c3',
+            contribuyente_nombre: null,
+            categoria: 'COINCIDE',
+            confianza: null,
+            delta_impuesto: '0.40',
+            estado: null
+          }
+        ]
+      }
+    ])
     const { mapa } = montar()
-    mapa.fire('click', 'visor-lotes-relleno', { point: [0, 0], lngLat: [0, 0], features: [{ properties: LOTES.features[1].properties }] })
-    expect(fake.FakePopup.html).toHaveLength(1)
-    const html = fake.FakePopup.html[0]
-    expect(html).toContain('01-01-0002')
-    expect(html).toContain('Omiso')
-    expect(html).toContain('+S/ 120.00')
-    expect(html).toContain('A fiscalizar')
+    expect(fetch.calls).toHaveLength(0)
+    act(() => mapa.fire('click', 'visor-lotes-relleno', { point: [0, 0], lngLat: [0, 0], features: [{ properties: LOTES.features[1].properties }] }))
+    const popup = screen.getByTestId('popup-lote')
+    expect(popup).toHaveTextContent('01-01-0002')
+    expect(popup).toHaveTextContent('Omiso')
+    expect(popup.textContent?.replace(/\u00a0/g, ' ')).toContain('+S/ 120.00')
+    expect(popup).toHaveTextContent('A fiscalizar')
+    expect(within(popup).getByRole('status')).toHaveTextContent('Cargando predios…')
+
+    const predios = await within(popup).findByRole('list', { name: 'Predios del lote' })
+    expect(fetch.calls.map((c) => c.path)).toEqual(['/srtm/visor/lotes/01-01-0002/predios?anio=2026'])
+    const [uno, dos] = within(predios).getAllByRole('listitem')
+    expect(uno.textContent?.replace(/\u00a0/g, ' ')).toContain('Omiso+S/ 120.00')
+    expect(uno).toHaveTextContent('QUISPE MAMANI JUAN')
+    expect(within(uno).getByRole('link', { name: 'Ver predio 01-01-0002' })).toHaveAttribute('href', '/predios/p2')
+    expect(within(uno).getByRole('link', { name: 'Ver contribuyente de 01-01-0002' })).toHaveTextContent('Ver contribuyente')
+    expect(within(uno).getByRole('link', { name: 'Ver contribuyente de 01-01-0002' })).toHaveAttribute('href', '/contribuyentes/c2')
+    // no name (the user may not read contribuyentes): only «Contribuyente»
+    expect(dos.textContent?.replace(/\u00a0/g, ' ')).toContain('01-01-0002-1Coincide+S/ 0.40')
+    expect(within(dos).getByRole('link', { name: 'Ver contribuyente de 01-01-0002-1' })).toHaveTextContent(/^Contribuyente$/)
+    expect(within(dos).getByRole('link', { name: 'Ver predio 01-01-0002-1' })).toHaveAttribute('href', '/predios/p3')
+  })
+
+  it('says when the lote is not in the corrida, or its predios cannot be read', async () => {
+    fetch = mockFetch([
+      { path: '/srtm/visor/lotes/01-01-0001/predios', status: 404, body: { title: 'Not Found', status: 404 } },
+      { path: '/srtm/visor/lotes/01-01-0002/predios', status: 500, body: { title: 'Error', status: 500 } }
+    ])
+    const { mapa } = montar({ corrida: 'c1' })
+    act(() => mapa.fire('click', 'visor-lotes-relleno', { point: [0, 0], lngLat: [0, 0], features: [{ properties: LOTES.features[0].properties }] }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('El lote no está en esta corrida.')
+    expect(fetch.calls[0].path).toBe('/srtm/visor/lotes/01-01-0001/predios?anio=2026&corrida=c1')
+    // another lote closes the first popup
+    act(() => mapa.fire('click', 'visor-lotes-relleno', { point: [0, 0], lngLat: [0, 0], features: [{ properties: LOTES.features[1].properties }] }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron leer los predios del lote.')
+    expect(screen.getAllByTestId('popup-lote')).toHaveLength(1)
+  })
+
+  it('opens on the view it was left on, without framing the lotes, and tells where it stops and the cursor', () => {
+    const onCamara = vi.fn()
+    const onCursor = vi.fn()
+    const { mapa } = montar({ camara: { center: [-75.7, -14.06], zoom: 17.5 }, onCamara, onCursor })
+    expect(mapa.options).toMatchObject({ center: [-75.7, -14.06], zoom: 17.5 })
+    expect(mapa.options.bounds).toBeUndefined()
+    expect(mapa.fitBounds).not.toHaveBeenCalled()
+    act(() => mapa.fire('moveend', null, {}))
+    expect(onCamara).toHaveBeenCalledWith({ center: [-75.73, -14.07], zoom: 15 })
+    act(() => mapa.fire('mousemove', null, { lngLat: { lng: -75.735, lat: -14.065 } }))
+    expect(onCursor).toHaveBeenLastCalledWith({ lng: -75.735, lat: -14.065 })
+    act(() => mapa.fire('mouseout', null, {}))
+    expect(onCursor).toHaveBeenLastCalledWith(null)
+  })
+
+  it('follows the opacity of the lotes and of the vías, and hides the basemap', () => {
+    const { mapa, cambiar } = montar()
+    expect(pintura(mapa, 'visor-lotes-relleno')?.['fill-opacity']).toBe(0.6)
+    cambiar({ opacidadLotes: 0.3, opacidadVias: 0.5, base: 'ninguno' })
+    expect(pintura(mapa, 'visor-lotes-relleno')?.['fill-opacity']).toBe(0.3)
+    expect(pintura(mapa, 'visor-vias-con-valor')?.['line-opacity']).toBe(0.5)
+    expect(pintura(mapa, 'visor-vias-sin-asignar')?.['line-opacity']).toBe(0.5)
+    expect(mapa.getLayer('osm')?.layout?.visibility).toBe('none')
+    cambiar({ base: 'osm' })
+    expect(mapa.getLayer('osm')?.layout?.visibility).toBe('visible')
   })
 
   it('puts the WMS layers under the lotes, follows their opacity and takes them off', () => {
