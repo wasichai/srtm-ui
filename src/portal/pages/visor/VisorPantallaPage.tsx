@@ -6,6 +6,7 @@ import { Link } from 'react-router'
 import { ThemeMenu } from '../../shell/ThemeMenu'
 import { formatInstante } from '../EmisionesPage'
 import { CapasVisor, CONTROL, Leyenda, sinCatastro } from './CapasVisor'
+import { ConEnlacesExternos } from './enlaces'
 import type { Camara, MapaBase } from './estado'
 import { MapaVisor } from './MapaVisor'
 import { usePantallaAncha } from './pantalla'
@@ -175,8 +176,8 @@ function Cabecera({ children }: { children?: ReactNode }) {
 // the controls float over it. the same map, layers and legend as the visor, over the same url: the visor's tab
 // keeps it, «Compartir vista» copies it, «Volver al visor» takes it back
 export function VisorPantallaPage() {
-  const { anio, corrida, conPermisos, puedeLeer, estado, panel, lotes, vias, clases, clasesVias, leyendaVias } = useVisor()
-  const { colorear, mostrarVias, wms, cambiar } = estado
+  const { anio, corrida, conPermisos, puedeLeer, estado, filtros, conPricos, wms, panel, lotes, vias, clases, clasesVias, leyendaVias } = useVisor()
+  const { colorear, mostrarVias, cambiar } = estado
   const ancha = usePantallaAncha()
   // the panel of layers starts open on a wide screen, folded on a phone
   const [capasAbiertas, setCapasAbiertas] = useState(ancha)
@@ -202,107 +203,112 @@ export function VisorPantallaPage() {
       </div>
     )
 
+  // no workspace here: a link to a ficha opens a new tab of the browser, and the map stays as it was left
   return (
-    <div className="flex h-full flex-col bg-surface">
-      <Cabecera>{corridaLeida}</Cabecera>
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-surface-muted [&_.maplibregl-ctrl-bottom-right]:bottom-14!">
-        <MapaVisor
-          ref={control}
-          pantallaCompleta
-          clave={`${anio}|${corrida}`}
-          anio={anio}
-          corrida={corrida}
-          lotes={lotes.data}
-          colorear={colorear}
-          vias={vias.data}
-          mostrarVias={mostrarVias}
-          clasesVias={clasesVias}
-          wms={wms}
-          opacidadLotes={estado.opacidadLotes}
-          opacidadVias={estado.opacidadVias}
-          base={estado.base}
-          camara={estado.camara}
-          onCamara={(c) => cambiar({ camara: c })}
-          onCursor={setCursor}
-        />
+    <ConEnlacesExternos value>
+      <div className="flex h-full flex-col bg-surface">
+        <Cabecera>{corridaLeida}</Cabecera>
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-surface-muted [&_.maplibregl-ctrl-bottom-right]:bottom-14!">
+          <MapaVisor
+            ref={control}
+            pantallaCompleta
+            clave={`${anio}|${corrida}`}
+            anio={anio}
+            corrida={corrida}
+            lotes={lotes.data}
+            colorear={colorear}
+            vias={vias.data}
+            mostrarVias={mostrarVias}
+            clasesVias={clasesVias}
+            wms={wms}
+            opacidadLotes={estado.opacidadLotes}
+            opacidadVias={estado.opacidadVias}
+            base={estado.base}
+            camara={estado.camara}
+            onCamara={(c) => cambiar({ camara: c })}
+            onCursor={setCursor}
+          />
 
-        <div className="pointer-events-none absolute inset-x-2 top-2 flex flex-wrap items-start gap-2">
-          <Buscador onBuscar={(codigo) => control.current?.irA(codigo) ?? false} />
-          <Herramientas base={estado.base} onBase={(b) => cambiar({ base: b })} />
-          <div className="pointer-events-none relative z-10 order-2 ml-auto flex flex-col items-end gap-2">
-            <div className={cn(TARJETA, 'flex items-center gap-0.5 p-1')}>
-              <button
-                type="button"
-                aria-expanded={capasAbiertas}
-                aria-controls="visor-panel-capas"
-                onClick={() => setCapasAbiertas((a) => !a)}
-                className={cn(BOTON, capasAbiertas && 'bg-surface-muted')}
-              >
-                <Layers aria-hidden className="size-4" />
-                <span className="max-sm:sr-only">Capas</span>
-              </button>
-              {conPantallaCompleta() && (
+          <div className="pointer-events-none absolute inset-x-2 top-2 flex flex-wrap items-start gap-2">
+            <Buscador onBuscar={(codigo) => control.current?.irA(codigo) ?? false} />
+            <Herramientas base={estado.base} onBase={(b) => cambiar({ base: b })} />
+            <div className="pointer-events-none relative z-10 order-2 ml-auto flex flex-col items-end gap-2">
+              <div className={cn(TARJETA, 'flex items-center gap-0.5 p-1')}>
                 <button
                   type="button"
-                  onClick={alternarPantalla}
-                  aria-label={enPantalla ? 'Salir de la pantalla completa' : 'Pantalla completa del navegador'}
-                  title={enPantalla ? 'Salir de la pantalla completa' : 'Pantalla completa del navegador'}
-                  className={BOTON}
+                  aria-expanded={capasAbiertas}
+                  aria-controls="visor-panel-capas"
+                  onClick={() => setCapasAbiertas((a) => !a)}
+                  className={cn(BOTON, capasAbiertas && 'bg-surface-muted')}
                 >
-                  {enPantalla ? <Minimize aria-hidden className="size-4" /> : <Maximize aria-hidden className="size-4" />}
+                  <Layers aria-hidden className="size-4" />
+                  <span className="max-sm:sr-only">Capas</span>
                 </button>
-              )}
-              <Link to={volver} className={BOTON} aria-label="Volver al visor" title="Volver al visor">
-                <ArrowLeft aria-hidden className="size-4" />
-                <span className="max-sm:hidden">Volver al visor</span>
-              </Link>
-            </div>
-            <section
-              id="visor-panel-capas"
-              aria-label="Capas"
-              hidden={!capasAbiertas}
-              className={cn(TARJETA, 'absolute top-full right-0 mt-2 max-h-[min(70vh,36rem)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto p-3')}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Capas</h2>
-                <button type="button" aria-label="Cerrar capas" onClick={() => setCapasAbiertas(false)} className={cn(BOTON, 'h-7 px-1.5')}>
-                  <X aria-hidden className="size-4" />
-                </button>
+                {conPantallaCompleta() && (
+                  <button
+                    type="button"
+                    onClick={alternarPantalla}
+                    aria-label={enPantalla ? 'Salir de la pantalla completa' : 'Pantalla completa del navegador'}
+                    title={enPantalla ? 'Salir de la pantalla completa' : 'Pantalla completa del navegador'}
+                    className={BOTON}
+                  >
+                    {enPantalla ? <Minimize aria-hidden className="size-4" /> : <Maximize aria-hidden className="size-4" />}
+                  </button>
+                )}
+                <Link to={volver} className={BOTON} aria-label="Volver al visor" title="Volver al visor">
+                  <ArrowLeft aria-hidden className="size-4" />
+                  <span className="max-sm:hidden">Volver al visor</span>
+                </Link>
               </div>
-              <CapasVisor
-                colorear={colorear}
-                onColorear={(c) => cambiar({ colorear: c })}
-                mostrarVias={mostrarVias}
-                onMostrarVias={(v) => cambiar({ mostrarVias: v })}
-                anio={anio}
-                errorVias={vias.isError ? sinCatastro(vias.error, 'las vías') : null}
-                wms={wms}
-                onWms={(w) => cambiar({ wms: w })}
-                opacidadLotes={estado.opacidadLotes}
-                onOpacidadLotes={(o) => cambiar({ opacidadLotes: o })}
-                opacidadVias={estado.opacidadVias}
-                onOpacidadVias={(o) => cambiar({ opacidadVias: o })}
-              />
-            </section>
+              <section
+                id="visor-panel-capas"
+                aria-label="Capas"
+                hidden={!capasAbiertas}
+                className={cn(TARJETA, 'absolute top-full right-0 mt-2 max-h-[min(70vh,36rem)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto p-3')}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">Capas</h2>
+                  <button type="button" aria-label="Cerrar capas" onClick={() => setCapasAbiertas(false)} className={cn(BOTON, 'h-7 px-1.5')}>
+                    <X aria-hidden className="size-4" />
+                  </button>
+                </div>
+                <CapasVisor
+                  colorear={colorear}
+                  onColorear={(c) => cambiar({ colorear: c })}
+                  mostrarVias={mostrarVias}
+                  onMostrarVias={(v) => cambiar({ mostrarVias: v })}
+                  anio={anio}
+                  errorVias={vias.isError ? sinCatastro(vias.error, 'las vías') : null}
+                  wms={wms}
+                  onWms={(w) => cambiar({ wms: w })}
+                  opacidadLotes={estado.opacidadLotes}
+                  onOpacidadLotes={(o) => cambiar({ opacidadLotes: o })}
+                  opacidadVias={estado.opacidadVias}
+                  onOpacidadVias={(o) => cambiar({ opacidadVias: o })}
+                  soloPricos={filtros.prico}
+                  onSoloPricos={conPricos ? (v) => cambiar({ filtros: { ...filtros, prico: v } }) : undefined}
+                />
+              </section>
+            </div>
           </div>
+
+          {(panel.isError || lotes.isError) && (
+            <Alert
+              tone={panel.error instanceof ApiError && panel.error.status === 404 ? 'notice' : 'danger'}
+              className="absolute inset-x-2 top-28 mx-auto max-w-md"
+            >
+              {panel.error instanceof ApiError && panel.error.status === 404
+                ? `Aún no se ha calculado la brecha de ${anio}.`
+                : panel.isError
+                  ? 'No se pudo leer el panel del visor.'
+                  : 'No se pudieron cargar los lotes del mapa.'}
+            </Alert>
+          )}
+
+          <Leyenda colorear={colorear} clases={clases} vias={leyendaVias} anio={anio} />
+          <Coordenadas cursor={cursor} camara={estado.camara} />
         </div>
-
-        {(panel.isError || lotes.isError) && (
-          <Alert
-            tone={panel.error instanceof ApiError && panel.error.status === 404 ? 'notice' : 'danger'}
-            className="absolute inset-x-2 top-28 mx-auto max-w-md"
-          >
-            {panel.error instanceof ApiError && panel.error.status === 404
-              ? `Aún no se ha calculado la brecha de ${anio}.`
-              : panel.isError
-                ? 'No se pudo leer el panel del visor.'
-                : 'No se pudieron cargar los lotes del mapa.'}
-          </Alert>
-        )}
-
-        <Leyenda colorear={colorear} clases={clases} vias={leyendaVias} anio={anio} />
-        <Coordenadas cursor={cursor} camara={estado.camara} />
       </div>
-    </div>
+    </ConEnlacesExternos>
   )
 }

@@ -1,9 +1,8 @@
 import { Badge, Button, Input, PageSizePagination, Table, Td, Th } from '@wasichai/ui'
 import { MapPinOff } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
 import type { CategoriaBrecha, Confianza, DecisionBrecha } from '../../types'
-import { CONTROL } from './CapasVisor'
+import { CONTROL, SoloPricos } from './CapasVisor'
 import {
   COLOR_CATEGORIA,
   COLOR_CONFIANZA,
@@ -16,7 +15,9 @@ import {
   etiquetaConfianza,
   etiquetaEstado
 } from './colores'
+import { ChipPrico } from './ChipPrico'
 import { nombreDeFila } from './DetalleNiveles'
+import { EnlaceFicha } from './enlaces'
 import { soles } from './formato'
 import { CATEGORIAS_VISOR, CONFIANZAS_VISOR, ESTADOS_VISOR, type FilaVisor, type Filtros, type Orden, type PaginaVisor } from './tipos'
 
@@ -83,11 +84,14 @@ function Opciones<K extends string>({
 export function FiltrosVisor({
   filtros,
   onCambio,
+  conPricos = false,
   orden,
   onOrden
 }: {
   filtros: Filtros
   onCambio: (f: Filtros) => void
+  // the backend knows the PRICOs (srtm-backend#273): an older one has no «Solo PRICOs»
+  conPricos?: boolean
   orden: Orden
   onOrden: (o: Orden) => void
 }) {
@@ -156,6 +160,11 @@ export function FiltrosVisor({
             className="h-8 w-28"
           />
         </label>
+        {conPricos && (
+          <div className="flex h-8 items-center">
+            <SoloPricos valor={filtros.prico} onCambio={(prico) => onCambio({ ...filtros, prico })} />
+          </div>
+        )}
         <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
           Orden
           <select value={orden} onChange={(e) => onOrden(e.target.value as Orden)} className={CONTROL}>
@@ -228,13 +237,16 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
             {filas.map((f) => (
               <tr key={f.id}>
                 <Td className="font-mono text-xs whitespace-nowrap">
-                  {f.predio ? (
-                    <Link to={`/predios/${encodeURIComponent(f.predio)}`} className="text-link hover:underline">
-                      {f.codigo_predio ?? 'Ver predio'}
-                    </Link>
-                  ) : (
-                    (f.codigo_predio ?? '—')
-                  )}
+                  <span className="inline-flex items-center gap-1.5">
+                    {f.predio ? (
+                      <EnlaceFicha ficha="predio" id={f.predio} titulo={f.codigo_predio ?? 'Predio'} className="text-link hover:underline">
+                        {f.codigo_predio ?? 'Ver predio'}
+                      </EnlaceFicha>
+                    ) : (
+                      (f.codigo_predio ?? '—')
+                    )}
+                    {f.prico && <ChipPrico />}
+                  </span>
                 </Td>
                 <Td className="font-mono text-xs">
                   <span className="inline-flex items-center gap-1">
@@ -251,13 +263,15 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
                   {/* the router's link, as in the popup: it opens or focuses the contribuyente's tab. no name: the user may
                       not read contribuyentes */}
                   {f.contribuyente ? (
-                    <Link
-                      to={`/contribuyentes/${encodeURIComponent(f.contribuyente)}`}
+                    <EnlaceFicha
+                      ficha="contribuyente"
+                      id={f.contribuyente}
+                      titulo={f.contribuyente_nombre ?? 'Contribuyente'}
                       className="text-link hover:underline"
                       aria-label={f.contribuyente_nombre ? undefined : `Contribuyente de ${nombreDeFila(f)}`}
                     >
                       {f.contribuyente_nombre ?? 'Contribuyente'}
-                    </Link>
+                    </EnlaceFicha>
                   ) : (
                     '—'
                   )}
@@ -288,9 +302,15 @@ export function TablaVisor({ pagina, page, size, onPage, onSize, onNiveles }: Ta
                 <Td className="whitespace-nowrap">{etiquetaEstado(f.estado)}</Td>
                 <Td>
                   {f.declaracion ? (
-                    <Link to={`/declaraciones/${f.declaracion}`} className="text-link hover:underline" aria-label={`Declaración de ${nombreDeFila(f)}`}>
+                    <EnlaceFicha
+                      ficha="declaracion"
+                      id={f.declaracion}
+                      titulo={`DJ ${f.codigo_predio ?? ''}`.trim()}
+                      className="text-link hover:underline"
+                      aria-label={`Declaración de ${nombreDeFila(f)}`}
+                    >
                       Ver DJ
-                    </Link>
+                    </EnlaceFicha>
                   ) : (
                     '—'
                   )}

@@ -288,7 +288,8 @@ function filtrosVisor(f: FiltrosVisor): Record<string, string> {
     estado: f.estado.join(','),
     sector: f.sector.trim(),
     supera_5_uit: f.supera_5_uit,
-    min_delta: valido ? minimo : ''
+    min_delta: valido ? minimo : '',
+    prico: f.prico ? 'true' : ''
   }
 }
 
@@ -569,7 +570,8 @@ export const rentas = {
   // backend's pick, 404 without one), its rows with catastro's decision, read only. the filters are the same for the
   // predios, the lotes and the export. vias and capas come from catastro through srtm: 409 when catastro is not
   // configured, 502 when it does not answer (the rest of the visor goes on)
-  visorPanel: (anio: number, corrida?: string | null) => get<PanelVisor>(`/srtm/visor/panel${query({ anio, corrida })}`),
+  visorPanel: (anio: number, corrida?: string | null, prico = false) =>
+    get<PanelVisor>(`/srtm/visor/panel${query({ anio, corrida, prico: prico ? 'true' : '' })}`),
   visorPredios: (anio: number, corrida: string | null | undefined, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number) =>
     get<PaginaVisor<FilaVisor>>(`/srtm/visor/predios${query({ anio, corrida, ...filtrosVisor(filtros), orden, page, size })}`),
   visorNiveles: (id: string) => get<NivelVisor[]>(`/srtm/visor/predios/${encodeURIComponent(id)}/niveles`),

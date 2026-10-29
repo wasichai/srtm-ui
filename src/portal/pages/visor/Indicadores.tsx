@@ -1,4 +1,4 @@
-import { Card, CardBody } from '@wasichai/ui'
+import { Card, CardBody, cn } from '@wasichai/ui'
 import { Barras } from '../reportes/Barras'
 import { COLOR_CATEGORIA, COLOR_ESTADO, GRIS, colorConfianza, colorDeSigno, etiquetaCategoria, etiquetaConfianza, etiquetaEstado } from './colores'
 import { cantidad, plural, soles } from './formato'
@@ -26,7 +26,13 @@ export function Indicadores({ panel }: { panel: PanelVisor }) {
   return (
     <section aria-label="Indicadores de la corrida" className="@container space-y-3">
       {/* columns by the width of the section, not of the screen: a KPI card needs ~15rem for «+S/ 1,234,567.89» */}
-      <div className="grid grid-cols-1 gap-3 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3 @min-[96rem]:grid-cols-6">
+      {/* a 7th card with the PRICOs (srtm-backend#273): 4 + 3 from 64rem, all in a row from 112rem */}
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-3 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3',
+          kpis.pricos ? '@min-[64rem]:grid-cols-4 @min-[112rem]:grid-cols-7' : '@min-[96rem]:grid-cols-6'
+        )}
+      >
         <Kpi
           etiqueta="Diferencia de impuesto"
           valor={soles(kpis.delta_impuesto, { signo: true })}
@@ -41,6 +47,13 @@ export function Indicadores({ panel }: { panel: PanelVisor }) {
           detalle={kpis.pendientes === null ? 'Sin datos de catastro' : `de ${cantidad(kpis.fichas)}, según catastro`}
         />
         <Kpi etiqueta="Con geometría" valor={cantidad(kpis.con_geometria)} detalle={`de ${cantidad(kpis.fichas)}`} />
+        {kpis.pricos && (
+          <Kpi
+            etiqueta="PRICOs"
+            valor={cantidad(kpis.pricos.predios)}
+            detalle={`Principales contribuyentes · ${soles(kpis.pricos.delta_impuesto, { signo: true })}`}
+          />
+        )}
       </div>
       <div className="grid gap-3 @min-[43rem]:grid-cols-2 @min-[87rem]:grid-cols-4">
         <Barras
