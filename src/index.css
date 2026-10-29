@@ -7,17 +7,21 @@
 /* the @wasichai packages ship class names, not css, so tailwind scans them */
 @source '../node_modules/@wasichai';
 
-/* a workspace tab opened in the background (TabBar, wasichai/srtm-ui#164): a wash of --tab-resalte over its
-   background, under its text, that fades out */
+/* a workspace tab opened in the background (TabBar, wasichai/srtm-ui#164): a ring of --tab-resalte-borde and a
+   wash of --tab-resalte over its background, under its text, that fade out */
 @theme {
     --animate-tab-resalte: tab-resalte 1.8s ease-out forwards;
 
     @keyframes tab-resalte {
         from {
-            box-shadow: inset 0 0 0 100vmax var(--tab-resalte);
+            box-shadow:
+                inset 0 0 0 2px var(--tab-resalte-borde),
+                inset 0 0 0 100vmax var(--tab-resalte);
         }
         to {
-            box-shadow: inset 0 0 0 100vmax transparent;
+            box-shadow:
+                inset 0 0 0 2px transparent,
+                inset 0 0 0 100vmax transparent;
         }
     }
 }

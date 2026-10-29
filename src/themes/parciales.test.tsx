@@ -163,6 +163,15 @@ describe('tabs.css', () => {
     expect(foco.get('outline-offset')).toBe('-2px')
   })
 
+  // a tab opened in the background (wasichai/srtm-ui#164): the focus colour would vanish on the blue bar
+  it('lights a tab opened in the background in the bar’s white: a ring, and a wash that keeps its text legible', () => {
+    const resalte = rule(css, `${CABECERA} [data-ui='workspace-tab'][data-resaltada]`)
+    expect(resalte.get('--tab-resalte-borde')).toBe('var(--shell-ink)')
+    expect(resalte.get('--tab-resalte')).toBe('color-mix(in srgb, var(--shell-ink) 15%, transparent)')
+    // 15% white over #0d5fa8
+    expect(contrast(tokens.get('--shell-ink')!, 'rgb(49 119 181)')).toBeGreaterThanOrEqual(4.5)
+  })
+
   // under the theme the tabs are always in the bar: no rule for a strip over the content
   it('paints the workspace tabs only in the bar', () => {
     const tabs = rules(css)
