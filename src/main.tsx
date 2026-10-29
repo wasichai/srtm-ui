@@ -1,4 +1,4 @@
-import { lazy, StrictMode, Suspense } from 'react'
+import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 // the printable document sheet's css, not run through tailwind (see @wasichai/documents)
 import '@wasichai/documents/print.css'
@@ -7,12 +7,13 @@ import '@wasichai/documents/print.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { setMapWorkerUrl } from './portal/components/mapWorker'
 import './index.css'
+import { lazyConRecarga } from './portal/components/lazyConRecarga'
 
 // two apps, one build: /admin is wasichai's admin, everything else the end-user portal. each is its own chunk, loaded
 // only where it is drawn: the portal's clerks never download the admin's modules (workflow, pages, views, forms,
-// documents, gis), nor the admin the portal's screens
-const AdminApp = lazy(() => import('./admin/AdminApp').then((m) => ({ default: m.AdminApp })))
-const PortalApp = lazy(() => import('./portal/PortalApp').then((m) => ({ default: m.PortalApp })))
+// documents, gis), nor the admin the portal's screens. a chunk gone after a deploy reloads the page once (lazyConRecarga)
+const AdminApp = lazyConRecarga('admin', () => import('./admin/AdminApp').then((m) => ({ default: m.AdminApp })))
+const PortalApp = lazyConRecarga('portal', () => import('./portal/PortalApp').then((m) => ({ default: m.PortalApp })))
 
 const admin = /^\/admin(\/|$)/.test(window.location.pathname)
 setMapWorkerUrl(workerUrl)

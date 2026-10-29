@@ -1,0 +1,4 @@
+# la imagen (deploy/Dockerfile) solo necesita el build y la conf de nginx
+*
+!dist/
+!deploy/nginx.conf
