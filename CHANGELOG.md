@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.4.0](https://github.com/wasichai/srtm-ui/compare/v2.3.0...v2.4.0) (2026-10-29)
+
+
+### Features
+
+* **visor:** predios catastrales por defecto, «Solo PRICOs» y pestañas en segundo plano ([#165](https://github.com/wasichai/srtm-ui/issues/165)) ([cc03680](https://github.com/wasichai/srtm-ui/commit/cc03680863512b34aef7e861fbbf0a46c42aecd0))
+
+
+### Bug Fixes
+
+* **mapa:** recargar una vez si falta un chunk y versionar la conf de nginx ([#162](https://github.com/wasichai/srtm-ui/issues/162)) ([98a9fa3](https://github.com/wasichai/srtm-ui/commit/98a9fa3a1505cd306942fb39e832bbcbc8338e71))
+
 ## [2.3.0](https://github.com/wasichai/srtm-ui/compare/v2.2.0...v2.3.0) (2026-10-28)
 
 
