@@ -243,7 +243,7 @@ describe('visor de brechas', () => {
     expect(llamadas('/srtm/visor/predios')).toHaveLength(0)
   })
 
-  it('shows the 7 KPIs and the 4 panels of bars of the latest TERMINADA corrida', async () => {
+  it('shows the 6 KPIs, the PRICOs and the 4 panels of bars of the latest TERMINADA corrida', async () => {
     start('/brecha/visor')
     await screen.findByRole('region', { name: 'Indicadores de la corrida' })
     expect(llamadas('/srtm/visor/panel')[0]).toBe(`/srtm/visor/panel?anio=${year}`)
@@ -255,7 +255,7 @@ describe('visor de brechas', () => {
     expect(kpi('Superan 5 UIT')).toContain('12')
     expect(kpi('Pendientes de decidir')).toContain('30,000')
     expect(kpi('Con geometría')).toContain('29,000de 30,706')
-    expect(kpi('PRICOs')).toBe('PRICOs1,234Principales contribuyentes · +S/ 5,000.00')
+    expect(kpi('PRICOs')).toBe('PRICOs Principales contribuyentes1,234 prediosDiferencia de impuesto +S/ 5,000.00')
     expect(barras('Por categoría')).toEqual(['Omiso80 · +S/ 3,000.00', 'Subvaluado300 · +S/ 9,800.00', 'Sobrevaluado40 · −S/ 454.33'])
     expect(barras('Por confianza')).toEqual(['Confiable700 · +S/ 9,000.00', 'Sin confianza3 · S/ 0.00'])
     expect(barras('Por estado')).toEqual(['Pendiente30,000', 'A fiscalizar6'])
