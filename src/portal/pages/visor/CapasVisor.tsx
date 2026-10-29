@@ -4,12 +4,11 @@ import { Layers } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useVisorCapas } from '../../queries'
 import { COLOREAR, type Colorear } from './colores'
+import { OPACIDAD_WMS } from './estado'
 import { usePantallaAncha } from './pantalla'
 import type { CapaVisor, CapaWmsActiva } from './tipos'
 
 export const CONTROL = 'h-8 max-w-full rounded-md border border-border bg-surface px-2 text-sm text-ink'
-
-export const OPACIDAD_INICIAL = 0.7
 
 export interface CapasVisorProps {
   colorear: Colorear
@@ -26,6 +25,9 @@ export interface CapasVisorProps {
   onOpacidadLotes?: (o: number) => void
   opacidadVias?: number
   onOpacidadVias?: (o: number) => void
+  // «Solo PRICOs», when it is handed its change: the full page has no filters of the table (an older backend, none)
+  soloPricos?: boolean
+  onSoloPricos?: (v: boolean) => void
 }
 
 // an opacity in steps of 5 %
@@ -44,6 +46,20 @@ function Opacidad({ nombre, valor, onCambio, disabled }: { nombre: string; valor
       onChange={(e) => onCambio(Number(e.target.value) / 100)}
       className="w-full"
     />
+  )
+}
+
+// «Solo PRICOs»: only the predios of principales contribuyentes, on the map, in the table and in the CSV
+export function SoloPricos({ valor, onCambio }: { valor: boolean; onCambio: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-sm whitespace-nowrap text-ink">
+      <input type="checkbox" role="switch" checked={valor} onChange={(e) => onCambio(e.target.checked)} className="peer sr-only" />
+      <span
+        aria-hidden
+        className="relative inline-block h-5 w-9 shrink-0 rounded-full border border-border-control bg-surface-muted transition-colors peer-checked:border-brand peer-checked:bg-brand peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus after:absolute after:top-0.5 after:left-0.5 after:size-3.5 after:rounded-full after:bg-ink-muted after:transition-transform peer-checked:after:translate-x-4 peer-checked:after:bg-on-brand"
+      />
+      Solo PRICOs
+    </label>
   )
 }
 
@@ -66,7 +82,9 @@ export function CapasVisor({
   opacidadLotes,
   onOpacidadLotes,
   opacidadVias,
-  onOpacidadVias
+  onOpacidadVias,
+  soloPricos,
+  onSoloPricos
 }: CapasVisorProps) {
   const capas = useVisorCapas()
   const prendida = (layerName: string) => wms.find((c) => c.layerName === layerName)
@@ -83,6 +101,7 @@ export function CapasVisor({
           ))}
         </select>
       </label>
+      {onSoloPricos && <SoloPricos valor={Boolean(soloPricos)} onCambio={onSoloPricos} />}
       {onOpacidadLotes && (
         <div className="space-y-1">
           <span aria-hidden className="text-xs text-ink-muted">
@@ -120,9 +139,7 @@ export function CapasVisor({
                       type="checkbox"
                       checked={!!on}
                       onChange={(e) =>
-                        onWms(
-                          e.target.checked ? [...wms, { layerName: c.layerName, opacity: OPACIDAD_INICIAL }] : wms.filter((w) => w.layerName !== c.layerName)
-                        )
+                        onWms(e.target.checked ? [...wms, { layerName: c.layerName, opacity: OPACIDAD_WMS }] : wms.filter((w) => w.layerName !== c.layerName))
                       }
                     />
                     <span className="truncate" title={c.layerName}>
@@ -131,7 +148,7 @@ export function CapasVisor({
                   </label>
                   <Opacidad
                     nombre={nombre(c)}
-                    valor={on?.opacity ?? OPACIDAD_INICIAL}
+                    valor={on?.opacity ?? OPACIDAD_WMS}
                     disabled={!on}
                     onCambio={(o) => onWms(wms.map((w) => (w.layerName === c.layerName ? { ...w, opacity: o } : w)))}
                   />

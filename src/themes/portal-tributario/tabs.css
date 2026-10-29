@@ -129,3 +129,11 @@
     font-size: 14px;
     font-weight: normal;
 }
+
+/* a tab opened in the background (the visor's links, wasichai/srtm-ui#164): TabBar rings it and washes it, then
+   fades both (index.css). the focus colour would vanish on the blue bar: here a ring in the bar's white and a
+   wash of 15 % white, which keeps its white text at 4.7:1 over #0d5fa8 */
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab'][data-resaltada] {
+    --tab-resalte: color-mix(in srgb, var(--shell-ink) 15%, transparent);
+    --tab-resalte-borde: var(--shell-ink);
+}

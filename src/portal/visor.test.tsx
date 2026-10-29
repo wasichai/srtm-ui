@@ -51,7 +51,8 @@ const panel = {
     omisos_estimado: 4321,
     supera_5_uit: 12,
     pendientes: 30000,
-    con_geometria: 29000
+    con_geometria: 29000,
+    pricos: { predios: 1234, delta_impuesto: 5000 }
   },
   por_categoria: [
     { clave: 'OMISO', fichas: 80, delta_impuesto: 3000 },
@@ -242,7 +243,7 @@ describe('visor de brechas', () => {
     expect(llamadas('/srtm/visor/predios')).toHaveLength(0)
   })
 
-  it('shows the 6 KPIs and the 4 panels of bars of the latest TERMINADA corrida', async () => {
+  it('shows the 6 KPIs, the PRICOs and the 4 panels of bars of the latest TERMINADA corrida', async () => {
     start('/brecha/visor')
     await screen.findByRole('region', { name: 'Indicadores de la corrida' })
     expect(llamadas('/srtm/visor/panel')[0]).toBe(`/srtm/visor/panel?anio=${year}`)
@@ -254,6 +255,7 @@ describe('visor de brechas', () => {
     expect(kpi('Superan 5 UIT')).toContain('12')
     expect(kpi('Pendientes de decidir')).toContain('30,000')
     expect(kpi('Con geometría')).toContain('29,000de 30,706')
+    expect(kpi('PRICOs')).toBe('PRICOs Principales contribuyentes1,234 prediosDiferencia de impuesto +S/ 5,000.00')
     expect(barras('Por categoría')).toEqual(['Omiso80 · +S/ 3,000.00', 'Subvaluado300 · +S/ 9,800.00', 'Sobrevaluado40 · −S/ 454.33'])
     expect(barras('Por confianza')).toEqual(['Confiable700 · +S/ 9,000.00', 'Sin confianza3 · S/ 0.00'])
     expect(barras('Por estado')).toEqual(['Pendiente30,000', 'A fiscalizar6'])
@@ -430,14 +432,17 @@ describe('visor de brechas', () => {
     start('/brecha/visor')
     const lista = await screen.findByRole('list', { name: 'Capas WMS' })
     expect(llamadas('/srtm/visor/capas')).toHaveLength(1)
-    const opacidad = within(lista).getByRole('slider', { name: 'Opacidad de Predios' })
+    const opacidad = within(lista).getByRole('slider', { name: 'Opacidad de Tramos de vía' })
     expect(opacidad).toBeDisabled()
     expect(opacidad).toHaveAttribute('step', '5')
-    await userEvent.click(within(lista).getByRole('checkbox', { name: 'Predios' }))
-    expect(JSON.parse(mapa().dataset.wms!)).toEqual([{ layerName: 'predio_catastral__0a1b2c3d__geom', opacity: 0.7 }])
+    await userEvent.click(within(lista).getByRole('checkbox', { name: 'Tramos de vía' }))
+    expect(JSON.parse(mapa().dataset.wms!)).toEqual([
+      { layerName: 'predio_catastral__0a1b2c3d__geom', opacity: 0.7 },
+      { layerName: 'tramo_via__0a1b2c3d__geom', opacity: 0.7 }
+    ])
     expect(opacidad).toHaveValue('70')
-    await userEvent.click(within(lista).getByRole('checkbox', { name: 'Predios' }))
-    expect(JSON.parse(mapa().dataset.wms!)).toEqual([])
+    await userEvent.click(within(lista).getByRole('checkbox', { name: 'Tramos de vía' }))
+    expect(JSON.parse(mapa().dataset.wms!)).toEqual([{ layerName: 'predio_catastral__0a1b2c3d__geom', opacity: 0.7 }])
   })
 
   it('draws the vías of the year when asked, and only then asks for them', async () => {
@@ -488,5 +493,116 @@ describe('visor de brechas', () => {
     await waitFor(() => expect(llamadas('/srtm/visor/lotes')[0]).toBe(`/srtm/visor/lotes?anio=${year}&corrida=c1`))
     expect(llamadas('/srtm/visor/predios')[0]).toContain(`anio=${year}&corrida=c1&`)
     expect(mapa()).toHaveAttribute('data-clave', `${year}|c1`)
+  })
+})
+
+// srtm-ui#164: la capa de predios catastrales prendida por defecto, el filtro «Solo PRICOs» y sus marcas
+describe('la capa de predios catastrales', () => {
+  const PREDIOS = { layerName: 'predio_catastral__0a1b2c3d__geom', opacity: 0.7 }
+  const lista = () => screen.findByRole('list', { name: 'Capas WMS' })
+
+  it('is on by default at 70 %, picked by its name and not by its label, without writing the url', async () => {
+    start('/brecha/visor', [
+      {
+        path: '/srtm/visor/capas',
+        body: [
+          { layerName: 'manzana__0a1b2c3d__geom', label: 'Predios catastrales (manzanas)' },
+          { layerName: 'predio_catastral__0a1b2c3d__lote_geom', label: 'Lotes' }
+        ]
+      }
+    ])
+    expect(within(await lista()).getByRole('checkbox', { name: 'Lotes' })).toBeChecked()
+    expect(within(await lista()).getByRole('checkbox', { name: 'Predios catastrales (manzanas)' })).not.toBeChecked()
+    expect(within(await lista()).getByRole('slider', { name: 'Opacidad de Lotes' })).toHaveValue('70')
+    await waitFor(() => expect(JSON.parse(mapa().dataset.wms!)).toEqual([{ layerName: 'predio_catastral__0a1b2c3d__lote_geom', opacity: 0.7 }]))
+    expect(new URLSearchParams(window.location.search).has('wms')).toBe(false)
+  })
+
+  it('stays off when the url says so, and turning it off says so in the url', async () => {
+    start('/brecha/visor')
+    const capas = await lista()
+    await waitFor(() => expect(within(capas).getByRole('checkbox', { name: 'Predios' })).toBeChecked())
+    await userEvent.click(within(capas).getByRole('checkbox', { name: 'Predios' }))
+    expect(JSON.parse(mapa().dataset.wms!)).toEqual([])
+    await waitFor(() => expect(window.location.search).toBe('?wms='))
+  })
+
+  it('is off on a link with the layers off, or with only another layer on', async () => {
+    start('/brecha/visor?wms=')
+    const capas = await lista()
+    await waitFor(() => expect(mapa()).toHaveAttribute('data-lotes', '2'))
+    expect(within(capas).getByRole('checkbox', { name: 'Predios' })).not.toBeChecked()
+    expect(JSON.parse(mapa().dataset.wms!)).toEqual([])
+  })
+
+  it('keeps the layers of the link, the predios’ off when it is not there', async () => {
+    start('/brecha/visor?wms=tramo_via__0a1b2c3d__geom@50')
+    const capas = await lista()
+    expect(within(capas).getByRole('checkbox', { name: 'Predios' })).not.toBeChecked()
+    expect(within(capas).getByRole('checkbox', { name: 'Tramos de vía' })).toBeChecked()
+    await waitFor(() => expect(JSON.parse(mapa().dataset.wms!)).toEqual([{ layerName: 'tramo_via__0a1b2c3d__geom', opacity: 0.5 }]))
+  })
+
+  it('keeps an opacity of the url', async () => {
+    start('/brecha/visor?wms=predio_catastral__0a1b2c3d__geom@35')
+    expect(within(await lista()).getByRole('slider', { name: 'Opacidad de Predios' })).toHaveValue('35')
+    await waitFor(() => expect(JSON.parse(mapa().dataset.wms!)).toEqual([{ ...PREDIOS, opacity: 0.35 }]))
+  })
+})
+
+describe('«Solo PRICOs»', () => {
+  const interruptor = () => within(screen.getByRole('search', { name: 'Filtros de los predios' })).getByRole('switch', { name: 'Solo PRICOs' })
+
+  it('asks the panel, the rows, the lotes and the CSV for the PRICOs only, and keeps it in the url', async () => {
+    const descargas: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      descargas.push(this.download)
+    })
+    Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:visor'), revokeObjectURL: vi.fn() })
+    start('/brecha/visor')
+    await screen.findByRole('table', { name: 'Predios de la brecha' })
+    expect(interruptor()).not.toBeChecked()
+    await userEvent.click(interruptor())
+    expect(interruptor()).toBeChecked()
+    await waitFor(() => expect(llamadas('/srtm/visor/predios').at(-1)).toBe(`/srtm/visor/predios?anio=${year}&prico=true&orden=delta_desc&page=0&size=50`))
+    expect(llamadas('/srtm/visor/panel').at(-1)).toBe(`/srtm/visor/panel?anio=${year}&prico=true`)
+    await waitFor(() => expect(llamadas('/srtm/visor/lotes').at(-1)).toBe(`/srtm/visor/lotes?anio=${year}&prico=true`))
+    expect(new URLSearchParams(window.location.search).get('prico')).toBe('true')
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
+    await waitFor(() => expect(llamadas('/srtm/visor/predios.csv')).toEqual([`/srtm/visor/predios.csv?anio=${year}&prico=true&orden=delta_desc`]))
+
+    await userEvent.click(interruptor())
+    await waitFor(() => expect(llamadas('/srtm/visor/predios').at(-1)).toBe(`/srtm/visor/predios?anio=${year}&orden=delta_desc&page=0&size=50`))
+    expect(new URLSearchParams(window.location.search).has('prico')).toBe(false)
+  })
+
+  it('comes on from the url', async () => {
+    start(`/brecha/visor?prico=true`)
+    await screen.findByRole('table', { name: 'Predios de la brecha' })
+    expect(llamadas('/srtm/visor/panel')[0]).toBe(`/srtm/visor/panel?anio=${year}&prico=true`)
+    await waitFor(() => expect(llamadas('/srtm/visor/lotes')[0]).toBe(`/srtm/visor/lotes?anio=${year}&prico=true`))
+    expect(llamadas('/srtm/visor/predios')[0]).toBe(`/srtm/visor/predios?anio=${year}&prico=true&orden=delta_desc&page=0&size=50`)
+    expect(interruptor()).toBeChecked()
+  })
+
+  it('is not offered, nor the KPI, by a backend that does not know the PRICOs', async () => {
+    const { pricos: _, ...kpis } = panel.kpis
+    start(`/brecha/visor?prico=true`, [{ path: '/srtm/visor/panel', body: { ...panel, kpis } }])
+    await screen.findByRole('table', { name: 'Predios de la brecha' })
+    await waitFor(() => expect(filas()).toHaveLength(2))
+    expect(screen.queryByRole('switch', { name: 'Solo PRICOs' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'PRICOs' })).not.toBeInTheDocument()
+    // the filter of the url is not applied: nothing would say so, nor take it off
+    expect(llamadas('/srtm/visor/predios').every((p) => !p.includes('prico'))).toBe(true)
+    expect(llamadas('/srtm/visor/lotes').every((p) => !p.includes('prico'))).toBe(true)
+  })
+
+  it('marks the rows of the PRICOs with a chip', async () => {
+    start('/brecha/visor', [{ path: '/srtm/visor/predios', body: { ...predios, content: [fila({ prico: true }), fila({ id: 'b2', prico: false })] } }])
+    await waitFor(() => expect(filas()).toHaveLength(2))
+    const [prico, otro] = filas()
+    expect(within(prico).getByText('PRICO')).toHaveAttribute('title', 'Principal contribuyente')
+    expect(within(prico).getAllByText('PRICO')).toHaveLength(1)
+    expect(within(otro).queryByText('PRICO')).not.toBeInTheDocument()
   })
 })

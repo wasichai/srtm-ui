@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { mockFetch, type FetchMock, type MockRoute } from '@wasichai/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -99,7 +99,16 @@ const year = new Date().getFullYear()
 
 const panel = {
   corrida: { id: 'c2', anio: year, terminado: `${year}-10-20T15:00:00Z`, version_catastro: 'valuacion-v2' },
-  kpis: { fichas: 2, delta_impuesto: 300, delta_impuesto_confiable: 300, omisos_estimado: 0, supera_5_uit: 0, pendientes: 2, con_geometria: 2 },
+  kpis: {
+    fichas: 2,
+    delta_impuesto: 300,
+    delta_impuesto_confiable: 300,
+    omisos_estimado: 0,
+    supera_5_uit: 0,
+    pendientes: 2,
+    con_geometria: 2,
+    pricos: { predios: 1, delta_impuesto: 300 }
+  },
   por_categoria: [],
   por_confianza: [],
   por_estado: [],
@@ -121,7 +130,12 @@ const cuadrado = (x: number) => ({
 const lotes = {
   type: 'FeatureCollection',
   features: [
-    { type: 'Feature', id: 'b1', geometry: cuadrado(-75.73), properties: { codigo: '01-01-0001', codigo_catastro: 'PC-1', categoria: 'SUBVALUADO' } },
+    {
+      type: 'Feature',
+      id: 'b1',
+      geometry: cuadrado(-75.73),
+      properties: { codigo: '01-01-0001', codigo_catastro: 'PC-1', categoria: 'SUBVALUADO', prico: true }
+    },
     { type: 'Feature', id: 'b2', geometry: cuadrado(-75.72), properties: { codigo: '01-01-0002', codigo_catastro: 'PC-2', categoria: 'OMISO' } }
   ]
 }
@@ -137,7 +151,21 @@ const prediosDelLote = [
     categoria: 'SUBVALUADO',
     confianza: 'CONFIABLE',
     delta_impuesto: 300,
-    estado: 'PENDIENTE'
+    estado: 'PENDIENTE',
+    prico: true
+  },
+  {
+    id: 'b9',
+    predio: 'p9',
+    codigo_predio: '01-01-0009',
+    declaracion: 'd9',
+    contribuyente: 'c9',
+    contribuyente_nombre: 'ROJAS PEREZ ANA',
+    categoria: 'COINCIDE',
+    confianza: 'CONFIABLE',
+    delta_impuesto: 0,
+    estado: 'PENDIENTE',
+    prico: false
   }
 ]
 
@@ -278,21 +306,28 @@ function pantalla(ancho: number) {
 }
 
 describe('el popup de un lote', () => {
-  it('lists its predios and opens the predio’s ficha in a tab, with the visor’s tab beside it', async () => {
+  it('lists its predios and opens the predio’s ficha in a tab in the background, the visor still on screen', async () => {
     start('/brecha/visor')
     const mapa = await mapaListo()
     expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).toHaveAttribute('aria-current', 'page')
     clicEnLote(mapa)
     const popup = screen.getByTestId('popup-lote')
     const lista = await within(popup).findByRole('list', { name: 'Predios del lote' })
-    expect(within(lista).getByRole('listitem')).toHaveTextContent('QUISPE MAMANI JUAN')
+    expect(within(lista).getByRole('listitem', { name: '01-01-0001' })).toHaveTextContent('QUISPE MAMANI JUAN')
     expect(within(lista).getByRole('link', { name: 'Ver contribuyente de 01-01-0001' })).toHaveAttribute('href', '/contribuyentes/c1')
 
     await userEvent.click(within(lista).getByRole('link', { name: 'Ver predio 01-01-0001' }))
+    // the predio's tab, beside the visor's, which stays the one on screen: the map was not taken down
+    expect(await pestanas().findByRole('link', { name: '01-01-0001' })).not.toHaveAttribute('aria-current')
+    expect(window.location.pathname).toBe('/brecha/visor')
+    expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).toHaveAttribute('aria-current', 'page')
+    expect(fake.FakeMap.all[0].remove).not.toHaveBeenCalled()
+    expect(screen.getByTestId('popup-lote')).toBeInTheDocument()
+
+    // the tab takes the clerk there, with no reload: the same session of tabs
+    await userEvent.click(pestanas().getByRole('link', { name: '01-01-0001' }))
     await waitFor(() => expect(window.location.pathname).toBe('/predios/p1'))
-    // the predio's tab, open, and the visor's beside it: no reload, the same session of tabs
-    expect(await pestanas().findByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
-    expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).not.toHaveAttribute('aria-current')
+    expect(pestanas().getByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
     expect(fake.FakeMap.all[0].remove).toHaveBeenCalled()
   })
 })
@@ -302,36 +337,95 @@ describe('la tabla del visor', () => {
   const PESTANA_QUISPE = '43554564 QUISPE MAMANI JUAN'
   const tabla = () => within(screen.getByRole('table', { name: 'Predios de la brecha' }))
 
-  it('opens the contribuyente of a row in its tab, and focuses it when it is open', async () => {
+  it('opens the contribuyente of a row in its tab in the background, with the ficha’s own title, once', async () => {
     start('/brecha/visor', conFilas)
     await mapaListo()
     await userEvent.click(await tabla().findByRole('link', { name: 'QUISPE MAMANI JUAN' }))
-    await waitFor(() => expect(window.location.pathname).toBe('/contribuyentes/c1'))
-    expect(await pestanas().findByRole('link', { name: PESTANA_QUISPE })).toHaveAttribute('aria-current', 'page')
-    expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).not.toHaveAttribute('aria-current')
+    // the title the ficha gives its tab, its document and its name, read without going there
+    expect(await pestanas().findByRole('link', { name: PESTANA_QUISPE })).not.toHaveAttribute('aria-current')
+    expect(window.location.pathname).toBe('/brecha/visor')
 
-    // back to the visor and the same link again: the same tab, focused, not a second one
-    await userEvent.click(pestanas().getByRole('link', { name: 'Visor de brechas' }))
-    await waitFor(() => expect(window.location.pathname).toBe('/brecha/visor'))
-    await userEvent.click(await tabla().findByRole('link', { name: 'QUISPE MAMANI JUAN' }))
-    await waitFor(() => expect(window.location.pathname).toBe('/contribuyentes/c1'))
+    // the same link again: the same tab, not a second one
+    await userEvent.click(tabla().getByRole('link', { name: 'QUISPE MAMANI JUAN' }))
     expect(pestanas().getAllByRole('link', { name: PESTANA_QUISPE })).toHaveLength(1)
+    await userEvent.click(pestanas().getByRole('link', { name: PESTANA_QUISPE }))
+    await waitFor(() => expect(window.location.pathname).toBe('/contribuyentes/c1'))
     expect(pestanas().getByRole('link', { name: PESTANA_QUISPE })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('opens the predio of a row in its tab, and focuses it when it is open', async () => {
-    start('/brecha/visor', conFilas)
+  it('opens the predio and the DJ of a row in their tabs in the background', async () => {
+    start('/brecha/visor', [...conFilas, { path: '/srtm/declaraciones/d1', status: 500, body: { title: 'Error', status: 500 } }])
     await mapaListo()
     await userEvent.click(await tabla().findByRole('link', { name: '01-01-0001' }))
-    await waitFor(() => expect(window.location.pathname).toBe('/predios/p1'))
-    expect(await pestanas().findByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
+    expect(await pestanas().findByRole('link', { name: '01-01-0001' })).not.toHaveAttribute('aria-current')
+    // the DJ could not be read: the tab keeps what the row knows of it
+    await userEvent.click(tabla().getByRole('link', { name: 'Declaración de 01-01-0001' }))
+    expect(await pestanas().findByRole('link', { name: 'DJ 01-01-0001' })).toHaveAttribute('href', '/declaraciones/d1')
+    expect(window.location.pathname).toBe('/brecha/visor')
+    expect(pestanas().getByRole('link', { name: 'Visor de brechas' })).toHaveAttribute('aria-current', 'page')
+  })
 
-    await userEvent.click(pestanas().getByRole('link', { name: 'Visor de brechas' }))
-    await waitFor(() => expect(window.location.pathname).toBe('/brecha/visor'))
-    await userEvent.click(await tabla().findByRole('link', { name: '01-01-0001' }))
-    await waitFor(() => expect(window.location.pathname).toBe('/predios/p1'))
-    expect(pestanas().getAllByRole('link', { name: '01-01-0001' })).toHaveLength(1)
-    expect(pestanas().getByRole('link', { name: '01-01-0001' })).toHaveAttribute('aria-current', 'page')
+  it('lets ctrl or cmd and the middle button open a tab of the browser', async () => {
+    start('/brecha/visor', conFilas)
+    await mapaListo()
+    const enlace = await tabla().findByRole('link', { name: 'QUISPE MAMANI JUAN' })
+    // not cancelled: the browser opens it
+    expect(fireEvent.click(enlace, { ctrlKey: true })).toBe(true)
+    expect(fireEvent.click(enlace, { metaKey: true })).toBe(true)
+    expect(fireEvent.click(enlace, { button: 1 })).toBe(true)
+    expect(pestanas().queryByRole('link', { name: /QUISPE/ })).not.toBeInTheDocument()
+    expect(window.location.pathname).toBe('/brecha/visor')
+    // a plain click is the visor's
+    expect(fireEvent.click(enlace)).toBe(false)
+  })
+})
+
+describe('una pestaña abierta en segundo plano', () => {
+  const tabla = () => within(screen.getByRole('table', { name: 'Predios de la brecha' }))
+  const pestana = (nombre: string) => pestanas().getByRole('link', { name: nombre }).closest('li')!
+
+  afterEach(() => vi.useRealTimers())
+
+  it('lights up for a moment, again when it was already open, and is announced', async () => {
+    start('/brecha/visor', conFilas)
+    await mapaListo()
+    const enlace = await tabla().findByRole('link', { name: '01-01-0001' })
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    fireEvent.click(enlace)
+    await waitFor(() => expect(pestana('01-01-0001')).toHaveAttribute('data-resaltada', 'true'))
+    expect(pestana('Visor de brechas')).not.toHaveAttribute('data-resaltada')
+    const aviso = screen.getByText('Se abrió la pestaña de 01-01-0001')
+    expect(aviso).toHaveAttribute('aria-live', 'polite')
+    act(() => vi.advanceTimersByTime(2000))
+    expect(pestana('01-01-0001')).not.toHaveAttribute('data-resaltada')
+
+    // open already: the same light, and the same words
+    fireEvent.click(enlace)
+    expect(pestana('01-01-0001')).toHaveAttribute('data-resaltada', 'true')
+    expect(screen.getByText('Se abrió la pestaña de 01-01-0001')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(2000))
+    expect(pestana('01-01-0001')).not.toHaveAttribute('data-resaltada')
+  })
+
+  it('stays lit, still, a few seconds longer for less motion', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('prefers-reduced-motion: reduce'),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    }))
+    start('/brecha/visor', conFilas)
+    await mapaListo()
+    const enlace = await tabla().findByRole('link', { name: '01-01-0001' })
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    fireEvent.click(enlace)
+    await waitFor(() => expect(pestana('01-01-0001')).toHaveAttribute('data-resaltada', 'true'))
+    // tailwind's motion-reduce: no fade, a still wash
+    expect(pestana('01-01-0001').className).toContain('motion-reduce:data-resaltada:animate-none')
+    act(() => vi.advanceTimersByTime(2000))
+    expect(pestana('01-01-0001')).toHaveAttribute('data-resaltada', 'true')
+    act(() => vi.advanceTimersByTime(2100))
+    expect(pestana('01-01-0001')).not.toHaveAttribute('data-resaltada')
   })
 })
 
@@ -340,7 +434,6 @@ describe('la pestaña del visor', () => {
     start(`/brecha/visor?anio=${year}`)
     const mapa = await mapaListo()
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Colorear lotes por' }), 'delta')
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'Predios' }))
     await userEvent.click(within(screen.getByRole('group', { name: 'Categoría' })).getByRole('button', { name: 'Omiso' }))
     act(() => mapa.fire('moveend', {}))
     await waitFor(() => expect(params().get('c')).toBe('-75.731235,-14.068765'))
@@ -348,7 +441,6 @@ describe('la pestaña del visor', () => {
       anio: String(year),
       categoria: 'OMISO',
       colorear: 'delta',
-      wms: 'predio_catastral__0a1b2c3d__geom@70',
       c: '-75.731235,-14.068765',
       z: '17.25'
     })
@@ -358,6 +450,7 @@ describe('la pestaña del visor', () => {
 
     clicEnLote(mapa)
     await userEvent.click(await screen.findByRole('link', { name: 'Ver predio 01-01-0001' }))
+    await userEvent.click(await pestanas().findByRole('link', { name: '01-01-0001' }))
     await waitFor(() => expect(window.location.pathname).toBe('/predios/p1'))
 
     await userEvent.click(pestanas().getByRole('link', { name: 'Visor de brechas' }))
@@ -433,6 +526,7 @@ describe('el visor a pantalla completa', () => {
     start(`/brecha/visor/mapa?anio=${year}`)
     const mapa = await mapaListo()
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Colorear lotes por' }), 'confianza')
+    // the predios' layer, off: on by default, the link says it is off
     await userEvent.click(await screen.findByRole('checkbox', { name: 'Predios' }))
     await userEvent.click(screen.getByRole('checkbox', { name: /Vías con arancel/ }))
     act(() => mapa.fire('moveend', {}))
@@ -444,7 +538,7 @@ describe('el visor a pantalla completa', () => {
       anio: String(year),
       colorear: 'confianza',
       vias: '1',
-      wms: 'predio_catastral__0a1b2c3d__geom@70',
+      wms: '',
       c: '-75.731235,-14.068765',
       z: '17.25'
     })
@@ -457,8 +551,9 @@ describe('el visor a pantalla completa', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Mapa base' }), 'ninguno')
     expect(params().get('base')).toBe('ninguno')
     const capas = screen.getByRole('region', { name: 'Capas' })
+    expect(await within(capas).findByRole('slider', { name: 'Opacidad de Predios' })).toBeEnabled()
     await userEvent.click(within(capas).getByRole('checkbox', { name: 'Predios' }))
-    expect(within(capas).getByRole('slider', { name: 'Opacidad de Predios' })).toBeEnabled()
+    expect(within(capas).getByRole('slider', { name: 'Opacidad de Predios' })).toBeDisabled()
     expect(within(capas).getByRole('slider', { name: 'Opacidad de las vías' })).toBeDisabled()
     expect(within(capas).getByRole('slider', { name: 'Opacidad de los lotes' })).toHaveValue('60')
   })
@@ -509,5 +604,88 @@ describe('el visor a pantalla completa', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pantalla completa del navegador' }))
     expect(pedir).toHaveBeenCalled()
     Object.defineProperty(document, 'fullscreenEnabled', { value: false, configurable: true })
+  })
+})
+
+// srtm-ui#164: la capa de predios catastrales por defecto en el mapa, «Solo PRICOs» a pantalla completa, sus marcas
+// en el popup, y los enlaces de la pantalla completa en otra pestaña del navegador
+describe('los PRICOs y la capa de predios en el mapa', () => {
+  const PREDIOS = 'visor-wms-predio_catastral__0a1b2c3d__geom'
+  const enLotes = () => fetch!.calls.filter((c) => c.path.startsWith('/srtm/visor/lotes?')).map((c) => c.path)
+
+  it('draws the predios’ layer at 70 % by default, in the visor and on the full page', async () => {
+    start('/brecha/visor')
+    const mapa = await mapaListo()
+    await waitFor(() => expect(mapa.setPaintProperty).toHaveBeenCalledWith(PREDIOS, 'raster-opacity', 0.7))
+    await userEvent.click(screen.getByRole('link', { name: 'Mapa a pantalla completa' }))
+    const otro = await mapaListo(2)
+    await waitFor(() => expect(otro.setPaintProperty).toHaveBeenCalledWith(PREDIOS, 'raster-opacity', 0.7))
+    expect(within(screen.getByRole('region', { name: 'Capas' })).getByRole('checkbox', { name: 'Predios' })).toBeChecked()
+  })
+
+  it('does not draw it on a link with the layers off', async () => {
+    start('/brecha/visor/mapa?wms=')
+    const mapa = await mapaListo()
+    await screen.findByRole('list', { name: 'Capas WMS' })
+    expect(within(screen.getByRole('region', { name: 'Capas' })).getByRole('checkbox', { name: 'Predios' })).not.toBeChecked()
+    expect(mapa.setPaintProperty).not.toHaveBeenCalledWith(PREDIOS, 'raster-opacity', expect.anything())
+  })
+
+  it('filters the lotes of the full page by «Solo PRICOs», in its panel of layers', async () => {
+    start('/brecha/visor/mapa')
+    await mapaListo()
+    const capas = screen.getByRole('region', { name: 'Capas' })
+    const solo = await within(capas).findByRole('switch', { name: 'Solo PRICOs' })
+    await userEvent.click(solo)
+    await waitFor(() => expect(enLotes().at(-1)).toBe(`/srtm/visor/lotes?anio=${year}&prico=true`))
+    expect(params().get('prico')).toBe('true')
+    // back in the visor, the filter is on in the table’s filters too
+    await userEvent.click(screen.getByRole('link', { name: 'Volver al visor' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/brecha/visor'))
+    expect(within(await screen.findByRole('search', { name: 'Filtros de los predios' })).getByRole('switch', { name: 'Solo PRICOs' })).toBeChecked()
+  })
+
+  it('marks the lote and the predios of the PRICOs in the popup', async () => {
+    start('/brecha/visor')
+    const mapa = await mapaListo()
+    clicEnLote(mapa)
+    const popup = screen.getByTestId('popup-lote')
+    const lista = await within(popup).findByRole('list', { name: 'Predios del lote' })
+    expect(within(within(lista).getByRole('listitem', { name: '01-01-0001' })).getByText('PRICO')).toBeInTheDocument()
+    expect(within(within(lista).getByRole('listitem', { name: '01-01-0009' })).queryByText('PRICO')).not.toBeInTheDocument()
+    // the lote has a PRICO
+    expect(within(popup).getAllByText('PRICO')).toHaveLength(2)
+  })
+
+  it('opens the fichas of the full page’s popup in a new tab of the browser', async () => {
+    start('/brecha/visor/mapa')
+    const mapa = await mapaListo()
+    clicEnLote(mapa)
+    const lista = await within(screen.getByTestId('popup-lote')).findByRole('list', { name: 'Predios del lote' })
+    for (const nombre of ['Ver predio 01-01-0001', 'Ver contribuyente de 01-01-0001']) {
+      const enlace = within(lista).getByRole('link', { name: nombre })
+      expect(enlace).toHaveAttribute('target', '_blank')
+      expect(enlace).toHaveAttribute('rel', 'noopener noreferrer')
+    }
+    expect(within(lista).getByRole('link', { name: 'Ver predio 01-01-0001' })).toHaveAttribute('href', '/predios/p1')
+  })
+
+  it('opens them in the workspace’s tabs in the visor', async () => {
+    start('/brecha/visor', conFilas)
+    const mapa = await mapaListo()
+    clicEnLote(mapa)
+    const lista = await within(screen.getByTestId('popup-lote')).findByRole('list', { name: 'Predios del lote' })
+    const tabla = within(screen.getByRole('table', { name: 'Predios de la brecha' }))
+    await tabla.findByRole('link', { name: 'QUISPE MAMANI JUAN' })
+    for (const enlace of [
+      within(lista).getByRole('link', { name: 'Ver predio 01-01-0001' }),
+      within(lista).getByRole('link', { name: 'Ver contribuyente de 01-01-0001' }),
+      tabla.getByRole('link', { name: '01-01-0001' }),
+      tabla.getByRole('link', { name: 'QUISPE MAMANI JUAN' }),
+      tabla.getByRole('link', { name: 'Declaración de 01-01-0001' })
+    ]) {
+      expect(enlace).not.toHaveAttribute('target')
+      expect(enlace).not.toHaveAttribute('rel')
+    }
   })
 })

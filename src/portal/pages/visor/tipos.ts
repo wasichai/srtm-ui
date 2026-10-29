@@ -31,6 +31,9 @@ export interface PanelVisor {
     // null when catastro could not be read: srtm does not know the decisions then
     pendientes: number | null
     con_geometria: number
+    // the predios of principales contribuyentes and their Δ impuesto (srtm-backend#273): absent from an older backend,
+    // which has no «Solo PRICOs» either
+    pricos?: { predios: number; delta_impuesto: Decimal }
   }
   por_categoria: CuentaVisor<CategoriaBrecha>[]
   por_confianza: CuentaVisor<Confianza | null>[]
@@ -68,6 +71,8 @@ export interface FilaVisor {
   // null: no decision read (catastro not reachable)
   estado: DecisionBrecha | null
   con_geometria?: boolean
+  // a predio of a principal contribuyente (srtm-backend#273)
+  prico?: boolean
 }
 
 export interface PaginaVisor<T> {
@@ -96,6 +101,8 @@ export interface LoteVisorProps {
   delta_impuesto: number | null
   estado: DecisionBrecha | null
   supera_5_uit: boolean | null
+  // the lote has a predio of a principal contribuyente
+  prico?: boolean
 }
 
 // GET /lotes/{codigo}/predios (srtm-backend#265): the predios of a lote with their DJ, their contribuyente and their row
@@ -112,6 +119,7 @@ export interface PredioDeLote {
   confianza: Confianza | null
   delta_impuesto: Decimal
   estado: DecisionBrecha | null
+  prico?: boolean
 }
 
 export interface LotesVisor {
@@ -127,6 +135,8 @@ export interface Filtros {
   // '' = both
   supera_5_uit: '' | 'true' | 'false'
   min_delta: string
+  // only the predios of principales contribuyentes («Solo PRICOs»)
+  prico: boolean
 }
 
 export type Orden = 'delta_desc' | 'delta_asc' | 'codigo'

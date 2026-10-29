@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import type { CategoriaBrecha, Confianza, DecisionBrecha } from '../../types'
 import { COLOREAR, type Colorear } from './colores'
-import { CATEGORIAS_VISOR, CONFIANZAS_VISOR, ESTADOS_VISOR, type CapaWmsActiva, type Filtros, type Orden } from './tipos'
+import { CATEGORIAS_VISOR, CONFIANZAS_VISOR, ESTADOS_VISOR, type CapaVisor, type CapaWmsActiva, type Filtros, type Orden } from './tipos'
 
 // what the visor shows lives in its url (wasichai/srtm-ui#157): the filters, the colouring, the layers and the view
 // of the map. so the visor's workspace tab comes back to it as it was left, the full page opens on the same view, and
@@ -21,7 +21,8 @@ export interface EstadoVisor {
   orden: Orden
   colorear: Colorear
   mostrarVias: boolean
-  wms: CapaWmsActiva[]
+  // null: the url says nothing of the layers, and the visor's default is on (capasPorDefecto); [] they are all off
+  wms: CapaWmsActiva[] | null
   // the opacity of the lotes and of the vías, 0 to 1
   opacidadLotes: number
   opacidadVias: number
@@ -40,6 +41,7 @@ export const CLAVES_VISOR = [
   'sector',
   'supera_5_uit',
   'min_delta',
+  'prico',
   'orden',
   'colorear',
   'vias',
@@ -62,12 +64,13 @@ const fraccion = (valor: string | null, porDefecto: number) => {
 const ORDENES: readonly Orden[] = ['delta_desc', 'delta_asc', 'codigo']
 
 // «capa@70,otra@35»: a GeoServer name may carry a «:» (workspace:layer), never an «@»
-function leerWms(valor: string | null): CapaWmsActiva[] {
+function leerWms(valor: string | null): CapaWmsActiva[] | null {
+  if (valor === null) return null
   if (!valor) return []
   return valor.split(',').flatMap((parte) => {
     const arroba = parte.lastIndexOf('@')
     const layerName = arroba > 0 ? parte.slice(0, arroba) : parte
-    return layerName ? [{ layerName, opacity: fraccion(arroba > 0 ? parte.slice(arroba + 1) : null, 0.7) }] : []
+    return layerName ? [{ layerName, opacity: fraccion(arroba > 0 ? parte.slice(arroba + 1) : null, OPACIDAD_WMS) }] : []
   })
 }
 
@@ -89,7 +92,8 @@ export function leerEstado(params: URLSearchParams): EstadoVisor {
       estado: lista<DecisionBrecha>(params.get('estado'), ESTADOS_VISOR),
       sector: params.get('sector') ?? '',
       supera_5_uit: supera === 'true' || supera === 'false' ? supera : '',
-      min_delta: params.get('min_delta') ?? ''
+      min_delta: params.get('min_delta') ?? '',
+      prico: params.get('prico') === 'true'
     },
     orden: ORDENES.includes(orden as Orden) ? (orden as Orden) : 'delta_desc',
     colorear: colorear && colorear in COLOREAR ? (colorear as Colorear) : 'categoria',
@@ -101,6 +105,13 @@ export function leerEstado(params: URLSearchParams): EstadoVisor {
     camara: leerCamara(params.get('c'), params.get('z'))
   }
 }
+
+// the layers on when the url says nothing of them: catastro's predios, by their GeoServer name and not by their label
+// (predio_catastral__<hash>__lote_geom), at the opacity a layer starts with
+export const PREFIJO_PREDIOS = 'predio_catastral__'
+export const OPACIDAD_WMS = 0.7
+export const capasPorDefecto = (capas: readonly CapaVisor[]): CapaWmsActiva[] =>
+  capas.filter((c) => c.layerName.startsWith(PREFIJO_PREDIOS)).map((c) => ({ layerName: c.layerName, opacity: OPACIDAD_WMS }))
 
 const porciento = (f: number) => String(Math.round(f * 100))
 
@@ -115,10 +126,12 @@ export function escribirEstado(params: URLSearchParams, e: EstadoVisor): URLSear
   poner('sector', e.filtros.sector)
   poner('supera_5_uit', e.filtros.supera_5_uit)
   poner('min_delta', e.filtros.min_delta)
+  poner('prico', 'true', e.filtros.prico)
   poner('orden', e.orden, e.orden !== 'delta_desc')
   poner('colorear', e.colorear, e.colorear !== 'categoria')
   poner('vias', '1', e.mostrarVias)
-  poner('wms', e.wms.map((c) => `${c.layerName}@${porciento(c.opacity)}`).join(','))
+  // «wms=» says they are off, so a link with the layers off keeps them off
+  poner('wms', (e.wms ?? []).map((c) => `${c.layerName}@${porciento(c.opacity)}`).join(','), e.wms !== null)
   poner('ol', porciento(e.opacidadLotes), Math.abs(e.opacidadLotes - OPACIDAD_LOTES) > 0.001)
   poner('ov', porciento(e.opacidadVias), Math.abs(e.opacidadVias - OPACIDAD_VIAS) > 0.001)
   poner('base', e.base, e.base !== 'osm')

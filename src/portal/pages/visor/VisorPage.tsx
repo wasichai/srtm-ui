@@ -18,7 +18,7 @@ import { FiltrosVisor, TablaVisor } from './TablaVisor'
 import type { FilaVisor, Filtros, Orden } from './tipos'
 import { RUTA_PANTALLA, useVisor } from './useVisor'
 
-export const FILTROS_VACIOS: Filtros = { categoria: [], confianza: [], estado: [], sector: '', supera_5_uit: '', min_delta: '' }
+export const FILTROS_VACIOS: Filtros = { categoria: [], confianza: [], estado: [], sector: '', supera_5_uit: '', min_delta: '', prico: false }
 
 const noHay = (error: unknown) => error instanceof ApiError && error.status === 404
 
@@ -28,8 +28,8 @@ const noHay = (error: unknown) => error instanceof ApiError && error.status === 
 // its filters, colouring, layers and view are in the url (useEstadoVisor): its workspace tab and its full page come
 // back to them
 export function VisorPage() {
-  const { anio, corrida, conPermisos, puedeLeer, estado, panel, hay, lotes, vias, clases, clasesVias, leyendaVias } = useVisor()
-  const { filtros, orden, colorear, mostrarVias, wms, cambiar } = estado
+  const { anio, corrida, conPermisos, puedeLeer, estado, filtros, conPricos, wms, panel, hay, lotes, vias, clases, clasesVias, leyendaVias } = useVisor()
+  const { orden, colorear, mostrarVias, cambiar } = estado
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(50)
   const [viendo, setViendo] = useState<FilaVisor | null>(null)
@@ -151,7 +151,13 @@ export function VisorPage() {
           </section>
 
           <section aria-label="Predios" className="space-y-3">
-            <FiltrosVisor filtros={filtros} onCambio={cambiarFiltros} orden={orden} onOrden={(o) => (cambiar({ orden: o }), setPage(0))} />
+            <FiltrosVisor
+              filtros={filtros}
+              onCambio={cambiarFiltros}
+              conPricos={conPricos}
+              orden={orden}
+              onOrden={(o) => (cambiar({ orden: o }), setPage(0))}
+            />
             <ExportarCsv anio={anio} corrida={corrida} filtros={filtros} orden={orden} />
             {predios.isError ? (
               <Alert tone="danger">{errorMessage(predios.error, 'No se pudieron leer los predios')}</Alert>

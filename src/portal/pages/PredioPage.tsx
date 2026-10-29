@@ -24,6 +24,7 @@ import { FichaHeader } from './FichaHeader'
 import { InfraccionesDe } from './InfraccionesDe'
 import { CodigosDelPredio } from './ValuacionOrigen'
 import { VerPu } from './VerPdf'
+import { tituloPredio } from '../shell/fichas'
 
 // the year's figures: a StatCard each over the tabs in light and dark, one card under them in the portal's two columns
 const cifrasDelAnio = (titulares: number, totales: Totales) => [
@@ -43,7 +44,7 @@ function PredioPage({ id }: { id: string }) {
   const catalogos = useCatalogos()
   const ficha = useQuery({ queryKey: ['predio', id, anio], queryFn: () => rentas.predio(id, anio), placeholderData: keepPreviousData })
   const p = ficha.data?.predio
-  useWorkspaceTab(p ? { path: `/predios/${id}`, label: p.codigo ?? 'Predio', kind: 'predio' } : null)
+  useWorkspaceTab(p ? { path: `/predios/${id}`, label: tituloPredio(p), kind: 'predio' } : null)
   const portal = useVarianteTema() === 'portal'
 
   return (

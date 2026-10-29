@@ -1,8 +1,9 @@
 import { ApiError } from '@wasichai/core'
 import { Loader2 } from 'lucide-react'
-import { Link } from 'react-router'
 import { useVisorPrediosDeLote } from '../../queries'
 import { COLOR_CATEGORIA, GRIS, etiquetaCategoria, etiquetaConfianza, etiquetaEstado } from './colores'
+import { ChipPrico } from './ChipPrico'
+import { EnlaceFicha } from './enlaces'
 import { soles } from './formato'
 import type { LoteVisorProps, PredioDeLote } from './tipos'
 
@@ -32,19 +33,26 @@ function Predio({ p }: { p: PredioDeLote }) {
           {etiquetaCategoria(p.categoria)}
         </span>
         <span className="tabular-nums">{soles(p.delta_impuesto, { signo: true })}</span>
+        {p.prico && <ChipPrico />}
       </div>
       {/* null: the user may not read contribuyentes */}
       {p.contribuyente_nombre && <div className="truncate text-ink-muted">{p.contribuyente_nombre}</div>}
       <div className="flex flex-wrap gap-x-3">
         {p.predio && (
-          <Link to={`/predios/${encodeURIComponent(p.predio)}`} className={ENLACE} aria-label={`Ver predio ${codigo}`}>
+          <EnlaceFicha ficha="predio" id={p.predio} titulo={p.codigo_predio ?? 'Predio'} className={ENLACE} aria-label={`Ver predio ${codigo}`}>
             Ver predio
-          </Link>
+          </EnlaceFicha>
         )}
         {p.contribuyente && (
-          <Link to={`/contribuyentes/${encodeURIComponent(p.contribuyente)}`} className={ENLACE} aria-label={`Ver contribuyente de ${codigo}`}>
+          <EnlaceFicha
+            ficha="contribuyente"
+            id={p.contribuyente}
+            titulo={p.contribuyente_nombre ?? 'Contribuyente'}
+            className={ENLACE}
+            aria-label={`Ver contribuyente de ${codigo}`}
+          >
             {p.contribuyente_nombre ? 'Ver contribuyente' : 'Contribuyente'}
-          </Link>
+          </EnlaceFicha>
         )}
       </div>
     </li>
@@ -82,7 +90,10 @@ export function PopupLote({ lote, anio, corrida }: { lote: LoteVisorProps; anio:
   return (
     <div data-theme="light" className="space-y-2 text-xs leading-normal text-ink" data-testid="popup-lote">
       <div>
-        <div className="font-semibold">{lote.codigo ?? 'Sin código'}</div>
+        <div className="flex items-center gap-1.5 font-semibold">
+          {lote.codigo ?? 'Sin código'}
+          {lote.prico && <ChipPrico />}
+        </div>
         {lote.codigo_catastro && <Fila k="Código catastral" v={lote.codigo_catastro} />}
         <Fila k="Categoría" v={etiquetaCategoria(lote.categoria)} />
         <Fila k="Confianza" v={etiquetaConfianza(lote.confianza)} />

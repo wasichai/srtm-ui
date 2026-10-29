@@ -325,7 +325,7 @@ export function useReporte<T>(clave: string, anio: number, corrida: string, filt
 // within the same year and corrida
 export const clavesVisor = {
   todo: ['visor'] as const,
-  panel: (anio: number, corrida: string) => ['visor', 'panel', anio, corrida] as const,
+  panel: (anio: number, corrida: string, prico = false) => ['visor', 'panel', anio, corrida, prico] as const,
   predios: (anio: number, corrida: string, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number) =>
     ['visor', 'predios', anio, corrida, filtros, orden, page, size] as const,
   niveles: (id: string) => ['visor', 'niveles', id] as const,
@@ -340,8 +340,14 @@ const deLaMismaCorrida =
   (anterior: T | undefined, consulta: { queryKey: readonly unknown[] } | undefined) =>
     consulta?.queryKey[2] === anio && consulta?.queryKey[3] === corrida ? anterior : undefined
 
-export function useVisorPanel(anio: number, corrida: string, enabled = true) {
-  return useQuery({ queryKey: clavesVisor.panel(anio, corrida), queryFn: () => rentas.visorPanel(anio, corrida), enabled })
+// «Solo PRICOs» asks it again: the last figures stay on screen meanwhile, so the visor still knows the backend has PRICOs
+export function useVisorPanel(anio: number, corrida: string, prico: boolean, enabled = true) {
+  return useQuery({
+    queryKey: clavesVisor.panel(anio, corrida, prico),
+    queryFn: () => rentas.visorPanel(anio, corrida, prico),
+    enabled,
+    placeholderData: deLaMismaCorrida(anio, corrida)
+  })
 }
 
 export function useVisorPredios(anio: number, corrida: string, filtros: FiltrosVisor, orden: OrdenVisor, page: number, size: number, enabled = true) {

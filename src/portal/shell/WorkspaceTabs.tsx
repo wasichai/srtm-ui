@@ -17,11 +17,29 @@ export interface WorkspaceTab {
 // where a tab takes the clerk: its path, with the query it was left on
 export const destino = (tab: WorkspaceTab) => tab.path + (tab.search ?? '')
 
+// a tab opened in the background, highlighted for a moment: `vez` tells one highlight from the next of the same tab
+export interface TabResaltada {
+  path: string
+  vez: number
+}
+
 interface WorkspaceTabs {
   tabs: WorkspaceTab[]
   open: (tab: WorkspaceTab) => void
   close: (path: string) => void
+  // opens a tab, or keeps the one there, without leaving the screen (wasichai/srtm-ui#164): it is highlighted for a
+  // moment and announced. `label`, when it comes, is the ficha's own title, the one its page gives the tab
+  openInBackground: (tab: WorkspaceTab, label?: Promise<string | null>) => void
+  resaltada: TabResaltada | null
+  // «Se abrió la pestaña de …», for a polite live region
+  aviso: string
 }
+
+// how long a tab opened in the background stays highlighted: the fade of tabs.css, or a few seconds of a still
+// highlight for whoever asks the system for less motion
+export const RESALTE_MS = 1800
+export const RESALTE_QUIETO_MS = 4000
+const menosMovimiento = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const Context = createContext<WorkspaceTabs | null>(null)
 
@@ -97,7 +115,32 @@ export function WorkspaceTabsProvider({ usuario, children }: { usuario?: string;
     setTabs((current) => current.filter((t) => t.path !== cerrar))
   }, [cerrar, location.key])
 
-  const value = useMemo(() => ({ tabs, open, close }), [tabs, open, close])
+  const [resaltada, setResaltada] = useState<TabResaltada | null>(null)
+  const [aviso, setAviso] = useState('')
+  const vez = useRef(0)
+  const pestanas = useRef(tabs)
+  pestanas.current = tabs
+  useEffect(() => {
+    if (!resaltada) return
+    const reloj = setTimeout(() => setResaltada(null), menosMovimiento() ? RESALTE_QUIETO_MS : RESALTE_MS)
+    return () => clearTimeout(reloj)
+  }, [resaltada])
+  const openInBackground = useCallback((tab: WorkspaceTab, label?: Promise<string | null>) => {
+    const abierta = pestanas.current.find((t) => t.path === tab.path)
+    if (!abierta) setTabs((current) => (current.some((t) => t.path === tab.path) ? current : [...current, tab]))
+    vez.current += 1
+    setResaltada({ path: tab.path, vez: vez.current })
+    setAviso(`Se abrió la pestaña de ${(abierta ?? tab).label}`)
+    // the ficha's title once it is read, on the tab opened here (one already open keeps its own)
+    if (!abierta)
+      void label
+        ?.then((titulo) => {
+          if (titulo) setTabs((current) => current.map((t) => (t.path === tab.path && t.label === tab.label ? { ...t, label: titulo } : t)))
+        })
+        .catch(() => {})
+  }, [])
+
+  const value = useMemo(() => ({ tabs, open, close, openInBackground, resaltada, aviso }), [tabs, open, close, openInBackground, resaltada, aviso])
   return <Context value={value}>{children}</Context>
 }
 
@@ -115,6 +158,11 @@ export function useWorkspaceTabs(): WorkspaceTabs {
   const context = use(Context)
   if (!context) throw new Error('useWorkspaceTabs must be used inside WorkspaceTabsProvider')
   return context
+}
+
+// the tabs where there are any: a screen drawn outside the shell (a component's test) has none
+export function useWorkspaceTabsOpcional(): WorkspaceTabs | null {
+  return use(Context)
 }
 
 // a ficha registers itself once its label is known

@@ -25,6 +25,25 @@ export function Indicadores({ panel }: { panel: PanelVisor }) {
   const { kpis } = panel
   return (
     <section aria-label="Indicadores de la corrida" className="@container space-y-3">
+      {/* the PRICOs (srtm-backend#273) in a strip of their own above the 6 cards, which keep their 3 + 3 and 2 + 2 + 2 */}
+      {kpis.pricos && (
+        <div
+          role="group"
+          aria-label="PRICOs"
+          className="flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded-lg border border-brand/30 bg-brand-soft px-4 py-2.5 text-ink"
+        >
+          <p className="text-sm font-semibold">
+            PRICOs <span className="font-normal text-ink-muted">Principales contribuyentes</span>
+          </p>
+          <p className="text-sm">
+            <span className="text-lg font-semibold tabular-nums">{cantidad(kpis.pricos.predios)}</span> predios
+          </p>
+          <p className="text-sm">
+            <span className="text-ink-muted">Diferencia de impuesto </span>
+            <span className="text-lg font-semibold whitespace-nowrap tabular-nums">{soles(kpis.pricos.delta_impuesto, { signo: true })}</span>
+          </p>
+        </div>
+      )}
       {/* columns by the width of the section, not of the screen: a KPI card needs ~15rem for «+S/ 1,234,567.89» */}
       <div className="grid grid-cols-1 gap-3 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3 @min-[96rem]:grid-cols-6">
         <Kpi
