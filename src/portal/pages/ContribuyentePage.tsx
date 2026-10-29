@@ -28,6 +28,7 @@ import { EliminarFicha } from './EliminarFicha'
 import { FichaHeader } from './FichaHeader'
 import { InfraccionesDe } from './InfraccionesDe'
 import { VerHla, VerHr } from './VerPdf'
+import { tituloContribuyente } from '../shell/fichas'
 
 // the srtm's registro de contribuyente, in its order, then what rentas adds: the year's predios and every declaration
 export const CONTRIBUYENTE_TABS = [
@@ -90,7 +91,7 @@ function ContribuyentePage({ id }: { id: string }) {
   const activa = params.get('tab') ?? 'datos'
   const paso = inscripcion ? CONTRIBUYENTE_TABS.find((tab) => tab.id === activa && habilitada(tab.id))?.id : undefined
   const c = ficha.data?.contribuyente
-  useWorkspaceTab(c ? { path: `/contribuyentes/${id}`, label: `${c.numero_documento ?? ''} ${c.nombre_completo ?? ''}`.trim(), kind: 'contribuyente' } : null)
+  useWorkspaceTab(c ? { path: `/contribuyentes/${id}`, label: tituloContribuyente(c), kind: 'contribuyente' } : null)
   const portal = useVarianteTema() === 'portal'
 
   return (

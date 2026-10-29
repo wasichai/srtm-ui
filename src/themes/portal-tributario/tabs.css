@@ -129,3 +129,9 @@
     font-size: 14px;
     font-weight: normal;
 }
+
+/* a tab opened in the background (the visor's links, wasichai/srtm-ui#164): TabBar washes it in the focus colour
+   and fades it; on the bar, in its ink */
+[data-theme='portal-tributario'] [data-ui='workspace-tabs'][data-ubicacion='cabecera'] [data-ui='workspace-tab'][data-resaltada] {
+    --tab-resalte: color-mix(in srgb, var(--shell-ink) 40%, transparent);
+}

@@ -27,6 +27,7 @@ import { FichaHeader } from './FichaHeader'
 import { FrentesPanel, NivelesPanel, ObrasPanel, TransferentesPanel } from './DeclaracionListas'
 import { AvisoSustituida, EnlaceSustituye, RectificarDeclaracion } from './RectificarDeclaracion'
 import { CodigosDelPredio, ValuacionDeLaDeclaracion } from './ValuacionOrigen'
+import { tituloDeclaracion } from '../shell/fichas'
 
 // the srtm's tabs of a declaración jurada predial
 export const DECLARACION_TABS = [
@@ -95,9 +96,7 @@ function DeclaracionPage({ id }: { id: string }) {
   const dj = ficha.data
   // what an external padrón brought (srtm-backend#132), read-only: nothing is drawn while it loads, fails or is empty
   const origen = useValuacionOrigen(id).data
-  useWorkspaceTab(
-    dj ? { path: `/declaraciones/${id}`, label: `DJ ${dj.declaracion.numero_declaracion ?? ''} ${dj.predio.codigo ?? ''}`.trim(), kind: 'declaracion' } : null
-  )
+  useWorkspaceTab(dj ? { path: `/declaraciones/${id}`, label: tituloDeclaracion(dj), kind: 'declaracion' } : null)
   // the DJ's año's arbitrios: what its ordenanza cobra por (BASE_ARBITRIO) and lee de (DIMENSIONES_ARBITRIO), to
   // exigir frontis, área construida o la ubicación respecto a áreas verdes (wasichai/srtm-ui#94). mientras la query
   // carga o falla, ambos conjuntos quedan vacíos: los campos siguen opcionales, como hoy
