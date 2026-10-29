@@ -1,11 +1,12 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazyConRecarga } from '../../components/lazyConRecarga'
 import { vistaInicial } from '../../components/geo'
 import { SinMapa } from '../../components/LotesMap'
 import { useMunicipalidad } from '../../queries'
 import type { VisorMapaProps } from './VisorMapa'
 
 // maplibre weighs more than the rest of the portal: the visor's map loads with its page, not with the portal
-const VisorMapa = lazy(() => import('./VisorMapa'))
+const VisorMapa = lazyConRecarga('visor-mapa', () => import('./VisorMapa'))
 
 // the visor's map, where the organization's lotes are (GET /srtm/municipalidad), so it waits for them. a machine
 // that cannot draw it (no webgl) says so in its place; the indicators and the table stay

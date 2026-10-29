@@ -1,6 +1,7 @@
 import { cn } from '@wasichai/ui'
 import { MapPinOff } from 'lucide-react'
-import { Component, lazy, Suspense, type ReactNode } from 'react'
+import { Component, Suspense, type ReactNode } from 'react'
+import { ChunkViejoError, lazyConRecarga } from './lazyConRecarga'
 import { useMunicipalidad } from '../queries'
 import type { ColorPor } from './colorDeLotes'
 import { vistaInicial, type Bbox, type FeatureCollection, type Geometry, type VistaMapa } from './geo'
@@ -29,7 +30,7 @@ export interface LotesMapProps {
 }
 
 // maplibre and terra-draw are heavy: they load with the first map, not with the portal
-const LotesMapImpl = lazy(() => import('./LotesMapImpl'))
+const LotesMapImpl = lazyConRecarga('lotes-mapa', () => import('./LotesMapImpl'))
 
 // it opens where the organization's lotes are (GET /srtm/municipalidad), so it waits for them; without them, on Perú
 export function LotesMap({ className, ...props }: LotesMapProps) {
@@ -52,12 +53,14 @@ export function LotesMap({ className, ...props }: LotesMapProps) {
 
 // a map that cannot be drawn (a machine without webgl, a remote desktop; its chunk gone after a deploy) says so in its
 // place, and only there: the form or the dialog around it, and whatever the clerk typed, stay and can be saved. trying
-// again would fail the same way, so it offers nothing to click. aviso: what the rest of the page still offers
-export class SinMapa extends Component<{ children: ReactNode; aviso?: ReactNode }, { fallo: boolean }> {
-  state = { fallo: false }
+// again would fail the same way, so it offers nothing to click. a chunk gone after a deploy reloads the page once by
+// itself (lazyConRecarga); if it is still missing after that (ChunkViejoError), the browser's cache is in the way, so
+// it suggests a reload without it. aviso: what the rest of the page still offers
+export class SinMapa extends Component<{ children: ReactNode; aviso?: ReactNode }, { fallo: boolean; chunk: boolean }> {
+  state = { fallo: false, chunk: false }
 
-  static getDerivedStateFromError() {
-    return { fallo: true }
+  static getDerivedStateFromError(error: unknown) {
+    return { fallo: true, chunk: error instanceof ChunkViejoError }
   }
 
   render() {
@@ -66,6 +69,7 @@ export class SinMapa extends Component<{ children: ReactNode; aviso?: ReactNode 
       <div role="alert" className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-ink-muted">
         <MapPinOff className="size-6" />
         <p className="font-medium text-ink">No se pudo mostrar el mapa en este equipo.</p>
+        {this.state.chunk && <p>Recarga la página sin caché (Ctrl+Mayús+R, o Cmd+Mayús+R en Mac) para traer la versión nueva.</p>}
         <p>{this.props.aviso ?? 'El resto del formulario sigue disponible: puede continuar y guardar sin él.'}</p>
       </div>
     )
